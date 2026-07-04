@@ -14,10 +14,6 @@ export default function ConnectVideoBanner() {
     offset: ["start start", "end start"],
   });
 
-  /*
-    Text scrolls out first.
-    Video stays full sticky style.
-  */
   const textY = useTransform(
     scrollYProgress,
     [0, 0.18, 0.38, 0.58, 0.68],
@@ -36,17 +32,7 @@ export default function ConnectVideoBanner() {
     [1, 0.96, 0.86]
   );
 
-  /*
-    Video layer premium motion.
-    Very soft zoom only, not scrolling.
-  */
   const videoScale = useTransform(scrollYProgress, [0, 1], [1.04, 1.1]);
-
-  const videoBrightness = useTransform(
-    scrollYProgress,
-    [0, 0.55, 1],
-    [1, 1.05, 1]
-  );
 
   const handleVideoToggle = () => {
     if (!videoRef.current) return;
@@ -125,15 +111,12 @@ export default function ConnectVideoBanner() {
       `}</style>
 
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Layer 1: Full Premium Video Layer */}
+        {/* Layer 1: Full Video Layer */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.video
             ref={videoRef}
-            style={{
-              scale: videoScale,
-              filter: `brightness(${videoBrightness.get?.() || 1})`,
-            }}
-            className="h-full w-full object-cover"
+            style={{ scale: videoScale }}
+            className="h-full w-full object-cover brightness-[1.04]"
             src="https://www.powerschool.com/wp-content/uploads/2026/04/tour-home-connections-hero.mp4"
             autoPlay
             muted
@@ -143,27 +126,19 @@ export default function ConnectVideoBanner() {
           />
         </div>
 
-        {/* Layer 2: Premium clean video styling overlays */}
+        {/* Layer 2: Soft premium overlays */}
         <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
-
-        {/* Soft left blue wash */}
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[#0068ff]/18 via-transparent to-transparent" />
-
-        {/* Soft right warm wash */}
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[#ff7a3d]/16 via-transparent to-transparent" />
-
-        {/* Top and bottom cinematic fade, not black */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[180px] bg-gradient-to-b from-white/20 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[220px] bg-gradient-to-t from-white/18 to-transparent" />
 
-        {/* Decorative soft glow */}
         <div className="video-glow pointer-events-none absolute left-[8%] top-[18%] z-10 h-[260px] w-[260px] rounded-full bg-[#0068ff]/16 blur-[100px]" />
         <div className="video-glow pointer-events-none absolute bottom-[12%] right-[8%] z-10 h-[300px] w-[300px] rounded-full bg-[#ff7a3d]/14 blur-[110px]" />
 
-        {/* Subtle glass frame */}
         <div className="pointer-events-none absolute inset-4 z-10 rounded-[36px] border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]" />
 
-        {/* Video Control Layer */}
+        {/* Video Control */}
         <button
           type="button"
           onClick={handleVideoToggle}

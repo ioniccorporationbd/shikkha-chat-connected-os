@@ -1,15 +1,15 @@
-import Banner from '@/components/Banner';
-import HomeConnectionsVideoBanner from '@/components/HomeConnectionsVideoBanner';
+import Banner from "@/components/Banner";
+import ConnectVideoBanner from "@/components/HomeConnectionsVideoBanner";
+import RightSidebar from "@/components/RightSidebar";
 
-import React from 'react';
 
-const page = () => {
+export default function Page() {
   return (
-    <div>
-   <Banner/>
-   <HomeConnectionsVideoBanner/>
-    </div>
+    <>
+      <Banner />
+      <ConnectVideoBanner />
+      <RightSidebar/> 
+  
+    </>
   );
-};
-
-export default page;
+}
