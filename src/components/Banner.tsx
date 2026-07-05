@@ -2,68 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { FaArrowDownLong } from "react-icons/fa6";
 import { motion, Variants } from "framer-motion";
 
 type SectionKey = "orange" | "green" | "purple";
 
-type VisiblePeople = {
-  orange: boolean;
-  green: boolean;
-  purple: boolean;
-};
-
-type ActivePulse = SectionKey | null;
+type VisiblePeople = Record<SectionKey, boolean>;
 
 const impactVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.9,
-    y: 22,
-    filter: "blur(8px)",
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: {
-      duration: 0.7,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  },
+  hidden: { opacity: 0, scale: 0.94, y: 18, filter: "blur(6px)" },
+  visible: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
 };
 
 const peopleVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.72,
-    y: 90,
-    rotateX: 12,
-    filter: "blur(12px)",
-  },
+  hidden: { opacity: 0, scale: 0.78, y: 72, filter: "blur(10px)" },
   visible: {
     opacity: 1,
-    scale: [0.72, 1.14, 0.95, 1.04, 1],
-    y: [90, -30, 12, -7, 0],
-    rotateX: [12, 0, 0, 0, 0],
+    scale: [0.78, 1.08, 0.98, 1],
+    y: [72, -18, 6, 0],
     filter: "blur(0px)",
-    transition: {
-      duration: 1.25,
-      ease: [0.22, 1, 0.36, 1],
-    },
+    transition: { duration: 1.05, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
-const peopleFloat: Variants = {
+const floatVariants: Variants = {
   float: {
-    y: [0, -9, 0],
-    scale: [1, 1.008, 1],
-    transition: {
-      duration: 4.8,
-      repeat: Infinity,
-      ease: "easeInOut",
-    },
+    y: [0, -8, 0],
+    transition: { duration: 4.8, repeat: Infinity, ease: "easeInOut" },
   },
 };
 
@@ -73,282 +37,86 @@ export default function Banner() {
     green: false,
     purple: false,
   });
-
-  const [activePulse, setActivePulse] = useState<ActivePulse>(null);
+  const [pulse, setPulse] = useState<SectionKey | null>(null);
 
   useEffect(() => {
-    const playSection = (section: SectionKey, delay: number) => {
-      const startTimer = window.setTimeout(() => {
-        setActivePulse(section);
-
-        window.setTimeout(() => {
-          setVisiblePeople((prev) => ({
-            ...prev,
-            [section]: true,
-          }));
-        }, 280);
-
-        window.setTimeout(() => {
-          setActivePulse(null);
-        }, 1350);
+    const schedule = (section: SectionKey, delay: number) =>
+      window.setTimeout(() => {
+        setPulse(section);
+        window.setTimeout(() => setVisiblePeople((prev) => ({ ...prev, [section]: true })), 220);
+        window.setTimeout(() => setPulse(null), 1100);
       }, delay);
 
-      return startTimer;
-    };
-
-    const orangeTimer = playSection("orange", 3000);
-    const greenTimer = playSection("green", 3950);
-    const purpleTimer = playSection("purple", 4900);
-
-    return () => {
-      window.clearTimeout(orangeTimer);
-      window.clearTimeout(greenTimer);
-      window.clearTimeout(purpleTimer);
-    };
+    const timers = [schedule("orange", 900), schedule("green", 1350), schedule("purple", 1800)];
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, []);
 
-  const getImpactPulse = (section: SectionKey) => {
-    if (activePulse !== section) return {};
-
-    return {
-      scale: [1, 1.12, 0.96, 1.04, 1],
-      y: [0, -18, 8, -4, 0],
-      filter: [
-        "drop-shadow(0 0 0 rgba(0,104,255,0))",
-        "drop-shadow(0 24px 34px rgba(0,104,255,0.18))",
-        "drop-shadow(0 10px 20px rgba(0,104,255,0.1))",
-        "drop-shadow(0 18px 28px rgba(0,104,255,0.15))",
-        "drop-shadow(0 0 0 rgba(0,104,255,0))",
-      ],
-      transition: {
-        duration: 1.25,
-        ease: [0.22, 1, 0.36, 1],
-      },
-    };
-  };
+  const impactAnimate = (section: SectionKey): any =>
+    pulse === section
+      ? {
+          opacity: 1,
+          scale: [1, 1.08, 0.98, 1.02, 1],
+          y: [0, -12, 4, -2, 0],
+          filter: "blur(0px)",
+          transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] },
+        }
+      : {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          filter: "blur(0px)",
+          transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
+        };
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f8fbff]">
-      <style jsx>{`
-        @keyframes arrowJump {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-
-          10% {
-            transform: translateY(-14px);
-          }
-
-          20% {
-            transform: translateY(0);
-          }
-
-          30% {
-            transform: translateY(-8px);
-          }
-
-          40% {
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes arrowRing {
-          0% {
-            opacity: 0.55;
-            transform: scale(0.86);
-          }
-
-          70% {
-            opacity: 0;
-            transform: scale(1.45);
-          }
-
-          100% {
-            opacity: 0;
-            transform: scale(1.45);
-          }
-        }
-
-        .arrow-jump {
-          animation: arrowJump 2s ease-in-out infinite;
-        }
-
-        .arrow-ring {
-          animation: arrowRing 2s ease-in-out infinite;
-        }
-      `}</style>
-
-      {/* dotted background */}
+    <section id="intro" className="relative min-h-screen overflow-hidden bg-[#f8fbff]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[#0068ff]/10 blur-[120px]" />
 
-      {/* soft blue light */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute left-1/2 top-0 h-[280px] w-[760px] -translate-x-1/2 rounded-full bg-[#0068ff]/10 blur-[120px]"
-      />
-
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1600px] flex-col px-5 pb-8 pt-7 lg:px-10">
-        {/* header text small */}
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
         <motion.div
-          initial={{ opacity: 0, y: -14 }}
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.55 }}
           className="mx-auto text-center"
         >
-          <p className="mb-2 text-[7px] font-semibold uppercase tracking-[0.17em] text-[#111827] md:text-[8px] lg:text-[9px]">
+          <p className="mb-2 text-[7px] font-bold uppercase tracking-[0.17em] text-slate-800 md:text-[9px]">
             UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
           </p>
-
-          <h1 className="text-[22px] font-extrabold leading-[1.05] tracking-[-0.045em] text-[#0068ff] md:text-[34px] lg:text-[43px] xl:text-[48px]">
+          <h1 className="text-[24px] font-black leading-[1.04] tracking-[-0.05em] text-[#0068ff] md:text-[38px] lg:text-[48px] xl:text-[54px]">
             The K–12 Connected Operating System
           </h1>
         </motion.div>
 
-        {/* banner visual */}
-        <div className="relative mt-6 flex flex-1 items-center justify-center lg:mt-9">
-          <div className="relative h-[650px] w-full max-w-[1500px]">
-            {/* Orange impact/background */}
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={{
-                ...impactVariants.visible,
-                ...getImpactPulse("orange"),
-              }}
-              className="absolute left-[0%] top-[2%] h-[430px] w-[34%]"
-            >
-              <Image
-                src="/Banner-imaes/orange-impact.png"
-                alt="Home Connections"
-                fill
-                priority
-                className="object-contain object-top"
-              />
+        <div className="relative mt-5 flex flex-1 items-center justify-center lg:mt-8">
+          <div className="relative h-[560px] w-full max-w-[1420px] md:h-[610px] lg:h-[650px]">
+            <motion.div initial={{ opacity: 0, scale: 0.94, y: 18, filter: "blur(6px)" }} animate={impactAnimate("orange")} className="absolute left-[0%] top-[2%] h-[390px] w-[35%] md:h-[430px]">
+              <Image src="/Banner-imaes/orange-impact.png" alt="Home Connections" fill priority className="object-contain object-top" />
             </motion.div>
-
-            {/* Orange people */}
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.orange ? "visible" : "hidden"}
-              className="absolute bottom-[1%] left-[1%] h-[430px] w-[27%]"
-            >
-              <motion.div
-                variants={peopleFloat}
-                animate={visiblePeople.orange ? "float" : undefined}
-                className="relative h-full w-full"
-              >
-                <Image
-                  src="/Banner-imaes/orange-people.png"
-                  alt="Home Connections People"
-                  fill
-                  priority
-                  className="object-contain object-bottom drop-shadow-[0_24px_18px_rgba(15,23,42,0.18)]"
-                />
+            <motion.div variants={peopleVariants} initial="hidden" animate={visiblePeople.orange ? "visible" : "hidden"} className="absolute bottom-[5%] left-[1%] h-[350px] w-[28%] md:h-[430px]">
+              <motion.div variants={floatVariants} animate={visiblePeople.orange ? "float" : undefined} className="relative h-full w-full">
+                <Image src="/Banner-imaes/orange-people.png" alt="Home Connections people" fill priority className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]" />
               </motion.div>
             </motion.div>
 
-            {/* Green impact/background */}
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={{
-                ...impactVariants.visible,
-                ...getImpactPulse("green"),
-              }}
-              className="absolute left-1/2 top-[2%] h-[395px] w-[34%] -translate-x-1/2"
-            >
-              <Image
-                src="/Banner-imaes/green-impact.png"
-                alt="Student Achievement"
-                fill
-                priority
-                className="object-contain object-top"
-              />
+            <motion.div initial={{ opacity: 0, scale: 0.94, y: 18, filter: "blur(6px)" }} animate={impactAnimate("green")} className="absolute left-1/2 top-[2%] h-[360px] w-[34%] -translate-x-1/2 md:h-[395px]">
+              <Image src="/Banner-imaes/green-impact.png" alt="Student Achievement" fill priority className="object-contain object-top" />
             </motion.div>
-
-            {/* Green people */}
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.green ? "visible" : "hidden"}
-              className="absolute bottom-[0%] left-1/2 h-[455px] w-[20%] -translate-x-1/2"
-            >
-              <motion.div
-                variants={peopleFloat}
-                animate={visiblePeople.green ? "float" : undefined}
-                className="relative h-full w-full"
-              >
-                <Image
-                  src="/Banner-imaes/green-people.png"
-                  alt="Student Achievement People"
-                  fill
-                  priority
-                  className="object-contain object-bottom drop-shadow-[0_24px_18px_rgba(15,23,42,0.18)]"
-                />
+            <motion.div variants={peopleVariants} initial="hidden" animate={visiblePeople.green ? "visible" : "hidden"} className="absolute bottom-[4%] left-1/2 h-[380px] w-[20%] -translate-x-1/2 md:h-[455px]">
+              <motion.div variants={floatVariants} animate={visiblePeople.green ? "float" : undefined} className="relative h-full w-full">
+                <Image src="/Banner-imaes/green-people.png" alt="Student Achievement person" fill priority className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]" />
               </motion.div>
             </motion.div>
 
-            {/* Purple impact/background */}
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={{
-                ...impactVariants.visible,
-                ...getImpactPulse("purple"),
-              }}
-              className="absolute right-[0%] top-[2%] h-[440px] w-[34%]"
-            >
-              <Image
-                src="/Banner-imaes/purple-impact.png"
-                alt="Operational Excellence"
-                fill
-                priority
-                className="object-contain object-top"
-              />
+            <motion.div initial={{ opacity: 0, scale: 0.94, y: 18, filter: "blur(6px)" }} animate={impactAnimate("purple")} className="absolute right-[0%] top-[2%] h-[395px] w-[35%] md:h-[440px]">
+              <Image src="/Banner-imaes/purple-impact.png" alt="Operational Excellence" fill priority className="object-contain object-top" />
             </motion.div>
-
-            {/* Purple people */}
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.purple ? "visible" : "hidden"}
-              className="absolute bottom-[0%] right-[6%] h-[430px] w-[25%]"
-            >
-              <motion.div
-                variants={peopleFloat}
-                animate={visiblePeople.purple ? "float" : undefined}
-                className="relative h-full w-full"
-              >
-                <Image
-                  src="/Banner-imaes/purple-people.png"
-                  alt="Operational Excellence People"
-                  fill
-                  priority
-                  className="object-contain object-bottom drop-shadow-[0_24px_18px_rgba(15,23,42,0.18)]"
-                />
+            <motion.div variants={peopleVariants} initial="hidden" animate={visiblePeople.purple ? "visible" : "hidden"} className="absolute bottom-[4%] right-[5%] h-[350px] w-[26%] md:h-[430px]">
+              <motion.div variants={floatVariants} animate={visiblePeople.purple ? "float" : undefined} className="relative h-full w-full">
+                <Image src="/Banner-imaes/purple-people.png" alt="Operational Excellence people" fill priority className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]" />
               </motion.div>
             </motion.div>
           </div>
-        </div>
-
-        {/* interactive arrow with react icon */}
-        <div className="relative z-20 flex justify-center pb-3">
-          <a
-            href="#my-connected-os"
-            aria-label="Scroll down"
-            className="arrow-jump group relative flex h-[56px] w-[56px] items-center justify-center rounded-full border border-[#0068ff]/15 bg-white/90 text-[#0068ff] shadow-[0_18px_42px_rgba(0,104,255,0.24)] backdrop-blur-xl transition-all duration-500 hover:scale-110 hover:bg-[#0068ff] hover:text-white hover:shadow-[0_28px_65px_rgba(0,104,255,0.36)]"
-          >
-            <span className="arrow-ring absolute inset-0 rounded-full border border-[#0068ff]/25" />
-            <span className="arrow-ring absolute inset-[-10px] rounded-full border border-[#0068ff]/15 [animation-delay:0.35s]" />
-
-            <FaArrowDownLong className="relative z-10 text-[22px] transition-transform duration-500 group-hover:translate-y-1" />
-
-            <span className="absolute bottom-[8px] h-[5px] w-[18px] rounded-full bg-[#0068ff]/18 blur-[2px] transition-all duration-500 group-hover:bg-white/30" />
-          </a>
         </div>
       </div>
     </section>

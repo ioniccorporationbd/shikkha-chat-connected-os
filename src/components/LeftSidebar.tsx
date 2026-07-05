@@ -1,110 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-type SidebarSectionKey = "home" | "student" | "operation" | "myos";
-
-type SidebarChildGroup = {
+type MenuGroup = {
   title: string;
-  items: string[];
-};
-
-type SidebarItem = {
-  key: SidebarSectionKey;
-  label: string;
   href: string;
-  color: string;
-  lightColor: string;
-  textColor: string;
-  glowColor: string;
-  groups?: SidebarChildGroup[];
+  children?: { title: string; href: string }[];
 };
 
-const sidebarItems: SidebarItem[] = [
+const menu: MenuGroup[] = [
   {
-    key: "home",
-    label: "Home Connections",
-    href: "#home-connections",
-    color: "#ff6f3c",
-    lightColor: "rgba(255,111,60,0.12)",
-    textColor: "#8f2c08",
-    glowColor: "rgba(255,111,60,0.28)",
-    groups: [
-      {
-        title: "Student Information",
-        items: ["SIS", "Enrollment", "Special Programs"],
-      },
-      {
-        title: "Family Engagement",
-        items: ["Communications", "Attendance Support"],
-      },
+    title: "Home Connections",
+    href: "#home-connections-panel",
+    children: [
+      { title: "Student Information", href: "#student-information" },
+      { title: "SIS", href: "#sis" },
+      { title: "Enrollment", href: "#enrollment" },
+      { title: "Special Programs", href: "#special-programs" },
+      { title: "Family Engagement", href: "#family-engagement" },
+      { title: "Communications", href: "#communications" },
+      { title: "Attendance Support", href: "#attendance-support" },
     ],
   },
-  {
-    key: "student",
-    label: "Student Achievement",
-    href: "#student-achievement",
-    color: "#00a86b",
-    lightColor: "rgba(0,168,107,0.12)",
-    textColor: "#006642",
-    glowColor: "rgba(0,168,107,0.28)",
-    groups: [
-      {
-        title: "Classroom Solutions",
-        items: ["Learning Management", "Assessment", "Curriculum & Instruction"],
-      },
-      {
-        title: "Student Intervention",
-        items: ["MTSS", "Behavior Support"],
-      },
-      {
-        title: "College, Career & Life Readiness",
-        items: ["CCLR"],
-      },
-    ],
-  },
-  {
-    key: "operation",
-    label: "Operational Excellence",
-    href: "#operational-excellence",
-    color: "#8b5cf6",
-    lightColor: "rgba(139,92,246,0.13)",
-    textColor: "#5b21b6",
-    glowColor: "rgba(139,92,246,0.3)",
-    groups: [
-      {
-        title: "Resource Planning",
-        items: ["Financial Strategy", "ERP Systems", "Predictive Enrollment"],
-      },
-      {
-        title: "Talent Management",
-        items: ["Recruiting & Human Resources", "Educator Support"],
-      },
-    ],
-  },
-  {
-    key: "myos",
-    label: "★ My Connected OS",
-    href: "#my-connected-os",
-    color: "#0068ff",
-    lightColor: "rgba(0,104,255,0.12)",
-    textColor: "#002b86",
-    glowColor: "rgba(0,104,255,0.28)",
-  },
+  { title: "Student Achievement", href: "#student-achievement" },
+  { title: "Operational Excellence", href: "#operational-excellence" },
+  { title: "★ My Connected OS", href: "#my-connected-os" },
 ];
 
-function SidebarLogo() {
+const sectionIds = [
+  "home-connections-panel",
+  "student-information",
+  "sis",
+  "enrollment",
+  "special-programs",
+  "family-engagement",
+  "communications",
+  "attendance-support",
+];
+
+function moveRightSidebarTo(id: string) {
+  window.dispatchEvent(
+    new CustomEvent("connected-os-scroll-to-section", {
+      detail: { id },
+    })
+  );
+}
+
+function Logo() {
   return (
-    <Link href="/" className="group block w-full">
-      <div className="relative h-[72px] w-full transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-0.5 group-hover:scale-[1.02]">
+    <Link href="#intro" className="block w-full" aria-label="Shikkha Chat home">
+      <div className="relative h-[74px] w-full transition duration-500 hover:scale-[1.02]">
         <Image
           src="/images/logo.png"
           alt="Shikkha Chat"
           fill
           priority
-          sizes="260px"
+          sizes="240px"
           className="object-contain object-left"
         />
       </div>
@@ -112,195 +65,166 @@ function SidebarLogo() {
   );
 }
 
-function ChevronIcon({ open, color }: { open: boolean; color: string }) {
+function MiniOsIcon({ active }: { active: string }) {
+  const columns = [
+    { id: "home", color: "#ff7438", active: active !== "student" && active !== "operation" },
+    { id: "student", color: "#00a86b", active: active === "student" },
+    { id: "operation", color: "#8b5cf6", active: active === "operation" },
+  ];
+
   return (
-    <span
-      className="relative h-4 w-4 shrink-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        transform: open ? "rotate(180deg)" : "rotate(0deg)",
-      }}
-    >
-      <span
-        className="absolute left-[3px] top-[7px] h-[2px] w-[6px] rotate-45 rounded-full"
-        style={{ backgroundColor: color }}
-      />
-      <span
-        className="absolute right-[3px] top-[7px] h-[2px] w-[6px] -rotate-45 rounded-full"
-        style={{ backgroundColor: color }}
-      />
-    </span>
+    <div className="mt-2 flex items-start gap-2">
+      {columns.map((col, idx) => (
+        <div key={col.id} className="space-y-1">
+          <span
+            className="block h-1 rounded-full transition-all duration-500"
+            style={{
+              width: idx === 1 ? 34 : 28,
+              background: col.active ? col.color : "#c9d1da",
+            }}
+          />
+          <div
+            className="grid gap-[4px] rounded-md border-2 p-[4px] transition duration-500"
+            style={{
+              borderColor: col.active ? col.color : "#c9d1da",
+              background: col.active ? `${col.color}18` : "#edf2f7",
+            }}
+          >
+            {Array.from({ length: idx === 1 ? 8 : 6 }).map((_, i) => (
+              <span
+                key={i}
+                className="h-[10px] w-[10px] rounded-[2px] transition-all duration-500"
+                style={{ background: col.active ? col.color : "#c9d1da" }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
 export default function LeftSidebar() {
-  const [openSection, setOpenSection] = useState<SidebarSectionKey | null>(null);
+  const [activeId, setActiveId] = useState("home-connections-panel");
+  const [openHome, setOpenHome] = useState(true);
 
-  const handleToggle = (key: SidebarSectionKey) => {
-    setOpenSection((current) => (current === key ? null : key));
-  };
+  useEffect(() => {
+    const targets = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean) as HTMLElement[];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible?.target?.id) {
+          setActiveId(visible.target.id);
+          setOpenHome(true);
+        }
+      },
+      { root: null, threshold: [0.2, 0.45, 0.7], rootMargin: "-28% 0px -52% 0px" }
+    );
+
+    const handleRightSectionActive = (event: Event) => {
+      const customEvent = event as CustomEvent<{ id?: string }>;
+      const id = customEvent.detail?.id;
+
+      if (id && sectionIds.includes(id)) {
+        setActiveId(id);
+        setOpenHome(true);
+      }
+    };
+
+    targets.forEach((target) => observer.observe(target));
+    window.addEventListener("connected-os-active-section", handleRightSectionActive);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("connected-os-active-section", handleRightSectionActive);
+    };
+  }, []);
+
+  const isChildActive = (href: string) => href.replace("#", "") === activeId;
 
   return (
-    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[310px] overflow-hidden border-r border-slate-200/80 bg-white shadow-[14px_0_45px_rgba(15,23,42,0.07)] lg:flex lg:flex-col">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_5%,rgba(0,104,255,0.06),transparent_28%),radial-gradient(circle_at_8%_48%,rgba(0,168,107,0.05),transparent_30%),radial-gradient(circle_at_95%_95%,rgba(139,92,246,0.05),transparent_28%)]" />
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[292px] overflow-hidden border-r border-slate-200 bg-white shadow-[12px_0_40px_rgba(15,23,42,0.06)] lg:flex lg:flex-col">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_4%,rgba(0,104,255,0.07),transparent_30%),radial-gradient(circle_at_10%_70%,rgba(255,116,56,0.07),transparent_32%)]" />
 
-      <div className="relative flex h-full flex-col overflow-y-auto px-6 py-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <SidebarLogo />
+      <div className="relative flex h-full flex-col overflow-y-auto px-5 py-7 no-scrollbar">
+        <Logo />
 
-        <nav className="mt-8 space-y-2.5">
-          {sidebarItems.map((item) => {
-            const isOpen = openSection === item.key;
-            const hasDropdown = Boolean(item.groups?.length);
+        <div className="mt-6">
+          <p className="text-[13px] font-black tracking-[-0.02em] text-[#001b70]">The K–12 OS</p>
+          <MiniOsIcon active="home" />
+        </div>
 
-            return (
-              <div key={item.key} className="relative">
-                <span
-                  className="absolute -left-6 top-2 h-9 w-[5px] rounded-r-full transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  style={{
-                    backgroundColor: item.color,
-                    opacity: isOpen ? 1 : 0,
-                    transform: isOpen ? "scaleY(1)" : "scaleY(0.2)",
-                    boxShadow: isOpen ? `0 8px 22px ${item.glowColor}` : "none",
-                  }}
-                />
+        <nav className="mt-7 space-y-1.5 text-[13px]">
+          {menu.map((item) => {
+            const activeGroup = item.children?.some((child) => isChildActive(child.href)) || isChildActive(item.href);
+            const color = item.title.includes("Student") ? "#006642" : item.title.includes("Operational") ? "#5b21b6" : "#7a270b";
 
-                {hasDropdown ? (
+            if (item.children) {
+              return (
+                <div key={item.title}>
                   <button
                     type="button"
-                    onClick={() => handleToggle(item.key)}
-                    className="group relative flex w-full items-center justify-between overflow-hidden rounded-2xl px-4 py-3 text-left transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-1 hover:shadow-[0_16px_35px_rgba(15,23,42,0.08)]"
-                    style={{
-                      backgroundColor: isOpen ? item.lightColor : "transparent",
-                    }}
+                    onClick={() => setOpenHome((current) => !current)}
+                    className="group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left font-black transition-all duration-300 hover:translate-x-1 hover:bg-[#ff7438]/10"
+                    style={{ color }}
                   >
-                    <span
-                      className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/75 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-                      aria-hidden="true"
-                    />
-
-                    <span
-                      className="relative block whitespace-nowrap text-[13px] font-extrabold leading-5 tracking-[-0.01em] transition-all duration-700"
-                      style={{
-                        color: item.textColor,
-                        transform: isOpen ? "translateX(3px)" : "translateX(0)",
-                      }}
-                    >
-                      {item.label}
-                    </span>
-
-                    <ChevronIcon open={isOpen} color={item.textColor} />
+                    <span>{item.title}</span>
+                    <span className={`transition-transform duration-300 ${openHome ? "rotate-180" : ""}`}>⌄</span>
+                    {activeGroup ? <span className="absolute -left-5 top-2 h-7 w-1 rounded-r-full bg-[#ff7438]" /> : null}
                   </button>
-                ) : (
-                  <Link
-                    href={item.href}
-                    onClick={() => handleToggle(item.key)}
-                    className="group relative flex w-full items-center justify-between overflow-hidden rounded-2xl px-4 py-3 text-left transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-1 hover:shadow-[0_16px_35px_rgba(15,23,42,0.08)]"
-                    style={{
-                      backgroundColor: isOpen ? item.lightColor : "transparent",
-                    }}
-                  >
-                    <span
-                      className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/75 to-transparent transition-transform duration-1000 group-hover:translate-x-full"
-                      aria-hidden="true"
-                    />
 
-                    <span
-                      className="relative block whitespace-nowrap text-[13px] font-extrabold leading-5 tracking-[-0.01em] transition-all duration-700"
-                      style={{ color: item.textColor }}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-                )}
-
-                <div
-                  className="grid transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  style={{
-                    gridTemplateRows: isOpen && hasDropdown ? "1fr" : "0fr",
-                    opacity: isOpen && hasDropdown ? 1 : 0,
-                  }}
-                >
-                  <div className="overflow-hidden">
-                    {item.groups ? (
-                      <div className="space-y-4 pb-3 pl-5 pt-4">
-                        {item.groups.map((group, groupIndex) => (
-                          <div
-                            key={group.title}
-                            className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                            style={{
-                              transitionDelay: isOpen
-                                ? `${groupIndex * 70}ms`
-                                : "0ms",
-                              transform: isOpen
-                                ? "translateY(0)"
-                                : "translateY(-8px)",
-                              opacity: isOpen ? 1 : 0,
-                            }}
-                          >
-                            <h3 className="whitespace-nowrap text-[13px] font-extrabold leading-5 tracking-[-0.02em] text-slate-950">
-                              {group.title}
-                            </h3>
-
-                            <div className="mt-2.5 space-y-1.5">
-                              {group.items.map((child, childIndex) => (
-                                <Link
-                                  key={child}
-                                  href={item.href}
-                                  className="group/child relative block rounded-xl py-1.5 pl-0 text-[12px] font-medium leading-5 text-slate-700 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:translate-x-1 hover:bg-white/80 hover:text-[#0068ff]"
-                                  style={{
-                                    transitionDelay: isOpen
-                                      ? `${groupIndex * 60 + childIndex * 30}ms`
-                                      : "0ms",
-                                  }}
-                                >
-                                  <span
-                                    className="absolute left-0 top-1/2 h-[5px] w-[5px] -translate-y-1/2 scale-0 rounded-full opacity-0 transition-all duration-500 group-hover/child:scale-100 group-hover/child:opacity-100"
-                                    style={{
-                                      backgroundColor: item.color,
-                                      boxShadow: `0 0 14px ${item.glowColor}`,
-                                    }}
-                                  />
-
-                                  <span className="block whitespace-nowrap transition-all duration-500 group-hover/child:pl-3">
-                                    {child}
-                                  </span>
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                  <div className={`grid transition-all duration-500 ${openHome ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                    <div className="overflow-hidden">
+                      <div className="mt-1 space-y-1.5 pl-4">
+                        {item.children.map((child) => {
+                          const active = isChildActive(child.href);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                moveRightSidebarTo(child.href.replace("#", ""));
+                              }}
+                              className={`relative block rounded-lg px-3 py-2 font-medium transition-all duration-300 hover:translate-x-1 hover:bg-[#ff7438]/10 ${active ? "bg-[#ffd09a] font-black text-[#7a270b]" : "text-slate-700"}`}
+                            >
+                              {active ? <span className="absolute -left-4 top-2 h-6 w-1 rounded-r-full bg-[#ff7438]" /> : null}
+                              {child.title}
+                            </Link>
+                          );
+                        })}
                       </div>
-                    ) : null}
+                    </div>
                   </div>
                 </div>
-              </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block rounded-xl px-3 py-2.5 font-black transition-all duration-300 hover:translate-x-1 hover:bg-slate-100"
+                style={{ color }}
+              >
+                {item.title}
+              </Link>
             );
           })}
         </nav>
 
         <div className="mt-auto pt-8">
-          <button
-            type="button"
-            aria-label="Accessibility"
-            className="group mb-5 flex h-9 w-9 items-center justify-center rounded-full bg-slate-600 text-white transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110 hover:bg-[#0068ff] hover:shadow-[0_14px_28px_rgba(0,104,255,0.3)]"
-          >
-            <span className="relative block h-5 w-5 transition-transform duration-700 group-hover:rotate-12">
-              <span className="absolute left-1/2 top-0 h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-white" />
-              <span className="absolute left-1/2 top-[7px] h-[10px] w-[3px] -translate-x-1/2 rounded-full bg-white" />
-              <span className="absolute left-[2px] top-[7px] h-[3px] w-[16px] rounded-full bg-white" />
-              <span className="absolute left-[5px] top-[13px] h-[3px] w-[9px] rotate-[65deg] rounded-full bg-white" />
-              <span className="absolute right-[5px] top-[13px] h-[3px] w-[9px] -rotate-[65deg] rounded-full bg-white" />
-            </span>
+          <button className="mb-5 grid h-8 w-8 place-items-center rounded-full bg-slate-600 text-sm font-black text-white transition hover:scale-110 hover:bg-[#0068ff]" type="button" aria-label="Accessibility">
+            ♿
           </button>
-
-          <Link
-            href="#demo"
-            className="group relative flex h-[50px] w-full overflow-hidden rounded-2xl bg-[#0068ff] text-[14px] font-extrabold text-white shadow-[0_14px_30px_rgba(0,104,255,0.26)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:bg-[#005be0] hover:shadow-[0_22px_45px_rgba(0,104,255,0.36)]"
-          >
-            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
-
-            <span className="relative flex h-full w-full items-center justify-center whitespace-nowrap">
-              Talk to an Expert
-            </span>
+          <Link href="#connect" className="flex h-12 items-center justify-center rounded-xl bg-[#0068ff] text-[14px] font-black text-white shadow-[0_14px_28px_rgba(0,104,255,0.25)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#005be0]">
+            Talk to an Expert
           </Link>
         </div>
       </div>

@@ -1,12 +1,23 @@
-import Home_Components from "@/components/RightSidebar/Home_Components";
-import { Home_Components } from '@/Home_Components';
+import HomeComponents from "@/components/RightSidebarComponents/Home_Components";
+import StudentInformation from "@/components/RightSidebarComponents/StudentInformation";
+import SIS from "@/components/RightSidebarComponents/SIS";
+import Enrollment from "@/components/RightSidebarComponents/Enrollment";
+import SpecialPrograms from "@/components/RightSidebarComponents/SpecialPrograms";
+import FamilyEngagement from "@/components/RightSidebarComponents/FamilyEngagement";
+import Communications from "@/components/RightSidebarComponents/Communications";
+import AttendanceSupport from "@/components/RightSidebarComponents/AttendanceSupport";
 
-const RightSidebar = () => {
+export default function RightSidebar() {
   return (
-    <div>
-      <Home_Components />
+    <div className="min-h-full bg-white">
+      <HomeComponents />
+      <StudentInformation />
+      <SIS />
+      <Enrollment />
+      <SpecialPrograms />
+      <FamilyEngagement />
+      <Communications />
+      <AttendanceSupport />
     </div>
   );
-};
-
-export default RightSidebar;
+}
