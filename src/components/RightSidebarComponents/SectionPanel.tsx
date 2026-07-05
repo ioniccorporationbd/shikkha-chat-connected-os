@@ -31,19 +31,27 @@ export default function SectionPanel({
 }: SectionPanelProps) {
   const isSolid = pillStyle === "solid";
 
-  return (
-    <aside id={id} className="min-h-screen w-full bg-white px-6 py-9 md:px-8 lg:px-9 lg:py-10">
-      <div className="flex min-h-screen flex-col justify-center">
-        <div
-          className={`mb-16 flex min-h-[54px] w-full items-center rounded-full px-6 text-[14px] font-black ${
-            isSolid
-              ? "bg-[#ffd09a] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.10)]"
-              : "border-[3px] border-[#ff7438] bg-[#eaf4ff] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.08)]"
-          }`}
-        >
-          {pill}
-        </div>
+  const pillClassName = `flex min-h-[54px] w-full items-center rounded-full px-6 text-[14px] font-black tracking-[-0.01em] transition-shadow duration-300 ${
+    isSolid
+      ? "bg-[#ffd09a] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.10)]"
+      : "border-[3px] border-[#ff7438] bg-[#eaf4ff] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.08)]"
+  }`;
 
+  return (
+    <aside
+      id={id}
+      className="relative min-h-screen w-full bg-white px-6 py-6 md:px-8 lg:px-9 lg:py-7"
+    >
+      {/*
+        Sticky section title.
+        It sticks only inside this section because the sticky element is inside
+        the section <aside>. When this section ends, the next section pushes it away.
+      */}
+      <div className="sticky top-5 z-30 bg-white/92 pb-4 pt-1 backdrop-blur-md supports-[backdrop-filter]:bg-white/78">
+        <div className={pillClassName}>{pill}</div>
+      </div>
+
+      <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">
         <h2 className="max-w-[455px] text-[28px] font-black leading-[1.08] tracking-[-0.045em] text-[#202833] md:text-[34px]">
           {title}
         </h2>
@@ -61,7 +69,10 @@ export default function SectionPanel({
               <span className="text-[18px]">→</span>
               Product Details
             </a>
-            <button type="button" className="inline-flex items-center gap-3 text-[15px] font-black text-[#0068ff] transition-all duration-300 hover:translate-x-1">
+            <button
+              type="button"
+              className="inline-flex items-center gap-3 text-[15px] font-black text-[#0068ff] transition-all duration-300 hover:translate-x-1"
+            >
               <span>☆</span>
               Save Product
             </button>
@@ -85,12 +96,18 @@ export default function SectionPanel({
 
         {quote ? (
           <div className="mt-8 overflow-hidden rounded-[18px] bg-[#ffd09a] p-6 shadow-[0_18px_45px_rgba(255,116,56,0.14)]">
-            <p className="text-[17px] font-medium leading-[1.5] text-[#23140e] md:text-[18px]">“{quote}”</p>
+            <p className="text-[17px] font-medium leading-[1.5] text-[#23140e] md:text-[18px]">
+              “{quote}”
+            </p>
             <div className="relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle,#ff7438_1.25px,transparent_1.25px)] [background-size:17px_17px] opacity-60" />
               <div className="relative z-10 flex items-center gap-8">
                 {image ? (
-                  <img src={image} alt={author || "School leader"} className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_rgba(0,0,0,0.15)]" />
+                  <img
+                    src={image}
+                    alt={author || "School leader"}
+                    className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_rgba(0,0,0,0.15)]"
+                  />
                 ) : null}
                 <div className="flex h-[84px] w-[140px] items-center justify-center rounded-xl bg-white/30 px-4 text-center text-[13px] font-black uppercase leading-tight text-[#351100]">
                   {logo || "School Logo"}
@@ -100,7 +117,11 @@ export default function SectionPanel({
             {author ? (
               <div className="mt-6">
                 <h3 className="text-[16px] font-black text-black">{author}</h3>
-                {role ? <p className="mt-1 text-[14px] font-medium leading-6 text-[#2f2118]">{role}</p> : null}
+                {role ? (
+                  <p className="mt-1 text-[14px] font-medium leading-6 text-[#2f2118]">
+                    {role}
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </div>
