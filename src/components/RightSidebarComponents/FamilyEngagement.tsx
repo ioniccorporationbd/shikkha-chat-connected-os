@@ -7,7 +7,7 @@ export default function FamilyEngagement() {
       pill="FAMILY ENGAGEMENT"
       pillStyle="solid"
       title="Bring Families Closer to Every School Day"
-      description="Keeping families informed shouldn’t require juggling tools, data gaps, or mixed messages. PowerSchool makes communication clear, consistent, and accessible—saving staff time, keeping families connected, and ensuring students are in school."
+      description="Keeping families informed shouldn’t require juggling tools, data gaps, or mixed messages. Shikkha Chat makes communication clear, consistent, and accessible—saving staff time, keeping families connected, and ensuring students are in school."
       showButtons={false}
       stats={[{ value: "4%", label: "Improvement in chronic absenteeism districtwide" }]}
       quote="As more staff and teachers began using the platform, what started as a communication tool became an engagement engine."

@@ -6,8 +6,8 @@ export default function SIS() {
       id="sis"
       pill="SIS"
       title="Less Information Chaos. More Student Clarity."
-      description="PowerSchool SIS centralizes enrollment, schedules, attendance, grades, and program data in one single source of truth. With accurate, accessible student information, staff spend less time fixing data and more time supporting students, families, and daily school operations."
-      stats={[{ value: "5000+", label: "Organizations Using PowerSchool SIS" }, { value: "17M+", label: "Students Supported" }]}
+      description="Shikkha Chat SIS centralizes enrollment, schedules, attendance, grades, and program data in one single source of truth. With accurate, accessible student information, staff spend less time fixing data and more time supporting students, families, and daily school operations."
+      stats={[{ value: "5000+", label: "Organizations Using Shikkha Chat SIS" }, { value: "17M+", label: "Students Supported" }]}
       quote="Our systems are finally working together. That means our people can work together too."
       author="Sarah Miller"
       role="Technology Leader, Lorena Independent School District, Texas"

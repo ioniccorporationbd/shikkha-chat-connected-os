@@ -4,17 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-type MenuChild = {
-  title: string;
-  href: string;
-};
-
-type MenuGroup = {
-  title: string;
-  href: string;
-  children?: MenuChild[];
-};
-
 type ActiveSectionId =
   | "home-connections-panel"
   | "student-information"
@@ -27,6 +16,17 @@ type ActiveSectionId =
   | "student-achievement"
   | "operational-excellence"
   | "my-connected-os";
+
+type MenuChild = {
+  title: string;
+  href: string;
+};
+
+type MenuGroup = {
+  title: string;
+  href: string;
+  children?: MenuChild[];
+};
 
 const menu: MenuGroup[] = [
   {
@@ -82,20 +82,12 @@ function dispatchActiveSection(id: string) {
 }
 
 function moveRightSidebarTo(id: string) {
-  /**
-   * This event is listened by ScrollLockedContentSection.
-   * It moves the right sidebar scroll to the target section.
-   */
   window.dispatchEvent(
     new CustomEvent("connected-os-scroll-to-section", {
       detail: { id },
     })
   );
 
-  /**
-   * This event is listened by MiddleSection and LeftSidebar.
-   * It updates active state instantly.
-   */
   dispatchActiveSection(id);
 }
 
@@ -188,39 +180,6 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
   );
 }
 
-function SidebarLink({
-  title,
-  href,
-  active,
-  color,
-  onClick,
-}: {
-  title: string;
-  href: string;
-  active: boolean;
-  color: string;
-  onClick: (event: React.MouseEvent<HTMLAnchorElement>) => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={[
-        "group relative block rounded-xl px-3 py-2.5 font-black transition-all duration-300",
-        "hover:translate-x-1 hover:bg-slate-100",
-        active ? "bg-[#eaf4ff] shadow-[0_10px_24px_rgba(0,104,255,0.08)]" : "",
-      ].join(" ")}
-      style={{ color }}
-    >
-      {active ? (
-        <span className="absolute -left-5 top-2 h-7 w-1 rounded-r-full bg-[#0068ff]" />
-      ) : null}
-
-      <span className="relative z-10">{title}</span>
-    </Link>
-  );
-}
-
 function SidebarChildLink({
   child,
   active,
@@ -254,6 +213,39 @@ function SidebarChildLink({
   );
 }
 
+function SidebarLink({
+  title,
+  href,
+  active,
+  color,
+  onClick,
+}: {
+  title: string;
+  href: string;
+  active: boolean;
+  color: string;
+  onClick: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={[
+        "group relative block rounded-xl px-3 py-2.5 font-black transition-all duration-300",
+        "hover:translate-x-1 hover:bg-slate-100",
+        active ? "bg-[#eaf4ff] shadow-[0_10px_24px_rgba(0,104,255,0.08)]" : "",
+      ].join(" ")}
+      style={{ color }}
+    >
+      {active ? (
+        <span className="absolute -left-5 top-2 h-7 w-1 rounded-r-full bg-[#0068ff]" />
+      ) : null}
+
+      <span>{title}</span>
+    </Link>
+  );
+}
+
 export default function LeftSidebar() {
   const [activeId, setActiveId] =
     useState<ActiveSectionId>("home-connections-panel");
@@ -261,7 +253,7 @@ export default function LeftSidebar() {
   const [openHome, setOpenHome] = useState(true);
 
   useEffect(() => {
-    const handleRightSectionActive = (event: Event) => {
+    const handleActiveSection = (event: Event) => {
       const customEvent = event as CustomEvent<{ id?: ActiveSectionId }>;
       const id = customEvent.detail?.id;
 
@@ -276,50 +268,12 @@ export default function LeftSidebar() {
       }
     };
 
-    const pageTargets = allSectionIds
-      .map((id) => document.getElementById(id))
-      .filter(Boolean) as HTMLElement[];
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        const id = visible?.target?.id as ActiveSectionId | undefined;
-
-        if (!id) return;
-
-        if (allSectionIds.includes(id)) {
-          setActiveId(id);
-
-          if (isHomeConnectionSection(id)) {
-            setOpenHome(true);
-          }
-
-          dispatchActiveSection(id);
-        }
-      },
-      {
-        root: null,
-        threshold: [0.2, 0.45, 0.7],
-        rootMargin: "-28% 0px -52% 0px",
-      }
-    );
-
-    pageTargets.forEach((target) => observer.observe(target));
-
-    window.addEventListener(
-      "connected-os-active-section",
-      handleRightSectionActive
-    );
+    window.addEventListener("connected-os-active-section", handleActiveSection);
 
     return () => {
-      observer.disconnect();
-
       window.removeEventListener(
         "connected-os-active-section",
-        handleRightSectionActive
+        handleActiveSection
       );
     };
   }, []);
@@ -330,10 +284,8 @@ export default function LeftSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[292px] overflow-hidden border-r border-slate-200 bg-white shadow-[12px_0_40px_rgba(15,23,42,0.06)] lg:flex lg:flex-col">
-      {/* background */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_4%,rgba(0,104,255,0.07),transparent_30%),radial-gradient(circle_at_10%_70%,rgba(255,116,56,0.07),transparent_32%)]" />
 
-      {/* scrollable sidebar content */}
       <div className="no-scrollbar relative flex h-full flex-col overflow-y-auto px-5 py-7">
         <Logo />
 
@@ -350,7 +302,9 @@ export default function LeftSidebar() {
             const itemId = getIdFromHref(item.href);
 
             const activeGroup =
-              item.children?.some((child) => getIdFromHref(child.href) === activeId) ||
+              item.children?.some(
+                (child) => getIdFromHref(child.href) === activeId
+              ) ||
               itemId === activeId ||
               (item.href === "#home-connections-panel" && homeGroupActive);
 
@@ -403,7 +357,6 @@ export default function LeftSidebar() {
                   >
                     <div className="overflow-hidden">
                       <div className="mt-1 space-y-1.5 pl-4">
-                        {/* Home Connections main link */}
                         <SidebarChildLink
                           child={{
                             title: "Overview",
