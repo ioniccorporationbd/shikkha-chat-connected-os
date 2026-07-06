@@ -409,14 +409,7 @@ export default function LeftSidebar() {
         </nav>
 
         <div className="mt-auto pt-8">
-          <button
-            className="mb-5 grid h-8 w-8 place-items-center rounded-full bg-slate-600 text-sm font-black text-white transition hover:scale-110 hover:bg-[#0068ff]"
-            type="button"
-            aria-label="Accessibility"
-          >
-            ♿
-          </button>
-
+      
           <Link
             href="#connect"
             className="flex h-12 items-center justify-center rounded-xl bg-[#0068ff] text-[14px] font-black text-white shadow-[0_14px_28px_rgba(0,104,255,0.25)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#005be0]"
