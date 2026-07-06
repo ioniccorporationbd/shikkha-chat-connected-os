@@ -31,7 +31,7 @@ export default function HomeConnectionsVideoBanner() {
   };
 
   return (
-    <section ref={sectionRef} id="connect" className="relative h-[178vh] overflow-visible bg-white">
+    <section ref={sectionRef} id="connect" className="relative  overflow-visible bg-white">
       <style jsx>{`
         @keyframes textStart {
           0% { opacity: 0; transform: scale(.82) translateY(34px); filter: blur(10px); }
@@ -46,7 +46,7 @@ export default function HomeConnectionsVideoBanner() {
           <motion.video
             ref={videoRef}
             style={{ scale: videoScale }}
-            className="h-full w-full object-cover brightness-[1.04]"
+            className="h-full w-full object-cover brightness-[1.04] "
             src="https://www.powerschool.com/wp-content/uploads/2026/04/tour-home-connections-hero.mp4"
             autoPlay
             muted

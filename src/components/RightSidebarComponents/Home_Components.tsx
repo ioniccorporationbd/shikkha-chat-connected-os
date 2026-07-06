@@ -6,15 +6,28 @@ export default function HomeComponents() {
       id="home-connections-panel"
       pill="Home Connections"
       pillStyle="solid"
-      title="Connect every family with trusted information."
-      description="When student information and communications are clear and consistent, schools and families connect with confidence. Shikkha Chat brings together student and family operations in one connected system that helps school communities engage around trusted information."
+      title="Connected family experience for every school."
+      description="Shikkha Chat connects student information, family communication, attendance support, enrollment, and school operations in one trusted platform. Schools can share clear updates, families can stay informed, and every learner gets better support."
       showButtons={false}
-      stats={[{ value: "+70%", label: "Improvement in data accuracy" }]}
-      quote="We improved data accuracy and helped families stay connected with clear, trusted updates."
+      stats={[
+        {
+          value: "+70%",
+          label: "Better data accuracy",
+        },
+        {
+          value: "24/7",
+          label: "Family access",
+        },
+        {
+          value: "1 OS",
+          label: "Unified school system",
+        },
+      ]}
+      quote="Shikkha Chat helped us reduce communication gaps and create a smarter connected school experience."
       author="Dr. Angela Hargrave"
       role="Technology Leader, Connected School Community"
       image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=220&q=80"
-      logo="School Logo"
+      logo="Shikkha Chat"
     />
   );
 }
