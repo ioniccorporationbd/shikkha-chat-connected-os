@@ -4,6 +4,7 @@ import MiddleSection_1 from "@/components/MiddleSection_1";
 import MiddleSection_2 from "@/components/MiddleSection_2";
 import MiddleSection_3 from "@/components/MiddleSection_3";
 import OperationalExcellenceVideoBanner from "@/components/OperationalExcellenceVideoBanner";
+import ProductRouterSection from "@/components/ProductRouterSection";
 import RightSidebar_1 from "@/components/RightSidebar_1";
 import RightSidebar_2 from "@/components/RightSidebar_2";
 import RightSidebar_3 from "@/components/RightSidebar_3";
@@ -38,6 +39,7 @@ export default function Page() {
         middle={<MiddleSection_3 />}
         right={<RightSidebar_3 />}
       />
+      <ProductRouterSection/>
     </>
   );
 }

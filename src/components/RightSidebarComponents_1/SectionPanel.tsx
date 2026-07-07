@@ -30,25 +30,41 @@ export default function SectionPanel({
   showButtons = true,
 }: SectionPanelProps) {
   const isSolid = pillStyle === "solid";
-
-  const pillClassName = `flex min-h-[54px] w-full items-center rounded-full px-6 text-[14px] font-black tracking-[-0.01em] transition-shadow duration-300 ${
-    isSolid
-      ? "bg-[#ffd09a] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.10)]"
-      : "border-[3px] border-[#ff7438] bg-[#eaf4ff] text-[#351100] shadow-[0_14px_32px_rgba(255,116,56,0.08)]"
-  }`;
+  const themeColor = "#ff7438";
+  const darkColor = "#af3611";
 
   return (
     <aside
       id={id}
       className="relative min-h-screen w-full bg-white px-6 py-6 md:px-8 lg:px-9 lg:py-7"
     >
-      {/*
-        Sticky section title.
-        It sticks only inside this section because the sticky element is inside
-        the section <aside>. When this section ends, the next section pushes it away.
-      */}
-      <div className="sticky top-5 z-30 bg-white/92 pb-4 pt-1 backdrop-blur-md supports-[backdrop-filter]:bg-white/78">
-        <div className={pillClassName}>{pill}</div>
+      <div className="sticky top-5 z-30 bg-white/90 pb-4 pt-1 backdrop-blur-xl supports-[backdrop-filter]:bg-white/75">
+        <div
+          className="group relative flex min-h-[60px] w-full items-center gap-3 overflow-hidden rounded-[22px] border px-5 text-[15px] font-normal leading-[1.15] tracking-[-0.02em] shadow-[0_18px_45px_rgba(15,23,42,0.11)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,23,42,0.16)]"
+          style={{
+            borderColor: isSolid ? "transparent" : `${themeColor}88`,
+            background: isSolid
+              ? `linear-gradient(135deg, ${themeColor}, #ffd09a)`
+              : `linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,240,228,0.94))`,
+            color: darkColor,
+          }}
+        >
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.9),transparent_34%),linear-gradient(120deg,rgba(255,255,255,0.54),transparent_52%)]" />
+          <span
+            className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-2xl text-[15px] text-white shadow-[0_12px_24px_rgba(255,116,56,0.22)]"
+            style={{ background: darkColor }}
+          >
+            ✦
+          </span>
+          <span className="relative z-10 min-w-0">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Active Product
+            </span>
+            <span className="mt-0.5 block text-[15.5px] font-normal text-[#202833]">
+              {pill}
+            </span>
+          </span>
+        </div>
       </div>
 
       <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">

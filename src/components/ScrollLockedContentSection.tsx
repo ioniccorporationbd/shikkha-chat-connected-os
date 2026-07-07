@@ -21,11 +21,11 @@ export default function ScrollLockedContentSection({
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
 
   const touchStartYRef = useRef<number | null>(null);
-
   const targetScrollRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
   const isProgrammaticScrollRef = useRef(false);
   const activeIdRef = useRef<string>("");
+  const snapLockRef = useRef(false);
 
   const getRightSectionIds = () => {
     const panel = rightScrollRef.current;
@@ -54,15 +54,48 @@ export default function ScrollLockedContentSection({
     );
   };
 
-  const isSectionLockedInView = () => {
+  const getSectionMetrics = () => {
     const section = sectionRef.current;
-    if (!section) return false;
+    if (!section) return null;
 
     const rect = section.getBoundingClientRect();
     const viewportHeight =
       window.innerHeight || document.documentElement.clientHeight;
 
+    return { section, rect, viewportHeight };
+  };
+
+  const isSectionLockedInView = () => {
+    const metrics = getSectionMetrics();
+    if (!metrics) return false;
+
+    const { rect, viewportHeight } = metrics;
     return rect.top <= 2 && rect.bottom >= viewportHeight - 2;
+  };
+
+  const isSectionNearViewport = () => {
+    const metrics = getSectionMetrics();
+    if (!metrics) return false;
+
+    const { rect, viewportHeight } = metrics;
+    return rect.top < viewportHeight * 0.72 && rect.bottom > viewportHeight * 0.28;
+  };
+
+  const snapSectionToTop = () => {
+    const section = sectionRef.current;
+    if (!section || snapLockRef.current) return;
+
+    snapLockRef.current = true;
+
+    section.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+
+    window.setTimeout(() => {
+      snapLockRef.current = false;
+      syncActiveSection();
+    }, 480);
   };
 
   const syncActiveSection = () => {
@@ -104,7 +137,7 @@ export default function ScrollLockedContentSection({
     const panel = rightScrollRef.current;
     if (!panel) return false;
 
-    const maxScroll = panel.scrollHeight - panel.clientHeight;
+    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
     const target = clamp(targetValue, 0, maxScroll);
 
     targetScrollRef.current = target;
@@ -144,7 +177,7 @@ export default function ScrollLockedContentSection({
     const panel = rightScrollRef.current;
     if (!panel) return false;
 
-    const maxScroll = panel.scrollHeight - panel.clientHeight;
+    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
     const currentScroll = panel.scrollTop;
 
     const scrollingDown = deltaY > 0;
@@ -179,11 +212,10 @@ export default function ScrollLockedContentSection({
     const target = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
     if (!target) return;
 
-    const maxScroll = panel.scrollHeight - panel.clientHeight;
+    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
     const targetTop = clamp(target.offsetTop, 0, maxScroll);
 
     smoothScrollToTarget(targetTop);
-
     dispatchActiveSection(id);
   };
 
@@ -195,16 +227,34 @@ export default function ScrollLockedContentSection({
     }
 
     const handleWheel = (event: WheelEvent) => {
-      if (!isSectionLockedInView()) return;
-
+      const metrics = getSectionMetrics();
       const currentPanel = rightScrollRef.current;
-      if (!currentPanel) return;
+      if (!metrics || !currentPanel) return;
 
-      const maxScroll = currentPanel.scrollHeight - currentPanel.clientHeight;
-      const currentScroll = currentPanel.scrollTop;
-
+      const { rect, viewportHeight } = metrics;
+      const sectionIsNear = isSectionNearViewport();
+      const sectionIsLocked = isSectionLockedInView();
       const scrollingDown = event.deltaY > 0;
       const scrollingUp = event.deltaY < 0;
+
+      const enteringFromTop =
+        scrollingDown && rect.top > 2 && rect.top < viewportHeight * 0.72;
+      const enteringFromBottom =
+        scrollingUp && rect.top < -2 && rect.bottom > viewportHeight * 0.28;
+
+      if (!sectionIsLocked && sectionIsNear && (enteringFromTop || enteringFromBottom)) {
+        event.preventDefault();
+        snapSectionToTop();
+        return;
+      }
+
+      if (!sectionIsLocked) return;
+
+      const maxScroll = Math.max(
+        0,
+        currentPanel.scrollHeight - currentPanel.clientHeight
+      );
+      const currentScroll = currentPanel.scrollTop;
 
       const canScrollDown = currentScroll < maxScroll - 1;
       const canScrollUp = currentScroll > 1;
@@ -220,7 +270,8 @@ export default function ScrollLockedContentSection({
     };
 
     const handleTouchMove = (event: TouchEvent) => {
-      if (!isSectionLockedInView()) return;
+      const metrics = getSectionMetrics();
+      if (!metrics) return;
       if (touchStartYRef.current === null) return;
 
       const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
@@ -229,6 +280,25 @@ export default function ScrollLockedContentSection({
       touchStartYRef.current = currentY;
 
       if (Math.abs(deltaY) < 1) return;
+
+      const { rect, viewportHeight } = metrics;
+      const scrollingDown = deltaY > 0;
+      const scrollingUp = deltaY < 0;
+      const sectionIsLocked = isSectionLockedInView();
+      const sectionIsNear = isSectionNearViewport();
+
+      const enteringFromTop =
+        scrollingDown && rect.top > 2 && rect.top < viewportHeight * 0.72;
+      const enteringFromBottom =
+        scrollingUp && rect.top < -2 && rect.bottom > viewportHeight * 0.28;
+
+      if (!sectionIsLocked && sectionIsNear && (enteringFromTop || enteringFromBottom)) {
+        event.preventDefault();
+        snapSectionToTop();
+        return;
+      }
+
+      if (!sectionIsLocked) return;
 
       const didScroll = scrollRightPanelBy(deltaY);
 
@@ -254,7 +324,7 @@ export default function ScrollLockedContentSection({
 
       window.setTimeout(() => {
         scrollRightPanelTo(id);
-      }, 120);
+      }, 150);
     };
 
     const handlePanelScroll = () => {
@@ -309,7 +379,8 @@ export default function ScrollLockedContentSection({
     <section
       ref={sectionRef}
       id={sectionId}
-      className="relative h-screen overflow-hidden bg-white"
+      className="relative h-screen overflow-hidden bg-white scroll-mt-0"
+      data-connected-scroll-section="true"
     >
       <div className="grid h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(430px,38vw)] 2xl:grid-cols-[minmax(0,1fr)_600px]">
         <div className="relative hidden h-screen overflow-hidden bg-[#f7fbff] lg:block">

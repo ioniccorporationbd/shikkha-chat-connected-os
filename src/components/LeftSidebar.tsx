@@ -182,6 +182,35 @@ function getGroupColor(group: OpenGroup, isMyConnected = false) {
   return "#0068ff";
 }
 
+function getReadableGroupColor(group: OpenGroup, isMyConnected = false) {
+  if (group === "home") return "#af3611";
+  if (group === "student") return "#236000";
+  if (group === "operational") return "#5B1276";
+  if (isMyConnected) return "#004fc4";
+  return "#004fc4";
+}
+
+function getActiveTitle(activeId: ActiveSectionId) {
+  for (const item of menu) {
+    if (getIdFromHref(item.href) === activeId) return item.title;
+
+    const child = item.children?.find(
+      (childItem) => getIdFromHref(childItem.href) === activeId
+    );
+
+    if (child) return child.title;
+  }
+
+  return "Connected OS";
+}
+
+function getActiveGroupTitle(activeId: ActiveSectionId) {
+  if (isHomeConnectionSection(activeId)) return "Home Connections";
+  if (isStudentAchievementSection(activeId)) return "Student Achievement";
+  if (isOperationalExcellenceSection(activeId)) return "Operational Excellence";
+  return "My Connected OS";
+}
+
 function dispatchActiveSection(id: string) {
   window.dispatchEvent(
     new CustomEvent("connected-os-active-section", {
@@ -303,6 +332,56 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
   );
 }
 
+function ActiveStatusCard({ activeId }: { activeId: ActiveSectionId }) {
+  const group = getGroupById(activeId);
+  const accentColor = getGroupColor(group, activeId === "my-connected-os");
+  const readableColor = getReadableGroupColor(
+    group,
+    activeId === "my-connected-os"
+  );
+  const activeTitle = getActiveTitle(activeId);
+  const groupTitle = getActiveGroupTitle(activeId);
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white/82 p-3.5 shadow-[0_16px_34px_rgba(15,23,42,0.08)] backdrop-blur-md">
+      <div className="flex items-center gap-2">
+        <span
+          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_rgba(15,23,42,0.04)]"
+          style={{ background: accentColor }}
+        />
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          Currently viewing
+        </p>
+      </div>
+
+      <h3
+        className="mt-2 text-[16px] font-semibold leading-[1.15] tracking-[-0.03em]"
+        style={{ color: readableColor }}
+      >
+        {activeTitle}
+      </h3>
+
+      <p className="mt-1 text-[12px] font-normal leading-5 text-slate-600">
+        {groupTitle}
+      </p>
+
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: isHomeConnectionSection(activeId)
+              ? "33%"
+              : isStudentAchievementSection(activeId)
+                ? "66%"
+                : "100%",
+            background: `linear-gradient(90deg, ${accentColor}, ${readableColor})`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function SidebarChildLink({
   child,
   active,
@@ -324,17 +403,25 @@ function SidebarChildLink({
         handleSidebarNavigate(id);
       }}
       className={[
-        "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-[12.2px] font-semibold transition-all duration-300",
-        "hover:translate-x-1",
+        "group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.4px] font-medium transition-all duration-300",
+        "hover:translate-x-1 hover:bg-white/90",
         active
-          ? "font-black shadow-[0_10px_24px_rgba(15,23,42,0.13)]"
-          : "text-slate-700 hover:bg-white/80",
+          ? "shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
+          : "text-[#263548]",
       ].join(" ")}
       style={{
         background: active
-          ? `linear-gradient(90deg, ${color}22, ${color}0f)`
+          ? `linear-gradient(90deg, ${color}28, ${color}10)`
           : "transparent",
-        color: active ? (color === "#9CF048" ? "#236000" : color === "#ECC6FE" ? "#5B1276" : color) : undefined,
+        color: active
+          ? color === "#9CF048"
+            ? "#236000"
+            : color === "#ECC6FE"
+              ? "#5B1276"
+              : color === "#ff7438"
+                ? "#af3611"
+                : color
+          : "#263548",
       }}
     >
       {active ? (
@@ -345,7 +432,7 @@ function SidebarChildLink({
       ) : null}
 
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-[9px] font-black"
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-[9px] font-semibold"
         style={{
           background: active ? color : "#e2e8f0",
           color: active ? "#ffffff" : "#64748b",
@@ -354,7 +441,7 @@ function SidebarChildLink({
         {index}
       </span>
 
-      <span className="leading-[1.1]">{child.title}</span>
+      <span className="leading-[1.2] tracking-[-0.015em]">{child.title}</span>
     </Link>
   );
 }
@@ -377,7 +464,7 @@ function SidebarLink({
       href={href}
       onClick={onClick}
       className={[
-        "group relative block rounded-xl px-3 py-2.5 font-black transition-all duration-300",
+        "group relative block rounded-xl px-3 py-2.5 text-[13.8px] font-semibold transition-all duration-300",
         "hover:translate-x-1 hover:bg-slate-100",
         active ? "shadow-[0_10px_24px_rgba(0,104,255,0.1)]" : "",
       ].join(" ")}
@@ -442,21 +529,22 @@ export default function LeftSidebar() {
   }, [activeId]);
 
   return (
-    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[292px] overflow-hidden border-r border-slate-200 bg-white shadow-[12px_0_40px_rgba(15,23,42,0.06)] lg:flex lg:flex-col">
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[320px] overflow-hidden border-r border-slate-200 bg-[#fbfdff] shadow-[12px_0_40px_rgba(15,23,42,0.07)] lg:flex lg:flex-col">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_4%,rgba(0,104,255,0.07),transparent_30%),radial-gradient(circle_at_10%_70%,rgba(255,116,56,0.07),transparent_32%)]" />
 
       <div className="no-scrollbar relative flex h-full flex-col overflow-y-auto px-5 py-7">
         <Logo />
 
-        <div className="mt-6">
-          <p className="text-[13px] font-black tracking-[-0.02em] text-[#001b70]">
+        <div className="mt-6 rounded-2xl border border-slate-200/80 bg-white/72 p-4 shadow-[0_14px_30px_rgba(15,23,42,0.055)]">
+          <p className="text-[13px] font-semibold tracking-[-0.02em] text-[#001b70]">
             The K–12 OS
           </p>
 
           <MiniOsIcon activeId={activeId} />
+          <ActiveStatusCard activeId={activeId} />
         </div>
 
-        <nav className="mt-7 space-y-1.5 text-[13px]">
+        <nav className="mt-6 space-y-1.5 text-[13px]">
           {menu.map((item) => {
             const itemId = getIdFromHref(item.href);
 
@@ -472,6 +560,10 @@ export default function LeftSidebar() {
 
             const group = item.group ?? null;
             const color = getGroupColor(group, item.title.includes("My"));
+            const readableColor = getReadableGroupColor(
+              group,
+              item.title.includes("My")
+            );
 
             const openState = group ? openGroup === group : false;
 
@@ -486,16 +578,16 @@ export default function LeftSidebar() {
                       );
                     }}
                     className={[
-                      "group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left font-black transition-all duration-300",
-                      "hover:translate-x-1",
+                      "group relative flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-[14.2px] font-semibold tracking-[-0.02em] transition-all duration-300",
+                      "hover:translate-x-1 hover:bg-white/90",
                       activeGroup
                         ? "shadow-[0_12px_26px_rgba(15,23,42,0.1)]"
-                        : "",
+                        : "text-[#172033]",
                     ].join(" ")}
                     style={{
-                      color,
+                      color: activeGroup ? readableColor : "#172033",
                       background: activeGroup
-                        ? `linear-gradient(90deg, ${color}1f, ${color}0d)`
+                        ? `linear-gradient(90deg, ${color}24, ${color}0d)`
                         : "transparent",
                     }}
                   >
@@ -506,7 +598,7 @@ export default function LeftSidebar() {
                       />
                     ) : null}
 
-                    <span>{item.title}</span>
+                    <span className="leading-[1.18]">{item.title}</span>
 
                     <span
                       className={[
@@ -527,7 +619,7 @@ export default function LeftSidebar() {
                     ].join(" ")}
                   >
                     <div className="overflow-hidden">
-                      <div className="mt-1 space-y-1.5 pl-4">
+                      <div className="mt-1.5 space-y-1.5 rounded-2xl border-l border-slate-200/80 bg-white/35 py-1.5 pl-4 pr-1">
                         {item.href === "#home-connections-panel" ? (
                           <SidebarChildLink
                             child={{
