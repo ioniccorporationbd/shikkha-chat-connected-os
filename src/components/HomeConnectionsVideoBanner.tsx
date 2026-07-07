@@ -41,7 +41,7 @@ export default function HomeConnectionsVideoBanner() {
         .text-start-animation { animation: textStart 720ms cubic-bezier(.22,1,.36,1) both; }
       `}</style>
 
-      <div className="sticky top-0 h-screen overflow-hidden">
+      <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.video
             ref={videoRef}
@@ -57,8 +57,8 @@ export default function HomeConnectionsVideoBanner() {
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[#0068ff]/16 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[#ff7a3d]/14 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[var(--sc-primary)]/20 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[var(--sc-secondary)]/24 via-transparent to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-white/14 to-transparent" />
 
@@ -66,12 +66,12 @@ export default function HomeConnectionsVideoBanner() {
           type="button"
           onClick={toggleVideo}
           aria-label={isPaused ? "Play video" : "Pause video"}
-          className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[#0068ff] lg:right-12 lg:top-9"
+          className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
         >
           {isPaused ? <FaPlay className="text-[13px]" /> : <FaPause className="text-[13px]" />}
         </button>
 
-        <div className="absolute inset-0 z-30 flex h-screen items-center justify-center px-6">
+        <div className="absolute inset-0 z-30 flex h-[100svh] items-center justify-center px-6">
           <motion.div
             style={{ y: textY, opacity: textOpacity, scale: textScale }}
             className="text-start-animation mx-auto max-w-[780px] text-center lg:text-left"

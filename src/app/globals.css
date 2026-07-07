@@ -203,3 +203,175 @@ div {
     font-size: 15px;
   }
 }
+/* Shikkha Chat global brand system */
+:root {
+  --sc-primary: #16423c;
+  --sc-primary-dark: #0b2f2a;
+  --sc-primary-soft: rgba(22, 66, 60, 0.1);
+  --sc-secondary: #ede6b3;
+  --sc-secondary-light: #fff9d7;
+  --sc-secondary-soft: rgba(237, 230, 179, 0.42);
+  --sc-white: #ffffff;
+  --sc-black: #071513;
+  --sc-surface: #fbfcf7;
+  --sc-border: rgba(22, 66, 60, 0.16);
+  --sc-muted: #5f6f6b;
+  --primary-blue: var(--sc-primary);
+  --primary-orange: var(--sc-secondary);
+  --soft-orange: var(--sc-secondary-light);
+  --soft-blue: rgba(22, 66, 60, 0.08);
+  --text-dark: var(--sc-black);
+  --text-muted: var(--sc-muted);
+}
+
+body {
+  background: var(--sc-white);
+  color: var(--sc-black);
+}
+
+.site-content-shell {
+  padding-left: 0;
+}
+
+@media (min-width: 1400px) {
+  .site-content-shell {
+    padding-left: 320px;
+  }
+}
+
+.connected-sidebar {
+  transform: translateX(-100%);
+}
+
+.connected-sidebar.is-open {
+  transform: translateX(0);
+}
+
+@media (min-width: 1400px) {
+  .connected-sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-open-button,
+  .sidebar-mobile-backdrop,
+  .sidebar-close-button {
+    display: none !important;
+  }
+}
+
+.connected-scroll-section {
+  min-height: 100svh;
+  overflow: visible;
+  background: var(--sc-white);
+}
+
+.connected-scroll-grid {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.connected-middle-pane {
+  display: none;
+}
+
+.connected-right-pane {
+  min-height: 100svh;
+  overflow: visible;
+  border-left: 0;
+  background: var(--sc-white);
+}
+
+.connected-right-scroll-panel {
+  height: auto;
+  min-height: 100svh;
+  overflow: visible;
+}
+
+@media (min-width: 1100px) {
+  .connected-scroll-section {
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .connected-scroll-grid {
+    height: 100vh;
+    height: 100svh;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(330px, 32vw);
+  }
+
+  .connected-middle-pane {
+    display: block;
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
+    background: #f8fbf5;
+  }
+
+  .connected-right-pane {
+    height: 100vh;
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+    border-left: 1px solid var(--sc-border);
+  }
+
+  .connected-right-scroll-panel {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+@media (min-width: 1400px) {
+  .connected-scroll-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(430px, 38vw);
+  }
+}
+
+@media (min-width: 1536px) {
+  .connected-scroll-grid {
+    grid-template-columns: minmax(0, 1fr) 600px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .right-scroll-panel {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+}
+
+html[data-lang="bn"] body {
+  font-family:
+    var(--font-bangla),
+    var(--font-english),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+html[data-lang="en"] body {
+  font-family:
+    var(--font-english),
+    var(--font-bangla),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.language-toggle-knob {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-lang="en"] .language-toggle-knob {
+  transform: translateX(34px);
+}

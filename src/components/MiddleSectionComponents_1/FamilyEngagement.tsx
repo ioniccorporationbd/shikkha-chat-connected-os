@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
   AnimatePresence,
@@ -15,18 +15,29 @@ import {
   FaXmark,
 } from "react-icons/fa6";
 import { MdAddCircleOutline, MdOutlineHub } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+type LanguageCode = "bn" | "en";
+
+type ProductId =
+  | "student-information"
+  | "sis"
+  | "enrollment"
+  | "special-programs"
+  | "family-engagement"
+  | "communications"
+  | "attendance-support";
 
 type ProductCard = {
-  id: string;
+  id: ProductId;
   title: string;
   subtitle?: string;
   icon?: ReactNode;
-  orange?: boolean;
+  featured?: boolean;
   outline?: boolean;
   muted?: boolean;
-  color?: string;
   label?: string;
-  description?: string;
+  description: string;
 };
 
 type ConnectorPath = {
@@ -36,115 +47,198 @@ type ConnectorPath = {
 };
 
 const rightImage = "/images/family-engagement-people.png";
-const premiumEase = [0.22, 1, 0.36, 1] as const;
+const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const products: ProductCard[] = [
+const sectionText = {
+  bn: {
+    groupTitle: "হোম কানেকশন",
+    openSection: "সেকশন খুলুন",
+    closeDetail: "ডিটেইল বন্ধ করুন",
+    tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
+    imageAlt: "পরিবার সম্পৃক্ততা",
+    cards: {
+      "student-information": {
+        title: "শিক্ষার্থী তথ্য",
+        subtitle: "প্রোফাইল",
+        label: "শিক্ষার্থী প্রোফাইল",
+        description:
+          "শিক্ষার্থী তথ্য শিক্ষার্থীর রেকর্ড, পরিবারের বিস্তারিত, একাডেমিক ডেটা এবং স্কুলের সংযুক্ত কাজগুলোকে একটি জায়গায় সুন্দরভাবে সাজিয়ে রাখে।",
+      },
+      sis: {
+        title: "এসআইএস",
+        subtitle: "কোর সিস্টেম",
+        label: "কোর সিস্টেম",
+        description:
+          "এসআইএস একটি কেন্দ্রীয় শিক্ষার্থী তথ্য ব্যবস্থা, যেখানে স্কুলের ডেটা, ভর্তি, উপস্থিতি এবং সংযুক্ত রেকর্ড পরিচালনা করা হয়।",
+      },
+      enrollment: {
+        title: "ভর্তি",
+        subtitle: "অ্যাডমিশন",
+        label: "ভর্তি প্রক্রিয়া",
+        description:
+          "ভর্তি ফিচার স্কুলকে শিক্ষার্থী ভর্তি, অনবোর্ডিং, পরিবারের তথ্য এবং ক্লাস প্লেসমেন্ট সহজভাবে পরিচালনা করতে সাহায্য করে।",
+      },
+      "special-programs": {
+        title: "বিশেষ প্রোগ্রাম",
+        subtitle: "সহায়তা",
+        label: "শিক্ষার্থী সহায়তা",
+        description:
+          "বিশেষ প্রোগ্রাম শিক্ষার্থী সহায়তা, ইন্টারভেনশন কাজের ধারা এবং প্রোগ্রাম ডেটাকে পুরো স্কুল সিস্টেমের সাথে যুক্ত করে।",
+      },
+      "family-engagement": {
+        title: "পরিবার সম্পৃক্ততা",
+        subtitle: "প্রধান পরিবার এলাকা",
+        label: "প্রধান পরিবার এলাকা",
+        description:
+          "পরিবার সম্পৃক্ততা স্কুল, শিক্ষার্থী এবং পরিবারের যোগাযোগকে একসাথে যুক্ত করে, যাতে অভিভাবকরা শেখার যাত্রায় সবসময় অবগত ও সম্পৃক্ত থাকেন।",
+      },
+      communications: {
+        title: "যোগাযোগ",
+        subtitle: "স্কুল মেসেঞ্জার",
+        label: "স্কুল যোগাযোগ",
+        description:
+          "যোগাযোগ ফিচার শিক্ষার্থী ও স্কুল ডেটা ব্যবহার করে পরিবারকে সংযুক্ত, সঠিক এবং সময়মতো আপডেট পাঠাতে সাহায্য করে।",
+      },
+      "attendance-support": {
+        title: "উপস্থিতি সহায়তা",
+        subtitle: "রেসপন্স",
+        label: "উপস্থিতি রেসপন্স",
+        description:
+          "উপস্থিতি সহায়তা উপস্থিতির প্যাটার্ন শনাক্ত করে এবং দ্রুত শিক্ষার্থী সহায়তার জন্য স্কুল ও পরিবারকে সংযুক্ত করে।",
+      },
+    },
+  },
+  en: {
+    groupTitle: "Home Connections",
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    tapHint: "Click any card to view details",
+    imageAlt: "Family Engagement",
+    cards: {
+      "student-information": {
+        title: "Student Information",
+        subtitle: "Profile",
+        label: "Student Profile",
+        description:
+          "Student Information keeps student records, family details, academic data, and connected school workflows organized in one place.",
+      },
+      sis: {
+        title: "SIS",
+        subtitle: "Core System",
+        label: "Core System",
+        description:
+          "SIS works as the central student information system where school data, enrollment, attendance, and connected records are managed.",
+      },
+      enrollment: {
+        title: "Enrollment",
+        subtitle: "Admission",
+        label: "Admission Workflow",
+        description:
+          "Enrollment helps schools manage student admission, onboarding, family information, and class placement smoothly.",
+      },
+      "special-programs": {
+        title: "Special Programs",
+        subtitle: "Support",
+        label: "Student Support",
+        description:
+          "Special Programs connects support services, intervention workflows, and student program data with the wider school system.",
+      },
+      "family-engagement": {
+        title: "Family Engagement",
+        subtitle: "Main Family Area",
+        label: "Main Family Area",
+        description:
+          "Family Engagement connects school, student, and family communication so guardians stay informed and involved in the learning journey.",
+      },
+      communications: {
+        title: "Communications",
+        subtitle: "School Messenger",
+        label: "School Communication",
+        description:
+          "Communications helps schools send connected, accurate, and timely updates to families using student and school data.",
+      },
+      "attendance-support": {
+        title: "Attendance Support",
+        subtitle: "Response",
+        label: "Attendance Response",
+        description:
+          "Attendance Support helps identify attendance patterns and connect schools with families for faster student support.",
+      },
+    },
+  },
+} as const;
+
+const productBase = [
   {
-    id: "student-information",
-    title: "STUDENT INFORMATION",
+    id: "student-information" as const,
     muted: true,
-    color: "#8b2d10",
-    label: "Student Profile",
-    description:
-      "Student Information keeps student records, family details, academic data, and connected school workflows organized in one place.",
   },
   {
-    id: "sis",
-    title: "SIS",
+    id: "sis" as const,
     icon: <FaUsers />,
     muted: true,
-    color: "#8b2d10",
-    label: "Core System",
-    description:
-      "SIS works as the central student information system where school data, enrollment, attendance, and connected records are managed.",
   },
   {
-    id: "enrollment",
-    title: "Enrollment",
+    id: "enrollment" as const,
     icon: <MdAddCircleOutline />,
     muted: true,
-    color: "#8b2d10",
-    label: "Admission Workflow",
-    description:
-      "Enrollment helps schools manage student admission, onboarding, family information, and class placement smoothly.",
   },
   {
-    id: "special-programs",
-    title: "Special Programs",
+    id: "special-programs" as const,
     icon: <FaRegStar />,
     muted: true,
-    color: "#8b2d10",
-    label: "Student Support",
-    description:
-      "Special Programs connects support services, intervention workflows, and student program data with the wider school system.",
   },
   {
-    id: "family-engagement",
-    title: "FAMILY ENGAGEMENT",
-    orange: true,
-    color: "#ff7438",
-    label: "Main Family Area",
-    description:
-      "Family Engagement connects school, student, and family communication so guardians stay informed and involved in the learning journey.",
+    id: "family-engagement" as const,
+    featured: true,
   },
   {
-    id: "communications",
-    title: "Communications",
-    subtitle: "School Messenger",
+    id: "communications" as const,
     icon: <MdOutlineHub />,
     outline: true,
-    color: "#8b2d10",
-    label: "School Communication",
-    description:
-      "Communications helps schools send connected, accurate, and timely updates to families using student and school data.",
   },
   {
-    id: "attendance-support",
-    title: "Attendance Support",
+    id: "attendance-support" as const,
     icon: <FaRegCircleQuestion />,
     outline: true,
-    color: "#8b2d10",
-    label: "Attendance Response",
-    description:
-      "Attendance Support helps identify attendance patterns and connect schools with families for faster student support.",
   },
 ];
 
-const connectorPaths: Record<string, ConnectorPath> = {
+const connectorPaths: Record<ProductId, ConnectorPath> = {
   "student-information": {
     d: "M500 360 L456 360 Q442 360 442 346 L442 238 Q442 224 428 224 L390 224",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   sis: {
     d: "M500 360 L458 360 Q444 360 444 346 L444 238 Q444 224 430 224 L500 224",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   enrollment: {
     d: "M500 360 L456 360 Q442 360 442 346 L442 330 Q442 316 428 316 L390 316",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "special-programs": {
     d: "M500 360 L458 360 Q444 360 444 346 L444 330 Q444 316 430 316 L500 316",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "family-engagement": {
     d: "M500 360 L500 360",
-    color: "#ff7438",
-    glowColor: "rgba(255,116,56,0.16)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.16)",
   },
   communications: {
     d: "M500 360 L458 360 Q444 360 444 374 L444 424 Q444 438 430 438 L500 438",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "attendance-support": {
     d: "M500 360 L456 360 Q442 360 442 374 L442 424 Q442 438 428 438 L390 438",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
 };
 
@@ -283,17 +377,17 @@ function ProductTile({
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         selected || isActive
-          ? "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#fff8f0_0%,#ffd09a_100%)] shadow-[0_22px_52px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_22px_52px_rgba(22,66,60,0.22),0_0_0_5px_rgba(22,66,60,0.08)]"
           : item.outline
-            ? "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#f8fbff_0%,#e8f4ff_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)]"
+            ? "border-[3px] border-[var(--sc-primary)] bg-white shadow-[0_12px_30px_rgba(22,66,60,0.07)]"
             : item.muted
-              ? "border border-[#d8e2ee] bg-white/62 shadow-[0_12px_30px_rgba(15,23,42,0.055)]"
-              : "border border-[#d8e2ee] bg-white/82 shadow-[0_12px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_24px_58px_rgba(15,23,42,0.13)]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+              ? "border border-[var(--sc-border)] bg-white/72 shadow-[0_12px_30px_rgba(22,66,60,0.06)]"
+              : "border border-[var(--sc-border)] bg-white/84 shadow-[0_12px_30px_rgba(22,66,60,0.07)]",
+        "hover:bg-white hover:shadow-[0_24px_58px_rgba(22,66,60,0.14)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.64),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.66),rgba(255,255,255,0)_52%,rgba(22,66,60,0.04))]" />
 
       <motion.span
         aria-hidden="true"
@@ -315,7 +409,7 @@ function ProductTile({
       {selected || isActive ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-primary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -332,15 +426,10 @@ function ProductTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#4b6377] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div
-          className={[
-            "relative z-10 mb-[7px] text-[25px] leading-none transition-all duration-500 group-hover:scale-110",
-            item.muted ? "text-[#607084]" : "text-[#8b2d10]",
-          ].join(" ")}
-        >
+        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-[var(--sc-primary)] transition-all duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -348,8 +437,8 @@ function ProductTile({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center tracking-[-0.035em]",
-          isActive ? "font-black text-black" : "font-normal text-[#1f2937]",
+          "text-center tracking-[-0.035em] text-[var(--sc-primary)]",
+          isActive ? "font-semibold" : "font-normal",
           isSingleWord
             ? "text-[14px] leading-none"
             : "text-[11.2px] leading-[1.08]",
@@ -359,7 +448,7 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[#243241]/90">
+        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[var(--sc-muted)]">
           {item.subtitle}
         </p>
       ) : null}
@@ -370,12 +459,14 @@ function ProductTile({
 function DetailPanel({
   item,
   onClose,
+  openSectionText,
+  closeText,
 }: {
   item: ProductCard;
   onClose: () => void;
+  openSectionText: string;
+  closeText: string;
 }) {
-  const isFamily = item.id === "family-engagement";
-
   return (
     <motion.div
       initial={{
@@ -406,69 +497,61 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--sc-border)] bg-white px-6 py-6",
+        "shadow-[0_26px_80px_rgba(22,66,60,0.16)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-[#202833] hover:text-white"
-        aria-label="Close detail"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-border)] bg-white text-[var(--sc-muted)] transition hover:bg-[var(--sc-primary)] hover:text-white"
+        aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[#d8e2ee] bg-[#f7fbff]"
-          style={{ color: item.color ?? "#8b2d10" }}
-        >
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-border)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
           <div className="text-[31px] leading-none">
             {item.icon ?? <FaUsers />}
           </div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
-            {item.label ?? "Connected Capability"}
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+            {item.label}
           </p>
 
-          <h3
-            className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
-              isFamily ? "font-black" : "font-normal",
-            ].join(" ")}
-          >
+          <h3 className="mt-2 text-[30px] font-semibold leading-[0.98] tracking-[-0.055em] text-[var(--sc-primary)]">
             {item.title}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#0068ff]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-primary)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--sc-muted)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--sc-border)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[#202833] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[#0f172a]"
+        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[var(--sc-primary-dark)]"
       >
-        Open Section
+        {openSectionText}
       </button>
     </motion.div>
   );
 }
 
-function ConnectorLine({ selectedId }: { selectedId: string }) {
+function ConnectorLine({ selectedId }: { selectedId: ProductId }) {
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 
@@ -492,7 +575,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
             cy="360"
             r="40"
             fill="none"
-            stroke="#ff7438"
+            stroke="var(--sc-primary)"
             strokeWidth="4"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={
@@ -549,7 +632,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.88)"
+          stroke="white"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -582,13 +665,100 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
   );
 }
 
+function MobileTabletView({
+  products,
+  selectedCard,
+  setSelectedCard,
+  hint,
+}: {
+  products: ProductCard[];
+  selectedCard: ProductCard | null;
+  setSelectedCard: (product: ProductCard) => void;
+  hint: string;
+}) {
+  return (
+    <div className="relative z-10 mx-auto flex min-h-[660px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
+      <div className="rounded-[30px] border border-[var(--sc-border)] bg-white/86 p-5 shadow-[0_24px_70px_rgba(22,66,60,0.12)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
+          {hint}
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {products.map((product) => {
+            const active =
+              selectedCard?.id === product.id ||
+              product.id === "family-engagement";
+
+            return (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCard(product);
+                  scrollRightSidebarTo(product.id);
+                }}
+                className={[
+                  "group rounded-[22px] border p-4 text-left transition duration-300",
+                  active
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_18px_40px_rgba(22,66,60,0.14)]"
+                    : "border-[var(--sc-border)] bg-white hover:-translate-y-1 hover:bg-[var(--sc-secondary-light)]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--sc-primary)] text-[22px] text-white">
+                    {product.icon ?? <FaUsers />}
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+                      {product.label}
+                    </p>
+
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--sc-primary)]">
+                      {product.title}
+                    </h3>
+
+                    {product.subtitle ? (
+                      <p className="mt-1 text-[12px] font-normal text-[var(--sc-muted)]">
+                        {product.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <p className="mt-3 text-[13.5px] font-normal leading-6 text-[var(--sc-muted)]">
+                  {product.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FamilyEngagement() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const text = sectionText[currentLanguage];
+
   const shouldReduceMotion = useReducedMotion();
   const [selectedCard, setSelectedCard] = useState<ProductCard | null>(null);
   const [isSeparated, setIsSeparated] = useState(false);
   const [imageSettled, setImageSettled] = useState(false);
 
   const selectedId = selectedCard?.id;
+
+  const products = useMemo<ProductCard[]>(() => {
+    return productBase.map((product) => ({
+      ...product,
+      title: text.cards[product.id].title,
+      subtitle: text.cards[product.id].subtitle,
+      label: text.cards[product.id].label,
+      description: text.cards[product.id].description,
+    }));
+  }, [text]);
 
   useEffect(() => {
     const separateTimer = window.setTimeout(() => {
@@ -606,8 +776,8 @@ export default function FamilyEngagement() {
   }, []);
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full min-h-[660px] w-full overflow-hidden bg-[var(--sc-bg)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
@@ -629,13 +799,13 @@ export default function FamilyEngagement() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute right-[20%] top-[52%] h-[280px] w-[280px] -translate-y-1/2 rounded-full bg-[#ff7438]/8 blur-[92px]"
+        className="pointer-events-none absolute right-[20%] top-[52%] h-[280px] w-[280px] -translate-y-1/2 rounded-full bg-[var(--sc-secondary)] blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
             : {
                 scale: [1, 1.12, 1],
-                opacity: [0.35, 0.75, 0.35],
+                opacity: [0.24, 0.52, 0.24],
               }
         }
         transition={{
@@ -645,7 +815,14 @@ export default function FamilyEngagement() {
         }}
       />
 
-      <div className="relative z-10 h-full w-full">
+      <MobileTabletView
+        products={products}
+        selectedCard={selectedCard}
+        setSelectedCard={setSelectedCard}
+        hint={text.tapHint}
+      />
+
+      <div className="relative z-10 hidden h-full w-full lg:block">
         <AnimatePresence mode="wait">
           {selectedId ? (
             <ConnectorLine key={selectedId} selectedId={selectedId} />
@@ -691,27 +868,27 @@ export default function FamilyEngagement() {
               }}
               className={[
                 "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
-                "h-[38px] min-w-[224px] rounded-full bg-[#d7e1ec]",
-                "px-[28px] text-[14px] font-normal leading-[38px] text-black",
-                "whitespace-nowrap shadow-[0_14px_34px_rgba(15,23,42,0.1)]",
-                "transition hover:bg-[#cfd8e3]",
+                "h-[38px] min-w-[224px] rounded-full bg-[var(--sc-secondary)]",
+                "px-[28px] text-[14px] font-normal leading-[38px] text-[var(--sc-primary)]",
+                "whitespace-nowrap shadow-[0_14px_34px_rgba(22,66,60,0.12)]",
+                "transition hover:bg-[var(--sc-secondary-light)]",
               ].join(" ")}
             >
-              Home Connections
+              {text.groupTitle}
 
-              <span className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 rounded-full bg-[#cfd8e3]" />
+              <span className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 rounded-full bg-[var(--sc-border)]" />
             </motion.button>
 
             <div
               className={[
                 "relative h-[430px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[#cfd8e3]/95",
-                "bg-white/20 p-[8px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-border)]",
+                "bg-white/24 p-[8px]",
+                "shadow-[0_28px_80px_rgba(22,66,60,0.10)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(0,104,255,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_35%,rgba(22,66,60,0.04))]" />
 
               <div className="relative z-10 grid grid-cols-2 gap-[8px]">
                 {products.map((product) => (
@@ -744,11 +921,7 @@ export default function FamilyEngagement() {
             y: imageSettled
               ? ["-50%", "calc(-50% - 18px)", "calc(-50% + 7px)", "-50%"]
               : "-50%",
-            scale: imageSettled
-              ? [1, 1.055, 0.985, 1]
-              : isSeparated
-                ? 1
-                : 0.74,
+            scale: imageSettled ? [1, 1.055, 0.985, 1] : isSeparated ? 1 : 0.74,
             rotate: imageSettled ? [0, 1.2, -0.7, 0] : isSeparated ? 0 : -2,
             filter: isSeparated ? "blur(0px)" : "blur(16px)",
           }}
@@ -790,15 +963,15 @@ export default function FamilyEngagement() {
           }}
           className="absolute left-1/2 top-1/2 z-20 hidden h-[430px] w-[330px] shrink-0 md:block"
         >
-          <div className="absolute bottom-[24px] left-1/2 h-[42px] w-[220px] -translate-x-1/2 rounded-full bg-[#0f172a]/16 blur-[18px]" />
+          <div className="absolute bottom-[24px] left-1/2 h-[42px] w-[220px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/16 blur-[18px]" />
 
           <Image
             src={rightImage}
-            alt="Family Engagement"
+            alt={text.imageAlt}
             fill
             priority
             sizes="330px"
-            className="object-contain object-bottom drop-shadow-[0_24px_28px_rgba(15,23,42,0.14)]"
+            className="object-contain object-bottom drop-shadow-[0_24px_28px_rgba(22,66,60,0.14)]"
           />
         </motion.div>
       </div>
@@ -808,6 +981,8 @@ export default function FamilyEngagement() {
           <DetailPanel
             item={selectedCard}
             onClose={() => setSelectedCard(null)}
+            openSectionText={text.openSection}
+            closeText={text.closeDetail}
           />
         ) : null}
       </AnimatePresence>

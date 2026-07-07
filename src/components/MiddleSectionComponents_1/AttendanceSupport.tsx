@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   AnimatePresence,
   motion,
@@ -18,9 +18,20 @@ import {
   MdOutlineGridView,
   MdOutlineHub,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+type LanguageCode = "bn" | "en";
+
+type CardId =
+  | "consistent-experience"
+  | "sis"
+  | "connected-intelligence"
+  | "analytics-insights"
+  | "attendance-support"
+  | "family-engagement";
 
 type CardItem = {
-  id: string;
+  id: CardId;
   title: string;
   subtitle?: string;
   icon?: ReactNode;
@@ -36,104 +47,162 @@ type ConnectorPath = {
   glowColor: string;
 };
 
-const premiumEase = [0.22, 1, 0.36, 1] as const;
+const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const floatingCards: CardItem[] = [
+const sectionText = {
+  bn: {
+    openSection: "সেকশন খুলুন",
+    closeDetail: "ডিটেইল বন্ধ করুন",
+    tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
+    cards: {
+      "consistent-experience": {
+        title: "একই অভিজ্ঞতা",
+        subtitle: "ফ্যামিলি হাব",
+        label: "পরিবারের অভিজ্ঞতা",
+        description:
+          "একই অভিজ্ঞতা পরিবার, শিক্ষার্থী এবং স্টাফকে উপস্থিতি, যোগাযোগ এবং দৈনন্দিন স্কুল কাজের মধ্যে একটি সংযুক্ত ভিউ দেয়।",
+      },
+      sis: {
+        title: "এসআইএস",
+        subtitle: "এসআইএস",
+        label: "সংযুক্ত সিস্টেম",
+        description:
+          "এসআইএস শিক্ষার্থীর রেকর্ড, উপস্থিতি তথ্য, পরিবারের তথ্য এবং স্কুলের গুরুত্বপূর্ণ কাজগুলোকে একটি কেন্দ্রীয় জায়গায় রাখে।",
+      },
+      "connected-intelligence": {
+        title: "সংযুক্ত ইন্টেলিজেন্স",
+        subtitle: "ডেটা ইনসাইট",
+        label: "সংযুক্ত ইন্টেলিজেন্স",
+        description:
+          "সংযুক্ত ইন্টেলিজেন্স স্কুলকে উপস্থিতির ট্রেন্ড, শিক্ষার্থীর গতিবিধি এবং সহায়তার প্রয়োজন দ্রুত বুঝতে সাহায্য করে।",
+      },
+      "analytics-insights": {
+        title: "অ্যানালিটিক্স ও ইনসাইটস",
+        subtitle: "রিপোর্টিং",
+        label: "অ্যানালিটিক্স লেয়ার",
+        description:
+          "অ্যানালিটিক্স ও ইনসাইটস উপস্থিতি এবং শিক্ষার্থী ডেটাকে পরিষ্কার প্যাটার্ন, ড্যাশবোর্ড এবং সিদ্ধান্তের উপযোগী তথ্য হিসেবে দেখায়।",
+      },
+      "attendance-support": {
+        title: "উপস্থিতি সহায়তা",
+        subtitle: "প্রধান উপস্থিতি এলাকা",
+        label: "প্রধান উপস্থিতি এলাকা",
+        description:
+          "উপস্থিতি সহায়তা স্কুলকে উপস্থিতির প্যাটার্ন শনাক্ত করতে, দ্রুত পদক্ষেপ নিতে এবং পরিবারকে সঠিক সহায়তার সাথে যুক্ত করতে সাহায্য করে।",
+      },
+      "family-engagement": {
+        title: "পরিবার সম্পৃক্ততা",
+        subtitle: "অভিভাবক সেকশন",
+        label: "অভিভাবক সেকশন",
+        description:
+          "পরিবার সম্পৃক্ততা উপস্থিতি সহায়তা, যোগাযোগ এবং পরিবারের কাজগুলোকে একটি সংযুক্ত স্কুল অভিজ্ঞতায় যুক্ত করে।",
+      },
+    },
+  },
+  en: {
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    tapHint: "Click any card to view details",
+    cards: {
+      "consistent-experience": {
+        title: "Consistent Experience",
+        subtitle: "Family Hub",
+        label: "Family Experience",
+        description:
+          "Consistent Experience gives families, students, and staff a connected view across attendance, communication, and daily school workflows.",
+      },
+      sis: {
+        title: "SIS",
+        subtitle: "SIS",
+        label: "Connected System",
+        description:
+          "SIS stores student records, attendance information, family data, and connected school workflows in one central place.",
+      },
+      "connected-intelligence": {
+        title: "Connected Intelligence",
+        subtitle: "Data Insight",
+        label: "Connected Intelligence",
+        description:
+          "Connected Intelligence helps schools understand attendance trends, student movement, and support needs using connected data.",
+      },
+      "analytics-insights": {
+        title: "Analytics & Insights",
+        subtitle: "Reporting",
+        label: "Analytics Layer",
+        description:
+          "Analytics & Insights turns attendance and student data into clear patterns, dashboards, and action-ready school decisions.",
+      },
+      "attendance-support": {
+        title: "Attendance Support",
+        subtitle: "Main Attendance Area",
+        label: "Main Attendance Area",
+        description:
+          "Attendance Support helps schools identify attendance patterns, respond quickly, and connect families with the right student support.",
+      },
+      "family-engagement": {
+        title: "Family Engagement",
+        subtitle: "Parent Section",
+        label: "Parent Section",
+        description:
+          "Family Engagement connects attendance support, communication, and family workflows in one connected school experience.",
+      },
+    },
+  },
+} as const;
+
+const cardBase = [
   {
-    id: "consistent-experience",
-    title: "Consistent Experience",
-    subtitle: "Family Hub",
+    id: "consistent-experience" as const,
     icon: <MdOutlineGridView />,
     positionClass: "left-[4%] top-[11%]",
-    color: "#001b70",
-    label: "Family Experience",
-    description:
-      "Consistent Experience gives families, students, and staff a connected view across attendance, communication, and daily school workflows.",
   },
   {
-    id: "sis",
-    title: "SIS",
+    id: "sis" as const,
     icon: <FaUsers />,
     positionClass: "right-[5%] top-[14%]",
-    color: "#8b2d10",
-    label: "Connected System",
-    description:
-      "SIS stores student records, attendance information, family data, and connected school workflows in one central place.",
   },
   {
-    id: "connected-intelligence",
-    title: "Connected Intelligence",
+    id: "connected-intelligence" as const,
     icon: <MdOutlineHub />,
     positionClass: "left-[2%] bottom-[16%]",
-    color: "#001b70",
-    label: "Connected Intelligence",
-    description:
-      "Connected Intelligence helps schools understand attendance trends, student movement, and support needs using connected data.",
   },
   {
-    id: "analytics-insights",
-    title: "Analytics & Insights",
+    id: "analytics-insights" as const,
     icon: <MdOutlineAnalytics />,
     positionClass: "right-[5%] bottom-[14%]",
-    color: "#001b70",
-    label: "Analytics Layer",
-    description:
-      "Analytics & Insights turns attendance and student data into clear patterns, dashboards, and action-ready school decisions.",
   },
 ];
 
-const mainCard: CardItem = {
-  id: "attendance-support",
-  title: "Attendance Support",
-  icon: <FaRegCircleQuestion />,
-  color: "#8b2d10",
-  label: "Main Attendance Area",
-  description:
-    "Attendance Support helps schools identify attendance patterns, respond quickly, and connect families with the right student support.",
-};
-
-const familyCard: CardItem = {
-  id: "family-engagement",
-  title: "Family Engagement",
-  icon: <MdOutlineGridView />,
-  color: "#8b2d10",
-  label: "Parent Section",
-  description:
-    "Family Engagement connects attendance support, communication, and family workflows in one connected school experience.",
-};
-
-const allCards = [mainCard, familyCard, ...floatingCards];
-
-const connectorPaths: Record<string, ConnectorPath> = {
+const connectorPaths: Record<CardId, ConnectorPath> = {
   "consistent-experience": {
     d: "M500 360 L410 360 Q390 360 390 340 L390 135 Q390 115 370 115 L125 115",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   sis: {
     d: "M500 360 L610 360 Q630 360 630 340 L630 145 Q630 125 650 125 L900 125",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "connected-intelligence": {
     d: "M500 360 L410 360 Q390 360 390 380 L390 585 Q390 605 370 605 L110 605",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "analytics-insights": {
     d: "M500 360 L610 360 Q630 360 630 380 L630 585 Q630 605 650 605 L900 605",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
   "attendance-support": {
     d: "M500 360 L500 360",
-    color: "#ff7438",
-    glowColor: "rgba(255,116,56,0.16)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.16)",
   },
   "family-engagement": {
     d: "M500 360 L500 360 Q500 340 500 320 L500 285",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: "var(--sc-primary)",
+    glowColor: "rgba(22,66,60,0.14)",
   },
 };
 
@@ -279,15 +348,15 @@ function FloatingCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)]/40 focus-visible:ring-offset-2",
         active
-          ? "border-[3px] border-[#ff7438] bg-white shadow-[0_24px_60px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
-          : "border border-[#d8e2ee] bg-white/82 shadow-[0_14px_34px_rgba(15,23,42,0.065)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(15,23,42,0.14)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-white shadow-[0_24px_60px_rgba(22,66,60,0.22),0_0_0_5px_rgba(22,66,60,0.08)]"
+          : "border border-[var(--sc-border)] bg-white/84 shadow-[0_14px_34px_rgba(22,66,60,0.08)]",
+        "hover:bg-white hover:shadow-[0_24px_58px_rgba(22,66,60,0.14)]",
         item.positionClass ?? "",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.7),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(255,255,255,0)_52%,rgba(22,66,60,0.04))]" />
 
       <motion.span
         aria-hidden="true"
@@ -309,7 +378,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-primary)]/45"
           animate={
             shouldReduceMotion
               ? undefined
@@ -326,19 +395,16 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#1f2937] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
 
-      <div
-        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-500 group-hover:scale-110"
-        style={{ color: active ? "#ff7438" : item.color ?? "#001b70" }}
-      >
+      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-[var(--sc-primary)] transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
       <div
         className={[
           "relative z-10 flex max-w-[84px] items-center justify-center text-center",
-          "font-normal tracking-[-0.04em] text-[#001b70]",
+          "font-normal tracking-[-0.04em] text-[var(--sc-primary)]",
           isSingleWord
             ? "text-[10.5px] leading-none"
             : "text-[9.5px] leading-[1.05]",
@@ -348,7 +414,7 @@ function FloatingCard({
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[#334155]">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[var(--sc-muted)]">
           {item.subtitle}
         </p>
       ) : null}
@@ -358,11 +424,9 @@ function FloatingCard({
 
 function ActiveAttendanceCard({
   item,
-  selected,
   onSelect,
 }: {
   item: CardItem;
-  selected: boolean;
   onSelect: () => void;
 }) {
   const shouldReduceMotion = useReducedMotion();
@@ -392,13 +456,13 @@ function ActiveAttendanceCard({
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#f8fbff_0%,#dcecfb_100%)]",
-        "shadow-[0_26px_70px_rgba(255,116,56,0.24),0_0_0_6px_rgba(255,116,56,0.08)]",
-        "transition-shadow duration-500 hover:shadow-[0_32px_84px_rgba(255,116,56,0.3),0_0_0_7px_rgba(255,116,56,0.1)]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "border-[3px] border-[var(--sc-primary)] bg-[linear-gradient(180deg,#ffffff_0%,var(--sc-secondary-light)_100%)]",
+        "shadow-[0_26px_70px_rgba(22,66,60,0.22),0_0_0_6px_rgba(22,66,60,0.08)]",
+        "transition-shadow duration-500 hover:shadow-[0_32px_84px_rgba(22,66,60,0.26),0_0_0_7px_rgba(22,66,60,0.10)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)]/40 focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,rgba(255,255,255,0.64),rgba(255,255,255,0)_52%,rgba(15,23,42,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,rgba(255,255,255,0.64),rgba(255,255,255,0)_52%,rgba(22,66,60,0.04))]" />
 
       <motion.span
         aria-hidden="true"
@@ -419,7 +483,7 @@ function ActiveAttendanceCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[#ff7438]/45"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--sc-primary)]/45"
         animate={
           shouldReduceMotion
             ? undefined
@@ -435,14 +499,14 @@ function ActiveAttendanceCard({
         }}
       />
 
-      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-black transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-4 text-[48px] leading-none text-[#8b2d10] transition-all duration-500 group-hover:scale-110 group-hover:text-[#ff7438]">
+      <div className="relative z-10 mb-4 text-[48px] leading-none text-[var(--sc-primary)] transition-all duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[132px] text-[14px] font-black leading-[1.05] tracking-[-0.04em] text-black">
-        Attendance Support
+      <h3 className="relative z-10 max-w-[132px] text-[14px] font-semibold leading-[1.08] tracking-[-0.04em] text-[var(--sc-primary)]">
+        {item.title}
       </h3>
     </motion.button>
   );
@@ -451,12 +515,14 @@ function ActiveAttendanceCard({
 function DetailPanel({
   item,
   onClose,
+  openSectionText,
+  closeText,
 }: {
   item: CardItem;
   onClose: () => void;
+  openSectionText: string;
+  closeText: string;
 }) {
-  const isAttendance = item.id === "attendance-support";
-
   return (
     <motion.div
       initial={{
@@ -487,67 +553,59 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--sc-border)] bg-white px-6 py-6",
+        "shadow-[0_26px_80px_rgba(22,66,60,0.16)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-[#202833] hover:text-white"
-        aria-label="Close detail"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-border)] bg-white text-[var(--sc-muted)] transition hover:bg-[var(--sc-primary)] hover:text-white"
+        aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[#d8e2ee] bg-[#f7fbff]"
-          style={{ color: item.color ?? "#8b2d10" }}
-        >
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-border)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
-            {item.label ?? "Connected Capability"}
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+            {item.label}
           </p>
 
-          <h3
-            className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
-              isAttendance ? "font-black" : "font-normal",
-            ].join(" ")}
-          >
+          <h3 className="mt-2 text-[30px] font-semibold leading-[0.98] tracking-[-0.055em] text-[var(--sc-primary)]">
             {item.title}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#0068ff]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-primary)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--sc-muted)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--sc-border)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[#202833] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[#0f172a]"
+        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[var(--sc-primary-dark)]"
       >
-        Open Section
+        {openSectionText}
       </button>
     </motion.div>
   );
 }
 
-function ConnectorLine({ selectedId }: { selectedId: string }) {
+function ConnectorLine({ selectedId }: { selectedId: CardId }) {
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 
@@ -561,17 +619,13 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <svg
-          className="h-full w-full"
-          viewBox="0 0 1000 720"
-          preserveAspectRatio="none"
-        >
+        <svg className="h-full w-full" viewBox="0 0 1000 720" preserveAspectRatio="none">
           <motion.circle
             cx="500"
             cy="360"
             r="56"
             fill="none"
-            stroke="#ff7438"
+            stroke="var(--sc-primary)"
             strokeWidth="4"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={
@@ -604,11 +658,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
       }}
       className="pointer-events-none absolute inset-0 z-[25]"
     >
-      <svg
-        className="h-full w-full"
-        viewBox="0 0 1000 720"
-        preserveAspectRatio="none"
-      >
+      <svg className="h-full w-full" viewBox="0 0 1000 720" preserveAspectRatio="none">
         <motion.path
           d={path.d}
           fill="none"
@@ -661,15 +711,125 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
   );
 }
 
+function MobileTabletView({
+  cards,
+  selectedCard,
+  setSelectedCard,
+  hint,
+}: {
+  cards: CardItem[];
+  selectedCard: CardItem | null;
+  setSelectedCard: (card: CardItem) => void;
+  hint: string;
+}) {
+  return (
+    <div className="relative z-10 mx-auto flex min-h-[640px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
+      <div className="rounded-[30px] border border-[var(--sc-border)] bg-white/86 p-5 shadow-[0_24px_70px_rgba(22,66,60,0.12)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
+          {hint}
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {cards.map((card) => {
+            const active = selectedCard?.id === card.id;
+
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCard(card);
+                  scrollRightSidebarTo(card.id);
+                }}
+                className={[
+                  "group rounded-[22px] border p-4 text-left transition duration-300",
+                  active
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_18px_40px_rgba(22,66,60,0.14)]"
+                    : "border-[var(--sc-border)] bg-white hover:-translate-y-1 hover:bg-[var(--sc-secondary-light)]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--sc-primary)] text-[22px] text-white">
+                    {card.icon}
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+                      {card.label}
+                    </p>
+
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--sc-primary)]">
+                      {card.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-[13.5px] font-normal leading-6 text-[var(--sc-muted)]">
+                  {card.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AttendanceSupport() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const text = sectionText[currentLanguage];
+
   const shouldReduceMotion = useReducedMotion();
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+
+  const floatingCards = useMemo<CardItem[]>(() => {
+    return cardBase.map((card) => ({
+      ...card,
+      title: text.cards[card.id].title,
+      subtitle: text.cards[card.id].subtitle,
+      label: text.cards[card.id].label,
+      description: text.cards[card.id].description,
+      color: "var(--sc-primary)",
+    }));
+  }, [text]);
+
+  const mainCard = useMemo<CardItem>(
+    () => ({
+      id: "attendance-support",
+      title: text.cards["attendance-support"].title,
+      subtitle: text.cards["attendance-support"].subtitle,
+      icon: <FaRegCircleQuestion />,
+      color: "var(--sc-primary)",
+      label: text.cards["attendance-support"].label,
+      description: text.cards["attendance-support"].description,
+    }),
+    [text]
+  );
+
+  const familyCard = useMemo<CardItem>(
+    () => ({
+      id: "family-engagement",
+      title: text.cards["family-engagement"].title,
+      subtitle: text.cards["family-engagement"].subtitle,
+      icon: <MdOutlineGridView />,
+      color: "var(--sc-primary)",
+      label: text.cards["family-engagement"].label,
+      description: text.cards["family-engagement"].description,
+    }),
+    [text]
+  );
+
+  const allCards = useMemo<CardItem[]>(() => {
+    return [mainCard, familyCard, ...floatingCards];
+  }, [mainCard, familyCard, floatingCards]);
 
   const selectedId = selectedCard?.id;
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-[var(--sc-bg)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
@@ -691,7 +851,7 @@ export default function AttendanceSupport() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff7438]/8 blur-[92px]"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-secondary)]/35 blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -707,11 +867,18 @@ export default function AttendanceSupport() {
         }}
       />
 
+      <MobileTabletView
+        cards={allCards}
+        selectedCard={selectedCard}
+        setSelectedCard={setSelectedCard}
+        hint={text.tapHint}
+      />
+
       <motion.div
         variants={pageVariants}
         initial="hidden"
         animate="visible"
-        className="relative h-full w-full"
+        className="relative hidden h-full w-full lg:block"
       >
         {floatingCards.map((item, index) => (
           <FloatingCard
@@ -739,33 +906,32 @@ export default function AttendanceSupport() {
                   scrollRightSidebarTo("family-engagement");
                 }}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full bg-[#ffd09a] px-[44px]",
+                  "h-[40px] min-w-[300px] rounded-full bg-[var(--sc-secondary)] px-[44px]",
                   "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] text-[#8b2d10]",
-                  "shadow-[0_16px_34px_rgba(255,116,56,0.18)]",
-                  "transition duration-300 hover:scale-[1.025] hover:bg-[#ffc783]",
+                  "leading-[40px] text-[var(--sc-primary)]",
+                  "shadow-[0_16px_34px_rgba(22,66,60,0.14)]",
+                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary-light)]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
               >
-                Family Engagement
+                {familyCard.title}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[250px] w-[230px]",
-                "rounded-[26px] border-[3px] border-[#cfd8e3]/95",
-                "bg-white/20 p-[18px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-border)]",
+                "bg-white/24 p-[18px]",
+                "shadow-[0_28px_80px_rgba(22,66,60,0.10)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(0,104,255,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_35%,rgba(22,66,60,0.04))]" />
 
               <div className="relative z-10 flex h-full items-center justify-center">
                 <ActiveAttendanceCard
                   item={mainCard}
-                  selected={selectedId === mainCard.id}
                   onSelect={() => setSelectedCard(mainCard)}
                 />
               </div>
@@ -781,6 +947,8 @@ export default function AttendanceSupport() {
                 selectedCard
               }
               onClose={() => setSelectedCard(null)}
+              openSectionText={text.openSection}
+              closeText={text.closeDetail}
             />
           ) : null}
         </AnimatePresence>

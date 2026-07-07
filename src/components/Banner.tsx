@@ -69,21 +69,21 @@ export default function Banner() {
         };
 
   return (
-    <section id="intro" className="relative min-h-screen overflow-hidden bg-[#f8fbff]">
+    <section id="intro" className="relative min-h-[100svh] overflow-hidden bg-[var(--sc-surface)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[#0068ff]/10 blur-[120px]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/10 blur-[120px]" />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55 }}
           className="mx-auto text-center"
         >
-          <p className="mb-2 text-[7px] font-bold uppercase tracking-[0.17em] text-slate-800 md:text-[9px]">
+          <p className="mb-2 text-[7px] font-bold uppercase tracking-[0.17em] text-[var(--sc-primary)] md:text-[9px]">
             UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
           </p>
-          <h1 className="text-[24px] font-black leading-[1.04] tracking-[-0.05em] text-[#0068ff] md:text-[38px] lg:text-[48px] xl:text-[54px]">
+          <h1 className="text-[24px] font-black leading-[1.04] tracking-[-0.05em] text-[var(--sc-primary)] md:text-[38px] lg:text-[48px] xl:text-[54px]">
             The K–12 Connected Operating System
           </h1>
         </motion.div>

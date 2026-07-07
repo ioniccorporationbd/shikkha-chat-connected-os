@@ -27,6 +27,11 @@ export default function ScrollLockedContentSection({
   const activeIdRef = useRef<string>("");
   const snapLockRef = useRef(false);
 
+  const shouldUseLockedDesktopScroll = () => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth >= 1100;
+  };
+
   const getRightSectionIds = () => {
     const panel = rightScrollRef.current;
     if (!panel) return [];
@@ -227,6 +232,8 @@ export default function ScrollLockedContentSection({
     }
 
     const handleWheel = (event: WheelEvent) => {
+      if (!shouldUseLockedDesktopScroll()) return;
+
       const metrics = getSectionMetrics();
       const currentPanel = rightScrollRef.current;
       if (!metrics || !currentPanel) return;
@@ -270,6 +277,8 @@ export default function ScrollLockedContentSection({
     };
 
     const handleTouchMove = (event: TouchEvent) => {
+      if (!shouldUseLockedDesktopScroll()) return;
+
       const metrics = getSectionMetrics();
       if (!metrics) return;
       if (touchStartYRef.current === null) return;
@@ -311,7 +320,23 @@ export default function ScrollLockedContentSection({
       const customEvent = event as CustomEvent<{ id?: string }>;
       const id = customEvent.detail?.id;
 
-      if (!id || !hasRightSection(id)) return;
+      if (!id) return;
+
+      if (!shouldUseLockedDesktopScroll()) {
+        const pageTarget = document.getElementById(id);
+
+        if (pageTarget) {
+          pageTarget.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          dispatchActiveSection(id);
+        }
+
+        return;
+      }
+
+      if (!hasRightSection(id)) return;
 
       const section = sectionRef.current;
 
@@ -379,18 +404,18 @@ export default function ScrollLockedContentSection({
     <section
       ref={sectionRef}
       id={sectionId}
-      className="relative h-screen overflow-hidden bg-white scroll-mt-0"
+      className="connected-scroll-section relative scroll-mt-0"
       data-connected-scroll-section="true"
     >
-      <div className="grid h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(430px,38vw)] 2xl:grid-cols-[minmax(0,1fr)_600px]">
-        <div className="relative hidden h-screen overflow-hidden bg-[#f7fbff] lg:block">
+      <div className="connected-scroll-grid">
+        <div className="connected-middle-pane relative">
           {middle}
         </div>
 
-        <aside className="h-screen overflow-hidden border-l border-slate-200 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.04)]">
+        <aside className="connected-right-pane bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.04)]">
           <div
             ref={rightScrollRef}
-            className="right-scroll-panel no-scrollbar h-full overflow-y-auto overscroll-contain scroll-auto"
+            className="connected-right-scroll-panel right-scroll-panel no-scrollbar overscroll-contain scroll-auto"
           >
             {right}
           </div>

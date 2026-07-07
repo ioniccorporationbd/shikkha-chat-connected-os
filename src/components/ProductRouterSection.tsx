@@ -40,9 +40,9 @@ const groups: ProductGroup[] = [
   {
     id: "home-connections",
     title: "Home Connections",
-    color: "#ff7438",
-    light: "#ffd19d",
-    dark: "#8a3419",
+    color: "#16423C",
+    light: "#EDE6B3",
+    dark: "#16423C",
     products: [
       {
         id: "student-information",
@@ -88,9 +88,9 @@ const groups: ProductGroup[] = [
   {
     id: "student-achievement",
     title: "Student Achievement",
-    color: "#9CF048",
-    light: "#d7ffb4",
-    dark: "#236000",
+    color: "#EDE6B3",
+    light: "#fff9d7",
+    dark: "#16423C",
     products: [
       {
         id: "classroom-solutions",
@@ -148,9 +148,9 @@ const groups: ProductGroup[] = [
   {
     id: "operational-excellence",
     title: "Operational Excellence",
-    color: "#ECC6FE",
-    light: "#e7b7fb",
-    dark: "#5B1276",
+    color: "#16423C",
+    light: "#EDE6B3",
+    dark: "#16423C",
     products: [
       {
         id: "resource-planning",
@@ -255,19 +255,19 @@ export default function ProductRouterSection() {
   }, [tab, savedIds]);
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f8fbff] px-6 py-20">
+    <section className="relative min-h-screen overflow-hidden bg-[var(--sc-surface)] px-6 py-20">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.75]" />
 
       <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center">
-        <div className="mb-12 flex overflow-hidden rounded-[10px] border border-[#0b72f0] bg-white shadow-[0_12px_36px_rgba(15,23,42,0.08)]">
+        <div className="mb-12 flex overflow-hidden rounded-[10px] border border-[var(--sc-primary)] bg-white shadow-[0_12px_36px_rgba(15,23,42,0.08)]">
           <button
             type="button"
             onClick={() => setTab("saved")}
             className={[
               "flex h-[54px] items-center gap-2 px-7 text-[18px] font-semibold transition",
               tab === "saved"
-                ? "bg-[#0b72f0] text-white"
-                : "bg-white text-[#0b72f0]",
+                ? "bg-[var(--sc-primary)] text-white"
+                : "bg-white text-[var(--sc-primary)]",
             ].join(" ")}
           >
             <FaStar className="text-[18px]" />
@@ -280,8 +280,8 @@ export default function ProductRouterSection() {
             className={[
               "h-[54px] px-8 text-[18px] font-semibold transition",
               tab === "all"
-                ? "bg-[#0b72f0] text-white"
-                : "bg-white text-[#0b72f0]",
+                ? "bg-[var(--sc-primary)] text-white"
+                : "bg-white text-[var(--sc-primary)]",
             ].join(" ")}
           >
             All Products
@@ -331,12 +331,12 @@ export default function ProductRouterSection() {
                           className={[
                             "group relative flex h-[118px] flex-col items-center justify-center rounded-[16px] border border-slate-200 p-3 text-center",
                             "transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(15,23,42,0.12)]",
-                            product.featured ? "items-start text-left" : "bg-[#dce8f2]",
+                            product.featured ? "items-start text-left" : "bg-[var(--sc-secondary-light)]",
                           ].join(" ")}
                           style={{
                             background: product.featured
                               ? group.light
-                              : "linear-gradient(180deg,#eaf2f8,#dbe8f2)",
+                              : "linear-gradient(180deg,#ffffff,#fff9d7)",
                           }}
                         >
                           <span
