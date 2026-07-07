@@ -5,40 +5,17 @@ import { ReactNode, useEffect, useRef } from "react";
 type ScrollLockedContentSectionProps = {
   middle: ReactNode;
   right: ReactNode;
+  sectionId?: string;
 };
-
-type ActiveSectionId =
-  | "home-connections-panel"
-  | "student-information"
-  | "sis"
-  | "enrollment"
-  | "special-programs"
-  | "family-engagement"
-  | "communications"
-  | "attendance-support";
-
-const rightSectionIds: ActiveSectionId[] = [
-  "home-connections-panel",
-  "student-information",
-  "sis",
-  "enrollment",
-  "special-programs",
-  "family-engagement",
-  "communications",
-  "attendance-support",
-];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function isActiveSectionId(id: string): id is ActiveSectionId {
-  return rightSectionIds.includes(id as ActiveSectionId);
-}
-
 export default function ScrollLockedContentSection({
   middle,
   right,
+  sectionId = "connected-os-content-section",
 }: ScrollLockedContentSectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
@@ -48,9 +25,24 @@ export default function ScrollLockedContentSection({
   const targetScrollRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
   const isProgrammaticScrollRef = useRef(false);
-  const activeIdRef = useRef<ActiveSectionId>("home-connections-panel");
+  const activeIdRef = useRef<string>("");
 
-  const dispatchActiveSection = (id: ActiveSectionId) => {
+  const getRightSectionIds = () => {
+    const panel = rightScrollRef.current;
+    if (!panel) return [];
+
+    return Array.from(panel.querySelectorAll<HTMLElement>("[id]"))
+      .map((element) => element.id)
+      .filter(Boolean);
+  };
+
+  const hasRightSection = (id: string) => {
+    const panel = rightScrollRef.current;
+    if (!panel) return false;
+    return Boolean(panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`));
+  };
+
+  const dispatchActiveSection = (id: string) => {
     if (activeIdRef.current === id) return;
 
     activeIdRef.current = id;
@@ -77,13 +69,16 @@ export default function ScrollLockedContentSection({
     const panel = rightScrollRef.current;
     if (!panel) return;
 
+    const ids = getRightSectionIds();
+    if (!ids.length) return;
+
     const panelCenter = panel.scrollTop + panel.clientHeight / 2;
 
-    let activeId: ActiveSectionId = rightSectionIds[0];
+    let activeId = ids[0];
     let closestDistance = Number.POSITIVE_INFINITY;
 
-    rightSectionIds.forEach((id) => {
-      const element = panel.querySelector<HTMLElement>(`#${id}`);
+    ids.forEach((id) => {
+      const element = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
       if (!element) return;
 
       const elementCenter = element.offsetTop + element.offsetHeight / 2;
@@ -116,14 +111,7 @@ export default function ScrollLockedContentSection({
 
     stopSmoothScroll();
 
-    /**
-     * Professional smoothness
-     *
-     * EASE 0.28 = soft
-     * EASE 0.34 = balanced professional
-     * EASE 0.42 = faster/native
-     */
-    const EASE = 0.34;
+    const EASE = 0.42;
 
     const animate = () => {
       const currentPanel = rightScrollRef.current;
@@ -169,11 +157,7 @@ export default function ScrollLockedContentSection({
       return false;
     }
 
-    /**
-     * Normal/native scroll speed
-     * Do not increase too much, otherwise auto-scroll feeling comes back.
-     */
-    const SPEED = 1;
+    const SPEED = 1.35;
 
     const baseScroll =
       animationFrameRef.current === null
@@ -188,11 +172,11 @@ export default function ScrollLockedContentSection({
     return true;
   };
 
-  const scrollRightPanelTo = (id: ActiveSectionId) => {
+  const scrollRightPanelTo = (id: string) => {
     const panel = rightScrollRef.current;
     if (!panel) return;
 
-    const target = panel.querySelector<HTMLElement>(`#${id}`);
+    const target = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
     if (!target) return;
 
     const maxScroll = panel.scrollHeight - panel.clientHeight;
@@ -200,13 +184,7 @@ export default function ScrollLockedContentSection({
 
     smoothScrollToTarget(targetTop);
 
-    window.dispatchEvent(
-      new CustomEvent("connected-os-active-section", {
-        detail: { id },
-      })
-    );
-
-    activeIdRef.current = id;
+    dispatchActiveSection(id);
   };
 
   useEffect(() => {
@@ -263,7 +241,7 @@ export default function ScrollLockedContentSection({
       const customEvent = event as CustomEvent<{ id?: string }>;
       const id = customEvent.detail?.id;
 
-      if (!id || !isActiveSectionId(id)) return;
+      if (!id || !hasRightSection(id)) return;
 
       const section = sectionRef.current;
 
@@ -290,9 +268,16 @@ export default function ScrollLockedContentSection({
       syncActiveSection();
     };
 
+    const handleWindowScroll = () => {
+      if (isSectionLockedInView()) {
+        syncActiveSection();
+      }
+    };
+
     window.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
     window.addEventListener(
       "connected-os-scroll-to-section",
       handleScrollToSection
@@ -300,17 +285,9 @@ export default function ScrollLockedContentSection({
 
     panel?.addEventListener("scroll", handlePanelScroll, { passive: true });
 
-    /**
-     * Initial active section sync.
-     * This makes LeftSidebar + MiddleSection show Home Connections first.
-     */
-    window.dispatchEvent(
-      new CustomEvent("connected-os-active-section", {
-        detail: { id: "home-connections-panel" },
-      })
-    );
-
-    syncActiveSection();
+    if (isSectionLockedInView()) {
+      syncActiveSection();
+    }
 
     return () => {
       stopSmoothScroll();
@@ -318,6 +295,7 @@ export default function ScrollLockedContentSection({
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("scroll", handleWindowScroll);
       window.removeEventListener(
         "connected-os-scroll-to-section",
         handleScrollToSection
@@ -330,16 +308,14 @@ export default function ScrollLockedContentSection({
   return (
     <section
       ref={sectionRef}
-      id="home-connections-content"
+      id={sectionId}
       className="relative h-screen overflow-hidden bg-white"
     >
       <div className="grid h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(430px,38vw)] 2xl:grid-cols-[minmax(0,1fr)_600px]">
-        {/* Middle section: still/fixed area */}
         <div className="relative hidden h-screen overflow-hidden bg-[#f7fbff] lg:block">
           {middle}
         </div>
 
-        {/* Right sidebar scroll area */}
         <aside className="h-screen overflow-hidden border-l border-slate-200 bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.04)]">
           <div
             ref={rightScrollRef}

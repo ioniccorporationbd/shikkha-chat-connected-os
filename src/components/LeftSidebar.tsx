@@ -176,8 +176,8 @@ function getGroupById(id: string): OpenGroup {
 
 function getGroupColor(group: OpenGroup, isMyConnected = false) {
   if (group === "home") return "#ff7438";
-  if (group === "student") return "#00a86b";
-  if (group === "operational") return "#8b5cf6";
+  if (group === "student") return "#9CF048";
+  if (group === "operational") return "#ECC6FE";
   if (isMyConnected) return "#0068ff";
   return "#0068ff";
 }
@@ -214,7 +214,11 @@ function smoothPageScrollTo(id: string) {
 }
 
 function handleSidebarNavigate(id: ActiveSectionId) {
-  if (isHomeConnectionSection(id)) {
+  if (
+    isHomeConnectionSection(id) ||
+    isStudentAchievementSection(id) ||
+    isOperationalExcellenceSection(id)
+  ) {
     moveRightSidebarTo(id);
     return;
   }
@@ -254,12 +258,12 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
     },
     {
       id: "student",
-      color: "#00a86b",
+      color: "#9CF048",
       active: activeType === "student",
     },
     {
       id: "operation",
-      color: "#8b5cf6",
+      color: "#ECC6FE",
       active: activeType === "operation",
     },
   ];
@@ -330,7 +334,7 @@ function SidebarChildLink({
         background: active
           ? `linear-gradient(90deg, ${color}22, ${color}0f)`
           : "transparent",
-        color: active ? color : undefined,
+        color: active ? (color === "#9CF048" ? "#236000" : color === "#ECC6FE" ? "#5B1276" : color) : undefined,
       }}
     >
       {active ? (
