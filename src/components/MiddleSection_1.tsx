@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import HomeConnections from "@/components/MiddleSectionComponents/HomeConnections";
-import StudentInformation from "@/components/MiddleSectionComponents/StudentInformation";
-import SIS from "@/components/MiddleSectionComponents/SIS";
-import Enrollment from "@/components/MiddleSectionComponents/Enrollment";
-import SpecialPrograms from "@/components/MiddleSectionComponents/SpecialPrograms";
-import FamilyEngagement from "@/components/MiddleSectionComponents/FamilyEngagement";
-import Communications from "@/components/MiddleSectionComponents/Communications";
-import AttendanceSupport from "@/components/MiddleSectionComponents/AttendanceSupport";
+import HomeConnections from "@/components/MiddleSectionComponents_1/HomeConnections";
+import StudentInformation from "@/components/MiddleSectionComponents_1/StudentInformation";
+import SIS from "@/components/MiddleSectionComponents_1/SIS";
+import Enrollment from "@/components/MiddleSectionComponents_1/Enrollment";
+import SpecialPrograms from "@/components/MiddleSectionComponents_1/SpecialPrograms";
+import FamilyEngagement from "@/components/MiddleSectionComponents_1/FamilyEngagement";
+import Communications from "@/components/MiddleSectionComponents_1/Communications";
+import AttendanceSupport from "@/components/MiddleSectionComponents_1/AttendanceSupport";
 
 type ActiveSectionId =
   | "home-connections-panel"

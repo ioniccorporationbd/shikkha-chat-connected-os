@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -14,8 +14,26 @@ type ActiveSectionId =
   | "communications"
   | "attendance-support"
   | "student-achievement"
+  | "classroom-solutions"
+  | "learning-management-schoology"
+  | "assessment-performance-matters"
+  | "curriculum-instruction"
+  | "student-intervention"
+  | "mtss"
+  | "behavior-support"
+  | "college-career-life-readiness"
+  | "cclr-naviance"
   | "operational-excellence"
+  | "resource-planning"
+  | "financial-strategy-allovue"
+  | "erp-systems"
+  | "predictive-enrollment"
+  | "talent-management"
+  | "recruiting-and-hr"
+  | "educator-support"
   | "my-connected-os";
+
+type OpenGroup = "home" | "student" | "operational" | null;
 
 type MenuChild = {
   title: string;
@@ -25,6 +43,7 @@ type MenuChild = {
 type MenuGroup = {
   title: string;
   href: string;
+  group?: OpenGroup;
   children?: MenuChild[];
 };
 
@@ -32,6 +51,7 @@ const menu: MenuGroup[] = [
   {
     title: "Home Connections",
     href: "#home-connections-panel",
+    group: "home",
     children: [
       { title: "Student Information", href: "#student-information" },
       { title: "SIS", href: "#sis" },
@@ -42,8 +62,50 @@ const menu: MenuGroup[] = [
       { title: "Attendance Support", href: "#attendance-support" },
     ],
   },
-  { title: "Student Achievement", href: "#student-achievement" },
-  { title: "Operational Excellence", href: "#operational-excellence" },
+  {
+    title: "Student Achievement",
+    href: "#student-achievement",
+    group: "student",
+    children: [
+      { title: "Student Achievement", href: "#student-achievement" },
+      { title: "Classroom Solutions", href: "#classroom-solutions" },
+      {
+        title: "Learning Management (Schoology)",
+        href: "#learning-management-schoology",
+      },
+      {
+        title: "Assessment (Performance Matters)",
+        href: "#assessment-performance-matters",
+      },
+      { title: "Curriculum & Instruction", href: "#curriculum-instruction" },
+      { title: "Student Intervention", href: "#student-intervention" },
+      { title: "MTSS", href: "#mtss" },
+      { title: "Behavior Support", href: "#behavior-support" },
+      {
+        title: "College, Career & Life Readiness",
+        href: "#college-career-life-readiness",
+      },
+      { title: "CCLR (Naviance)", href: "#cclr-naviance" },
+    ],
+  },
+  {
+    title: "Operational Excellence",
+    href: "#operational-excellence",
+    group: "operational",
+    children: [
+      { title: "Operational Excellence", href: "#operational-excellence" },
+      { title: "Resource Planning", href: "#resource-planning" },
+      {
+        title: "Financial Strategy (Allovue)",
+        href: "#financial-strategy-allovue",
+      },
+      { title: "ERP Systems", href: "#erp-systems" },
+      { title: "Predictive Enrollment", href: "#predictive-enrollment" },
+      { title: "Talent Management", href: "#talent-management" },
+      { title: "Recruiting and HR", href: "#recruiting-and-hr" },
+      { title: "Educator Support", href: "#educator-support" },
+    ],
+  },
   { title: "★ My Connected OS", href: "#my-connected-os" },
 ];
 
@@ -58,10 +120,34 @@ const homeConnectionSectionIds: ActiveSectionId[] = [
   "attendance-support",
 ];
 
+const studentAchievementSectionIds: ActiveSectionId[] = [
+  "student-achievement",
+  "classroom-solutions",
+  "learning-management-schoology",
+  "assessment-performance-matters",
+  "curriculum-instruction",
+  "student-intervention",
+  "mtss",
+  "behavior-support",
+  "college-career-life-readiness",
+  "cclr-naviance",
+];
+
+const operationalExcellenceSectionIds: ActiveSectionId[] = [
+  "operational-excellence",
+  "resource-planning",
+  "financial-strategy-allovue",
+  "erp-systems",
+  "predictive-enrollment",
+  "talent-management",
+  "recruiting-and-hr",
+  "educator-support",
+];
+
 const allSectionIds: ActiveSectionId[] = [
   ...homeConnectionSectionIds,
-  "student-achievement",
-  "operational-excellence",
+  ...studentAchievementSectionIds,
+  ...operationalExcellenceSectionIds,
   "my-connected-os",
 ];
 
@@ -71,6 +157,29 @@ function getIdFromHref(href: string) {
 
 function isHomeConnectionSection(id: string) {
   return homeConnectionSectionIds.includes(id as ActiveSectionId);
+}
+
+function isStudentAchievementSection(id: string) {
+  return studentAchievementSectionIds.includes(id as ActiveSectionId);
+}
+
+function isOperationalExcellenceSection(id: string) {
+  return operationalExcellenceSectionIds.includes(id as ActiveSectionId);
+}
+
+function getGroupById(id: string): OpenGroup {
+  if (isHomeConnectionSection(id)) return "home";
+  if (isStudentAchievementSection(id)) return "student";
+  if (isOperationalExcellenceSection(id)) return "operational";
+  return null;
+}
+
+function getGroupColor(group: OpenGroup, isMyConnected = false) {
+  if (group === "home") return "#ff7438";
+  if (group === "student") return "#00a86b";
+  if (group === "operational") return "#8b5cf6";
+  if (isMyConnected) return "#0068ff";
+  return "#0068ff";
 }
 
 function dispatchActiveSection(id: string) {
@@ -93,14 +202,24 @@ function moveRightSidebarTo(id: string) {
 
 function smoothPageScrollTo(id: string) {
   const element = document.getElementById(id);
-  if (!element) return;
 
-  element.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
+  if (element) {
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   dispatchActiveSection(id);
+}
+
+function handleSidebarNavigate(id: ActiveSectionId) {
+  if (isHomeConnectionSection(id)) {
+    moveRightSidebarTo(id);
+    return;
+  }
+
+  smoothPageScrollTo(id);
 }
 
 function Logo() {
@@ -121,9 +240,9 @@ function Logo() {
 }
 
 function MiniOsIcon({ activeId }: { activeId: string }) {
-  const activeType = activeId.includes("student-achievement")
+  const activeType = isStudentAchievementSection(activeId)
     ? "student"
-    : activeId.includes("operational-excellence")
+    : isOperationalExcellenceSection(activeId)
       ? "operation"
       : "home";
 
@@ -183,9 +302,13 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
 function SidebarChildLink({
   child,
   active,
+  color,
+  index,
 }: {
   child: MenuChild;
   active: boolean;
+  color: string;
+  index: number;
 }) {
   const id = getIdFromHref(child.href);
 
@@ -194,21 +317,40 @@ function SidebarChildLink({
       href={child.href}
       onClick={(event) => {
         event.preventDefault();
-        moveRightSidebarTo(id);
+        handleSidebarNavigate(id);
       }}
       className={[
-        "relative block rounded-lg px-3 py-2 text-[12.5px] font-semibold transition-all duration-300",
-        "hover:translate-x-1 hover:bg-[#ff7438]/10",
+        "group relative flex items-center gap-2 rounded-lg px-3 py-2 text-[12.2px] font-semibold transition-all duration-300",
+        "hover:translate-x-1",
         active
-          ? "bg-[#ffd09a] font-black text-[#7a270b] shadow-[0_10px_22px_rgba(255,116,56,0.16)]"
-          : "text-slate-700",
+          ? "font-black shadow-[0_10px_24px_rgba(15,23,42,0.13)]"
+          : "text-slate-700 hover:bg-white/80",
       ].join(" ")}
+      style={{
+        background: active
+          ? `linear-gradient(90deg, ${color}22, ${color}0f)`
+          : "transparent",
+        color: active ? color : undefined,
+      }}
     >
       {active ? (
-        <span className="absolute -left-4 top-2 h-6 w-1 rounded-r-full bg-[#ff7438]" />
+        <span
+          className="absolute -left-4 top-2 h-6 w-1 rounded-r-full"
+          style={{ background: color }}
+        />
       ) : null}
 
-      {child.title}
+      <span
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-[9px] font-black"
+        style={{
+          background: active ? color : "#e2e8f0",
+          color: active ? "#ffffff" : "#64748b",
+        }}
+      >
+        {index}
+      </span>
+
+      <span className="leading-[1.1]">{child.title}</span>
     </Link>
   );
 }
@@ -224,7 +366,7 @@ function SidebarLink({
   href: string;
   active: boolean;
   color: string;
-  onClick: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <Link
@@ -233,12 +375,18 @@ function SidebarLink({
       className={[
         "group relative block rounded-xl px-3 py-2.5 font-black transition-all duration-300",
         "hover:translate-x-1 hover:bg-slate-100",
-        active ? "bg-[#eaf4ff] shadow-[0_10px_24px_rgba(0,104,255,0.08)]" : "",
+        active ? "shadow-[0_10px_24px_rgba(0,104,255,0.1)]" : "",
       ].join(" ")}
-      style={{ color }}
+      style={{
+        color,
+        background: active ? `${color}14` : "transparent",
+      }}
     >
       {active ? (
-        <span className="absolute -left-5 top-2 h-7 w-1 rounded-r-full bg-[#0068ff]" />
+        <span
+          className="absolute -left-5 top-2 h-7 w-1 rounded-r-full"
+          style={{ background: color }}
+        />
       ) : null}
 
       <span>{title}</span>
@@ -250,7 +398,7 @@ export default function LeftSidebar() {
   const [activeId, setActiveId] =
     useState<ActiveSectionId>("home-connections-panel");
 
-  const [openHome, setOpenHome] = useState(true);
+  const [openGroup, setOpenGroup] = useState<OpenGroup>("home");
 
   useEffect(() => {
     const handleActiveSection = (event: Event) => {
@@ -262,9 +410,8 @@ export default function LeftSidebar() {
       if (allSectionIds.includes(id)) {
         setActiveId(id);
 
-        if (isHomeConnectionSection(id)) {
-          setOpenHome(true);
-        }
+        const nextGroup = getGroupById(id);
+        setOpenGroup(nextGroup);
       }
     };
 
@@ -280,6 +427,14 @@ export default function LeftSidebar() {
 
   const homeGroupActive = useMemo(() => {
     return isHomeConnectionSection(activeId);
+  }, [activeId]);
+
+  const studentGroupActive = useMemo(() => {
+    return isStudentAchievementSection(activeId);
+  }, [activeId]);
+
+  const operationalGroupActive = useMemo(() => {
+    return isOperationalExcellenceSection(activeId);
   }, [activeId]);
 
   return (
@@ -306,33 +461,45 @@ export default function LeftSidebar() {
                 (child) => getIdFromHref(child.href) === activeId
               ) ||
               itemId === activeId ||
-              (item.href === "#home-connections-panel" && homeGroupActive);
+              (item.href === "#home-connections-panel" && homeGroupActive) ||
+              (item.href === "#student-achievement" && studentGroupActive) ||
+              (item.href === "#operational-excellence" &&
+                operationalGroupActive);
 
-            const color = item.title.includes("Student")
-              ? "#006642"
-              : item.title.includes("Operational")
-                ? "#5b21b6"
-                : "#7a270b";
+            const group = item.group ?? null;
+            const color = getGroupColor(group, item.title.includes("My"));
 
-            if (item.children) {
+            const openState = group ? openGroup === group : false;
+
+            if (item.children && group) {
               return (
                 <div key={item.title}>
                   <button
                     type="button"
                     onClick={() => {
-                      setOpenHome((current) => !current);
+                      setOpenGroup((current) =>
+                        current === group ? null : group
+                      );
                     }}
                     className={[
                       "group relative flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left font-black transition-all duration-300",
-                      "hover:translate-x-1 hover:bg-[#ff7438]/10",
+                      "hover:translate-x-1",
                       activeGroup
-                        ? "bg-[#fff2e8] shadow-[0_12px_26px_rgba(255,116,56,0.1)]"
+                        ? "shadow-[0_12px_26px_rgba(15,23,42,0.1)]"
                         : "",
                     ].join(" ")}
-                    style={{ color }}
+                    style={{
+                      color,
+                      background: activeGroup
+                        ? `linear-gradient(90deg, ${color}1f, ${color}0d)`
+                        : "transparent",
+                    }}
                   >
                     {activeGroup ? (
-                      <span className="absolute -left-5 top-2 h-7 w-1 rounded-r-full bg-[#ff7438]" />
+                      <span
+                        className="absolute -left-5 top-2 h-7 w-1 rounded-r-full"
+                        style={{ background: color }}
+                      />
                     ) : null}
 
                     <span>{item.title}</span>
@@ -340,7 +507,7 @@ export default function LeftSidebar() {
                     <span
                       className={[
                         "transition-transform duration-300",
-                        openHome ? "rotate-180" : "",
+                        openState ? "rotate-180" : "",
                       ].join(" ")}
                     >
                       ⌄
@@ -350,30 +517,40 @@ export default function LeftSidebar() {
                   <div
                     className={[
                       "grid transition-all duration-500",
-                      openHome
+                      openState
                         ? "grid-rows-[1fr] opacity-100"
                         : "grid-rows-[0fr] opacity-0",
                     ].join(" ")}
                   >
                     <div className="overflow-hidden">
                       <div className="mt-1 space-y-1.5 pl-4">
-                        <SidebarChildLink
-                          child={{
-                            title: "Overview",
-                            href: "#home-connections-panel",
-                          }}
-                          active={activeId === "home-connections-panel"}
-                        />
+                        {item.href === "#home-connections-panel" ? (
+                          <SidebarChildLink
+                            child={{
+                              title: "Overview",
+                              href: "#home-connections-panel",
+                            }}
+                            active={activeId === "home-connections-panel"}
+                            color={color}
+                            index={1}
+                          />
+                        ) : null}
 
-                        {item.children.map((child) => {
+                        {item.children.map((child, childIndex) => {
                           const childId = getIdFromHref(child.href);
                           const active = activeId === childId;
+                          const number =
+                            item.href === "#home-connections-panel"
+                              ? childIndex + 2
+                              : childIndex + 1;
 
                           return (
                             <SidebarChildLink
                               key={child.href}
                               child={child}
                               active={active}
+                              color={color}
+                              index={number}
                             />
                           );
                         })}
@@ -395,13 +572,8 @@ export default function LeftSidebar() {
                 color={color}
                 onClick={(event) => {
                   event.preventDefault();
-
-                  if (isHomeConnectionSection(itemId)) {
-                    moveRightSidebarTo(itemId);
-                    return;
-                  }
-
-                  smoothPageScrollTo(itemId);
+                  setOpenGroup(null);
+                  handleSidebarNavigate(itemId);
                 }}
               />
             );
@@ -409,7 +581,6 @@ export default function LeftSidebar() {
         </nav>
 
         <div className="mt-auto pt-8">
-      
           <Link
             href="#connect"
             className="flex h-12 items-center justify-center rounded-xl bg-[#0068ff] text-[14px] font-black text-white shadow-[0_14px_28px_rgba(0,104,255,0.25)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#005be0]"
