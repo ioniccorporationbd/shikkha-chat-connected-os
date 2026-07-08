@@ -42,32 +42,32 @@ const sectionText = {
     goTo: "সেকশনে যান",
     cards: {
       "student-information": {
-        title: "শিক্ষার্থী তথ্য",
-        subtitle: "প্রোফাইল",
+        title: "শিক্ষার্থীর তথ্য",
+        subtitle: "শিক্ষার্থী প্রোফাইল",
       },
       sis: {
-        title: "এসআইএস",
-        subtitle: "কোর সিস্টেম",
+        title: "শিক্ষার্থী তথ্য ব্যবস্থা",
+        subtitle: "মূল ব্যবস্থাপনা",
       },
       enrollment: {
-        title: "ভর্তি",
-        subtitle: "অ্যাডমিশন",
+        title: "ভর্তি ব্যবস্থাপনা",
+        subtitle: "ভর্তি প্রক্রিয়া",
       },
       "special-programs": {
-        title: "বিশেষ প্রোগ্রাম",
-        subtitle: "সহায়তা",
+        title: "বিশেষ কার্যক্রম",
+        subtitle: "সহায়তা কার্যক্রম",
       },
       "family-engagement": {
-        title: "পরিবার সম্পৃক্ততা",
+        title: "পরিবারের সম্পৃক্ততা",
         subtitle: "প্রধান এলাকা",
       },
       communications: {
-        title: "যোগাযোগ",
-        subtitle: "স্কুল মেসেঞ্জার",
+        title: "যোগাযোগ ব্যবস্থা",
+        subtitle: "স্কুল বার্তা",
       },
       "attendance-support": {
         title: "উপস্থিতি সহায়তা",
-        subtitle: "রেসপন্স",
+        subtitle: "দ্রুত সাড়া",
       },
     },
   },
@@ -77,19 +77,19 @@ const sectionText = {
     cards: {
       "student-information": {
         title: "Student Information",
-        subtitle: "Profile",
+        subtitle: "Student Profile",
       },
       sis: {
-        title: "SIS",
-        subtitle: "Core System",
+        title: "Student Information System",
+        subtitle: "Core Management",
       },
       enrollment: {
-        title: "Enrollment",
-        subtitle: "Admission",
+        title: "Enrollment Management",
+        subtitle: "Admission Process",
       },
       "special-programs": {
         title: "Special Programs",
-        subtitle: "Support",
+        subtitle: "Support Programs",
       },
       "family-engagement": {
         title: "Family Engagement",
@@ -101,7 +101,7 @@ const sectionText = {
       },
       "attendance-support": {
         title: "Attendance Support",
-        subtitle: "Response",
+        subtitle: "Quick Response",
       },
     },
   },
@@ -241,7 +241,7 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "bg-[var(--sc-secondary-light)] shadow-lg",
+        "bg-[var(--color-secondary-light)] shadow-[0_14px_32px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]",
         className,
       ].join(" ")}
       animate={
@@ -303,20 +303,20 @@ function ProductTile({
         "flex flex-col items-center justify-center text-center outline-none",
         "border transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         item.featured
-          ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)]"
-          : "border-[var(--sc-border)] bg-[var(--sc-white)]",
-        "shadow-lg hover:shadow-2xl",
+          ? "border-[var(--color-primary)] bg-[var(--color-secondary-light)]"
+          : "border-[var(--color-border-soft)] bg-[var(--color-white)]",
+        "shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-60" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-60" />
 
-      <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-primary)_0.8px,transparent_0.8px)] [background-size:12px_12px] opacity-[0.08]" />
+      <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_0.8px,transparent_0.8px)] [background-size:12px_12px] opacity-[0.08]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -331,10 +331,10 @@ function ProductTile({
         }
       />
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12.5px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12.5px] text-[var(--color-primary)] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[8px] text-[25px] leading-none text-[var(--sc-primary)] drop-shadow-sm transition-all duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-[8px] text-[25px] leading-none text-[var(--color-primary)] drop-shadow-sm transition-all duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -342,7 +342,7 @@ function ProductTile({
       <div
         className={[
           "relative z-10 flex min-h-[34px] max-w-[88px] items-center justify-center",
-          "text-center font-normal tracking-[-0.035em] text-[var(--sc-primary)]",
+          "text-center font-semibold tracking-[-0.035em] text-[var(--color-primary)]",
           "transition-colors duration-500",
           isSingleWord
             ? "text-[14px] leading-none"
@@ -355,12 +355,12 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.6px] font-normal leading-none text-[var(--sc-muted)]">
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.6px] font-medium leading-none text-[var(--color-text-gray)]">
           {item.subtitle}
         </p>
       ) : null}
 
-      <span className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-0 -translate-x-1/2 rounded-full bg-[var(--sc-primary)] transition-all duration-500 group-hover:w-[28px]" />
+      <span className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-0 -translate-x-1/2 rounded-full bg-[var(--color-primary)] transition-all duration-500 group-hover:w-[28px]" />
     </motion.button>
   );
 }
@@ -374,7 +374,7 @@ function MobileTabletView({
 }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-[660px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border border-[var(--sc-border)] bg-[var(--sc-white)]/90 p-5 shadow-xl backdrop-blur-xl">
+      <div className="rounded-[30px] border border-[var(--color-border-soft)] bg-[var(--color-white)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-xl">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {products.map((product) => (
             <button
@@ -385,23 +385,23 @@ function MobileTabletView({
               className={[
                 "group rounded-[22px] border p-4 text-left transition duration-300",
                 product.featured
-                  ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)]"
-                  : "border-[var(--sc-border)] bg-[var(--sc-white)] hover:bg-[var(--sc-secondary-light)]",
-                "hover:-translate-y-1 hover:shadow-lg",
+                  ? "border-[var(--color-primary)] bg-[var(--color-secondary-light)]"
+                  : "border-[var(--color-border-soft)] bg-[var(--color-white)] hover:bg-[var(--color-secondary-light)]",
+                "hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]",
               ].join(" ")}
             >
               <div className="flex items-start gap-3">
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--sc-primary)] text-[22px] text-[var(--sc-white)]">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[22px] text-[var(--color-text-inverse)]">
                   {product.icon ?? <FaUsers />}
                 </div>
 
                 <div>
-                  <h3 className="text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--sc-primary)]">
+                  <h3 className="text-[18px] font-bold leading-[1.08] tracking-[-0.045em] text-[var(--color-primary)]">
                     {product.title}
                   </h3>
 
                   {product.subtitle ? (
-                    <p className="mt-1 text-[12px] font-normal text-[var(--sc-muted)]">
+                    <p className="mt-1 text-[12px] font-medium text-[var(--color-text-gray)]">
                       {product.subtitle}
                     </p>
                   ) : null}
@@ -430,12 +430,12 @@ export default function HomeConnections() {
   }, [text]);
 
   return (
-    <div className="relative h-full min-h-[660px] w-full overflow-hidden bg-[var(--sc-bg)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
+    <div className="relative h-full min-h-[660px] w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-border-soft)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-75 blur-[78px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-75 blur-[78px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -453,7 +453,7 @@ export default function HomeConnections() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[52%] top-[48%] h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-secondary)] blur-[92px]"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-secondary)] blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -469,8 +469,8 @@ export default function HomeConnections() {
         }}
       />
 
-      <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[var(--sc-secondary-light)] blur-[82px]" />
-      <div className="pointer-events-none absolute bottom-[-12%] right-[18%] h-[270px] w-[270px] rounded-full bg-[var(--sc-secondary)] blur-[92px]" />
+      <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[var(--color-secondary-light)] blur-[82px]" />
+      <div className="pointer-events-none absolute bottom-[-12%] right-[18%] h-[270px] w-[270px] rounded-full bg-[var(--color-secondary)] blur-[92px]" />
 
       <FloatingDot className="left-[25%] top-[18%] h-[13px] w-[13px]" delay={0.1} />
       <FloatingDot className="right-[25%] top-[18%] h-[9px] w-[9px]" delay={0.8} />
@@ -488,7 +488,7 @@ export default function HomeConnections() {
         >
           <motion.div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[var(--sc-white)] opacity-35 blur-[34px]"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[var(--color-white)] opacity-35 blur-[34px]"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -521,20 +521,20 @@ export default function HomeConnections() {
             className={[
               "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
               "h-[38px] min-w-[224px] rounded-full",
-              "bg-[var(--sc-primary)]",
-              "px-[30px] text-[14px] font-semibold leading-[38px] text-[var(--sc-white)]",
-              "whitespace-nowrap shadow-xl transition-shadow duration-500 hover:shadow-2xl",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+              "bg-[var(--color-primary)]",
+              "px-[30px] text-[14px] font-bold leading-[38px] text-[var(--color-text-inverse)]",
+              "whitespace-nowrap shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition-shadow duration-500 hover:bg-[var(--color-primary)] hover:shadow-[0_24px_64px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
             ].join(" ")}
           >
             {text.title}
 
             <motion.span
               aria-hidden="true"
-              className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--sc-primary)]"
+              className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--color-primary)]"
             >
               <motion.span
-                className="absolute left-0 top-0 h-[40%] w-full rounded-full bg-[var(--sc-white)]"
+                className="absolute left-0 top-0 h-[40%] w-full rounded-full bg-[var(--color-white)]"
                 animate={
                   shouldReduceMotion
                     ? undefined
@@ -554,16 +554,16 @@ export default function HomeConnections() {
           <div
             className={[
               "relative h-[430px] w-[224px]",
-              "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
-              "bg-[var(--sc-white)]/24 p-[8px]",
-              "shadow-xl backdrop-blur-[4px]",
+              "rounded-[26px] border-[3px] border-[var(--color-primary)]",
+              "bg-[var(--color-white)] p-[8px]",
+              "shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-[4px]",
             ].join(" ")}
           >
-            <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-30" />
+            <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-30" />
 
             <motion.span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[var(--sc-primary)]"
+              className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[var(--color-primary)]"
               animate={
                 shouldReduceMotion
                   ? undefined

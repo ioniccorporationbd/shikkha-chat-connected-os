@@ -2,20 +2,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
+  /* Main Brand Colors */
+  --color-primary: #16423c;
+  --color-primary-dark: #0b2f2a;
+  --color-secondary: #ede6b3;
+  --color-secondary-light: #fff9d7;
+  --color-white: #ffffff;
+  --color-black: #071513;
+  --color-surface: #fbfcf7;
 
+  /* Text Colors */
+  --color-text-primary: #111827;
+  --color-text-secondary: #31465d;
+  --color-text-blue: #2563eb;
+  --color-text-red: #dc2626;
+  --color-text-gray: #6b7280;
+  --color-text-inverse: var(--color-white);
+
+  /* Soft UI Colors */
+  --color-border-soft: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  --color-border-strong: color-mix(in srgb, var(--color-primary) 28%, transparent);
+  --color-shadow-soft: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  --color-shadow-medium: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  --color-shadow-strong: color-mix(in srgb, var(--color-primary) 28%, transparent);
+  --color-blue-soft: color-mix(in srgb, var(--color-text-blue) 10%, var(--color-white));
+  --color-red-soft: color-mix(in srgb, var(--color-text-red) 10%, var(--color-white));
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
+  --color-secondary-soft: color-mix(in srgb, var(--color-secondary) 42%, var(--color-white));
+
+  /* Background / Foreground */
+  --background: var(--color-white);
+  --foreground: var(--color-text-primary);
+
+  /* Fonts */
   --font-english: "Inter";
   --font-bangla: "Noto Serif Bengali";
 
-  --primary-blue: #0068ff;
-  --primary-orange: #ff7438;
-  --soft-orange: #ffd09a;
-  --soft-blue: #eaf4ff;
-
-  --text-dark: #202833;
-  --text-muted: #4b5563;
-  --border-soft: rgba(148, 163, 184, 0.28);
+  /* Backward Compatibility For Old --sc-* Components */
+  --sc-primary: var(--color-primary);
+  --sc-primary-dark: var(--color-primary-dark);
+  --sc-secondary: var(--color-secondary);
+  --sc-secondary-light: var(--color-secondary-light);
+  --sc-white: var(--color-white);
+  --sc-black: var(--color-black);
+  --sc-bg: var(--color-white);
+  --sc-surface: var(--color-surface);
+  --sc-muted: var(--color-text-gray);
+  --sc-border: var(--color-border-soft);
+  --sc-text: var(--color-text-primary);
+  --sc-text-secondary: var(--color-text-secondary);
+  --sc-text-inverse: var(--color-text-inverse);
+  --sc-blue-soft: var(--color-blue-soft);
+  --sc-red-soft: var(--color-red-soft);
 }
 
 *,
@@ -25,10 +63,34 @@
 }
 
 html {
-  scroll-behavior: smooth;
   width: 100%;
   min-height: 100%;
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+html[data-lang="bn"] {
+  font-family:
+    var(--font-bangla),
+    var(--font-english),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+html[data-lang="en"] {
+  font-family:
+    var(--font-english),
+    var(--font-bangla),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 body {
@@ -38,14 +100,7 @@ body {
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family:
-    var(--font-english),
-    var(--font-bangla),
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: inherit;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -72,6 +127,10 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -86,8 +145,13 @@ canvas {
 }
 
 ::selection {
-  background: rgba(255, 116, 56, 0.24);
-  color: #111827;
+  background: color-mix(in srgb, var(--color-secondary) 72%, transparent);
+  color: var(--color-primary);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  outline-offset: 4px;
 }
 
 /* Smooth native scrollbar behavior */
@@ -106,10 +170,11 @@ canvas {
   display: none;
 }
 
-/* Better visible scrollbar utility if needed */
+/* Better visible scrollbar utility */
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 104, 255, 0.35) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent)
+    transparent;
 }
 
 .thin-scrollbar::-webkit-scrollbar {
@@ -122,11 +187,11 @@ canvas {
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(0, 104, 255, 0.35);
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 104, 255, 0.55);
+  background: color-mix(in srgb, var(--color-primary) 55%, transparent);
 }
 
 /* Global smooth section motion */
@@ -162,9 +227,9 @@ canvas {
 
 /* Middle section should stay still */
 .middle-still-section {
+  position: relative;
   height: 100vh;
   overflow: hidden;
-  position: relative;
 }
 
 /* Prevent horizontal overflow from animation */
@@ -175,60 +240,7 @@ div {
   min-width: 0;
 }
 
-/* Better focus style */
-:focus-visible {
-  outline: 3px solid rgba(0, 104, 255, 0.35);
-  outline-offset: 4px;
-}
-
-/* Motion safe */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Mobile improvements */
-@media (max-width: 1023px) {
-  body {
-    font-size: 15px;
-  }
-}
-/* Shikkha Chat global brand system */
-:root {
-  --sc-primary: #16423c;
-  --sc-primary-dark: #0b2f2a;
-  --sc-primary-soft: rgba(22, 66, 60, 0.1);
-  --sc-secondary: #ede6b3;
-  --sc-secondary-light: #fff9d7;
-  --sc-secondary-soft: rgba(237, 230, 179, 0.42);
-  --sc-white: #ffffff;
-  --sc-black: #071513;
-  --sc-surface: #fbfcf7;
-  --sc-border: rgba(22, 66, 60, 0.16);
-  --sc-muted: #5f6f6b;
-  --primary-blue: var(--sc-primary);
-  --primary-orange: var(--sc-secondary);
-  --soft-orange: var(--sc-secondary-light);
-  --soft-blue: rgba(22, 66, 60, 0.08);
-  --text-dark: var(--sc-black);
-  --text-muted: var(--sc-muted);
-}
-
-body {
-  background: var(--sc-white);
-  color: var(--sc-black);
-}
-
+/* Site shell */
 .site-content-shell {
   padding-left: 0;
 }
@@ -239,8 +251,11 @@ body {
   }
 }
 
+/* Sidebar layout */
 .connected-sidebar {
   transform: translateX(-100%);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .connected-sidebar.is-open {
@@ -259,10 +274,12 @@ body {
   }
 }
 
+/* Connected OS global layout */
 .connected-scroll-section {
   min-height: 100svh;
   overflow: visible;
-  background: var(--sc-white);
+  background: var(--color-white);
+  color: var(--color-primary);
 }
 
 .connected-scroll-grid {
@@ -279,13 +296,16 @@ body {
   min-height: 100svh;
   overflow: visible;
   border-left: 0;
-  background: var(--sc-white);
+  background: var(--color-white);
+  color: var(--color-primary);
 }
 
 .connected-right-scroll-panel {
   height: auto;
   min-height: 100svh;
   overflow: visible;
+  background: var(--color-white);
+  color: var(--color-primary);
 }
 
 @media (min-width: 1100px) {
@@ -307,7 +327,8 @@ body {
     height: 100vh;
     height: 100svh;
     overflow: hidden;
-    background: #f8fbf5;
+    background: var(--color-surface);
+    color: var(--color-primary);
   }
 
   .connected-right-pane {
@@ -315,7 +336,7 @@ body {
     height: 100svh;
     min-height: 0;
     overflow: hidden;
-    border-left: 1px solid var(--sc-border);
+    border-left: 1px solid var(--color-border-soft);
   }
 
   .connected-right-scroll-panel {
@@ -346,32 +367,158 @@ body {
   }
 }
 
-html[data-lang="bn"] body {
-  font-family:
-    var(--font-bangla),
-    var(--font-english),
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-}
-
-html[data-lang="en"] body {
-  font-family:
-    var(--font-english),
-    var(--font-bangla),
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-}
-
+/* Language toggle */
 .language-toggle-knob {
   transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html[data-lang="en"] .language-toggle-knob {
   transform: translateX(34px);
+}
+
+/* Global brand helper classes */
+.sc-section-bg {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.sc-card {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  box-shadow: 0 24px 70px var(--color-shadow-soft);
+}
+
+.sc-card-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.sc-soft-card {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-primary-soft);
+  color: var(--color-text-secondary);
+}
+
+.sc-title-pill {
+  border: 3px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: 0 20px 54px
+    color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+.sc-title-pill:hover {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.sc-muted-text {
+  color: var(--color-text-gray);
+}
+
+.sc-primary-text {
+  color: var(--color-primary);
+}
+
+.sc-secondary-text {
+  color: var(--color-text-secondary);
+}
+
+.sc-blue-text {
+  color: var(--color-text-blue);
+}
+
+.sc-red-text {
+  color: var(--color-text-red);
+}
+
+.sc-primary-bg {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.sc-secondary-bg {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.sc-surface-bg {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.sc-white-bg {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+.sc-blue-soft-bg {
+  background: var(--color-blue-soft);
+  color: var(--color-text-blue);
+}
+
+.sc-red-soft-bg {
+  background: var(--color-red-soft);
+  color: var(--color-text-red);
+}
+
+/* Home / Connected section helpers */
+.home-connections-section {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+.connected-section-bg {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+.connected-section-surface {
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.connected-card {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-white);
+  color: var(--color-primary);
+  box-shadow: 0 24px 70px var(--color-shadow-soft);
+}
+
+.connected-card-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: 0 26px 70px var(--color-shadow-medium);
+}
+
+.connected-card-soft {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-secondary-light);
+  color: var(--color-primary);
+}
+
+/* Motion safe */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile improvements */
+@media (max-width: 1023px) {
+  body {
+    font-size: 15px;
+  }
 }

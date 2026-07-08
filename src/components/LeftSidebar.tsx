@@ -35,7 +35,6 @@ type ActiveSectionId =
   | "my-connected-os";
 
 type OpenGroup = "home" | "student" | "operational" | null;
-
 type LanguageCode = "bn" | "en";
 
 type MenuChild = {
@@ -50,73 +49,91 @@ type MenuGroup = {
   children?: MenuChild[];
 };
 
+const colorPrimary = "var(--color-primary)";
+const colorSecondary = "var(--color-secondary)";
+const colorSecondaryLight = "var(--color-secondary-light)";
+const colorSurface = "var(--color-surface)";
+const colorTextInverse = "var(--color-text-inverse)";
+
 const sidebarText = {
   bn: {
+    logoHome: "শিক্ষা চ্যাট হোম",
     languageMode: "ভাষা নির্বাচন",
     interfaceTitle: "বাংলা ইন্টারফেস",
     currentlyViewing: "বর্তমানে দেখছেন",
-    theK12Os: "কে–১২ ওএস",
-    talkToExpert: "এক্সপার্টের সাথে কথা বলুন",
-    overview: "ওভারভিউ",
+    theK12Os: "কে–টুয়েলভ অপারেটিং সিস্টেম",
+    talkToExpert: "বিশেষজ্ঞের সাথে কথা বলুন",
+    overview: "সারসংক্ষেপ",
     menu: "মেনু",
     closeMenu: "মেনু বন্ধ করুন",
+    toggleLanguage: "ভাষা পরিবর্তন করুন",
+    bangla: "বাংলা",
+    english: "ইংরেজি",
+    bnShort: "বাংলা",
+    enShort: "ইংরেজি",
     groups: {
       home: "হোম কানেকশন",
       student: "শিক্ষার্থী অর্জন",
-      operational: "অপারেশনাল এক্সিলেন্স",
-      myOs: "★ আমার কানেক্টেড ওএস",
+      operational: "অপারেশনাল উৎকর্ষতা",
+      myOs: "আমার কানেক্টেড সিস্টেম",
     },
     sections: {
-      homeConnectionsPanel: "হোম কানেকশন ওভারভিউ",
-      studentInformation: "শিক্ষার্থী তথ্য",
-      sis: "এসআইএস",
-      enrollment: "ভর্তি",
-      specialPrograms: "বিশেষ প্রোগ্রাম",
-      familyEngagement: "পরিবার সম্পৃক্ততা",
-      communications: "যোগাযোগ",
+      homeConnectionsPanel: "হোম কানেকশন সারসংক্ষেপ",
+      studentInformation: "শিক্ষার্থীর তথ্য",
+      sis: "শিক্ষার্থী তথ্য ব্যবস্থা",
+      enrollment: "ভর্তি ব্যবস্থাপনা",
+      specialPrograms: "বিশেষ কার্যক্রম",
+      familyEngagement: "পরিবারের সম্পৃক্ততা",
+      communications: "যোগাযোগ ব্যবস্থা",
       attendanceSupport: "উপস্থিতি সহায়তা",
 
       studentAchievement: "শিক্ষার্থী অর্জন",
-      classroomSolutions: "ক্লাসরুম সল্যুশন",
-      learningManagement: "লার্নিং ম্যানেজমেন্ট",
-      assessment: "অ্যাসেসমেন্ট",
-      curriculumInstruction: "কারিকুলাম ও ইনস্ট্রাকশন",
-      studentIntervention: "শিক্ষার্থী ইন্টারভেনশন",
-      mtss: "এমটিএসএস",
-      behaviorSupport: "আচরণ সহায়তা",
-      collegeCareerLifeReadiness: "কলেজ, ক্যারিয়ার ও লাইফ রেডিনেস",
-      cclrNaviance: "সিসিএলআর ন্যাভিয়েন্স",
+      classroomSolutions: "শ্রেণিকক্ষ সমাধান",
+      learningManagementSchoology: "লার্নিং ম্যানেজমেন্ট ব্যবস্থা",
+      assessmentPerformanceMatters: "মূল্যায়ন ও পারফরম্যান্স বিশ্লেষণ",
+      curriculumInstruction: "কারিকুলাম ও পাঠদান",
+      studentIntervention: "শিক্ষার্থী সহায়তা ব্যবস্থা",
+      mtss: "বহুস্তরীয় সহায়তা ব্যবস্থা",
+      behaviorSupport: "আচরণগত সহায়তা",
+      collegeCareerLifeReadiness: "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি",
+      cclrNaviance: "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা",
 
-      operationalExcellence: "অপারেশনাল এক্সিলেন্স",
-      resourcePlanning: "রিসোর্স প্ল্যানিং",
-      financialStrategy: "ফাইন্যান্সিয়াল স্ট্র্যাটেজি",
-      erpSystems: "ইআরপি সিস্টেম",
-      predictiveEnrollment: "প্রেডিক্টিভ এনরোলমেন্ট",
-      talentManagement: "ট্যালেন্ট ম্যানেজমেন্ট",
-      recruitingHr: "রিক্রুটিং ও এইচআর",
-      educatorSupport: "এডুকেটর সাপোর্ট",
+      operationalExcellence: "অপারেশনাল উৎকর্ষতা",
+      resourcePlanning: "রিসোর্স পরিকল্পনা",
+      financialStrategyAllovue: "আর্থিক কৌশল ব্যবস্থাপনা",
+      erpSystems: "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা",
+      predictiveEnrollment: "পূর্বাভাসভিত্তিক ভর্তি ব্যবস্থাপনা",
+      talentManagement: "প্রতিভা ব্যবস্থাপনা",
+      recruitingHr: "নিয়োগ ও মানবসম্পদ",
+      educatorSupport: "শিক্ষক সহায়তা",
     },
   },
   en: {
+    logoHome: "Shikkha Chat home",
     languageMode: "Language Mode",
     interfaceTitle: "English Interface",
     currentlyViewing: "Currently viewing",
-    theK12Os: "The K–12 OS",
+    theK12Os: "The K–12 Operating System",
     talkToExpert: "Talk to an Expert",
     overview: "Overview",
     menu: "Menu",
     closeMenu: "Close menu",
+    toggleLanguage: "Change language",
+    bangla: "Bangla",
+    english: "English",
+    bnShort: "Bangla",
+    enShort: "English",
     groups: {
       home: "Home Connections",
       student: "Student Achievement",
       operational: "Operational Excellence",
-      myOs: "★ My Connected OS",
+      myOs: "My Connected System",
     },
     sections: {
       homeConnectionsPanel: "Home Connections Overview",
       studentInformation: "Student Information",
-      sis: "SIS",
-      enrollment: "Enrollment",
+      sis: "Student Information System",
+      enrollment: "Enrollment Management",
       specialPrograms: "Special Programs",
       familyEngagement: "Family Engagement",
       communications: "Communications",
@@ -124,22 +141,22 @@ const sidebarText = {
 
       studentAchievement: "Student Achievement",
       classroomSolutions: "Classroom Solutions",
-      learningManagement: "Learning Management",
-      assessment: "Assessment",
-      curriculumInstruction: "Curriculum & Instruction",
+      learningManagementSchoology: "Learning Management System",
+      assessmentPerformanceMatters: "Assessment and Performance Analytics",
+      curriculumInstruction: "Curriculum and Instruction",
       studentIntervention: "Student Intervention",
-      mtss: "MTSS",
+      mtss: "Multi-Tiered System of Supports",
       behaviorSupport: "Behavior Support",
-      collegeCareerLifeReadiness: "College, Career & Life Readiness",
-      cclrNaviance: "CCLR Naviance",
+      collegeCareerLifeReadiness: "College, Career and Life Readiness",
+      cclrNaviance: "Career and Life Readiness Guidance",
 
       operationalExcellence: "Operational Excellence",
       resourcePlanning: "Resource Planning",
-      financialStrategy: "Financial Strategy",
-      erpSystems: "ERP Systems",
-      predictiveEnrollment: "Predictive Enrollment",
+      financialStrategyAllovue: "Financial Strategy Management",
+      erpSystems: "Enterprise Resource Planning Systems",
+      predictiveEnrollment: "Predictive Enrollment Management",
       talentManagement: "Talent Management",
-      recruitingHr: "Recruiting and HR",
+      recruitingHr: "Recruiting and Human Resources",
       educatorSupport: "Educator Support",
     },
   },
@@ -198,17 +215,11 @@ function getSidebarMenu(language: LanguageCode): MenuGroup[] {
           href: "#classroom-solutions",
         },
         {
-          title:
-            language === "bn"
-              ? `${text.sections.learningManagement} (Schoology)`
-              : "Learning Management (Schoology)",
+          title: text.sections.learningManagementSchoology,
           href: "#learning-management-schoology",
         },
         {
-          title:
-            language === "bn"
-              ? `${text.sections.assessment} (Performance Matters)`
-              : "Assessment (Performance Matters)",
+          title: text.sections.assessmentPerformanceMatters,
           href: "#assessment-performance-matters",
         },
         {
@@ -251,10 +262,7 @@ function getSidebarMenu(language: LanguageCode): MenuGroup[] {
           href: "#resource-planning",
         },
         {
-          title:
-            language === "bn"
-              ? `${text.sections.financialStrategy} (Allovue)`
-              : "Financial Strategy (Allovue)",
+          title: text.sections.financialStrategyAllovue,
           href: "#financial-strategy-allovue",
         },
         {
@@ -352,22 +360,17 @@ function getGroupById(id: string): OpenGroup {
 }
 
 function getGroupColor(group: OpenGroup, isMyConnected = false) {
-  if (group === "student") return "#EDE6B3";
+  if (group === "student") return colorSecondary;
 
   if (group === "home" || group === "operational" || isMyConnected) {
-    return "#16423C";
+    return colorPrimary;
   }
 
-  return "#16423C";
+  return colorPrimary;
 }
 
-function getReadableGroupColor(group: OpenGroup, isMyConnected = false) {
-  if (group === "student") return "#16423C";
-  if (group === "home" || group === "operational" || isMyConnected) {
-    return "#16423C";
-  }
-
-  return "#16423C";
+function getReadableGroupColor() {
+  return colorPrimary;
 }
 
 function getActiveTitle(activeId: ActiveSectionId, currentMenu: MenuGroup[]) {
@@ -381,7 +384,7 @@ function getActiveTitle(activeId: ActiveSectionId, currentMenu: MenuGroup[]) {
     if (child) return child.title;
   }
 
-  return "Connected OS";
+  return "";
 }
 
 function getActiveGroupTitle(activeId: ActiveSectionId, language: LanguageCode) {
@@ -442,13 +445,15 @@ function handleSidebarNavigate(id: ActiveSectionId) {
   smoothPageScrollTo(id);
 }
 
-function Logo() {
+function Logo({ language }: { language: LanguageCode }) {
+  const text = sidebarText[language];
+
   return (
-    <Link href="#intro" className="block w-full" aria-label="Shikkha Chat home">
-      <div className="relative h-[74px] w-full transition duration-500 hover:scale-[1.02]">
+    <Link href="#intro" className="block w-full" aria-label={text.logoHome}>
+      <div className="relative h-[76px] w-full transition duration-500 hover:scale-[1.02]">
         <Image
           src="/images/logo.png"
-          alt="Shikkha Chat"
+          alt={text.logoHome}
           fill
           priority
           sizes="240px"
@@ -469,46 +474,54 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
   const columns = [
     {
       id: "home",
-      color: "#16423C",
+      color: colorPrimary,
       active: activeType === "home",
     },
     {
       id: "student",
-      color: "#EDE6B3",
+      color: colorSecondary,
       active: activeType === "student",
     },
     {
       id: "operation",
-      color: "#16423C",
+      color: colorPrimary,
       active: activeType === "operation",
     },
   ];
 
   return (
-    <div className="mt-2 flex items-start gap-2">
+    <div className="mt-3 flex items-start gap-2">
       {columns.map((col, index) => (
         <div key={col.id} className="space-y-1">
           <span
             className="block h-1 rounded-full transition-all duration-500"
             style={{
               width: index === 1 ? 34 : 28,
-              background: col.active ? col.color : "#d9dfcf",
+              background: col.active
+                ? col.color
+                : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
             }}
           />
 
           <div
-            className="grid gap-[4px] rounded-md border-2 p-[4px] transition duration-500"
+            className="grid gap-[4px] rounded-lg border-2 p-[4px] transition duration-500"
             style={{
-              borderColor: col.active ? col.color : "#d9dfcf",
-              background: col.active ? `${col.color}18` : "#fbfcf7",
+              borderColor: col.active
+                ? col.color
+                : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
+              background: col.active
+                ? `color-mix(in srgb, ${col.color} 18%, transparent)`
+                : colorSurface,
             }}
           >
             {Array.from({ length: index === 1 ? 8 : 6 }).map((_, itemIndex) => (
               <span
                 key={itemIndex}
-                className="h-[10px] w-[10px] rounded-[2px] transition-all duration-500"
+                className="h-[10px] w-[10px] rounded-[3px] transition-all duration-500"
                 style={{
-                  background: col.active ? col.color : "#d9dfcf",
+                  background: col.active
+                    ? col.color
+                    : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
                 }}
               />
             ))}
@@ -530,40 +543,36 @@ function ActiveStatusCard({
 }) {
   const group = getGroupById(activeId);
   const accentColor = getGroupColor(group, activeId === "my-connected-os");
-  const readableColor = getReadableGroupColor(
-    group,
-    activeId === "my-connected-os"
-  );
-
+  const readableColor = getReadableGroupColor();
   const activeTitle = getActiveTitle(activeId, currentMenu);
   const groupTitle = getActiveGroupTitle(activeId, language);
   const text = sidebarText[language];
 
   return (
-    <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--sc-border)] bg-white/86 p-3.5 shadow-[0_16px_34px_rgba(22,66,60,0.10)] backdrop-blur-md">
+    <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] p-4 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-md">
       <div className="flex items-center gap-2">
         <span
-          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_rgba(22,66,60,0.06)]"
+          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
           style={{ background: accentColor }}
         />
 
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--sc-muted)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-gray)]">
           {text.currentlyViewing}
         </p>
       </div>
 
       <h3
-        className="mt-2 text-[16px] font-semibold leading-[1.2] tracking-[-0.03em]"
+        className="mt-2 text-[16px] font-bold leading-[1.18] tracking-[-0.035em]"
         style={{ color: readableColor }}
       >
         {activeTitle}
       </h3>
 
-      <p className="mt-1 text-[12px] font-normal leading-5 text-[var(--sc-muted)]">
+      <p className="mt-1 text-[12px] font-medium leading-5 text-[var(--color-text-secondary)]">
         {groupTitle}
       </p>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--sc-secondary-light)]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-secondary-light)]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -572,7 +581,7 @@ function ActiveStatusCard({
               : isStudentAchievementSection(activeId)
                 ? "66%"
                 : "100%",
-            background: `linear-gradient(90deg, ${accentColor}, ${readableColor})`,
+            background: accentColor,
           }}
         />
       </div>
@@ -601,17 +610,17 @@ function SidebarChildLink({
         handleSidebarNavigate(id);
       }}
       className={[
-        "group relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13.4px] font-medium transition-all duration-300",
-        "hover:translate-x-1 hover:bg-white/90",
+        "group relative flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-[13.4px] font-semibold transition-all duration-300",
+        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
         active
-          ? "shadow-[0_12px_28px_rgba(22,66,60,0.12)]"
-          : "text-[#263548]",
+          ? "border-[var(--color-primary)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "",
       ].join(" ")}
       style={{
         background: active
-          ? `linear-gradient(90deg, ${color}28, ${color}10)`
-          : "transparent",
-        color: active ? "#16423C" : "#263548",
+          ? `color-mix(in srgb, ${color} 13%, transparent)`
+          : undefined,
+        color: colorPrimary,
       }}
     >
       {active ? (
@@ -622,10 +631,10 @@ function SidebarChildLink({
       ) : null}
 
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-[9px] font-semibold"
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-[var(--color-border-soft)] text-[9px] font-bold"
         style={{
-          background: active ? color : "#e2e8f0",
-          color: active ? "#ffffff" : "#64748b",
+          background: active ? color : colorSecondaryLight,
+          color: active ? colorTextInverse : colorPrimary,
         }}
       >
         {index}
@@ -643,54 +652,58 @@ function LanguageSwitch() {
   const text = sidebarText[currentLanguage];
 
   return (
-    <div className="mt-4 rounded-[22px] border border-[var(--sc-border)] bg-white/88 p-3.5 shadow-[0_16px_34px_rgba(22,66,60,0.10)] backdrop-blur-xl">
+    <div className="mt-4 rounded-[24px] border border-[var(--color-primary)] bg-[var(--color-white)] p-3.5 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-xl">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--sc-muted)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-gray)]">
             {text.languageMode}
           </p>
 
-          <h3 className="mt-1 text-[15px] font-semibold tracking-[-0.03em] text-[var(--sc-primary)]">
+          <h3 className="mt-1 text-[15px] font-bold tracking-[-0.03em] text-[var(--color-primary)]">
             {text.interfaceTitle}
           </h3>
         </div>
 
-        <span className="rounded-full bg-[var(--sc-secondary-light)] px-3 py-1 text-[11px] font-semibold text-[var(--sc-primary)]">
-          {isBangla ? "BN" : "EN"}
+        <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary-light)] px-3 py-1 text-[11px] font-bold text-[var(--color-primary)]">
+          {isBangla ? text.bnShort : text.enShort}
         </span>
       </div>
 
       <button
         type="button"
         onClick={() => setLanguage(isBangla ? "en" : "bn")}
-        className="group relative h-12 w-full overflow-hidden rounded-full border border-[var(--sc-border)] bg-[var(--sc-secondary-light)] p-1 shadow-inner transition duration-300 hover:bg-white"
-        aria-label="Toggle language"
+        className="group relative h-12 w-full overflow-hidden rounded-full border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_6%,transparent)] transition duration-300 hover:bg-[var(--color-secondary-light)]"
+        aria-label={text.toggleLanguage}
       >
         <span
           className={[
-            "absolute top-1 h-10 w-[calc(50%-4px)] rounded-full bg-[var(--sc-primary)] shadow-[0_12px_24px_rgba(22,66,60,0.28)] transition-all duration-500 ease-out",
+            "absolute top-1 h-10 w-[calc(50%-4px)] rounded-full bg-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-all duration-500 ease-out",
             isBangla ? "left-1" : "left-[calc(50%)]",
           ].join(" ")}
           aria-hidden="true"
         />
 
-        <span className="relative z-10 grid h-full grid-cols-2 text-[13px] font-semibold">
+        <span className="relative z-10 grid h-full grid-cols-2 text-[13px] font-bold">
           <span
             className={[
               "grid place-items-center rounded-full transition duration-300",
-              isBangla ? "text-white" : "text-[var(--sc-primary)]",
+              isBangla
+                ? "text-[var(--color-text-inverse)]"
+                : "text-[var(--color-primary)]",
             ].join(" ")}
           >
-            বাংলা
+            {text.bangla}
           </span>
 
           <span
             className={[
               "grid place-items-center rounded-full transition duration-300",
-              !isBangla ? "text-white" : "text-[var(--sc-primary)]",
+              !isBangla
+                ? "text-[var(--color-text-inverse)]"
+                : "text-[var(--color-primary)]",
             ].join(" ")}
           >
-            English
+            {text.english}
           </span>
         </span>
       </button>
@@ -716,13 +729,17 @@ function SidebarLink({
       href={href}
       onClick={onClick}
       className={[
-        "group relative block rounded-xl px-3 py-2.5 text-[13.8px] font-semibold transition-all duration-300",
-        "hover:translate-x-1 hover:bg-[var(--sc-secondary-light)]",
-        active ? "shadow-[0_10px_24px_rgba(22,66,60,0.12)]" : "",
+        "group relative block rounded-xl border border-transparent px-3 py-2.5 text-[13.8px] font-bold transition-all duration-300",
+        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+        active
+          ? "border-[var(--color-primary)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "",
       ].join(" ")}
       style={{
-        color,
-        background: active ? `${color}14` : "transparent",
+        color: colorPrimary,
+        background: active
+          ? `color-mix(in srgb, ${color} 13%, transparent)`
+          : undefined,
       }}
     >
       {active ? (
@@ -807,7 +824,7 @@ export default function LeftSidebar() {
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="sidebar-open-button fixed left-4 top-4 z-[80] grid h-12 w-12 place-items-center rounded-2xl border border-[var(--sc-border)] bg-white/92 text-[var(--sc-primary)] shadow-[0_14px_34px_rgba(22,66,60,0.18)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-[var(--sc-secondary-light)]"
+        className="sidebar-open-button fixed left-4 top-4 z-[80] grid h-12 w-12 place-items-center rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary-light)]"
         aria-label={text.menu}
       >
         <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
@@ -818,37 +835,41 @@ export default function LeftSidebar() {
           type="button"
           aria-label={text.closeMenu}
           onClick={() => setDrawerOpen(false)}
-          className="sidebar-mobile-backdrop fixed inset-0 z-[85] bg-[rgba(7,21,19,0.34)] backdrop-blur-[2px]"
+          className="sidebar-mobile-backdrop fixed inset-0 z-[85] bg-[var(--color-black)] opacity-35 backdrop-blur-[2px]"
         />
       ) : null}
 
       <aside
         className={[
-          "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen w-[320px] flex-col overflow-hidden border-r border-[var(--sc-border)] bg-[#fbfcf7] shadow-[12px_0_40px_rgba(22,66,60,0.12)] transition-transform duration-500",
+          "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen w-[320px] flex-col overflow-hidden border-r border-[var(--color-border-soft)] bg-[var(--color-white)] shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition-transform duration-500",
           drawerOpen ? "is-open" : "",
         ].join(" ")}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_4%,rgba(22,66,60,0.10),transparent_30%),radial-gradient(circle_at_10%_70%,rgba(237,230,179,0.34),transparent_32%)]" />
+        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary-light)] opacity-70 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-blue-soft)] opacity-80 blur-3xl" />
+        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[var(--color-border-soft)]" />
 
-        <div className="no-scrollbar relative flex h-full flex-col overflow-y-auto px-5 py-7">
+        <div className="no-scrollbar relative flex h-full flex-col overflow-y-auto bg-[var(--color-white)] px-5 py-7">
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[var(--sc-border)] bg-white text-[18px] text-[var(--sc-primary)] shadow-sm"
+            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]"
             aria-label={text.closeMenu}
           >
             ×
           </button>
 
-          <Logo />
+          <Logo language={currentLanguage} />
           <LanguageSwitch />
 
-          <div className="mt-6 rounded-2xl border border-[var(--sc-border)] bg-white/72 p-4 shadow-[0_14px_30px_rgba(22,66,60,0.06)]">
-            <p className="text-[13px] font-semibold tracking-[-0.02em] text-[var(--sc-primary)]">
-              {text.theK12Os}
-            </p>
+          <div className="mt-6 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-4 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
+            <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-white)] p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
+              <p className="text-[13px] font-bold tracking-[-0.02em] text-[var(--color-primary)]">
+                {text.theK12Os}
+              </p>
 
-            <MiniOsIcon activeId={activeId} />
+              <MiniOsIcon activeId={activeId} />
+            </div>
 
             <ActiveStatusCard
               activeId={activeId}
@@ -873,10 +894,8 @@ export default function LeftSidebar() {
 
               const group = item.group ?? null;
               const isMyConnected = item.href === "#my-connected-os";
-
               const color = getGroupColor(group, isMyConnected);
-              const readableColor = getReadableGroupColor(group, isMyConnected);
-
+              const readableColor = getReadableGroupColor();
               const openState = group ? openGroup === group : false;
 
               if (item.children && group) {
@@ -890,17 +909,17 @@ export default function LeftSidebar() {
                         );
                       }}
                       className={[
-                        "group relative flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-[14.2px] font-semibold tracking-[-0.02em] transition-all duration-300",
-                        "hover:translate-x-1 hover:bg-white/90",
+                        "group relative flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-3 text-left text-[14.2px] font-bold tracking-[-0.02em] transition-all duration-300",
+                        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
                         activeGroup
-                          ? "shadow-[0_12px_26px_rgba(22,66,60,0.10)]"
-                          : "text-[#172033]",
+                          ? "border-[var(--color-primary)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+                          : "",
                       ].join(" ")}
                       style={{
-                        color: activeGroup ? readableColor : "#172033",
+                        color: readableColor,
                         background: activeGroup
-                          ? `linear-gradient(90deg, ${color}24, ${color}0d)`
-                          : "transparent",
+                          ? `color-mix(in srgb, ${color} 13%, transparent)`
+                          : undefined,
                       }}
                     >
                       {activeGroup ? (
@@ -917,6 +936,7 @@ export default function LeftSidebar() {
                           "transition-transform duration-300",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
+                        aria-hidden="true"
                       >
                         ⌄
                       </span>
@@ -931,7 +951,7 @@ export default function LeftSidebar() {
                       ].join(" ")}
                     >
                       <div className="overflow-hidden">
-                        <div className="mt-1.5 space-y-1.5 rounded-2xl border-l border-[var(--sc-border)] bg-white/35 py-1.5 pl-4 pr-1">
+                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[var(--color-border-soft)] border-l-[3px] border-l-[var(--color-primary)] bg-[var(--color-white)] py-1.5 pl-4 pr-1 shadow-[inset_8px_0_18px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
                           {item.href === "#home-connections-panel" ? (
                             <SidebarChildLink
                               child={{
@@ -989,10 +1009,10 @@ export default function LeftSidebar() {
             })}
           </nav>
 
-          <div className="mt-auto pt-8">
+          <div className="mt-auto border-t border-[var(--color-border-soft)] bg-[var(--color-white)] pt-5">
             <Link
               href="#connect"
-              className="flex h-12 items-center justify-center rounded-xl bg-[var(--sc-primary)] text-[14px] font-black text-white shadow-[0_14px_28px_rgba(22,66,60,0.25)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--sc-primary-dark)]"
+              className="flex h-12 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[14px] font-black text-[var(--color-text-inverse)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
             >
               {text.talkToExpert}
             </Link>

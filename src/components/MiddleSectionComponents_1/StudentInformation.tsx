@@ -44,63 +44,63 @@ const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const sectionText = {
   bn: {
     title: "শিক্ষার্থীর তথ্য",
-    imageAlt: "শিক্ষার্থী তথ্য",
+    imageAlt: "শিক্ষার্থীর তথ্য চিত্র",
     goTo: "সেকশনে যান",
     cards: {
       "student-information": {
-        title: "শিক্ষার্থী তথ্য",
-        subtitle: "প্রোফাইল",
+        title: "শিক্ষার্থীর তথ্য",
+        subtitle: "শিক্ষার্থী প্রোফাইল",
       },
       sis: {
-        title: "এসআইএস",
-        subtitle: "কোর সিস্টেম",
+        title: "শিক্ষার্থী তথ্য ব্যবস্থা",
+        subtitle: "মূল ব্যবস্থাপনা",
       },
       enrollment: {
-        title: "ভর্তি",
-        subtitle: "অ্যাডমিশন",
+        title: "ভর্তি ব্যবস্থাপনা",
+        subtitle: "ভর্তি প্রক্রিয়া",
       },
       "special-programs": {
-        title: "বিশেষ প্রোগ্রাম",
-        subtitle: "সহায়তা",
+        title: "বিশেষ কার্যক্রম",
+        subtitle: "সহায়তা কার্যক্রম",
       },
       "family-engagement": {
-        title: "পরিবার সম্পৃক্ততা",
-        subtitle: "অভিভাবক",
+        title: "পরিবারের সম্পৃক্ততা",
+        subtitle: "অভিভাবক সংযোগ",
       },
       communications: {
-        title: "যোগাযোগ",
-        subtitle: "স্কুল মেসেঞ্জার",
+        title: "যোগাযোগ ব্যবস্থা",
+        subtitle: "স্কুল বার্তা",
       },
       "attendance-support": {
         title: "উপস্থিতি সহায়তা",
-        subtitle: "রেসপন্স",
+        subtitle: "দ্রুত সাড়া",
       },
     },
   },
   en: {
-    title: "Studet Information",
+    title: "Student Information",
     imageAlt: "Student Information",
     goTo: "Go to section",
     cards: {
       "student-information": {
         title: "Student Information",
-        subtitle: "Profile",
+        subtitle: "Student Profile",
       },
       sis: {
-        title: "SIS",
-        subtitle: "Core System",
+        title: "Student Information System",
+        subtitle: "Core Management",
       },
       enrollment: {
-        title: "Enrollment",
-        subtitle: "Admission",
+        title: "Enrollment Management",
+        subtitle: "Admission Process",
       },
       "special-programs": {
         title: "Special Programs",
-        subtitle: "Support",
+        subtitle: "Support Programs",
       },
       "family-engagement": {
         title: "Family Engagement",
-        subtitle: "Family",
+        subtitle: "Family Connection",
       },
       communications: {
         title: "Communications",
@@ -108,7 +108,7 @@ const sectionText = {
       },
       "attendance-support": {
         title: "Attendance Support",
-        subtitle: "Response",
+        subtitle: "Quick Response",
       },
     },
   },
@@ -279,22 +279,22 @@ function ProductTile({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         isActive || item.featured
-          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
           : item.outline
-            ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_16px_42px_color-mix(in_srgb,var(--sc-primary)_13%,transparent)]"
+            ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_16px_42px_color-mix(in_srgb,var(--color-primary)_13%,transparent)]"
             : item.ghost
-              ? "border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]"
-              : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:border-[var(--sc-primary)] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_20%,transparent)]",
+              ? "border border-[var(--color-primary)] bg-[var(--color-secondary-light)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+              : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-45" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-45" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-30%" }}
         whileHover={
           shouldReduceMotion
@@ -311,11 +311,11 @@ function ProductTile({
 
       {isActive ? (
         <>
-          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[var(--sc-secondary)] opacity-55" />
+          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[var(--color-secondary)] opacity-55" />
 
           <motion.span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
+            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -377,7 +377,7 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "bg-[var(--sc-secondary-light)] shadow-[0_12px_30px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "bg-[var(--color-secondary-light)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         className,
       ].join(" ")}
       animate={
@@ -406,7 +406,7 @@ function MobileTabletView({
 }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-[660px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)]/90 p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
+      <div className="rounded-[30px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] backdrop-blur-xl">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {products.map((product) => {
             const active = product.id === "student-information";
@@ -420,9 +420,9 @@ function MobileTabletView({
                 className={[
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active || product.featured
-                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
-                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
-                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
+                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
@@ -430,8 +430,8 @@ function MobileTabletView({
                     className={[
                       "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
                       active || product.featured
-                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
-                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                        ? "bg-[var(--color-secondary)] text-[var(--color-primary)]"
+                        : "bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
                     ].join(" ")}
                   >
                     {product.icon ?? <FaUsers />}
@@ -491,12 +491,12 @@ export default function StudentInformation() {
   }, []);
 
   return (
-    <section className="relative h-full min-h-[660px] w-full overflow-hidden bg-[var(--sc-bg)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
+    <section className="relative h-full min-h-[660px] w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-border-soft)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-75 blur-[78px]"
+        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-75 blur-[78px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -514,7 +514,7 @@ export default function StudentInformation() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute right-[17%] top-[52%] h-[330px] w-[330px] -translate-y-1/2 rounded-full bg-[var(--sc-secondary)] blur-[95px]"
+        className="pointer-events-none absolute right-[17%] top-[52%] h-[330px] w-[330px] -translate-y-1/2 rounded-full bg-[var(--color-secondary)] blur-[95px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -530,8 +530,8 @@ export default function StudentInformation() {
         }}
       />
 
-      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[var(--sc-secondary-light)] blur-[85px]" />
-      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[var(--sc-secondary)] blur-[92px]" />
+      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[var(--color-secondary-light)] blur-[85px]" />
+      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[var(--color-secondary)] blur-[92px]" />
 
       <FloatingDot className="left-[21%] top-[18%] h-[13px] w-[13px]" delay={0.1} />
       <FloatingDot className="left-[64%] top-[15%] h-[9px] w-[9px]" delay={0.8} />
@@ -566,7 +566,7 @@ export default function StudentInformation() {
           >
             <motion.div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[var(--sc-white)] opacity-35 blur-[34px]"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[var(--color-white)] opacity-35 blur-[34px]"
               animate={
                 shouldReduceMotion
                   ? undefined
@@ -597,20 +597,20 @@ export default function StudentInformation() {
               className={[
                 "absolute left-1/2 top-[-56px] z-20 -translate-x-1/2",
                 "h-[42px] min-w-[220px] rounded-full",
-                "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)]",
-                "px-[28px] text-[14px] font-semibold leading-[36px] text-[var(--sc-white)]",
-                "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
-                "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--sc-primary)_22%,transparent)]",
+                "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)]",
+                "px-[28px] text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
+                "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
+                "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
               ].join(" ")}
             >
               {text.title}
 
               <motion.span
                 aria-hidden="true"
-                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--sc-primary)]"
+                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--color-primary)]"
               >
                 <motion.span
-                  className="absolute left-0 top-0 h-[40%] w-full rounded-full bg-[var(--sc-secondary)]"
+                  className="absolute left-0 top-0 h-[40%] w-full rounded-full bg-[var(--color-secondary)]"
                   animate={
                     shouldReduceMotion
                       ? undefined
@@ -630,16 +630,16 @@ export default function StudentInformation() {
             <div
               className={[
                 "relative h-[430px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
-                "bg-[var(--sc-white)]/24 p-[8px]",
-                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)] backdrop-blur-[4px]",
+                "rounded-[26px] border-[3px] border-[var(--color-primary)]",
+                "bg-[var(--color-white)] p-[8px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,var(--sc-white),transparent_48%,var(--sc-secondary-light))] opacity-45" />
+              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,var(--color-white),transparent_48%,var(--color-secondary-light))] opacity-45" />
 
               <motion.span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[var(--sc-primary)] opacity-70"
+                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[var(--color-primary)] opacity-70"
                 animate={
                   shouldReduceMotion
                     ? undefined
@@ -733,7 +733,7 @@ export default function StudentInformation() {
         >
           <motion.div
             aria-hidden="true"
-            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)] opacity-20 blur-[18px]"
+            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[var(--color-primary)] opacity-20 blur-[18px]"
             animate={
               shouldReduceMotion
                 ? undefined

@@ -40,63 +40,63 @@ type ConnectorPath = {
 
 const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const brandColor = "var(--sc-primary)";
-const brandGlow = "color-mix(in srgb, var(--sc-primary) 14%, transparent)";
+const brandColor = "var(--color-primary)";
+const brandGlow = "color-mix(in srgb, var(--color-primary) 14%, transparent)";
 const brandGlowStrong =
-  "color-mix(in srgb, var(--sc-primary) 18%, transparent)";
+  "color-mix(in srgb, var(--color-primary) 18%, transparent)";
 
 const sectionText = {
   bn: {
-    sectionTitle: "ভর্তি",
+    sectionTitle: "ভর্তি ব্যবস্থাপনা",
     openSection: "সেকশন খুলুন",
-    closeDetail: "ডিটেইল বন্ধ করুন",
+    closeDetail: "বিস্তারিত বন্ধ করুন",
     tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
     cards: {
       sis: {
-        title: "এসআইএস",
-        subtitle: "শিক্ষার্থী সিস্টেম",
-        label: "সংযুক্ত সিস্টেম",
+        title: "শিক্ষার্থী তথ্য ব্যবস্থা",
+        subtitle: "শিক্ষার্থী ব্যবস্থাপনা",
+        label: "সংযুক্ত ব্যবস্থা",
         description:
-          "এসআইএস শিক্ষার্থীর রেকর্ড, একাডেমিক তথ্য, ক্লাস ডেটা, উপস্থিতি এবং সংযুক্ত কাজের ধারাকে একটি কেন্দ্রীয় জায়গায় রাখে।",
+          "শিক্ষার্থী তথ্য ব্যবস্থা শিক্ষার্থীর রেকর্ড, একাডেমিক তথ্য, ক্লাস ডেটা, উপস্থিতি এবং সংযুক্ত কাজের ধারাকে একটি কেন্দ্রীয় জায়গায় রাখে।",
       },
       enrollment: {
-        title: "ভর্তি",
+        title: "ভর্তি ব্যবস্থাপনা",
         subtitle: "প্রধান ভর্তি এলাকা",
         label: "প্রধান ভর্তি",
         description:
-          "ভর্তি ফিচার স্কুলকে শিক্ষার্থী ভর্তি, পরিবারের তথ্য, ক্লাস প্লেসমেন্ট এবং সম্পূর্ণ শিক্ষার্থী অনবোর্ডিং যাত্রা পরিচালনা করতে সাহায্য করে।",
+          "ভর্তি ব্যবস্থা স্কুলকে শিক্ষার্থী ভর্তি, পরিবারের তথ্য, ক্লাস প্লেসমেন্ট এবং সম্পূর্ণ শিক্ষার্থী অনবোর্ডিং যাত্রা পরিচালনা করতে সাহায্য করে।",
       },
       "connected-intelligence": {
-        title: "সংযুক্ত ইন্টেলিজেন্স",
+        title: "সংযুক্ত বুদ্ধিমত্তা",
         subtitle: "ডেটা ইনসাইট",
-        label: "সংযুক্ত অ্যাড-অন",
+        label: "সংযুক্ত অতিরিক্ত সুবিধা",
         description:
-          "সংযুক্ত ইন্টেলিজেন্স স্কুলের ডেটা একসাথে এনে ভর্তি ট্রেন্ড, শিক্ষার্থীর মুভমেন্ট এবং অপারেশনাল ইনসাইট দ্রুত বুঝতে সাহায্য করে।",
+          "সংযুক্ত বুদ্ধিমত্তা স্কুলের ডেটা একসাথে এনে ভর্তি ট্রেন্ড, শিক্ষার্থীর মুভমেন্ট এবং অপারেশনাল ইনসাইট দ্রুত বুঝতে সাহায্য করে।",
       },
       "student-information": {
-        title: "শিক্ষার্থী তথ্য",
+        title: "শিক্ষার্থীর তথ্য",
         subtitle: "প্রোফাইল সেকশন",
         label: "শিক্ষার্থী সেকশন",
         description:
-          "শিক্ষার্থী তথ্য ভর্তি প্রক্রিয়াকে বিস্তৃত শিক্ষার্থী প্রোফাইলের সাথে যুক্ত করে, যাতে স্কুল সিস্টেমে রেকর্ড ম্যানেজ করা সহজ হয়।",
+          "শিক্ষার্থীর তথ্য ভর্তি প্রক্রিয়াকে বিস্তৃত শিক্ষার্থী প্রোফাইলের সাথে যুক্ত করে, যাতে স্কুল সিস্টেমে রেকর্ড পরিচালনা করা সহজ হয়।",
       },
     },
   },
   en: {
-    sectionTitle: "Enrollment",
+    sectionTitle: "Enrollment Management",
     openSection: "Open Section",
     closeDetail: "Close detail",
     tapHint: "Click any card to view details",
     cards: {
       sis: {
-        title: "SIS",
-        subtitle: "Student System",
+        title: "Student Information System",
+        subtitle: "Student Management",
         label: "Connected System",
         description:
-          "SIS keeps student records, academic information, class data, attendance, and connected workflows in one central place.",
+          "The student information system keeps student records, academic information, class data, attendance, and connected workflows in one central place.",
       },
       enrollment: {
-        title: "Enrollment",
+        title: "Enrollment Management",
         subtitle: "Main Enrollment Area",
         label: "Main Enrollment",
         description:
@@ -272,18 +272,18 @@ function MiniCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         selected
-          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
-          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
+          : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -301,7 +301,7 @@ function MiniCard({
       {selected ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -375,17 +375,17 @@ function ActiveEnrollmentCard({
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)]",
-        "shadow-[0_26px_70px_color-mix(in_srgb,var(--sc-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
-        "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--sc-primary)_26%,transparent)]",
-        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
+        "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+        "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_26%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
+      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -402,7 +402,7 @@ function ActiveEnrollmentCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--sc-secondary)]"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--color-secondary)]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -487,21 +487,21 @@ function FloatingCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         item.id === "connected-intelligence"
           ? "right-[3%] top-[31%]"
           : "left-1/2 top-[15%] -translate-x-1/2",
         active
-          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
-          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
+          : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -519,7 +519,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -590,51 +590,51 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[var(--sc-primary)] bg-[var(--sc-white)] px-6 py-6 text-[var(--sc-primary)]",
-        "shadow-[0_26px_80px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
+        "border border-[var(--color-primary)] bg-[var(--color-white)] px-6 py-6 text-[var(--color-primary)]",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] transition hover:bg-[var(--sc-primary)] hover:text-[var(--sc-white)]"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]"
         aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--color-primary)] bg-[var(--color-secondary-light)] text-[var(--color-primary)]">
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--color-text-gray)]">
             {item.label}
           </p>
 
-          <h3 className="mt-2 text-[30px] font-semibold leading-[0.98] tracking-[-0.055em] text-[var(--sc-primary)]">
+          <h3 className="mt-2 text-[30px] font-semibold leading-[0.98] tracking-[-0.055em] text-[var(--color-primary)]">
             {item.title}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-muted)]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--color-text-gray)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--sc-muted)]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[var(--sc-border)]" />
+      <div className="mt-5 h-px w-full bg-[var(--color-border-soft)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--sc-white)] transition hover:translate-y-[-1px] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]"
+        className="mt-5 rounded-full bg-[var(--color-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-text-inverse)] transition hover:translate-y-[-1px] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
       >
         {openSectionText}
       </button>
@@ -666,7 +666,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
             cy="360"
             r="56"
             fill="none"
-            stroke="var(--sc-primary)"
+            stroke="var(--color-primary)"
             strokeWidth="4"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={
@@ -723,7 +723,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="var(--sc-white)"
+          stroke="var(--color-white)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -769,8 +769,8 @@ function MobileTabletView({
 }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-[640px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)]/90 p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
-        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
+      <div className="rounded-[30px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--color-text-gray)]">
           {hint}
         </p>
 
@@ -789,9 +789,9 @@ function MobileTabletView({
                 className={[
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
-                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
-                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
-                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
+                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
@@ -799,8 +799,8 @@ function MobileTabletView({
                     className={[
                       "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
                       active
-                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
-                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                        ? "bg-[var(--color-secondary)] text-[var(--color-primary)]"
+                        : "bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
                     ].join(" ")}
                   >
                     {card.icon}
@@ -895,12 +895,12 @@ export default function Enrollment() {
   const selectedId = selectedCard?.id;
 
   return (
-    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-[var(--sc-bg)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
+    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-border-soft)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-70 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -918,7 +918,7 @@ export default function Enrollment() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-secondary)] blur-[92px]"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-secondary)] blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -974,11 +974,11 @@ export default function Enrollment() {
                 }}
                 className={[
                   "h-[42px] min-w-[320px] rounded-full",
-                  "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] px-[44px]",
+                  "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] px-[44px]",
                   "text-center text-[13px] font-semibold uppercase tracking-[0.13em]",
-                  "leading-[36px] text-[var(--sc-white)]",
-                  "shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
-                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
+                  "leading-[36px] text-[var(--color-text-inverse)]",
+                  "shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
+                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
               >
@@ -989,13 +989,13 @@ export default function Enrollment() {
             <div
               className={[
                 "relative h-[250px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
-                "bg-[var(--sc-white)]/24 p-[18px]",
-                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
+                "rounded-[26px] border-[3px] border-[var(--color-primary)]",
+                "bg-[var(--color-white)] p-[18px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-35" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-35" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
                 <MiniCard

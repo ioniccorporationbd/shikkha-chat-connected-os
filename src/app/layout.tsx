@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" className="h-full antialiased">
-      <body className="min-h-full w-full overflow-x-hidden bg-white text-slate-950">
+    <html lang="bn" data-lang="bn" className="h-full antialiased">
+      <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
         <LanguageProvider>
           <LeftSidebar />
           <div className="site-content-shell min-h-screen min-w-0 overflow-x-hidden">
