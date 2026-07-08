@@ -49,9 +49,14 @@ type ConnectorPath = {
 const rightImage = "/images/family-engagement-people.png";
 const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+const brandColor = "var(--sc-primary)";
+const brandGlow = "color-mix(in srgb, var(--sc-primary) 14%, transparent)";
+const brandGlowStrong =
+  "color-mix(in srgb, var(--sc-primary) 18%, transparent)";
+
 const sectionText = {
   bn: {
-    groupTitle: "হোম কানেকশন",
+    groupTitle: "পরিবার সম্পৃক্ততা",
     openSection: "সেকশন খুলুন",
     closeDetail: "ডিটেইল বন্ধ করুন",
     tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
@@ -109,7 +114,7 @@ const sectionText = {
     },
   },
   en: {
-    groupTitle: "Home Connections",
+    groupTitle: "Family Engagement",
     openSection: "Open Section",
     closeDetail: "Close detail",
     tapHint: "Click any card to view details",
@@ -207,38 +212,38 @@ const productBase = [
 const connectorPaths: Record<ProductId, ConnectorPath> = {
   "student-information": {
     d: "M500 360 L456 360 Q442 360 442 346 L442 238 Q442 224 428 224 L390 224",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   sis: {
     d: "M500 360 L458 360 Q444 360 444 346 L444 238 Q444 224 430 224 L500 224",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   enrollment: {
     d: "M500 360 L456 360 Q442 360 442 346 L442 330 Q442 316 428 316 L390 316",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "special-programs": {
     d: "M500 360 L458 360 Q444 360 444 346 L444 330 Q444 316 430 316 L500 316",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "family-engagement": {
     d: "M500 360 L500 360",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.16)",
+    color: brandColor,
+    glowColor: brandGlowStrong,
   },
   communications: {
     d: "M500 360 L458 360 Q444 360 444 374 L444 424 Q444 438 430 438 L500 438",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "attendance-support": {
     d: "M500 360 L456 360 Q442 360 442 374 L442 424 Q442 438 428 438 L390 438",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
 };
 
@@ -346,6 +351,7 @@ function ProductTile({
   const wordCount = item.title.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
   const isActive = item.id === "family-engagement";
+  const active = selected || isActive;
 
   return (
     <motion.button
@@ -368,30 +374,28 @@ function ProductTile({
               },
             }
       }
-      whileTap={{
-        scale: 0.94,
-      }}
+      whileTap={{ scale: 0.94 }}
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        selected || isActive
-          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_22px_52px_rgba(22,66,60,0.22),0_0_0_5px_rgba(22,66,60,0.08)]"
-          : item.outline
-            ? "border-[3px] border-[var(--sc-primary)] bg-white shadow-[0_12px_30px_rgba(22,66,60,0.07)]"
-            : item.muted
-              ? "border border-[var(--sc-border)] bg-white/72 shadow-[0_12px_30px_rgba(22,66,60,0.06)]"
-              : "border border-[var(--sc-border)] bg-white/84 shadow-[0_12px_30px_rgba(22,66,60,0.07)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(22,66,60,0.14)]",
         "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        active
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : item.outline
+            ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_12%,transparent)]"
+            : item.muted
+              ? "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_12px_30px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]"
+              : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_12px_30px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.66),rgba(255,255,255,0)_52%,rgba(22,66,60,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/42 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -406,10 +410,10 @@ function ProductTile({
         }
       />
 
-      {selected || isActive ? (
+      {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-primary)]"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -426,10 +430,10 @@ function ProductTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-[var(--sc-primary)] transition-all duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current transition-all duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -437,7 +441,7 @@ function ProductTile({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center tracking-[-0.035em] text-[var(--sc-primary)]",
+          "text-center tracking-[-0.035em] text-current",
           isActive ? "font-semibold" : "font-normal",
           isSingleWord
             ? "text-[14px] leading-none"
@@ -448,7 +452,7 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[var(--sc-muted)]">
+        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -497,21 +501,21 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[var(--sc-border)] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(22,66,60,0.16)]",
+        "border border-[var(--sc-primary)] bg-[var(--sc-white)] px-6 py-6 text-[var(--sc-primary)]",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-border)] bg-white text-[var(--sc-muted)] transition hover:bg-[var(--sc-primary)] hover:text-white"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] transition hover:bg-[var(--sc-primary)] hover:text-[var(--sc-white)]"
         aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-border)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
           <div className="text-[31px] leading-none">
             {item.icon ?? <FaUsers />}
           </div>
@@ -527,7 +531,7 @@ function DetailPanel({
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-primary)]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-muted)]">
               {item.subtitle}
             </p>
           ) : null}
@@ -543,7 +547,7 @@ function DetailPanel({
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[var(--sc-primary-dark)]"
+        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--sc-white)] transition hover:translate-y-[-1px] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]"
       >
         {openSectionText}
       </button>
@@ -632,7 +636,7 @@ function ConnectorLine({ selectedId }: { selectedId: ProductId }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="white"
+          stroke="var(--sc-white)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -678,7 +682,7 @@ function MobileTabletView({
 }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-[660px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border border-[var(--sc-border)] bg-white/86 p-5 shadow-[0_24px_70px_rgba(22,66,60,0.12)] backdrop-blur-xl">
+      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
         <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
           {hint}
         </p>
@@ -700,33 +704,41 @@ function MobileTabletView({
                 className={[
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
-                    ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_18px_40px_rgba(22,66,60,0.14)]"
-                    : "border-[var(--sc-border)] bg-white hover:-translate-y-1 hover:bg-[var(--sc-secondary-light)]",
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
+                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--sc-primary)] text-[22px] text-white">
+                  <div
+                    className={[
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      active
+                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
+                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                    ].join(" ")}
+                  >
                     {product.icon ?? <FaUsers />}
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-current opacity-70">
                       {product.label}
                     </p>
 
-                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--sc-primary)]">
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-current">
                       {product.title}
                     </h3>
 
                     {product.subtitle ? (
-                      <p className="mt-1 text-[12px] font-normal text-[var(--sc-muted)]">
+                      <p className="mt-1 text-[12px] font-normal text-current opacity-75">
                         {product.subtitle}
                       </p>
                     ) : null}
                   </div>
                 </div>
 
-                <p className="mt-3 text-[13.5px] font-normal leading-6 text-[var(--sc-muted)]">
+                <p className="mt-3 text-[13.5px] font-normal leading-6 text-current opacity-75">
                   {product.description}
                 </p>
               </button>
@@ -781,7 +793,7 @@ export default function FamilyEngagement() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[40%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-[40%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -867,28 +879,29 @@ export default function FamilyEngagement() {
                 scale: 0.96,
               }}
               className={[
-                "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
-                "h-[38px] min-w-[224px] rounded-full bg-[var(--sc-secondary)]",
-                "px-[28px] text-[14px] font-normal leading-[38px] text-[var(--sc-primary)]",
-                "whitespace-nowrap shadow-[0_14px_34px_rgba(22,66,60,0.12)]",
-                "transition hover:bg-[var(--sc-secondary-light)]",
+                "absolute left-1/2 top-[-56px] z-20 -translate-x-1/2",
+                "h-[42px] min-w-[240px] rounded-full",
+                "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] px-[30px]",
+                "text-[14px] font-semibold leading-[36px] text-[var(--sc-white)]",
+                "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
+                "transition-all duration-300 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
               ].join(" ")}
             >
               {text.groupTitle}
 
-              <span className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 rounded-full bg-[var(--sc-border)]" />
+              <span className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]" />
             </motion.button>
 
             <div
               className={[
                 "relative h-[430px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[var(--sc-border)]",
-                "bg-white/24 p-[8px]",
-                "shadow-[0_28px_80px_rgba(22,66,60,0.10)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
+                "bg-[var(--sc-white)] p-[8px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_35%,rgba(22,66,60,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-35" />
 
               <div className="relative z-10 grid grid-cols-2 gap-[8px]">
                 {products.map((product) => (
@@ -921,7 +934,11 @@ export default function FamilyEngagement() {
             y: imageSettled
               ? ["-50%", "calc(-50% - 18px)", "calc(-50% + 7px)", "-50%"]
               : "-50%",
-            scale: imageSettled ? [1, 1.055, 0.985, 1] : isSeparated ? 1 : 0.74,
+            scale: imageSettled
+              ? [1, 1.055, 0.985, 1]
+              : isSeparated
+                ? 1
+                : 0.74,
             rotate: imageSettled ? [0, 1.2, -0.7, 0] : isSeparated ? 0 : -2,
             filter: isSeparated ? "blur(0px)" : "blur(16px)",
           }}
@@ -963,7 +980,7 @@ export default function FamilyEngagement() {
           }}
           className="absolute left-1/2 top-1/2 z-20 hidden h-[430px] w-[330px] shrink-0 md:block"
         >
-          <div className="absolute bottom-[24px] left-1/2 h-[42px] w-[220px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/16 blur-[18px]" />
+          <div className="absolute bottom-[24px] left-1/2 h-[42px] w-[220px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)] opacity-20 blur-[18px]" />
 
           <Image
             src={rightImage}
@@ -971,7 +988,7 @@ export default function FamilyEngagement() {
             fill
             priority
             sizes="330px"
-            className="object-contain object-bottom drop-shadow-[0_24px_28px_rgba(22,66,60,0.14)]"
+            className="object-contain object-bottom"
           />
         </motion.div>
       </div>

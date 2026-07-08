@@ -40,8 +40,14 @@ type ConnectorPath = {
 
 const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+const brandColor = "var(--sc-primary)";
+const brandGlow = "color-mix(in srgb, var(--sc-primary) 14%, transparent)";
+const brandGlowStrong =
+  "color-mix(in srgb, var(--sc-primary) 18%, transparent)";
+
 const sectionText = {
   bn: {
+    sectionTitle: "ভর্তি",
     openSection: "সেকশন খুলুন",
     closeDetail: "ডিটেইল বন্ধ করুন",
     tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
@@ -77,6 +83,7 @@ const sectionText = {
     },
   },
   en: {
+    sectionTitle: "Enrollment",
     openSection: "Open Section",
     closeDetail: "Close detail",
     tapHint: "Click any card to view details",
@@ -116,23 +123,23 @@ const sectionText = {
 const connectorPaths: Record<CardId, ConnectorPath> = {
   sis: {
     d: "M500 360 L455 360 Q440 360 440 345 L440 335 Q440 320 425 320 L390 320",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   enrollment: {
     d: "M500 360 L500 360",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.16)",
+    color: brandColor,
+    glowColor: brandGlowStrong,
   },
   "connected-intelligence": {
     d: "M500 360 L610 360 Q630 360 630 340 L630 325 Q630 305 650 305 L900 305",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "student-information": {
     d: "M500 360 L455 360 Q435 360 435 340 L435 270 Q435 250 455 250 L500 250",
-    color: "var(--sc-primary)",
-    glowColor: "rgba(22,66,60,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
 };
 
@@ -263,20 +270,20 @@ function MiniCard({
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
         selected
-          ? "border-[3px] border-[var(--sc-primary)] bg-[linear-gradient(180deg,#ffffff_0%,var(--sc-secondary-light)_100%)] shadow-[0_22px_52px_rgba(22,66,60,0.22),0_0_0_5px_rgba(22,66,60,0.08)]"
-          : "border border-[var(--sc-border)] bg-white shadow-[0_12px_30px_rgba(22,66,60,0.07)]",
-        "hover:shadow-[0_24px_58px_rgba(22,66,60,0.13)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.62),rgba(255,255,255,0)_52%,rgba(22,66,60,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -294,7 +301,7 @@ function MiniCard({
       {selected ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-primary)]"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -311,10 +318,10 @@ function MiniCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[8px] text-[27px] leading-none text-[var(--sc-primary)] transition-transform duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -322,7 +329,7 @@ function MiniCard({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center font-normal tracking-[-0.04em] text-[var(--sc-primary)]",
+          "text-center font-semibold tracking-[-0.04em] text-current",
           isSingleWord
             ? "text-[13.5px] leading-none"
             : "text-[11px] leading-[1.08]",
@@ -368,17 +375,17 @@ function ActiveEnrollmentCard({
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[var(--sc-primary)] bg-[linear-gradient(180deg,#ffffff_0%,var(--sc-secondary-light)_100%)]",
-        "shadow-[0_26px_70px_rgba(22,66,60,0.22),0_0_0_6px_rgba(22,66,60,0.08)]",
-        "transition-shadow duration-500 hover:shadow-[0_32px_84px_rgba(22,66,60,0.26),0_0_0_7px_rgba(22,66,60,0.10)]",
+        "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)]",
+        "shadow-[0_26px_70px_color-mix(in_srgb,var(--sc-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--sc-primary)_26%,transparent)]",
         "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,rgba(255,255,255,0.64),rgba(255,255,255,0)_52%,rgba(22,66,60,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -395,7 +402,7 @@ function ActiveEnrollmentCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--sc-primary)]"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--sc-secondary)]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -411,18 +418,18 @@ function ActiveEnrollmentCard({
         }}
       />
 
-      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-current opacity-85 transition-all duration-500 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-4 text-[42px] leading-none text-[var(--sc-primary)] transition-all duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-4 text-[42px] leading-none text-current transition-all duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[130px] text-[15px] font-semibold leading-[1.08] tracking-[-0.04em] text-[var(--sc-primary)]">
+      <h3 className="relative z-10 max-w-[130px] text-[15px] font-semibold leading-[1.08] tracking-[-0.04em] text-current">
         {item.title}
       </h3>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-2 text-[11px] font-normal leading-none text-[var(--sc-muted)]">
+        <p className="relative z-10 mt-2 text-[11px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -478,23 +485,23 @@ function FloatingCard({
       className={[
         "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
         item.id === "connected-intelligence"
           ? "right-[3%] top-[31%]"
           : "left-1/2 top-[15%] -translate-x-1/2",
         active
-          ? "border-[3px] border-[var(--sc-primary)] bg-white shadow-[0_24px_60px_rgba(22,66,60,0.22),0_0_0_5px_rgba(22,66,60,0.08)]"
-          : "border border-[var(--sc-border)] bg-white/84 shadow-[0_14px_34px_rgba(22,66,60,0.08)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(22,66,60,0.14)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.7),rgba(255,255,255,0)_52%,rgba(22,66,60,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -512,7 +519,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-primary)]"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -529,13 +536,13 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--sc-primary)] transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-[var(--sc-primary)] transition-transform duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-normal leading-[1.05] tracking-[-0.04em] text-[var(--sc-primary)]">
+      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(item.title)}
       </div>
     </motion.button>
@@ -583,21 +590,21 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[var(--sc-border)] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(22,66,60,0.16)]",
+        "border border-[var(--sc-primary)] bg-[var(--sc-white)] px-6 py-6 text-[var(--sc-primary)]",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-border)] bg-white text-[var(--sc-muted)] transition hover:bg-[var(--sc-primary)] hover:text-white"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] transition hover:bg-[var(--sc-primary)] hover:text-[var(--sc-white)]"
         aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-border)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
@@ -611,7 +618,7 @@ function DetailPanel({
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-primary)]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-muted)]">
               {item.subtitle}
             </p>
           ) : null}
@@ -627,7 +634,7 @@ function DetailPanel({
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[var(--sc-primary-dark)]"
+        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--sc-white)] transition hover:translate-y-[-1px] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]"
       >
         {openSectionText}
       </button>
@@ -716,7 +723,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="white"
+          stroke="var(--sc-white)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -762,7 +769,7 @@ function MobileTabletView({
 }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-[640px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border border-[var(--sc-border)] bg-white/86 p-5 shadow-[0_24px_70px_rgba(22,66,60,0.12)] backdrop-blur-xl">
+      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)]/90 p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
         <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
           {hint}
         </p>
@@ -782,33 +789,41 @@ function MobileTabletView({
                 className={[
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
-                    ? "border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] shadow-[0_18px_40px_rgba(22,66,60,0.14)]"
-                    : "border-[var(--sc-border)] bg-white hover:-translate-y-1 hover:bg-[var(--sc-secondary-light)]",
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
+                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--sc-primary)] text-[22px] text-white">
+                  <div
+                    className={[
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      active
+                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
+                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                    ].join(" ")}
+                  >
                     {card.icon}
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-current opacity-70">
                       {card.label}
                     </p>
 
-                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--sc-primary)]">
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-current">
                       {card.title}
                     </h3>
 
                     {card.subtitle ? (
-                      <p className="mt-1 text-[12px] font-normal text-[var(--sc-muted)]">
+                      <p className="mt-1 text-[12px] font-normal text-current opacity-75">
                         {card.subtitle}
                       </p>
                     ) : null}
                   </div>
                 </div>
 
-                <p className="mt-3 text-[13.5px] font-normal leading-6 text-[var(--sc-muted)]">
+                <p className="mt-3 text-[13.5px] font-normal leading-6 text-current opacity-75">
                   {card.description}
                 </p>
               </button>
@@ -885,7 +900,7 @@ export default function Enrollment() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -950,36 +965,37 @@ export default function Enrollment() {
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={itemVariants} className="relative">
-            <div className="absolute left-1/2 top-[-64px] z-20 -translate-x-1/2">
+            <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedCard(floatingCards[1]);
-                  scrollRightSidebarTo("student-information");
+                  setSelectedCard(centerCards[1]);
+                  scrollRightSidebarTo("enrollment");
                 }}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full bg-[var(--sc-secondary)] px-[44px]",
-                  "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] text-[var(--sc-primary)]",
-                  "shadow-[0_16px_34px_rgba(22,66,60,0.14)]",
-                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary-light)]",
+                  "h-[42px] min-w-[320px] rounded-full",
+                  "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] px-[44px]",
+                  "text-center text-[13px] font-semibold uppercase tracking-[0.13em]",
+                  "leading-[36px] text-[var(--sc-white)]",
+                  "shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
+                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
               >
-                {floatingCards[1].title}
+                {text.sectionTitle}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[250px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[var(--sc-border)]",
-                "bg-white/24 p-[18px]",
-                "shadow-[0_28px_80px_rgba(22,66,60,0.10)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
+                "bg-[var(--sc-white)]/24 p-[18px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent_35%,rgba(22,66,60,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-35" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
                 <MiniCard

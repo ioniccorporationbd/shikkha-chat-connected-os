@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   AnimatePresence,
   motion,
@@ -23,19 +23,35 @@ import {
   MdOutlineMenuBook,
   MdOutlinePsychology,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
 
+type LanguageCode = "bn" | "en";
 type CardKind = "core" | "floating";
 
+type CardId =
+  | "enrollment"
+  | "sis"
+  | "special-programs"
+  | "communications"
+  | "contextual-ai"
+  | "learning-management"
+  | "attendance-support"
+  | "assessment"
+  | "consistent-experience"
+  | "behavior-support"
+  | "connected-intelligence"
+  | "analytics-insights"
+  | "curriculum-instruction";
+
 type DetailCard = {
-  id: string;
+  id: CardId;
   title: string;
   subtitle?: string;
   icon: ReactNode;
-  color: string;
   kind: CardKind;
   positionClass?: string;
   active?: boolean;
-  label?: string;
+  label: string;
   description: string;
 };
 
@@ -45,226 +61,345 @@ type ConnectorPath = {
   glowColor: string;
 };
 
-const premiumEase = [0.22, 1, 0.36, 1] as const;
+const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const coreCards: DetailCard[] = [
+const brandColor = "var(--sc-primary)";
+const brandGlow = "color-mix(in srgb, var(--sc-primary) 14%, transparent)";
+const brandGlowStrong =
+  "color-mix(in srgb, var(--sc-primary) 18%, transparent)";
+
+const sectionText = {
+  bn: {
+    topTitle: "এসআইএস",
+    openSection: "সেকশন খুলুন",
+    closeDetail: "ডিটেইল বন্ধ করুন",
+    fallbackLabel: "সংযুক্ত সক্ষমতা",
+    tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
+    cards: {
+      enrollment: {
+        title: "ভর্তি",
+        label: "এসআইএসের ভিতরে",
+        description:
+          "শিক্ষার্থী ভর্তি, ভর্তি রেকর্ড, পরিবারের তথ্য, ক্লাস প্লেসমেন্ট এবং স্কুলের সংযুক্ত কাজগুলো একটি কেন্দ্রীয় তথ্য ব্যবস্থায় পরিচালনা করুন।",
+      },
+      sis: {
+        title: "এসআইএস",
+        label: "কেন্দ্রীয় সিস্টেম",
+        description:
+          "এসআইএস হলো শিক্ষার্থী তথ্য, ভর্তি, যোগাযোগ, উপস্থিতি, অ্যানালিটিক্স এবং দৈনন্দিন স্কুল পরিচালনার কেন্দ্রীয় ব্যবস্থা।",
+      },
+      "special-programs": {
+        title: "বিশেষ প্রোগ্রাম",
+        label: "এসআইএসের ভিতরে",
+        description:
+          "শিক্ষার্থী সহায়তা, বিশেষ প্রোগ্রাম, ইন্টারভেনশন কাজের ধারা এবং সার্ভিস তথ্য সংযুক্ত শিক্ষার্থী রেকর্ডের সাথে ট্র্যাক করুন।",
+      },
+      communications: {
+        title: "যোগাযোগ",
+        subtitle: "স্কুল মেসেঞ্জার",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "শিক্ষার্থী ডেটার সাথে মেসেজিং যুক্ত করুন, যাতে প্রতিটি পরিবার আপডেট সঠিক, সময়মতো এবং স্টাফদের জন্য সহজ হয়।",
+      },
+      "contextual-ai": {
+        title: "কনটেক্সচুয়াল এআই",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "এসআইএস ডেটার সাথে এআই ব্যবহার করে ইনসাইট তৈরি করুন, ডেটা অনুরোধ সহজ করুন এবং টিমকে স্কুল তথ্য দ্রুত বুঝতে সাহায্য করুন।",
+      },
+      "learning-management": {
+        title: "লার্নিং ম্যানেজমেন্ট",
+        subtitle: "লার্নিং স্যুট",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "ক্লাসরুম শেখার কার্যক্রমকে শিক্ষার্থী তথ্যের সাথে যুক্ত করুন, যাতে শিক্ষকরা একটি সংযুক্ত অভিজ্ঞতায় অগ্রগতি বুঝতে পারেন।",
+      },
+      "attendance-support": {
+        title: "উপস্থিতি সহায়তা",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "উপস্থিতির প্যাটার্ন আগে শনাক্ত করুন এবং দ্রুত সংযুক্ত পরিবার যোগাযোগের মাধ্যমে স্কুলকে প্রতিক্রিয়া জানাতে সাহায্য করুন।",
+      },
+      assessment: {
+        title: "মূল্যায়ন",
+        subtitle: "পারফরম্যান্স ইনসাইটস",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "মূল্যায়ন ডেটাকে এসআইএসের কাছাকাছি আনুন, যাতে টিম শেখার পারফরম্যান্স এবং শিক্ষার্থীর প্রয়োজন দ্রুত বুঝতে পারে।",
+      },
+      "consistent-experience": {
+        title: "একীভূত অভিজ্ঞতা",
+        subtitle: "মাই পাওয়ার হাব",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "পরিবার, শিক্ষার্থী এবং স্টাফদের স্কুল টুল ও দৈনন্দিন কাজের মধ্যে একটি একীভূত সংযুক্ত অভিজ্ঞতা দিন।",
+      },
+      "behavior-support": {
+        title: "আচরণ সহায়তা",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "সংযুক্ত শিক্ষার্থী তথ্য এবং পরিষ্কার টিম ভিজিবিলিটির মাধ্যমে ইতিবাচক আচরণ সহায়তার কাজগুলো শক্তিশালী করুন।",
+      },
+      "connected-intelligence": {
+        title: "সংযুক্ত ইন্টেলিজেন্স",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "সংযুক্ত সিস্টেমের ইনসাইট এক জায়গায় আনুন, যাতে নেতৃত্ব দল নির্ভরযোগ্য শিক্ষার্থী ডেটা দিয়ে ভালো সিদ্ধান্ত নিতে পারে।",
+      },
+      "analytics-insights": {
+        title: "অ্যানালিটিক্স ও ইনসাইটস",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "অপারেশনাল ও শিক্ষার্থী ডেটাকে পরিষ্কার ড্যাশবোর্ড, ট্রেন্ড এবং কার্যকর ইনসাইটে রূপান্তর করুন।",
+      },
+      "curriculum-instruction": {
+        title: "কারিকুলাম ও নির্দেশনা",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "কারিকুলাম, নির্দেশনা এবং শিক্ষার্থী পারফরম্যান্স ডেটা যুক্ত করে শক্তিশালী শিক্ষাদান সিদ্ধান্তে সহায়তা করুন।",
+      },
+    },
+  },
+  en: {
+    topTitle: "SIS",
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    fallbackLabel: "Connected Capability",
+    tapHint: "Click any card to view details",
+    cards: {
+      enrollment: {
+        title: "Enrollment",
+        label: "Inside SIS",
+        description:
+          "Manage student admission, enrollment records, family data, class placement, and connected school workflows from one central information system.",
+      },
+      sis: {
+        title: "SIS",
+        label: "Central System",
+        description:
+          "The SIS is the center of student information, enrollment, communication, attendance, analytics, and daily school operations.",
+      },
+      "special-programs": {
+        title: "Special Programs",
+        label: "Inside SIS",
+        description:
+          "Track student support, special programs, intervention workflows, and service information with connected student records.",
+      },
+      communications: {
+        title: "Communications",
+        subtitle: "School Messenger",
+        label: "Connected Add-on",
+        description:
+          "Connect messages with student data so every family update is accurate, timely, and easier for staff to deliver.",
+      },
+      "contextual-ai": {
+        title: "Contextual AI",
+        label: "Connected Add-on",
+        description:
+          "Use AI with SIS data to generate insights, simplify data requests, and help teams understand school information faster.",
+      },
+      "learning-management": {
+        title: "Learning Management",
+        subtitle: "Learning Suite",
+        label: "Connected Add-on",
+        description:
+          "Connect classroom learning activity with student information so educators understand progress in one connected experience.",
+      },
+      "attendance-support": {
+        title: "Attendance Support",
+        label: "Connected Add-on",
+        description:
+          "Detect attendance patterns earlier and help schools respond with fast, connected family outreach.",
+      },
+      assessment: {
+        title: "Assessment",
+        subtitle: "Performance Insights",
+        label: "Connected Add-on",
+        description:
+          "Bring assessment data closer to the SIS so teams can understand learning performance and student needs faster.",
+      },
+      "consistent-experience": {
+        title: "Consistent Experience",
+        subtitle: "MyPowerHub",
+        label: "Connected Add-on",
+        description:
+          "Give families, students, and staff a consistent connected experience across school tools and daily workflows.",
+      },
+      "behavior-support": {
+        title: "Behavior Support",
+        label: "Connected Add-on",
+        description:
+          "Support positive behavior workflows with connected student information and clearer team visibility.",
+      },
+      "connected-intelligence": {
+        title: "Connected Intelligence",
+        label: "Connected Add-on",
+        description:
+          "Unify insights from connected systems so leaders can make better decisions with trusted student data.",
+      },
+      "analytics-insights": {
+        title: "Analytics & Insights",
+        label: "Connected Add-on",
+        description:
+          "Transform operational and student data into clear dashboards, trends, and actionable insights.",
+      },
+      "curriculum-instruction": {
+        title: "Curriculum & Instruction",
+        label: "Connected Add-on",
+        description:
+          "Connect curriculum, instruction, and student performance data to support stronger teaching decisions.",
+      },
+    },
+  },
+} as const;
+
+const coreBase = [
   {
-    id: "enrollment",
-    title: "Enrollment",
+    id: "enrollment" as const,
     icon: <MdAddCircleOutline />,
-    color: "#8b2d10",
-    kind: "core",
-    label: "Inside SIS",
-    description:
-      "Manage student admission, enrollment records, family data, class placement, and connected school workflows from one central information system.",
+    kind: "core" as const,
   },
   {
-    id: "sis",
-    title: "SIS",
+    id: "sis" as const,
     icon: <FaUsers />,
-    color: "#8b2d10",
-    kind: "core",
+    kind: "core" as const,
     active: true,
-    label: "Central System",
-    description:
-      "The SIS is the center of student information, enrollment, communication, attendance, analytics, and daily school operations.",
   },
   {
-    id: "special-programs",
-    title: "Special Programs",
+    id: "special-programs" as const,
     icon: <FaRegStar />,
-    color: "#8b2d10",
-    kind: "core",
-    label: "Inside SIS",
-    description:
-      "Track student support, special programs, intervention workflows, and service information with connected student records.",
+    kind: "core" as const,
   },
 ];
 
-const floatingCards: DetailCard[] = [
+const floatingBase = [
   {
-    id: "communications",
-    title: "Communications",
-    subtitle: "School Messenger",
+    id: "communications" as const,
     icon: <MdOutlineHub />,
-    color: "#8b2d10",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "left-[4%] top-[13%]",
-    label: "Connected Add-on",
-    description:
-      "Connect messages with student data so every family update is accurate, timely, and easier for staff to deliver.",
   },
   {
-    id: "contextual-ai",
-    title: "Contextual AI",
+    id: "contextual-ai" as const,
     icon: <MdOutlineAutoAwesome />,
-    color: "#001b70",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "left-[23%] top-[5%]",
-    label: "Connected Add-on",
-    description:
-      "Use AI with SIS data to generate insights, simplify data requests, and help teams understand school information faster.",
   },
   {
-    id: "learning-management",
-    title: "Learning Management",
-    subtitle: "Learning Suite",
+    id: "learning-management" as const,
     icon: <MdOutlinePsychology />,
-    color: "#006642",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "right-[14%] top-[3%]",
-    label: "Connected Add-on",
-    description:
-      "Connect classroom learning activity with student information so educators understand progress in one connected experience.",
   },
   {
-    id: "attendance-support",
-    title: "Attendance Support",
+    id: "attendance-support" as const,
     icon: <FaRegCircleQuestion />,
-    color: "#8b2d10",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "right-[6%] top-[18%]",
-    label: "Connected Add-on",
-    description:
-      "Detect attendance patterns earlier and help schools respond with fast, connected family outreach.",
   },
   {
-    id: "assessment",
-    title: "Assessment",
-    subtitle: "Performance Insights",
+    id: "assessment" as const,
     icon: <FaRegStar />,
-    color: "#006642",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "right-[3%] top-[36%]",
-    label: "Connected Add-on",
-    description:
-      "Bring assessment data closer to the SIS so teams can understand learning performance and student needs faster.",
   },
   {
-    id: "consistent-experience",
-    title: "Consistent Experience",
-    subtitle: "MyPowerHub",
+    id: "consistent-experience" as const,
     icon: <MdOutlineGridView />,
-    color: "#001b70",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "left-[1.5%] top-[58%]",
-    label: "Connected Add-on",
-    description:
-      "Give families, students, and staff a consistent connected experience across school tools and daily workflows.",
   },
   {
-    id: "behavior-support",
-    title: "Behavior Support",
+    id: "behavior-support" as const,
     icon: <MdOutlineFavoriteBorder />,
-    color: "#006642",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "left-[3%] bottom-[14%]",
-    label: "Connected Add-on",
-    description:
-      "Support positive behavior workflows with connected student information and clearer team visibility.",
   },
   {
-    id: "connected-intelligence",
-    title: "Connected Intelligence",
+    id: "connected-intelligence" as const,
     icon: <MdOutlineHub />,
-    color: "#001b70",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "left-[15%] bottom-[5%]",
-    label: "Connected Add-on",
-    description:
-      "Unify insights from connected systems so leaders can make better decisions with trusted student data.",
   },
   {
-    id: "analytics-insights",
-    title: "Analytics & Insights",
+    id: "analytics-insights" as const,
     icon: <MdOutlineAnalytics />,
-    color: "#001b70",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "right-[6%] bottom-[16%]",
-    label: "Connected Add-on",
-    description:
-      "Transform operational and student data into clear dashboards, trends, and actionable insights.",
   },
   {
-    id: "curriculum-instruction",
-    title: "Curriculum & Instruction",
+    id: "curriculum-instruction" as const,
     icon: <MdOutlineMenuBook />,
-    color: "#006642",
-    kind: "floating",
+    kind: "floating" as const,
     positionClass: "right-[23%] bottom-[5%]",
-    label: "Connected Add-on",
-    description:
-      "Connect curriculum, instruction, and student performance data to support stronger teaching decisions.",
   },
 ];
 
-const allCards = [...coreCards, ...floatingCards];
-
-const connectorPaths: Record<string, ConnectorPath> = {
+const connectorPaths: Record<CardId, ConnectorPath> = {
   communications: {
     d: "M500 360 L430 360 Q410 360 410 340 L410 170 Q410 150 390 150 L126 150",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "contextual-ai": {
     d: "M500 360 L455 360 Q435 360 435 340 L435 112 Q435 92 415 92 L304 92",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "learning-management": {
     d: "M500 360 L600 360 Q620 360 620 340 L620 108 Q620 88 640 88 L810 88",
-    color: "#006642",
-    glowColor: "rgba(0,102,66,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "attendance-support": {
     d: "M500 360 L640 360 Q660 360 660 340 L660 188 Q660 168 680 168 L900 168",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   assessment: {
     d: "M500 360 L720 360 Q740 360 740 340 L740 332 Q740 315 758 315 L918 315",
-    color: "#006642",
-    glowColor: "rgba(0,102,66,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "consistent-experience": {
     d: "M500 360 L390 360 Q370 360 370 380 L370 515 Q370 535 350 535 L92 535",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "behavior-support": {
     d: "M500 360 L410 360 Q390 360 390 380 L390 610 Q390 630 370 630 L106 630",
-    color: "#006642",
-    glowColor: "rgba(0,102,66,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "connected-intelligence": {
     d: "M500 360 L455 360 Q435 360 435 380 L435 655 Q435 675 415 675 L245 675",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "analytics-insights": {
     d: "M500 360 L640 360 Q660 360 660 380 L660 615 Q660 635 680 635 L900 635",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "curriculum-instruction": {
     d: "M500 360 L600 360 Q620 360 620 380 L620 655 Q620 675 640 675 L760 675",
-    color: "#006642",
-    glowColor: "rgba(0,102,66,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   enrollment: {
     d: "M500 360 L458 360 Q444 360 444 346 L444 300 Q444 286 430 286 L390 286",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "special-programs": {
     d: "M500 360 L458 360 Q444 360 444 374 L444 424 Q444 438 430 438 L390 438",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   sis: {
     d: "M500 360 L500 360",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.16)",
+    color: brandColor,
+    glowColor: brandGlowStrong,
   },
 };
 
@@ -369,6 +504,7 @@ function CoreTile({
   const wordCount = item.title.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
   const isSis = item.id === "sis";
+  const active = selected || item.active;
 
   return (
     <motion.button
@@ -395,20 +531,20 @@ function CoreTile({
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
-        selected || item.active
-          ? "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#f8fbff_0%,#dcecfb_100%)] shadow-[0_22px_52px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
-          : "border border-[#d8e2ee] bg-[linear-gradient(180deg,#f9fcff_0%,#e8f4ff_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_24px_58px_rgba(15,23,42,0.13)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
+        active
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.62),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -423,10 +559,10 @@ function CoreTile({
         }
       />
 
-      {selected || item.active ? (
+      {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -443,23 +579,18 @@ function CoreTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#4b6377] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
-      <div
-        className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-500 group-hover:scale-110"
-        style={{ color: item.color }}
-      >
+      <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
       <div
         className={[
           "relative z-10 flex min-h-[32px] max-w-[86px] items-center justify-center",
-          "text-center text-black tracking-[-0.04em]",
-          isSis ? "font-black" : "font-normal",
-          isSingleWord
-            ? "text-[13.5px] leading-none"
-            : "text-[11px] leading-[1.08]",
+          "text-center tracking-[-0.04em] text-current",
+          isSis ? "font-black" : "font-semibold",
+          isSingleWord ? "text-[13.5px] leading-none" : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
@@ -519,21 +650,21 @@ function FloatingTile({
       className={[
         "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
         active
-          ? "border-[3px] border-[#ff7438] bg-white shadow-[0_24px_60px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
-          : "border border-[#d8e2ee] bg-white/82 shadow-[0_14px_34px_rgba(15,23,42,0.065)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(15,23,42,0.14)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.7),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -551,7 +682,7 @@ function FloatingTile({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -568,29 +699,24 @@ function FloatingTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#1f2937] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
-      <div
-        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-500 group-hover:scale-110"
-        style={{ color: active ? "#ff7438" : item.color }}
-      >
+      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
       <div
         className={[
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
-          "font-normal tracking-[-0.04em] text-black",
-          isSingleWord
-            ? "text-[10.5px] leading-none"
-            : "text-[9.5px] leading-[1.05]",
+          "font-semibold tracking-[-0.04em] text-current",
+          isSingleWord ? "text-[10.5px] leading-none" : "text-[9.5px] leading-[1.05]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[#334155]">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -601,9 +727,15 @@ function FloatingTile({
 function DetailPanel({
   item,
   onClose,
+  openSectionText,
+  closeText,
+  fallbackLabel,
 }: {
   item: DetailCard;
   onClose: () => void;
+  openSectionText: string;
+  closeText: string;
+  fallbackLabel: string;
 }) {
   const isSis = item.id === "sis";
 
@@ -637,9 +769,9 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white",
-        "px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--sc-primary)] bg-[var(--sc-white)]",
+        "px-6 py-6 text-[var(--sc-primary)]",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
       ].join(" ")}
     >
       <button
@@ -647,10 +779,10 @@ function DetailPanel({
         onClick={onClose}
         className={[
           "absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full",
-          "border border-slate-200 bg-white text-slate-500",
-          "transition hover:bg-[#202833] hover:text-white",
+          "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)]",
+          "transition hover:bg-[var(--sc-primary)] hover:text-[var(--sc-white)]",
         ].join(" ")}
-        aria-label="Close detail"
+        aria-label={closeText}
       >
         <FaXmark />
       </button>
@@ -659,57 +791,56 @@ function DetailPanel({
         <div
           className={[
             "grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px]",
-            "border border-[#d8e2ee] bg-[#f7fbff]",
+            "border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]",
           ].join(" ")}
-          style={{ color: item.color }}
         >
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
-            {item.label ?? "Connected Capability"}
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+            {item.label ?? fallbackLabel}
           </p>
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
-              isSis ? "font-black" : "font-normal",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--sc-primary)]",
+              isSis ? "font-black" : "font-semibold",
             ].join(" ")}
           >
             {item.title}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#0068ff]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-muted)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--sc-muted)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--sc-border)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
         className={[
-          "mt-5 rounded-full bg-[#202833] px-5 py-3",
-          "text-[12px] font-normal uppercase tracking-[0.08em] text-white",
-          "transition hover:translate-y-[-1px] hover:bg-[#0f172a]",
+          "mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3",
+          "text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--sc-white)]",
+          "transition hover:translate-y-[-1px] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
         ].join(" ")}
       >
-        Open Section
+        {openSectionText}
       </button>
     </motion.div>
   );
 }
 
-function ConnectorLine({ selectedId }: { selectedId: string }) {
+function ConnectorLine({ selectedId }: { selectedId: CardId }) {
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 
@@ -733,7 +864,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
             cy="360"
             r="35"
             fill="none"
-            stroke="#ff7438"
+            stroke="var(--sc-primary)"
             strokeWidth="4"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={
@@ -790,7 +921,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.88)"
+          stroke="var(--sc-white)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -822,7 +953,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.75)"
+          stroke="var(--sc-white)"
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -845,20 +976,124 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
   );
 }
 
+function MobileTabletView({
+  cards,
+  selectedId,
+  onSelect,
+  tapHint,
+}: {
+  cards: DetailCard[];
+  selectedId?: CardId;
+  onSelect: (card: DetailCard) => void;
+  tapHint: string;
+}) {
+  return (
+    <div className="relative z-10 mx-auto flex min-h-[720px] w-full max-w-4xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
+      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)]/90 p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
+          {tapHint}
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {cards.map((card) => {
+            const active = selectedId === card.id || card.active;
+
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => {
+                  onSelect(card);
+                  scrollRightSidebarTo(card.id);
+                }}
+                className={[
+                  "group rounded-[22px] border p-4 text-left transition duration-300",
+                  active
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
+                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={[
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      active
+                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
+                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                    ].join(" ")}
+                  >
+                    {card.icon}
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-current opacity-70">
+                      {card.label}
+                    </p>
+
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-current">
+                      {card.title}
+                    </h3>
+
+                    {card.subtitle ? (
+                      <p className="mt-1 text-[12px] font-normal text-current opacity-75">
+                        {card.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SIS() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const text = sectionText[currentLanguage];
+
   const shouldReduceMotion = useReducedMotion();
   const [selectedCapability, setSelectedCapability] =
     useState<DetailCard | null>(null);
 
+  const coreCards = useMemo<DetailCard[]>(() => {
+    return coreBase.map((card) => ({
+      ...card,
+      title: text.cards[card.id].title,
+      subtitle: "subtitle" in text.cards[card.id] ? text.cards[card.id].subtitle : undefined,
+      label: text.cards[card.id].label,
+      description: text.cards[card.id].description,
+    }));
+  }, [text]);
+
+  const floatingCards = useMemo<DetailCard[]>(() => {
+    return floatingBase.map((card) => ({
+      ...card,
+      title: text.cards[card.id].title,
+      subtitle: "subtitle" in text.cards[card.id] ? text.cards[card.id].subtitle : undefined,
+      label: text.cards[card.id].label,
+      description: text.cards[card.id].description,
+    }));
+  }, [text]);
+
+  const allCards = useMemo<DetailCard[]>(
+    () => [...coreCards, ...floatingCards],
+    [coreCards, floatingCards]
+  );
+
   const selectedId = selectedCapability?.id;
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full min-h-[720px] w-full overflow-hidden bg-[var(--sc-bg)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -874,11 +1109,18 @@ export default function SIS() {
         }}
       />
 
+      <MobileTabletView
+        cards={allCards}
+        selectedId={selectedId}
+        onSelect={setSelectedCapability}
+        tapHint={text.tapHint}
+      />
+
       <motion.div
         variants={pageVariants}
         initial="hidden"
         animate="visible"
-        className="relative h-full w-full"
+        className="relative hidden h-full w-full lg:block"
       >
         {floatingCards.map((item, index) => (
           <FloatingTile
@@ -898,34 +1140,34 @@ export default function SIS() {
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={itemVariants} className="relative">
-            <div className="absolute left-1/2 top-[-64px] z-20 -translate-x-1/2">
+            <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
               <button
                 type="button"
                 onClick={() => setSelectedCapability(coreCards[1])}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full",
-                  "bg-[#ffd09a] px-[44px]",
-                  "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] text-[#8b2d10]",
-                  "shadow-[0_16px_34px_rgba(255,116,56,0.18)]",
-                  "transition duration-300 hover:scale-[1.025] hover:bg-[#ffc783]",
+                  "h-[42px] min-w-[320px] rounded-full",
+                  "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] px-[44px]",
+                  "text-center text-[13px] font-semibold uppercase tracking-[0.13em]",
+                  "leading-[36px] text-[var(--sc-white)]",
+                  "shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
+                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
               >
-                Student Information
+                {text.topTitle}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[290px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[#cfd8e3]/95",
-                "bg-white/20 p-[14px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
+                "bg-[var(--sc-white)]/24 p-[14px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(0,104,255,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-35" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] gap-[14px]">
                 <div className="flex flex-col justify-center gap-[10px]">
@@ -964,6 +1206,9 @@ export default function SIS() {
                 selectedCapability
               }
               onClose={() => setSelectedCapability(null)}
+              openSectionText={text.openSection}
+              closeText={text.closeDetail}
+              fallbackLabel={text.fallbackLabel}
             />
           ) : null}
         </AnimatePresence>

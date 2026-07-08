@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   AnimatePresence,
   motion,
@@ -13,16 +13,26 @@ import {
   MdOutlineGridView,
   MdOutlinePsychology,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+type LanguageCode = "bn" | "en";
+
+type CardId =
+  | "sis"
+  | "special-programs"
+  | "learning-management"
+  | "consistent-experience"
+  | "contextual-ai"
+  | "student-information";
 
 type CardItem = {
-  id: string;
+  id: CardId;
   title: string;
   subtitle?: string;
   icon?: ReactNode;
   active?: boolean;
   floating?: boolean;
   positionClass?: string;
-  color?: string;
   label?: string;
   description?: string;
 };
@@ -33,92 +43,172 @@ type ConnectorPath = {
   glowColor: string;
 };
 
-const premiumEase = [0.22, 1, 0.36, 1] as const;
+const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-const centerCards: CardItem[] = [
+const brandColor = "var(--sc-primary)";
+const brandGlow = "color-mix(in srgb, var(--sc-primary) 14%, transparent)";
+const brandGlowStrong =
+  "color-mix(in srgb, var(--sc-primary) 18%, transparent)";
+
+const sectionText = {
+  bn: {
+    sectionTitle: "বিশেষ প্রোগ্রাম",
+    openSection: "সেকশন খুলুন",
+    closeDetail: "ডিটেইল বন্ধ করুন",
+    fallbackLabel: "সংযুক্ত সক্ষমতা",
+    tapHint: "যেকোনো কার্ডে ক্লিক করে বিস্তারিত দেখুন",
+    cards: {
+      sis: {
+        title: "এসআইএস",
+        label: "সংযুক্ত সিস্টেম",
+        description:
+          "এসআইএস শিক্ষার্থীর রেকর্ড, প্রোগ্রাম, একাডেমিক ডেটা এবং স্কুলের কাজের ধারাকে একটি কেন্দ্রীয় তথ্য ব্যবস্থায় যুক্ত করে।",
+      },
+      "special-programs": {
+        title: "বিশেষ প্রোগ্রাম",
+        label: "প্রধান প্রোগ্রাম এলাকা",
+        description:
+          "বিশেষ প্রোগ্রাম স্কুলকে শিক্ষার্থী সহায়তা, বিশেষ সার্ভিস, ইন্টারভেনশন কাজের ধারা এবং সংযুক্ত প্রোগ্রাম তথ্য পরিচালনা করতে সাহায্য করে।",
+      },
+      "learning-management": {
+        title: "লার্নিং ম্যানেজমেন্ট",
+        subtitle: "লার্নিং স্যুট",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "ক্লাসরুম শেখার কার্যক্রমকে শিক্ষার্থী প্রোগ্রামের সাথে যুক্ত করুন, যাতে শিক্ষকরা সহায়তার প্রয়োজন এবং অগ্রগতি পরিষ্কারভাবে বুঝতে পারেন।",
+      },
+      "consistent-experience": {
+        title: "একীভূত অভিজ্ঞতা",
+        subtitle: "ফ্যামিলি হাব",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "পরিবার, শিক্ষার্থী এবং স্টাফদের শিক্ষার্থী সহায়তা, প্রোগ্রাম আপডেট এবং দৈনন্দিন কাজের মধ্যে একটি একীভূত অভিজ্ঞতা দিন।",
+      },
+      "contextual-ai": {
+        title: "কনটেক্সচুয়াল এআই",
+        label: "সংযুক্ত অ্যাড-অন",
+        description:
+          "সংযুক্ত শিক্ষার্থী ডেটার সাথে এআই ব্যবহার করে ইনসাইট, প্রোগ্রাম প্রয়োজন, সহায়তার ট্রেন্ড এবং পরিষ্কার স্কুল সিদ্ধান্ত তুলে ধরুন।",
+      },
+      "student-information": {
+        title: "শিক্ষার্থী তথ্য",
+        label: "অভিভাবক সেকশন",
+        description:
+          "শিক্ষার্থী তথ্য এসআইএস, ভর্তি, বিশেষ প্রোগ্রাম এবং সংশ্লিষ্ট শিক্ষার্থী কাজের ধারাকে একটি সংযুক্ত প্ল্যাটফর্মে যুক্ত করে।",
+      },
+    },
+  },
+  en: {
+    sectionTitle: "Special Programs",
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    fallbackLabel: "Connected Capability",
+    tapHint: "Click any card to view details",
+    cards: {
+      sis: {
+        title: "SIS",
+        label: "Connected System",
+        description:
+          "SIS connects student records, programs, academic data, and school workflows in one central information system.",
+      },
+      "special-programs": {
+        title: "Special Programs",
+        label: "Main Program Area",
+        description:
+          "Special Programs helps schools manage student support, special services, intervention workflows, and connected program information.",
+      },
+      "learning-management": {
+        title: "Learning Management",
+        subtitle: "Learning Suite",
+        label: "Connected Add-on",
+        description:
+          "Connect classroom learning activity with student programs so educators understand support needs and progress clearly.",
+      },
+      "consistent-experience": {
+        title: "Consistent Experience",
+        subtitle: "Family Hub",
+        label: "Connected Add-on",
+        description:
+          "Give families, students, and staff a consistent experience across student support, program updates, and daily workflows.",
+      },
+      "contextual-ai": {
+        title: "Contextual AI",
+        label: "Connected Add-on",
+        description:
+          "Use AI with connected student data to surface insights, program needs, support trends, and clearer school decisions.",
+      },
+      "student-information": {
+        title: "Student Information",
+        label: "Parent Section",
+        description:
+          "Student Information connects SIS, enrollment, special programs, and related student workflows in one connected platform.",
+      },
+    },
+  },
+} as const;
+
+const centerBase = [
   {
-    id: "sis",
-    title: "SIS",
+    id: "sis" as const,
     icon: <FaUsers />,
-    color: "#8b2d10",
-    label: "Connected System",
-    description:
-      "SIS connects student records, programs, academic data, and school workflows in one central information system.",
   },
   {
-    id: "special-programs",
-    title: "Special Programs",
+    id: "special-programs" as const,
     icon: <FaRegStar />,
     active: true,
-    color: "#8b2d10",
-    label: "Main Program Area",
-    description:
-      "Special Programs helps schools manage student support, special services, intervention workflows, and connected program information.",
   },
 ];
 
-const floatingCards: CardItem[] = [
+const floatingBase = [
   {
-    id: "learning-management",
-    title: "Learning Management",
-    subtitle: "Learning Suite",
+    id: "learning-management" as const,
+    subtitle: true,
     icon: <MdOutlinePsychology />,
     positionClass: "right-[5%] top-[14%]",
-    color: "#006642",
-    label: "Connected Add-on",
-    description:
-      "Connect classroom learning activity with student programs so educators understand support needs and progress clearly.",
   },
   {
-    id: "consistent-experience",
-    title: "Consistent Experience",
-    subtitle: "Family Hub",
+    id: "consistent-experience" as const,
+    subtitle: true,
     icon: <MdOutlineGridView />,
     positionClass: "right-[5%] bottom-[14%]",
-    color: "#001b70",
-    label: "Connected Add-on",
-    description:
-      "Give families, students, and staff a consistent experience across student support, program updates, and daily workflows.",
   },
   {
-    id: "contextual-ai",
-    title: "Contextual AI",
+    id: "contextual-ai" as const,
     icon: <MdOutlineAutoAwesome />,
     positionClass: "left-[13%] bottom-[8%]",
-    color: "#001b70",
-    label: "Connected Add-on",
-    description:
-      "Use AI with connected student data to surface insights, program needs, support trends, and clearer school decisions.",
   },
 ];
 
-const allCards = [...centerCards, ...floatingCards];
-
-const connectorPaths: Record<string, ConnectorPath> = {
+const connectorPaths: Record<CardId, ConnectorPath> = {
   sis: {
     d: "M500 360 L455 360 Q440 360 440 345 L440 335 Q440 320 425 320 L390 320",
-    color: "#8b2d10",
-    glowColor: "rgba(139,45,16,0.14)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "special-programs": {
     d: "M500 360 L500 360",
-    color: "#ff7438",
-    glowColor: "rgba(255,116,56,0.16)",
+    color: brandColor,
+    glowColor: brandGlowStrong,
   },
   "learning-management": {
     d: "M500 360 L610 360 Q630 360 630 340 L630 175 Q630 155 650 155 L900 155",
-    color: "#006642",
-    glowColor: "rgba(0,102,66,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "consistent-experience": {
     d: "M500 360 L610 360 Q630 360 630 380 L630 550 Q630 570 650 570 L900 570",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
   },
   "contextual-ai": {
     d: "M500 360 L440 360 Q420 360 420 380 L420 625 Q420 645 400 645 L245 645",
-    color: "#001b70",
-    glowColor: "rgba(0,27,112,0.13)",
+    color: brandColor,
+    glowColor: brandGlow,
+  },
+  "student-information": {
+    d: "M500 360 L500 360",
+    color: brandColor,
+    glowColor: brandGlow,
   },
 };
 
@@ -190,9 +280,7 @@ function scrollRightSidebarTo(id: string) {
 function formatTitle(title: string) {
   const words = title.trim().split(/\s+/);
 
-  if (words.length === 1) {
-    return title;
-  }
+  if (words.length === 1) return title;
 
   if (words.length === 2) {
     return (
@@ -252,20 +340,20 @@ function MiniCard({
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
         selected
-          ? "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#f8fbff_0%,#dcecfb_100%)] shadow-[0_22px_52px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
-          : "border border-[#d8e2ee] bg-[linear-gradient(180deg,#f9fcff_0%,#e8f4ff_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_24px_58px_rgba(15,23,42,0.13)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_22px_55px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.62),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -283,7 +371,7 @@ function MiniCard({
       {selected ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -300,13 +388,10 @@ function MiniCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#4b6377] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div
-          className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-500 group-hover:scale-110"
-          style={{ color: item.color ?? "#8b2d10" }}
-        >
+        <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -314,8 +399,8 @@ function MiniCard({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center text-black tracking-[-0.04em]",
-          isSpecialPrograms ? "font-black" : "font-normal",
+          "text-center tracking-[-0.04em] text-current",
+          isSpecialPrograms ? "font-black" : "font-semibold",
           isSingleWord
             ? "text-[13.5px] leading-none"
             : "text-[11px] leading-[1.08]",
@@ -363,17 +448,17 @@ function ActiveSpecialProgramsCard({
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[#ff7438] bg-[linear-gradient(180deg,#f8fbff_0%,#dcecfb_100%)]",
-        "shadow-[0_26px_70px_rgba(255,116,56,0.24),0_0_0_6px_rgba(255,116,56,0.08)]",
-        "transition-shadow duration-500 hover:shadow-[0_32px_84px_rgba(255,116,56,0.3),0_0_0_7px_rgba(255,116,56,0.1)]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)]",
+        "shadow-[0_26px_70px_color-mix(in_srgb,var(--sc-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--sc-primary)_26%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,rgba(255,255,255,0.64),rgba(255,255,255,0)_52%,rgba(15,23,42,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -390,7 +475,7 @@ function ActiveSpecialProgramsCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[#ff7438]/45"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--sc-secondary)]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -406,15 +491,21 @@ function ActiveSpecialProgramsCard({
         }}
       />
 
-      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-black transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-current opacity-85 transition-all duration-500 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-4 text-[48px] leading-none text-[#8b2d10] transition-all duration-500 group-hover:scale-110 group-hover:text-[#ff7438]">
+      <div className="relative z-10 mb-4 text-[48px] leading-none text-current transition-all duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[132px] text-[14px] font-black leading-[1.05] tracking-[-0.04em] text-black">
-        Special Programs
+      <h3 className="relative z-10 max-w-[132px] text-[14px] font-black leading-[1.05] tracking-[-0.04em] text-current">
+        {item.title}
       </h3>
+
+      {item.subtitle ? (
+        <p className="relative z-10 mt-2 text-[11px] font-normal leading-none text-current opacity-75">
+          {item.subtitle}
+        </p>
+      ) : null}
     </motion.button>
   );
 }
@@ -467,21 +558,21 @@ function FloatingCard({
       className={[
         "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "transition-[box-shadow,border-color,background-color] duration-500",
+        "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ff7438]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] focus-visible:ring-offset-2",
         active
-          ? "border-[3px] border-[#ff7438] bg-white shadow-[0_24px_60px_rgba(255,116,56,0.24),0_0_0_5px_rgba(255,116,56,0.08)]"
-          : "border border-[#d8e2ee] bg-white/82 shadow-[0_14px_34px_rgba(15,23,42,0.065)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(15,23,42,0.14)]",
+          ? "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]"
+          : "border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--sc-primary)_10%,transparent)]",
+        "hover:-translate-y-1 hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.7),rgba(255,255,255,0)_52%,rgba(15,23,42,0.035))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--sc-white),transparent_52%,var(--sc-secondary-light))] opacity-35" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--sc-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -499,7 +590,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ff7438]/45"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--sc-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -516,21 +607,18 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#1f2937] transition-all duration-500 group-hover:rotate-12 group-hover:text-[#ff7438]" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
-      <div
-        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-500 group-hover:scale-110"
-        style={{ color: active ? "#ff7438" : item.color ?? "#001b70" }}
-      >
+      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-normal leading-[1.05] tracking-[-0.04em] text-[#001b70]">
+      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[#334155]">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -541,9 +629,15 @@ function FloatingCard({
 function DetailPanel({
   item,
   onClose,
+  openSectionText,
+  closeText,
+  fallbackLabel,
 }: {
   item: CardItem;
   onClose: () => void;
+  openSectionText: string;
+  closeText: string;
+  fallbackLabel: string;
 }) {
   const isSpecialPrograms = item.id === "special-programs";
 
@@ -577,67 +671,64 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--sc-primary)] bg-[var(--sc-white)] px-6 py-6 text-[var(--sc-primary)]",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-[#202833] hover:text-white"
-        aria-label="Close detail"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] transition hover:bg-[var(--sc-primary)] hover:text-[var(--sc-white)]"
+        aria-label={closeText}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[#d8e2ee] bg-[#f7fbff]"
-          style={{ color: item.color ?? "#8b2d10" }}
-        >
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--sc-primary)] bg-[var(--sc-secondary-light)] text-[var(--sc-primary)]">
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
-            {item.label ?? "Connected Capability"}
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--sc-muted)]">
+            {item.label ?? fallbackLabel}
           </p>
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
-              isSpecialPrograms ? "font-black" : "font-normal",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--sc-primary)]",
+              isSpecialPrograms ? "font-black" : "font-semibold",
             ].join(" ")}
           >
             {item.title}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#0068ff]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--sc-muted)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--sc-muted)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--sc-border)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[#202833] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px] hover:bg-[#0f172a]"
+        className="mt-5 rounded-full bg-[var(--sc-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--sc-white)] transition hover:translate-y-[-1px] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]"
       >
-        Open Section
+        {openSectionText}
       </button>
     </motion.div>
   );
 }
 
-function ConnectorLine({ selectedId }: { selectedId: string }) {
+function ConnectorLine({ selectedId }: { selectedId: CardId }) {
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 
@@ -661,7 +752,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
             cy="360"
             r="56"
             fill="none"
-            stroke="#ff7438"
+            stroke="var(--sc-primary)"
             strokeWidth="4"
             initial={{ opacity: 0, scale: 0.6 }}
             animate={
@@ -718,7 +809,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.88)"
+          stroke="var(--sc-white)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -751,19 +842,148 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
   );
 }
 
+function MobileTabletView({
+  cards,
+  selectedCard,
+  setSelectedCard,
+  hint,
+}: {
+  cards: CardItem[];
+  selectedCard: CardItem | null;
+  setSelectedCard: (card: CardItem) => void;
+  hint: string;
+}) {
+  return (
+    <div className="relative z-10 mx-auto flex min-h-[680px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
+      <div className="rounded-[30px] border-[3px] border-[var(--sc-primary)] bg-[var(--sc-white)]/90 p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--sc-primary)_14%,transparent)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--sc-muted)]">
+          {hint}
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {cards.map((card) => {
+            const active = selectedCard?.id === card.id || card.active;
+
+            return (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => {
+                  setSelectedCard(card);
+                  scrollRightSidebarTo(card.id);
+                }}
+                className={[
+                  "group rounded-[22px] border p-4 text-left transition duration-300",
+                  active
+                    ? "border-[var(--sc-primary)] bg-[var(--sc-primary)] text-[var(--sc-white)] shadow-[0_18px_44px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]"
+                    : "border-[var(--sc-primary)] bg-[var(--sc-white)] text-[var(--sc-primary)] hover:bg-[var(--sc-secondary)]",
+                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--sc-primary)_18%,transparent)]",
+                ].join(" ")}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={[
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      active
+                        ? "bg-[var(--sc-secondary)] text-[var(--sc-primary)]"
+                        : "bg-[var(--sc-primary)] text-[var(--sc-white)]",
+                    ].join(" ")}
+                  >
+                    {card.icon}
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-current opacity-70">
+                      {card.label}
+                    </p>
+
+                    <h3 className="mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-current">
+                      {card.title}
+                    </h3>
+
+                    {card.subtitle ? (
+                      <p className="mt-1 text-[12px] font-normal text-current opacity-75">
+                        {card.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <p className="mt-3 text-[13.5px] font-normal leading-6 text-current opacity-75">
+                  {card.description}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SpecialPrograms() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const text = sectionText[currentLanguage];
+
   const shouldReduceMotion = useReducedMotion();
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+
+  const centerCards = useMemo<CardItem[]>(
+    () =>
+      centerBase.map((card) => ({
+        ...card,
+        title: text.cards[card.id].title,
+        subtitle:
+          "subtitle" in text.cards[card.id]
+            ? text.cards[card.id].subtitle
+            : undefined,
+        label: text.cards[card.id].label,
+        description: text.cards[card.id].description,
+      })),
+    [text]
+  );
+
+  const floatingCards = useMemo<CardItem[]>(
+    () =>
+      floatingBase.map((card) => ({
+        ...card,
+        title: text.cards[card.id].title,
+        subtitle:
+          "subtitle" in text.cards[card.id]
+            ? text.cards[card.id].subtitle
+            : undefined,
+        label: text.cards[card.id].label,
+        description: text.cards[card.id].description,
+      })),
+    [text]
+  );
+
+  const parentCard = useMemo<CardItem>(
+    () => ({
+      id: "student-information",
+      title: text.cards["student-information"].title,
+      icon: <FaUsers />,
+      label: text.cards["student-information"].label,
+      description: text.cards["student-information"].description,
+    }),
+    [text]
+  );
+
+  const allCards = useMemo<CardItem[]>(
+    () => [...centerCards, ...floatingCards, parentCard],
+    [centerCards, floatingCards, parentCard]
+  );
 
   const selectedId = selectedCard?.id;
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full min-h-[680px] w-full overflow-hidden bg-[var(--sc-bg)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--sc-border)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -781,13 +1001,13 @@ export default function SpecialPrograms() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ff7438]/8 blur-[92px]"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--sc-secondary)] blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
             : {
                 scale: [1, 1.12, 1],
-                opacity: [0.35, 0.75, 0.35],
+                opacity: [0.24, 0.52, 0.24],
               }
         }
         transition={{
@@ -797,11 +1017,18 @@ export default function SpecialPrograms() {
         }}
       />
 
+      <MobileTabletView
+        cards={allCards}
+        selectedCard={selectedCard}
+        setSelectedCard={setSelectedCard}
+        hint={text.tapHint}
+      />
+
       <motion.div
         variants={pageVariants}
         initial="hidden"
         animate="visible"
-        className="relative h-full w-full"
+        className="relative hidden h-full w-full lg:block"
       >
         {floatingCards.map((item, index) => (
           <FloatingCard
@@ -815,49 +1042,43 @@ export default function SpecialPrograms() {
 
         <AnimatePresence mode="wait">
           {selectedId ? (
-            <ConnectorLine key={selectedId} selectedId={selectedId} />
+            <ConnectorLine key={selectedId} selectedId={selectedId as CardId} />
           ) : null}
         </AnimatePresence>
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={itemVariants} className="relative">
-            <div className="absolute left-1/2 top-[-64px] z-20 -translate-x-1/2">
+            <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
               <button
                 type="button"
-                onClick={() =>
-                  setSelectedCard({
-                    id: "student-information",
-                    title: "Student Information",
-                    icon: <FaUsers />,
-                    color: "#8b2d10",
-                    label: "Parent Section",
-                    description:
-                      "Student Information connects SIS, enrollment, special programs, and related student workflows in one connected platform.",
-                  })
-                }
+                onClick={() => {
+                  setSelectedCard(parentCard);
+                  scrollRightSidebarTo("student-information");
+                }}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full bg-[#ffd09a] px-[44px]",
-                  "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] text-[#8b2d10]",
-                  "shadow-[0_16px_34px_rgba(255,116,56,0.18)]",
-                  "transition duration-300 hover:scale-[1.025] hover:bg-[#ffc783]",
+                  "h-[42px] min-w-[320px] rounded-full",
+                  "border-[3px] border-[var(--sc-primary)] bg-[var(--sc-primary)] px-[44px]",
+                  "text-center text-[13px] font-semibold uppercase tracking-[0.13em]",
+                  "leading-[36px] text-[var(--sc-white)]",
+                  "shadow-[0_20px_54px_color-mix(in_srgb,var(--sc-primary)_24%,transparent)]",
+                  "transition duration-300 hover:scale-[1.025] hover:bg-[var(--sc-secondary)] hover:text-[var(--sc-primary)]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
               >
-                Student Information
+                {text.sectionTitle}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[250px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[#cfd8e3]/95",
-                "bg-white/20 p-[18px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[var(--sc-primary)]",
+                "bg-[var(--sc-white)]/24 p-[18px]",
+                "shadow-[0_30px_90px_color-mix(in_srgb,var(--sc-primary)_16%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(0,104,255,0.04))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--sc-white),transparent_35%,var(--sc-secondary-light))] opacity-35" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
                 <MiniCard
@@ -884,6 +1105,9 @@ export default function SpecialPrograms() {
                 selectedCard
               }
               onClose={() => setSelectedCard(null)}
+              openSectionText={text.openSection}
+              closeText={text.closeDetail}
+              fallbackLabel={text.fallbackLabel}
             />
           ) : null}
         </AnimatePresence>
