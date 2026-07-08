@@ -51,9 +51,9 @@ type MenuGroup = {
 
 const colorPrimary = "var(--color-primary)";
 const colorSecondary = "var(--color-secondary)";
-const colorSecondaryLight = "var(--color-secondary-light)";
-const colorSurface = "var(--color-surface)";
-const colorTextInverse = "var(--color-text-inverse)";
+const colorSecondaryLight = "var(--color-secondary)";
+const colorSurface = "var(--color-white)";
+const colorTextInverse = "var(--color-white)";
 
 const sidebarText = {
   bn: {
@@ -75,10 +75,10 @@ const sidebarText = {
       home: "হোম কানেকশন",
       student: "শিক্ষার্থী অর্জন",
       operational: "অপারেশনাল উৎকর্ষতা",
-      myOs: "আমার কানেক্টেড সিস্টেম",
+      myOs: "আমার সংযুক্ত সিস্টেম",
     },
     sections: {
-      homeConnectionsPanel: "হোম কানেকশন সারসংক্ষেপ",
+      homeConnectionsPanel: "হোম কানেকশন সারাংশ",
       studentInformation: "শিক্ষার্থীর তথ্য",
       sis: "শিক্ষার্থী তথ্য ব্যবস্থা",
       enrollment: "ভর্তি ব্যবস্থাপনা",
@@ -89,7 +89,7 @@ const sidebarText = {
 
       studentAchievement: "শিক্ষার্থী অর্জন",
       classroomSolutions: "শ্রেণিকক্ষ সমাধান",
-      learningManagementSchoology: "লার্নিং ম্যানেজমেন্ট ব্যবস্থা",
+      learningManagementSchoology: "লার্নিং ব্যবস্থাপনা",
       assessmentPerformanceMatters: "মূল্যায়ন ও পারফরম্যান্স বিশ্লেষণ",
       curriculumInstruction: "কারিকুলাম ও পাঠদান",
       studentIntervention: "শিক্ষার্থী সহায়তা ব্যবস্থা",
@@ -109,7 +109,7 @@ const sidebarText = {
     },
   },
   en: {
-    logoHome: "Shikkha Chat home",
+    logoHome: "Shikkha Chat home page",
     languageMode: "Language Mode",
     interfaceTitle: "English Interface",
     currentlyViewing: "Currently viewing",
@@ -130,7 +130,7 @@ const sidebarText = {
       myOs: "My Connected System",
     },
     sections: {
-      homeConnectionsPanel: "Home Connections Overview",
+      homeConnectionsPanel: "Home Connections Summary",
       studentInformation: "Student Information",
       sis: "Student Information System",
       enrollment: "Enrollment Management",
@@ -556,7 +556,7 @@ function ActiveStatusCard({
           style={{ background: accentColor }}
         />
 
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-gray)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-primary)]">
           {text.currentlyViewing}
         </p>
       </div>
@@ -568,11 +568,11 @@ function ActiveStatusCard({
         {activeTitle}
       </h3>
 
-      <p className="mt-1 text-[12px] font-medium leading-5 text-[var(--color-text-secondary)]">
+      <p className="mt-1 text-[12px] font-medium leading-5 text-[var(--color-primary)]">
         {groupTitle}
       </p>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-secondary-light)]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-secondary)]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -631,7 +631,7 @@ function SidebarChildLink({
       ) : null}
 
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-[var(--color-border-soft)] text-[9px] font-bold"
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-[var(--color-primary)] text-[9px] font-bold"
         style={{
           background: active ? color : colorSecondaryLight,
           color: active ? colorTextInverse : colorPrimary,
@@ -655,7 +655,7 @@ function LanguageSwitch() {
     <div className="mt-4 rounded-[24px] border border-[var(--color-primary)] bg-[var(--color-white)] p-3.5 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-xl">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-text-gray)]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
             {text.languageMode}
           </p>
 
@@ -664,7 +664,7 @@ function LanguageSwitch() {
           </h3>
         </div>
 
-        <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary-light)] px-3 py-1 text-[11px] font-bold text-[var(--color-primary)]">
+        <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-[11px] font-bold text-[var(--color-primary)]">
           {isBangla ? text.bnShort : text.enShort}
         </span>
       </div>
@@ -672,7 +672,7 @@ function LanguageSwitch() {
       <button
         type="button"
         onClick={() => setLanguage(isBangla ? "en" : "bn")}
-        className="group relative h-12 w-full overflow-hidden rounded-full border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_6%,transparent)] transition duration-300 hover:bg-[var(--color-secondary-light)]"
+        className="group relative h-12 w-full overflow-hidden rounded-full border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_6%,transparent)] transition duration-300 hover:bg-[var(--color-secondary)]"
         aria-label={text.toggleLanguage}
       >
         <span
@@ -688,7 +688,7 @@ function LanguageSwitch() {
             className={[
               "grid place-items-center rounded-full transition duration-300",
               isBangla
-                ? "text-[var(--color-text-inverse)]"
+                ? "text-[var(--color-white)]"
                 : "text-[var(--color-primary)]",
             ].join(" ")}
           >
@@ -699,7 +699,7 @@ function LanguageSwitch() {
             className={[
               "grid place-items-center rounded-full transition duration-300",
               !isBangla
-                ? "text-[var(--color-text-inverse)]"
+                ? "text-[var(--color-white)]"
                 : "text-[var(--color-primary)]",
             ].join(" ")}
           >
@@ -824,7 +824,7 @@ export default function LeftSidebar() {
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="sidebar-open-button fixed left-4 top-4 z-[80] grid h-12 w-12 place-items-center rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary-light)]"
+        className="sidebar-open-button fixed left-4 top-4 z-[80] grid h-12 w-12 place-items-center rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)]"
         aria-label={text.menu}
       >
         <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
@@ -841,19 +841,19 @@ export default function LeftSidebar() {
 
       <aside
         className={[
-          "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen w-[320px] flex-col overflow-hidden border-r border-[var(--color-border-soft)] bg-[var(--color-white)] shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition-transform duration-500",
+          "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen w-[320px] max-w-[calc(100vw-20px)] flex-col overflow-hidden border-r border-[var(--color-primary)] bg-[var(--color-white)] shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition-transform duration-500 will-change-transform",
           drawerOpen ? "is-open" : "",
         ].join(" ")}
       >
-        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary-light)] opacity-70 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-blue-soft)] opacity-80 blur-3xl" />
-        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[var(--color-border-soft)]" />
+        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary)] opacity-70 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-secondary)] opacity-80 blur-3xl" />
+        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[var(--color-primary)]" />
 
         <div className="no-scrollbar relative flex h-full flex-col overflow-y-auto bg-[var(--color-white)] px-5 py-7">
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-text-inverse)]"
+            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
             aria-label={text.closeMenu}
           >
             ×
@@ -863,7 +863,7 @@ export default function LeftSidebar() {
           <LanguageSwitch />
 
           <div className="mt-6 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-4 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
-            <div className="rounded-2xl border border-[var(--color-border-soft)] bg-[var(--color-white)] p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
+            <div className="rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
               <p className="text-[13px] font-bold tracking-[-0.02em] text-[var(--color-primary)]">
                 {text.theK12Os}
               </p>
@@ -903,6 +903,7 @@ export default function LeftSidebar() {
                   <div key={item.title}>
                     <button
                       type="button"
+                      aria-expanded={openState}
                       onClick={() => {
                         setOpenGroup((current) =>
                           current === group ? null : group
@@ -951,7 +952,7 @@ export default function LeftSidebar() {
                       ].join(" ")}
                     >
                       <div className="overflow-hidden">
-                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[var(--color-border-soft)] border-l-[3px] border-l-[var(--color-primary)] bg-[var(--color-white)] py-1.5 pl-4 pr-1 shadow-[inset_8px_0_18px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
+                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[var(--color-primary)] border-l-[3px] border-l-[var(--color-primary)] bg-[var(--color-white)] py-1.5 pl-4 pr-1 shadow-[inset_8px_0_18px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
                           {item.href === "#home-connections-panel" ? (
                             <SidebarChildLink
                               child={{
@@ -1009,10 +1010,10 @@ export default function LeftSidebar() {
             })}
           </nav>
 
-          <div className="mt-auto border-t border-[var(--color-border-soft)] bg-[var(--color-white)] pt-5">
+          <div className="mt-auto border-t border-[var(--color-primary)] bg-[var(--color-white)] pt-5">
             <Link
               href="#connect"
-              className="flex h-12 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[14px] font-black text-[var(--color-text-inverse)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
+              className="flex h-12 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[14px] font-black text-[var(--color-white)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
             >
               {text.talkToExpert}
             </Link>

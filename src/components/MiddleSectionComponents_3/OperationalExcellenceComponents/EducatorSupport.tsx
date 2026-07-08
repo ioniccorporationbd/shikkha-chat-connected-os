@@ -20,6 +20,72 @@ import {
   MdOutlineHub,
   MdOutlinePsychology,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+
+type LanguageCode = "bn" | "en";
+
+const sectionTranslations: Record<string, string> = {
+  "Operational Excellence": "অপারেশনাল উৎকর্ষতা",
+  "Operations Hub": "অপারেশন হাব",
+  "Resource Planning": "রিসোর্স পরিকল্পনা",
+  "Planning": "পরিকল্পনা",
+  "Financial Strategy": "আর্থিক কৌশল",
+  "Allovue": "আর্থিক ব্যবস্থাপনা",
+  "ERP Systems": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা",
+  "Core ERP": "মূল এন্টারপ্রাইজ রিসোর্স পরিকল্পনা",
+  "Predictive Enrollment": "পূর্বাভাসভিত্তিক ভর্তি ব্যবস্থাপনা",
+  "Forecasting": "পূর্বাভাস",
+  "Talent Management": "প্রতিভা ব্যবস্থাপনা",
+  "People": "মানুষ",
+  "Recruiting and HR": "নিয়োগ ও মানবসম্পদ",
+  "Hiring": "নিয়োগ",
+  "Educator Support": "শিক্ষক সহায়তা",
+  "Staff Success": "স্টাফ সাফল্য",
+  "Hiring Workflow": "নিয়োগ কার্যধারা",
+  "Planning Hub": "পরিকল্পনা হাব",
+  "Finance Strategy": "আর্থিক কৌশল",
+  "Finance Planning": "আর্থিক পরিকল্পনা",
+  "Enrollment Forecasting": "ভর্তি পূর্বাভাস",
+  "People Operations": "মানবসম্পদ পরিচালনা",
+  "Talent Planning": "প্রতিভা পরিকল্পনা",
+  "Connected Operations": "সংযুক্ত অপারেশন",
+  "Connected Capability": "সংযুক্ত সক্ষমতা",
+  "ERP Core": "মূল এন্টারপ্রাইজ ব্যবস্থা",
+  "Close detail": "বিস্তারিত বন্ধ করুন",
+  "Open Section": "সেকশন খুলুন",
+  "Resource Planning helps school leaders align budgets, staffing, programs, and operational priorities with better visibility.": "রিসোর্স পরিকল্পনা স্কুল নেতৃত্বকে বাজেট, জনবল, কার্যক্রম এবং অপারেশনাল অগ্রাধিকার আরও পরিষ্কারভাবে মিলিয়ে নিতে সাহায্য করে।",
+  "Resource Planning helps leaders align people, budgets, programs, and priorities with better visibility.": "রিসোর্স পরিকল্পনা নেতৃত্বকে মানুষ, বাজেট, কার্যক্রম এবং অগ্রাধিকার আরও পরিষ্কারভাবে মিলিয়ে নিতে সাহায্য করে।",
+  "Resource Planning aligns people, programs, budgets, and priorities into a clearer planning process.": "রিসোর্স পরিকল্পনা মানুষ, কার্যক্রম, বাজেট এবং অগ্রাধিকারকে আরও পরিষ্কার পরিকল্পনা প্রক্রিয়ায় যুক্ত করে।",
+  "Financial Strategy connects budgets, spending visibility, finance planning, and operational priorities.": "আর্থিক কৌশল বাজেট, ব্যয়ের দৃশ্যমানতা, আর্থিক পরিকল্পনা এবং অপারেশনাল অগ্রাধিকারকে সংযুক্ত করে।",
+  "Financial Strategy connects budgets, spending visibility, and finance planning with operational priorities.": "আর্থিক কৌশল বাজেট, ব্যয়ের দৃশ্যমানতা এবং আর্থিক পরিকল্পনাকে অপারেশনাল অগ্রাধিকারের সাথে যুক্ত করে।",
+  "ERP Systems connect finance, HR, purchasing, payroll, operations, and administrative workflows into one central business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অর্থ, মানবসম্পদ, ক্রয়, পেরোল, অপারেশন এবং প্রশাসনিক কাজকে একটি কেন্দ্রীয় ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "ERP Systems connect finance, HR, purchasing, operations, and administrative workflows into one central business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অর্থ, মানবসম্পদ, ক্রয়, অপারেশন এবং প্রশাসনিক কাজকে একটি কেন্দ্রীয় ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "ERP Systems connect operations, finance, purchasing, payroll, HR, and administration through one trusted business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অপারেশন, অর্থ, ক্রয়, পেরোল, মানবসম্পদ এবং প্রশাসনকে একটি নির্ভরযোগ্য ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "Operational Excellence brings school business systems together so leaders can plan, manage, and act with confidence.": "অপারেশনাল উৎকর্ষতা স্কুলের ব্যবসায়িক ব্যবস্থাগুলোকে একত্র করে, যাতে নেতৃত্ব আত্মবিশ্বাসের সাথে পরিকল্পনা, ব্যবস্থাপনা এবং সিদ্ধান্ত নিতে পারে।",
+  "Operational Excellence brings every operational system together so leaders can plan, manage, and act with confidence.": "অপারেশনাল উৎকর্ষতা প্রতিটি অপারেশনাল ব্যবস্থাকে একত্র করে, যাতে নেতৃত্ব আত্মবিশ্বাসের সাথে পরিকল্পনা, ব্যবস্থাপনা এবং সিদ্ধান্ত নিতে পারে।",
+  "Talent Management supports staff growth, role planning, performance, and people-centered operational decisions.": "প্রতিভা ব্যবস্থাপনা স্টাফের বৃদ্ধি, ভূমিকা পরিকল্পনা, পারফরম্যান্স এবং মানুষকেন্দ্রিক অপারেশনাল সিদ্ধান্তকে সহায়তা করে।",
+  "Talent Management supports staff development, role planning, performance, and people-centered operational decisions.": "প্রতিভা ব্যবস্থাপনা স্টাফ উন্নয়ন, ভূমিকা পরিকল্পনা, পারফরম্যান্স এবং মানুষকেন্দ্রিক অপারেশনাল সিদ্ধান্তকে সহায়তা করে।",
+  "Talent Management supports employee growth, staff planning, role visibility, and people-centered school operations.": "প্রতিভা ব্যবস্থাপনা কর্মী উন্নয়ন, স্টাফ পরিকল্পনা, ভূমিকার দৃশ্যমানতা এবং মানুষকেন্দ্রিক স্কুল অপারেশনকে সহায়তা করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, applicant tracking, and human resource workflows with school operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড, আবেদনকারী ট্র্যাকিং এবং মানবসম্পদ কার্যধারাকে স্কুল অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, and HR workflows with school operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড এবং মানবসম্পদ কার্যধারাকে স্কুল অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, and HR workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, staff records, onboarding, and human resources workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, স্টাফ রেকর্ড, অনবোর্ডিং এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, staff records, onboarding, and HR workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, স্টাফ রেকর্ড, অনবোর্ডিং এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Educator Support helps leaders support teacher growth, staff development, coaching, and instructional success.": "শিক্ষক সহায়তা নেতৃত্বকে শিক্ষক উন্নয়ন, স্টাফ বিকাশ, কোচিং এবং পাঠদান সাফল্য সহায়তা করতে সাহায্য করে।"
+};
+
+function useSectionText() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+
+  return (text?: string) => {
+    if (!text) return "";
+    if (currentLanguage === "en") return text;
+    return sectionTranslations[text] ?? text;
+  };
+}
+
 
 type CardItem = {
   id: string;
@@ -40,9 +106,9 @@ type ConnectorPath = {
   glowColor: string;
 };
 
-const themeColor = "#ECC6FE";
-const darkColor = "#5B1276";
-const glowColor = "rgba(236,198,254,0.28)";
+const themeColor = "var(--color-secondary)";
+const darkColor = "var(--color-primary)";
+const glowColor = "color-mix(in_srgb,var(--color-primary)_18%,transparent)";
 const premiumEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 const centerCards: CardItem[] = [
@@ -299,6 +365,7 @@ function MiniCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
@@ -331,18 +398,18 @@ function MiniCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ECC6FE]/60 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
         selected
-          ? "border-[3px] border-[#ECC6FE] bg-[linear-gradient(180deg,#fff7ff_0%,#f0d5ff_100%)] shadow-[0_22px_52px_rgba(236,198,254,0.42),0_0_0_5px_rgba(236,198,254,0.18)]"
-          : "border border-[#d8c7e4] bg-[linear-gradient(180deg,#ffffff_0%,#fbecff_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_24px_58px_rgba(91,18,118,0.16)]",
+          ? "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "border border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_6%,transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.68),rgba(255,255,255,0)_52%,rgba(91,18,118,0.05))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_68%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_40%,transparent)] blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -360,7 +427,7 @@ function MiniCard({
       {selected ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ECC6FE]/70"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]/70"
           animate={
             shouldReduceMotion
               ? undefined
@@ -394,14 +461,14 @@ function MiniCard({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center text-black tracking-[-0.04em]",
+          "text-center text-[var(--color-black)] tracking-[-0.04em]",
           isEducator ? "font-black" : "font-normal",
           isSingleWord
             ? "text-[13.5px] leading-none"
             : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
-        {formatTitle(item.title)}
+        {formatTitle(t(item.title))}
       </div>
     </motion.button>
   );
@@ -415,6 +482,7 @@ function ActiveEducatorCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -442,17 +510,17 @@ function ActiveEducatorCard({
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[#ECC6FE] bg-[linear-gradient(180deg,#fff7ff_0%,#f0d5ff_100%)]",
-        "shadow-[0_26px_70px_rgba(236,198,254,0.42),0_0_0_6px_rgba(236,198,254,0.16)]",
-        "transition-shadow duration-500 hover:shadow-[0_32px_84px_rgba(91,18,118,0.22),0_0_0_7px_rgba(236,198,254,0.2)]",
-        "focus-visible:ring-2 focus-visible:ring-[#ECC6FE]/60 focus-visible:ring-offset-2",
+        "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
+        "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]",
+        "transition-shadow duration-500 hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_22%,transparent),0_0_0_7px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,rgba(255,255,255,0.7),rgba(255,255,255,0)_52%,rgba(91,18,118,0.055))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_70%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_6%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -469,7 +537,7 @@ function ActiveEducatorCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[#ECC6FE]/75"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--color-secondary)]/75"
         animate={
           shouldReduceMotion
             ? undefined
@@ -497,8 +565,8 @@ function ActiveEducatorCard({
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[125px] text-[15px] font-black leading-[1.05] tracking-[-0.04em] text-black">
-        {formatTitle(item.title)}
+      <h3 className="relative z-10 max-w-[125px] text-[15px] font-black leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
+        {formatTitle(t(item.title))}
       </h3>
     </motion.button>
   );
@@ -515,6 +583,7 @@ function FloatingCard({
   onClick: () => void;
   index: number;
 }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -554,20 +623,20 @@ function FloatingCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#ECC6FE]/60 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
         item.positionClass ?? "",
         active
-          ? "border-[3px] border-[#ECC6FE] bg-white shadow-[0_24px_60px_rgba(236,198,254,0.42),0_0_0_5px_rgba(236,198,254,0.18)]"
-          : "border border-[#d8c7e4] bg-white/82 shadow-[0_14px_34px_rgba(15,23,42,0.065)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(91,18,118,0.16)]",
+          ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-black)_7%,transparent)]",
+        "hover:bg-[var(--color-white)] hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(255,255,255,0)_52%,rgba(91,18,118,0.045))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_72%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ECC6FE]/75"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]/75"
           animate={
             shouldReduceMotion
               ? undefined
@@ -586,7 +655,7 @@ function FloatingCard({
 
       <FaRegStar
         className="absolute right-[8px] top-[8px] z-10 text-[12px]"
-        style={{ color: active ? darkColor : "#5f4b6b" }}
+        style={{ color: active ? darkColor : "var(--color-primary)" }}
       />
 
       <div
@@ -596,8 +665,8 @@ function FloatingCard({
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-normal leading-[1.05] tracking-[-0.04em] text-black">
-        {formatTitle(item.title)}
+      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-normal leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
+        {formatTitle(t(item.title))}
       </div>
     </motion.button>
   );
@@ -610,6 +679,7 @@ function DetailPanel({
   item: CardItem;
   onClose: () => void;
 }) {
+  const t = useSectionText();
   const isEducator = item.id === "educator-support";
 
   return (
@@ -642,68 +712,69 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--color-secondary)] bg-[var(--color-white)] px-6 py-6",
+        "shadow-[0_26px_80px_color-mix(in_srgb,var(--color-black)_16%,transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-[#202833] hover:text-white"
-        aria-label="Close detail"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-secondary)] bg-[var(--color-white)] text-[var(--color-primary)] transition hover:bg-[var(--color-black)] hover:text-[var(--color-white)]"
+        aria-label={t("Close detail")}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
         <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[#d8e2ee] bg-[#fbf7ff]"
+          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--color-secondary)] bg-[var(--color-white)]"
           style={{ color: item.color ?? darkColor }}
         >
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--color-primary)]">
             {item.label ?? "Connected Capability"}
           </p>
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-black)]",
               isEducator ? "font-black" : "font-normal",
             ].join(" ")}
           >
-            {item.title}
+            {t(item.title)}
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#5B1276]">
-              {item.subtitle}
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--color-primary)]">
+              {t(item.subtitle)}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
-        {item.description}
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
+        {t(item.description)}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--color-secondary)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px]"
+        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
         style={{ background: darkColor }}
       >
-        Open Section
+        {t("Open Section")}
       </button>
     </motion.div>
   );
 }
 
 function ConnectorLine({ selectedId }: { selectedId: string }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 
@@ -784,7 +855,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.9)"
+          stroke="color-mix(in srgb, var(--color-white) 90%, transparent)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -818,18 +889,19 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
 }
 
 export default function EducatorSupport() {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
 
   const selectedId = selectedCard?.id;
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#fbf7ff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#cbb7d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-secondary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -895,30 +967,30 @@ export default function EducatorSupport() {
                 className={[
                   "h-[40px] min-w-[300px] rounded-full px-[44px]",
                   "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] shadow-[0_16px_34px_rgba(91,18,118,0.16)]",
+                  "leading-[40px] shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
                   "transition duration-300 hover:scale-[1.025]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
                 style={{
                   color: darkColor,
                   background:
-                    "linear-gradient(145deg,#fff7ff 0%,#f0d5ff 100%)",
+                    "linear-gradient(145deg,var(--color-white) 0%,var(--color-secondary) 100%)",
                 }}
               >
-                Operational Excellence
+                {t("Operational Excellence")}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[250px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[#e8d5f3]/95",
-                "bg-white/20 p-[18px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[var(--color-secondary)]/95",
+                "bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] p-[18px]",
+                "shadow-[0_28px_80px_color-mix(in_srgb,var(--color-black)_9%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.26),transparent_35%,rgba(236,198,254,0.13))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-white)_26%,transparent),transparent_35%,color-mix(in_srgb,var(--color-primary)_10%,transparent))]" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
                 <MiniCard

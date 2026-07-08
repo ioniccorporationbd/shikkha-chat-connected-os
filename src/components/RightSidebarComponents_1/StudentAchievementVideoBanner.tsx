@@ -3,8 +3,32 @@
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { FaPause, FaPlay } from "react-icons/fa6";
+import { useLanguage } from "@/lib/language";
+
+const bannerText = {
+  bn: {
+    pill: "হোম কানেকশন",
+    title: "প্রতিটি পরিবারে পৌঁছানো এবং শিক্ষার্থীদের সংযুক্ত রাখার আরও শক্তিশালী উপায়",
+    description:
+      "পরিবার যোগাযোগ, শিক্ষার্থী আপডেট, উপস্থিতি সহায়তা এবং স্কুল সম্পৃক্ততাকে একটি সংযুক্ত অভিজ্ঞতায় নিয়ে আসুন।",
+    play: "ভিডিও চালান",
+    pause: "ভিডিও বিরতি দিন",
+  },
+  en: {
+    pill: "Home Connections",
+    title: "More power to reach every family and keep students connected",
+    description:
+      "Bring family communication, student updates, attendance support, and school engagement into one connected experience.",
+    play: "Play video",
+    pause: "Pause video",
+  },
+} as const;
 
 export default function StudentAchievementVideoBanner() {
+  const { language } = useLanguage();
+  const currentLanguage = language === "en" ? "en" : "bn";
+  const text = bannerText[currentLanguage];
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -21,6 +45,7 @@ export default function StudentAchievementVideoBanner() {
 
   const toggleVideo = () => {
     if (!videoRef.current) return;
+
     if (videoRef.current.paused) {
       videoRef.current.play();
       setIsPaused(false);
@@ -31,7 +56,7 @@ export default function StudentAchievementVideoBanner() {
   };
 
   return (
-    <section ref={sectionRef} id="connect" className="relative  overflow-visible bg-white">
+    <section ref={sectionRef} id="connect" className="relative overflow-visible bg-[var(--color-white)]">
       <style jsx>{`
         @keyframes textStart {
           0% { opacity: 0; transform: scale(.82) translateY(34px); filter: blur(10px); }
@@ -46,7 +71,7 @@ export default function StudentAchievementVideoBanner() {
           <motion.video
             ref={videoRef}
             style={{ scale: videoScale }}
-            className="h-full w-full object-cover brightness-[1.04] "
+            className="h-full w-full object-cover brightness-[1.04]"
             src="https://www.powerschool.com/wp-content/uploads/2026/03/tour-student-achievement-hero.mp4"
             autoPlay
             muted
@@ -56,17 +81,17 @@ export default function StudentAchievementVideoBanner() {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[#0068ff]/16 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[#ff7a3d]/14 via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-white/14 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[color-mix(in_srgb,var(--color-white)_3%,transparent)]" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--color-primary)_16%,transparent),transparent)]" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[linear-gradient(to_left,color-mix(in_srgb,var(--color-secondary)_18%,transparent),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-[linear-gradient(to_top,color-mix(in_srgb,var(--color-white)_14%,transparent),transparent)]" />
 
         <button
           type="button"
           onClick={toggleVideo}
-          aria-label={isPaused ? "Play video" : "Pause video"}
-          className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[#0068ff] lg:right-12 lg:top-9"
+          aria-label={isPaused ? text.play : text.pause}
+          className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)] shadow-[0_16px_38px_color-mix(in_srgb,var(--color-black)_12%,transparent)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-[var(--color-white)] hover:text-[var(--color-primary)] lg:right-12 lg:top-9"
         >
           {isPaused ? <FaPlay className="text-[13px]" /> : <FaPause className="text-[13px]" />}
         </button>
@@ -76,14 +101,14 @@ export default function StudentAchievementVideoBanner() {
             style={{ y: textY, opacity: textOpacity, scale: textScale }}
             className="text-start-animation mx-auto max-w-[780px] text-center lg:text-left"
           >
-            <div className="mb-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/55 bg-white/25 px-7 text-[13px] font-black text-white backdrop-blur-md md:text-[14px]">
-              Home Connections
+            <div className="mb-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_25%,transparent)] px-7 text-[13px] font-black text-[var(--color-white)] backdrop-blur-md md:text-[14px]">
+              {text.pill}
             </div>
-            <h2 className="text-[32px] font-black leading-[1.06] tracking-[-0.05em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.24)] md:text-[50px] lg:text-[58px]">
-              More power to reach every family and keep students connected
+            <h2 className="text-[32px] font-black leading-[1.06] tracking-[-0.05em] text-[var(--color-white)] drop-shadow-[0_8px_26px_color-mix(in_srgb,var(--color-black)_24%,transparent)] md:text-[50px] lg:text-[58px]">
+              {text.title}
             </h2>
-            <p className="mt-5 max-w-[620px] text-[14px] font-medium leading-7 text-white/92 drop-shadow-[0_8px_22px_rgba(0,0,0,0.18)] md:text-[16px]">
-              Bring family communication, student updates, attendance support, and school engagement into one connected experience.
+            <p className="mt-5 max-w-[620px] text-[14px] font-medium leading-7 text-[color-mix(in_srgb,var(--color-white)_92%,transparent)] drop-shadow-[0_8px_22px_color-mix(in_srgb,var(--color-black)_18%,transparent)] md:text-[16px]">
+              {text.description}
             </p>
           </motion.div>
         </div>

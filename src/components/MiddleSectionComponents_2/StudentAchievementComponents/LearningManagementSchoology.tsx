@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { useMemo, type ReactNode, useState } from "react";
+import { useLanguage } from "@/lib/language";
 import {
   AnimatePresence,
   motion,
@@ -44,9 +45,199 @@ type ConnectorPath = {
   glowColor: string;
 };
 
-const themeColor = "#9CF048";
-const darkColor = "#236000";
-const glowColor = "rgba(156,240,72,0.22)";
+const themeColor = "var(--color-secondary)";
+const darkColor = "var(--color-primary)";
+const glowColor = "color-mix(in srgb, var(--color-primary) 18%, transparent)";
+
+type LanguageCode = "bn" | "en";
+
+type LocalizedCardText = {
+  title: string;
+  subtitle?: string;
+  label?: string;
+  description?: string;
+};
+
+const interfaceText: Record<LanguageCode, { studentAchievement: string; openSection: string; closeDetail: string; connectedCapability: string; imageAlt: string }> = {
+  bn: {
+    studentAchievement: "শিক্ষার্থী অর্জন",
+    openSection: "সেকশন খুলুন",
+    closeDetail: "বিস্তারিত বন্ধ করুন",
+    connectedCapability: "সংযুক্ত সক্ষমতা",
+    imageAlt: "শিক্ষার্থী অর্জন চিত্র",
+  },
+  en: {
+    studentAchievement: "Student Achievement",
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    connectedCapability: "Connected Capability",
+    imageAlt: "Student Achievement illustration",
+  },
+};
+
+const localizedCardText: Record<LanguageCode, Record<string, LocalizedCardText>> = {
+  bn: {
+    "student-achievement": {
+      title: "শিক্ষার্থী অর্জন",
+      subtitle: "একীভূত অগ্রগতি",
+      label: "অর্জন ভিউ",
+      description:
+        "শিক্ষার্থী অর্জন শিক্ষক ও নেতৃত্বকে অগ্রগতি, শেখার ফলাফল, সহায়তার প্রয়োজন এবং ভবিষ্যৎ প্রস্তুতি এক জায়গায় বুঝতে সাহায্য করে।",
+    },
+    "classroom-solutions": {
+      title: "শ্রেণিকক্ষ সমাধান",
+      subtitle: "শিক্ষণ টুলস",
+      label: "শিক্ষণ টুলস",
+      description:
+        "শ্রেণিকক্ষ সমাধান দৈনন্দিন পাঠদান, ক্লাসরুম সংগঠন, শেখার কার্যক্রম এবং শিক্ষার্থীর কাজকে আরও সহজ ও পরিষ্কার করে।",
+    },
+    "learning-management-schoology": {
+      title: "লার্নিং ব্যবস্থাপনা",
+      subtitle: "শেখার প্ল্যাটফর্ম",
+      label: "লার্নিং ডেটা",
+      description:
+        "লার্নিং ব্যবস্থাপনা অ্যাসাইনমেন্ট, রিসোর্স, ডিজিটাল শেখার কার্যক্রম এবং শিক্ষার্থী সম্পৃক্ততাকে অর্জন ডেটার সাথে যুক্ত করে।",
+    },
+    "assessment-performance-matters": {
+      title: "মূল্যায়ন",
+      subtitle: "পারফরম্যান্স বিশ্লেষণ",
+      label: "মূল্যায়ন ডেটা",
+      description:
+        "মূল্যায়ন শিক্ষককে দক্ষতা বোঝা, অগ্রগতি মাপা, পারফরম্যান্স ডেটা দেখা এবং আরও ভালো পাঠদান সিদ্ধান্ত নিতে সাহায্য করে।",
+    },
+    "curriculum-instruction": {
+      title: "কারিকুলাম ও পাঠদান",
+      subtitle: "পাঠদান পরিকল্পনা",
+      label: "পাঠদান পরিকল্পনা",
+      description:
+        "কারিকুলাম ও পাঠদান মানদণ্ড, পাঠ পরিকল্পনা, শিক্ষণ রিসোর্স এবং ক্লাসরুম ডেলিভারিকে একটি পরিষ্কার কাজের ধারায় যুক্ত করে।",
+    },
+    "student-intervention": {
+      title: "শিক্ষার্থী সহায়তা",
+      subtitle: "সহায়তা পরিকল্পনা",
+      label: "সহায়তা পরিকল্পনা",
+      description:
+        "শিক্ষার্থী সহায়তা শেখার ঘাটতি চিহ্নিত করা, লক্ষ্যভিত্তিক পরিকল্পনা তৈরি করা এবং অগ্রগতি নিয়মিত ট্র্যাক করতে সাহায্য করে।",
+    },
+    mtss: {
+      title: "বহুস্তরীয় সহায়তা ব্যবস্থা",
+      subtitle: "স্তরভিত্তিক সহায়তা",
+      label: "বহুস্তরীয় সিস্টেম",
+      description:
+        "বহুস্তরীয় সহায়তা ব্যবস্থা একাডেমিক, আচরণ, উপস্থিতি এবং সুস্থতা সহায়তাকে একসাথে এনে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।",
+    },
+    "behavior-support": {
+      title: "আচরণগত সহায়তা",
+      subtitle: "সুস্থতা",
+      label: "সুস্থতা ইনসাইট",
+      description:
+        "আচরণগত সহায়তা আচরণের ধরণ, সুস্থতার সংকেত এবং সহায়তা কার্যক্রম বুঝে আরও নিরাপদ ও ইতিবাচক শেখার পরিবেশ তৈরি করে।",
+    },
+    "college-career-life-readiness": {
+      title: "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি",
+      subtitle: "ভবিষ্যৎ প্রস্তুতি",
+      label: "ভবিষ্যৎ প্রস্তুতি",
+      description:
+        "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি শিক্ষার্থীর লক্ষ্য, পথ নির্বাচন, প্রস্তুতি এবং ভবিষ্যৎ সাফল্যের পরিকল্পনা পরিষ্কার করে।",
+    },
+    "cclr-naviance": {
+      title: "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা",
+      subtitle: "পরিকল্পনা নির্দেশনা",
+      label: "ভবিষ্যৎ পরিকল্পনা",
+      description:
+        "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা শিক্ষার্থীর পথ অনুসন্ধান, লক্ষ্য পরিকল্পনা, প্রস্তুতি ট্র্যাকিং এবং ভবিষ্যৎ সিদ্ধান্তকে সহজ করে।",
+    },
+  },
+  en: {
+    "student-achievement": {
+      title: "Student Achievement",
+      subtitle: "Unified Progress",
+      label: "Achievement View",
+      description:
+        "Student Achievement gives educators and leaders one clear view of progress, learning performance, support needs, and future readiness.",
+    },
+    "classroom-solutions": {
+      title: "Classroom Solutions",
+      subtitle: "Teaching Tools",
+      label: "Teaching Tools",
+      description:
+        "Classroom Solutions supports daily teaching, classroom organization, learning activity, and stronger instructional workflows.",
+    },
+    "learning-management-schoology": {
+      title: "Learning Management",
+      subtitle: "Learning Platform",
+      label: "Learning Data",
+      description:
+        "Learning Management connects assignments, resources, digital learning activity, and student engagement with achievement data.",
+    },
+    "assessment-performance-matters": {
+      title: "Assessment",
+      subtitle: "Performance Analytics",
+      label: "Assessment Data",
+      description:
+        "Assessment helps educators understand mastery, measure growth, review performance data, and make better instructional decisions.",
+    },
+    "curriculum-instruction": {
+      title: "Curriculum and Instruction",
+      subtitle: "Instruction Planning",
+      label: "Instruction Planning",
+      description:
+        "Curriculum and Instruction connects standards, lesson planning, teaching resources, and classroom delivery into one clear flow.",
+    },
+    "student-intervention": {
+      title: "Student Intervention",
+      subtitle: "Support Plans",
+      label: "Support Planning",
+      description:
+        "Student Intervention helps schools identify learning gaps, create targeted support plans, and track student progress clearly.",
+    },
+    mtss: {
+      title: "Multi-Tier Support",
+      subtitle: "Tiered Support",
+      label: "Multi-Tier System",
+      description:
+        "Multi-Tier Support connects academic, behavior, attendance, and wellbeing support so teams can respond earlier with better visibility.",
+    },
+    "behavior-support": {
+      title: "Behavior Support",
+      subtitle: "Wellbeing",
+      label: "Wellbeing Insight",
+      description:
+        "Behavior Support helps schools understand behavior patterns, wellbeing signals, and support actions for a safer learning environment.",
+    },
+    "college-career-life-readiness": {
+      title: "College, Career and Life Readiness",
+      subtitle: "Future Ready",
+      label: "Future Readiness",
+      description:
+        "College, Career and Life Readiness helps students plan goals, explore pathways, and prepare for future success.",
+    },
+    "cclr-naviance": {
+      title: "Career and Life Readiness Guidance",
+      subtitle: "Planning Guidance",
+      label: "Future Planning",
+      description:
+        "Career and Life Readiness Guidance supports pathway exploration, goal planning, readiness tracking, and future decisions.",
+    },
+  },
+};
+
+function localizeCard<T extends { id: string; title: string; subtitle?: string; label?: string; description?: string }>(
+  card: T,
+  language: LanguageCode
+): T {
+  const localized = localizedCardText[language][card.id];
+  if (!localized) return card;
+
+  return {
+    ...card,
+    title: localized.title,
+    subtitle: localized.subtitle ?? card.subtitle,
+    label: localized.label ?? card.label,
+    description: localized.description ?? card.description,
+  };
+}
+
 const premiumEase = [0.22, 1, 0.36, 1] as const;
 
 const coreCards: DetailCard[] = [
@@ -372,18 +563,18 @@ function CoreTile({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#9CF048]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] focus-visible:ring-offset-2",
         selected || item.active
-          ? "border-[3px] border-[#9CF048] bg-[linear-gradient(180deg,#fbfff5_0%,#e3ffc9_100%)] shadow-[0_22px_52px_rgba(156,240,72,0.28),0_0_0_5px_rgba(156,240,72,0.1)]"
-          : "border border-[#d8e2ee] bg-[linear-gradient(180deg,#ffffff_0%,#f4ffe9_100%)] shadow-[0_12px_30px_rgba(15,23,42,0.06)]",
-        "hover:shadow-[0_24px_58px_rgba(35,96,0,0.14)]",
+          ? "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_22px_52px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
+          : "border border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_12px_30px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.66),rgba(255,255,255,0)_52%,rgba(35,96,0,0.045))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 66%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_52%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/40 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_40%,transparent)] blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -401,7 +592,7 @@ function CoreTile({
       {selected || item.active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#9CF048]/65"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[color-mix(in_srgb,var(--color-secondary)_65%,transparent)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -433,7 +624,7 @@ function CoreTile({
       <div
         className={[
           "relative z-10 flex min-h-[32px] max-w-[86px] items-center justify-center",
-          "text-center text-black tracking-[-0.04em]",
+          "text-center text-[var(--color-black)] tracking-[-0.04em]",
           isLearning ? "font-black" : "font-normal",
           isSingleWord
             ? "text-[13.5px] leading-none"
@@ -499,19 +690,19 @@ function FloatingTile({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[#9CF048]/40 focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] focus-visible:ring-offset-2",
         active
-          ? "border-[3px] border-[#9CF048] bg-white shadow-[0_24px_60px_rgba(156,240,72,0.28),0_0_0_5px_rgba(156,240,72,0.1)]"
-          : "border border-[#d8e2ee] bg-white/82 shadow-[0_14px_34px_rgba(15,23,42,0.065)]",
-        "hover:bg-white hover:shadow-[0_24px_58px_rgba(35,96,0,0.14)]",
+          ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
+          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
+        "hover:bg-[var(--color-white)] hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(255,255,255,0)_52%,rgba(35,96,0,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 72%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_52%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -529,7 +720,7 @@ function FloatingTile({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#9CF048]/65"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[color-mix(in_srgb,var(--color-secondary)_65%,transparent)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -547,8 +738,8 @@ function FloatingTile({
       ) : null}
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[#1f2937] transition-all duration-500 group-hover:rotate-12"
-        style={{ color: active ? darkColor : "#1f2937" }}
+        className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--color-black)] transition-all duration-500 group-hover:rotate-12"
+        style={{ color: active ? darkColor : "var(--color-black)" }}
       />
 
       <div
@@ -561,7 +752,7 @@ function FloatingTile({
       <div
         className={[
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
-          "font-normal tracking-[-0.04em] text-black",
+          "font-normal tracking-[-0.04em] text-[var(--color-black)]",
           isSingleWord
             ? "text-[10.5px] leading-none"
             : "text-[9.5px] leading-[1.05]",
@@ -571,7 +762,7 @@ function FloatingTile({
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[#334155]">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[var(--color-primary)]">
           {item.subtitle}
         </p>
       ) : null}
@@ -586,6 +777,9 @@ function DetailPanel({
   item: DetailCard;
   onClose: () => void;
 }) {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+
   const isLearning = item.id === "learning-management-schoology";
 
   return (
@@ -618,35 +812,35 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[#d8e2ee] bg-white px-6 py-6",
-        "shadow-[0_26px_80px_rgba(15,23,42,0.16)]",
+        "border border-[var(--color-secondary)] bg-[var(--color-white)] px-6 py-6",
+        "shadow-[0_26px_80px_color-mix(in srgb, var(--color-black) 16%, transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-[#202833] hover:text-white"
-        aria-label="Close detail"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-secondary)] bg-[var(--color-white)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
+        aria-label={interfaceText[currentLanguage].closeDetail}
       >
         <FaXmark />
       </button>
 
       <div className="flex items-start gap-4 pr-10">
         <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[#d8e2ee] bg-[#f7fbff]"
+          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--color-secondary)] bg-[var(--color-white)]"
           style={{ color: item.color }}
         >
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[#64748b]">
-            {item.label ?? "Connected Capability"}
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--color-primary)]">
+            {item.label ?? interfaceText[currentLanguage].connectedCapability}
           </p>
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[#202833]",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-primary)]",
               isLearning ? "font-black" : "font-normal",
             ].join(" ")}
           >
@@ -654,23 +848,23 @@ function DetailPanel({
           </h3>
 
           {item.subtitle ? (
-            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[#236000]">
+            <p className="mt-2 text-[13px] font-normal tracking-[-0.01em] text-[var(--color-primary)]">
               {item.subtitle}
             </p>
           ) : null}
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[#475569]">
+      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[#e2e8f0]" />
+      <div className="mt-5 h-px w-full bg-[var(--color-secondary)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-white transition hover:translate-y-[-1px]"
+        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
         style={{ background: darkColor }}
       >
         Open Section
@@ -760,7 +954,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.88)"
+          stroke="color-mix(in srgb, var(--color-white) 88%, transparent)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -792,7 +986,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         <motion.path
           d={path.d}
           fill="none"
-          stroke="rgba(255,255,255,0.75)"
+          stroke="color-mix(in srgb, var(--color-white) 75%, transparent)"
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -816,6 +1010,21 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
 }
 
 export default function LearningManagementSchoology() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const localizedCoreCards = useMemo(
+    () => coreCards.map((card) => localizeCard(card, currentLanguage)),
+    [currentLanguage]
+  );
+  const localizedFloatingCards = useMemo(
+    () => floatingCards.map((card) => localizeCard(card, currentLanguage)),
+    [currentLanguage]
+  );
+  const localizedAllCards = useMemo(
+    () => [...localizedCoreCards, ...localizedFloatingCards],
+    [localizedCoreCards, localizedFloatingCards]
+  );
+
   const shouldReduceMotion = useReducedMotion();
   const [selectedCapability, setSelectedCapability] =
     useState<DetailCard | null>(null);
@@ -823,12 +1032,12 @@ export default function LearningManagementSchoology() {
   const selectedId = selectedCapability?.id;
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/72 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -869,7 +1078,7 @@ export default function LearningManagementSchoology() {
         animate="visible"
         className="relative h-full w-full"
       >
-        {floatingCards.map((item, index) => (
+        {localizedFloatingCards.map((item, index) => (
           <FloatingTile
             key={`${item.id}-${index}`}
             item={item}
@@ -890,55 +1099,55 @@ export default function LearningManagementSchoology() {
             <div className="absolute left-1/2 top-[-64px] z-20 -translate-x-1/2">
               <button
                 type="button"
-                onClick={() => setSelectedCapability(coreCards[1])}
+                onClick={() => setSelectedCapability(localizedCoreCards[1])}
                 className={[
                   "h-[40px] min-w-[300px] rounded-full px-[44px]",
                   "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
-                  "leading-[40px] shadow-[0_16px_34px_rgba(35,96,0,0.16)]",
+                  "leading-[40px] shadow-[0_16px_34px_color-mix(in srgb, var(--color-primary) 16%, transparent)]",
                   "transition duration-300 hover:scale-[1.025]",
                   "whitespace-nowrap outline-none",
                 ].join(" ")}
                 style={{
                   color: darkColor,
-                  background: "linear-gradient(145deg,#f4ffe9 0%,#dfffbd 100%)",
+                  background: "linear-gradient(145deg,var(--color-secondary) 0%,var(--color-secondary) 100%)",
                 }}
               >
-                Student Achievement
+                {interfaceText[currentLanguage].studentAchievement}
               </button>
             </div>
 
             <div
               className={[
                 "relative h-[290px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[#d8e8c8]/95",
-                "bg-white/20 p-[14px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09)]",
+                "rounded-[26px] border-[3px] border-[color-mix(in_srgb,var(--color-secondary)_95%,transparent)]",
+                "bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] p-[14px]",
+                "shadow-[0_28px_80px_color-mix(in srgb, var(--color-black) 9%, transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(156,240,72,0.09))]" />
+              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in srgb, var(--color-white) 24%, transparent),transparent_35%,color-mix(in srgb, var(--color-secondary) 9%, transparent))]" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] gap-[14px]">
                 <div className="flex flex-col justify-center gap-[10px]">
                   <CoreTile
-                    item={coreCards[0]}
-                    selected={selectedId === coreCards[0].id}
-                    onSelect={() => setSelectedCapability(coreCards[0])}
+                    item={localizedCoreCards[0]}
+                    selected={selectedId === localizedCoreCards[0].id}
+                    onSelect={() => setSelectedCapability(localizedCoreCards[0])}
                   />
 
                   <CoreTile
-                    item={coreCards[2]}
-                    selected={selectedId === coreCards[2].id}
-                    onSelect={() => setSelectedCapability(coreCards[2])}
+                    item={localizedCoreCards[2]}
+                    selected={selectedId === localizedCoreCards[2].id}
+                    onSelect={() => setSelectedCapability(localizedCoreCards[2])}
                   />
                 </div>
 
                 <div className="flex items-center justify-center">
                   <div className="scale-[1.55]">
                     <CoreTile
-                      item={coreCards[1]}
-                      selected={selectedId === coreCards[1].id}
-                      onSelect={() => setSelectedCapability(coreCards[1])}
+                      item={localizedCoreCards[1]}
+                      selected={selectedId === localizedCoreCards[1].id}
+                      onSelect={() => setSelectedCapability(localizedCoreCards[1])}
                     />
                   </div>
                 </div>
@@ -951,7 +1160,7 @@ export default function LearningManagementSchoology() {
           {selectedCapability ? (
             <DetailPanel
               item={
-                allCards.find((card) => card.id === selectedCapability.id) ??
+                localizedAllCards.find((card) => card.id === selectedCapability.id) ??
                 selectedCapability
               }
               onClose={() => setSelectedCapability(null)}

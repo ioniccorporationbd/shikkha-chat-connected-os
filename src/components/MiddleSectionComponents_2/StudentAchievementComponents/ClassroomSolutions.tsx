@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useMemo, type ReactNode } from "react";
+import { useLanguage } from "@/lib/language";
 import Image from "next/image";
 import {
   motion,
@@ -33,9 +34,199 @@ type ProductCard = {
 
 const rightImage = "/images/student-information-family.png";
 
-const themeColor = "#9CF048";
-const darkColor = "#236000";
-const glowColor = "rgba(156,240,72,0.22)";
+const themeColor = "var(--color-secondary)";
+const darkColor = "var(--color-primary)";
+const glowColor = "color-mix(in srgb, var(--color-primary) 18%, transparent)";
+
+type LanguageCode = "bn" | "en";
+
+type LocalizedCardText = {
+  title: string;
+  subtitle?: string;
+  label?: string;
+  description?: string;
+};
+
+const interfaceText: Record<LanguageCode, { studentAchievement: string; openSection: string; closeDetail: string; connectedCapability: string; imageAlt: string }> = {
+  bn: {
+    studentAchievement: "শিক্ষার্থী অর্জন",
+    openSection: "সেকশন খুলুন",
+    closeDetail: "বিস্তারিত বন্ধ করুন",
+    connectedCapability: "সংযুক্ত সক্ষমতা",
+    imageAlt: "শিক্ষার্থী অর্জন চিত্র",
+  },
+  en: {
+    studentAchievement: "Student Achievement",
+    openSection: "Open Section",
+    closeDetail: "Close detail",
+    connectedCapability: "Connected Capability",
+    imageAlt: "Student Achievement illustration",
+  },
+};
+
+const localizedCardText: Record<LanguageCode, Record<string, LocalizedCardText>> = {
+  bn: {
+    "student-achievement": {
+      title: "শিক্ষার্থী অর্জন",
+      subtitle: "একীভূত অগ্রগতি",
+      label: "অর্জন ভিউ",
+      description:
+        "শিক্ষার্থী অর্জন শিক্ষক ও নেতৃত্বকে অগ্রগতি, শেখার ফলাফল, সহায়তার প্রয়োজন এবং ভবিষ্যৎ প্রস্তুতি এক জায়গায় বুঝতে সাহায্য করে।",
+    },
+    "classroom-solutions": {
+      title: "শ্রেণিকক্ষ সমাধান",
+      subtitle: "শিক্ষণ টুলস",
+      label: "শিক্ষণ টুলস",
+      description:
+        "শ্রেণিকক্ষ সমাধান দৈনন্দিন পাঠদান, ক্লাসরুম সংগঠন, শেখার কার্যক্রম এবং শিক্ষার্থীর কাজকে আরও সহজ ও পরিষ্কার করে।",
+    },
+    "learning-management-schoology": {
+      title: "লার্নিং ব্যবস্থাপনা",
+      subtitle: "শেখার প্ল্যাটফর্ম",
+      label: "লার্নিং ডেটা",
+      description:
+        "লার্নিং ব্যবস্থাপনা অ্যাসাইনমেন্ট, রিসোর্স, ডিজিটাল শেখার কার্যক্রম এবং শিক্ষার্থী সম্পৃক্ততাকে অর্জন ডেটার সাথে যুক্ত করে।",
+    },
+    "assessment-performance-matters": {
+      title: "মূল্যায়ন",
+      subtitle: "পারফরম্যান্স বিশ্লেষণ",
+      label: "মূল্যায়ন ডেটা",
+      description:
+        "মূল্যায়ন শিক্ষককে দক্ষতা বোঝা, অগ্রগতি মাপা, পারফরম্যান্স ডেটা দেখা এবং আরও ভালো পাঠদান সিদ্ধান্ত নিতে সাহায্য করে।",
+    },
+    "curriculum-instruction": {
+      title: "কারিকুলাম ও পাঠদান",
+      subtitle: "পাঠদান পরিকল্পনা",
+      label: "পাঠদান পরিকল্পনা",
+      description:
+        "কারিকুলাম ও পাঠদান মানদণ্ড, পাঠ পরিকল্পনা, শিক্ষণ রিসোর্স এবং ক্লাসরুম ডেলিভারিকে একটি পরিষ্কার কাজের ধারায় যুক্ত করে।",
+    },
+    "student-intervention": {
+      title: "শিক্ষার্থী সহায়তা",
+      subtitle: "সহায়তা পরিকল্পনা",
+      label: "সহায়তা পরিকল্পনা",
+      description:
+        "শিক্ষার্থী সহায়তা শেখার ঘাটতি চিহ্নিত করা, লক্ষ্যভিত্তিক পরিকল্পনা তৈরি করা এবং অগ্রগতি নিয়মিত ট্র্যাক করতে সাহায্য করে।",
+    },
+    mtss: {
+      title: "বহুস্তরীয় সহায়তা ব্যবস্থা",
+      subtitle: "স্তরভিত্তিক সহায়তা",
+      label: "বহুস্তরীয় সিস্টেম",
+      description:
+        "বহুস্তরীয় সহায়তা ব্যবস্থা একাডেমিক, আচরণ, উপস্থিতি এবং সুস্থতা সহায়তাকে একসাথে এনে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।",
+    },
+    "behavior-support": {
+      title: "আচরণগত সহায়তা",
+      subtitle: "সুস্থতা",
+      label: "সুস্থতা ইনসাইট",
+      description:
+        "আচরণগত সহায়তা আচরণের ধরণ, সুস্থতার সংকেত এবং সহায়তা কার্যক্রম বুঝে আরও নিরাপদ ও ইতিবাচক শেখার পরিবেশ তৈরি করে।",
+    },
+    "college-career-life-readiness": {
+      title: "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি",
+      subtitle: "ভবিষ্যৎ প্রস্তুতি",
+      label: "ভবিষ্যৎ প্রস্তুতি",
+      description:
+        "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি শিক্ষার্থীর লক্ষ্য, পথ নির্বাচন, প্রস্তুতি এবং ভবিষ্যৎ সাফল্যের পরিকল্পনা পরিষ্কার করে।",
+    },
+    "cclr-naviance": {
+      title: "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা",
+      subtitle: "পরিকল্পনা নির্দেশনা",
+      label: "ভবিষ্যৎ পরিকল্পনা",
+      description:
+        "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা শিক্ষার্থীর পথ অনুসন্ধান, লক্ষ্য পরিকল্পনা, প্রস্তুতি ট্র্যাকিং এবং ভবিষ্যৎ সিদ্ধান্তকে সহজ করে।",
+    },
+  },
+  en: {
+    "student-achievement": {
+      title: "Student Achievement",
+      subtitle: "Unified Progress",
+      label: "Achievement View",
+      description:
+        "Student Achievement gives educators and leaders one clear view of progress, learning performance, support needs, and future readiness.",
+    },
+    "classroom-solutions": {
+      title: "Classroom Solutions",
+      subtitle: "Teaching Tools",
+      label: "Teaching Tools",
+      description:
+        "Classroom Solutions supports daily teaching, classroom organization, learning activity, and stronger instructional workflows.",
+    },
+    "learning-management-schoology": {
+      title: "Learning Management",
+      subtitle: "Learning Platform",
+      label: "Learning Data",
+      description:
+        "Learning Management connects assignments, resources, digital learning activity, and student engagement with achievement data.",
+    },
+    "assessment-performance-matters": {
+      title: "Assessment",
+      subtitle: "Performance Analytics",
+      label: "Assessment Data",
+      description:
+        "Assessment helps educators understand mastery, measure growth, review performance data, and make better instructional decisions.",
+    },
+    "curriculum-instruction": {
+      title: "Curriculum and Instruction",
+      subtitle: "Instruction Planning",
+      label: "Instruction Planning",
+      description:
+        "Curriculum and Instruction connects standards, lesson planning, teaching resources, and classroom delivery into one clear flow.",
+    },
+    "student-intervention": {
+      title: "Student Intervention",
+      subtitle: "Support Plans",
+      label: "Support Planning",
+      description:
+        "Student Intervention helps schools identify learning gaps, create targeted support plans, and track student progress clearly.",
+    },
+    mtss: {
+      title: "Multi-Tier Support",
+      subtitle: "Tiered Support",
+      label: "Multi-Tier System",
+      description:
+        "Multi-Tier Support connects academic, behavior, attendance, and wellbeing support so teams can respond earlier with better visibility.",
+    },
+    "behavior-support": {
+      title: "Behavior Support",
+      subtitle: "Wellbeing",
+      label: "Wellbeing Insight",
+      description:
+        "Behavior Support helps schools understand behavior patterns, wellbeing signals, and support actions for a safer learning environment.",
+    },
+    "college-career-life-readiness": {
+      title: "College, Career and Life Readiness",
+      subtitle: "Future Ready",
+      label: "Future Readiness",
+      description:
+        "College, Career and Life Readiness helps students plan goals, explore pathways, and prepare for future success.",
+    },
+    "cclr-naviance": {
+      title: "Career and Life Readiness Guidance",
+      subtitle: "Planning Guidance",
+      label: "Future Planning",
+      description:
+        "Career and Life Readiness Guidance supports pathway exploration, goal planning, readiness tracking, and future decisions.",
+    },
+  },
+};
+
+function localizeCard<T extends { id: string; title: string; subtitle?: string; label?: string; description?: string }>(
+  card: T,
+  language: LanguageCode
+): T {
+  const localized = localizedCardText[language][card.id];
+  if (!localized) return card;
+
+  return {
+    ...card,
+    title: localized.title,
+    subtitle: localized.subtitle ?? card.subtitle,
+    label: localized.label ?? card.label,
+    description: localized.description ?? card.description,
+  };
+}
+
 
 const products: ProductCard[] = [
   {
@@ -226,23 +417,23 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         isActive
-          ? "bg-[linear-gradient(145deg,#eaffd3_0%,#9CF048_52%,#f6ffe8_100%)]"
-          : "bg-[linear-gradient(145deg,#ffffff_0%,#f8fff1_55%,#efffde_100%)]",
+          ? "bg-[linear-gradient(145deg,var(--color-secondary)_0%,var(--color-secondary)_52%,var(--color-white)_100%)]"
+          : "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-white)_55%,var(--color-secondary)_100%)]",
         isActive
-          ? "border-[3px] border-[#9CF048]"
-          : "border border-[#cfd8e3] bg-white/55",
+          ? "border-[3px] border-[var(--color-secondary)]"
+          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_55%,transparent)]",
         isActive
-          ? "shadow-[0_22px_50px_rgba(156,240,72,0.32),inset_0_1px_0_rgba(255,255,255,0.76)]"
-          : "shadow-[0_12px_30px_rgba(15,23,42,0.055),inset_0_1px_0_rgba(255,255,255,0.75)]",
-        "hover:shadow-[0_24px_58px_rgba(35,96,0,0.18),inset_0_1px_0_rgba(255,255,255,0.8)]",
-        "focus-visible:ring-2 focus-visible:ring-[#9CF048]/50 focus-visible:ring-offset-2",
+          ? "shadow-[0_22px_50px_color-mix(in srgb, var(--color-secondary) 32%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 76%, transparent)]"
+          : "shadow-[0_12px_30px_color-mix(in srgb, var(--color-black) 6%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 75%, transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 18%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 80%, transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_50%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.9),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.48),rgba(255,255,255,0)_48%,rgba(35,96,0,0.05))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in srgb, var(--color-white) 90%, transparent),transparent_34%),linear-gradient(145deg,color-mix(in srgb, var(--color-white) 48%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_48%,color-mix(in srgb, var(--color-primary) 5%, transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
         initial={{ x: "-30%" }}
         whileHover={
           shouldReduceMotion
@@ -259,10 +450,10 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
 
       {isActive ? (
         <>
-          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[#236000]/35" />
+          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[color-mix(in_srgb,var(--color-primary)_35%,transparent)]" />
           <motion.span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#9CF048]/55"
+            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -282,13 +473,13 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
 
       <FaRegStar
         className="absolute right-[8px] top-[8px] z-10 text-[12.5px] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110"
-        style={{ color: isActive ? darkColor : "#4b6377" }}
+        style={{ color: isActive ? darkColor : "var(--color-primary)" }}
       />
 
       {item.icon ? (
         <div
           className="relative z-10 mb-[7px] text-[25px] leading-none drop-shadow-sm transition-all duration-500 group-hover:scale-115"
-          style={{ color: isActive ? darkColor : "#236000" }}
+          style={{ color: isActive ? darkColor : "var(--color-primary)" }}
         >
           {item.icon}
         </div>
@@ -303,13 +494,13 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
             ? "text-[14px] leading-none"
             : "text-[11.5px] leading-[1.08]",
         ].join(" ")}
-        style={{ color: isActive ? "#111827" : "#1f2937" }}
+        style={{ color: isActive ? "var(--color-black)" : "var(--color-black)" }}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[#243241]/90">
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[color-mix(in_srgb,var(--color-primary)_90%,transparent)]">
           {item.subtitle}
         </p>
       ) : null}
@@ -331,8 +522,8 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "bg-[linear-gradient(145deg,rgba(255,255,255,0.95),rgba(156,240,72,0.24))]",
-        "shadow-[0_12px_30px_rgba(15,23,42,0.08)]",
+        "bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 95%, transparent),color-mix(in srgb, var(--color-secondary) 24%, transparent))]",
+        "shadow-[0_12px_30px_color-mix(in srgb, var(--color-black) 8%, transparent)]",
         className,
       ].join(" ")}
       animate={
@@ -353,6 +544,13 @@ function FloatingDot({
 }
 
 export default function ClassroomSolutions() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const localizedProducts = useMemo(
+    () => products.map((product) => localizeCard(product, currentLanguage)),
+    [currentLanguage]
+  );
+
   const shouldReduceMotion = useReducedMotion();
   const [isSeparated, setIsSeparated] = useState(false);
   const [imageSettled, setImageSettled] = useState(false);
@@ -373,12 +571,12 @@ export default function ClassroomSolutions() {
   }, []);
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 blur-[78px]"
+        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--color-white)_75%,transparent)] blur-[78px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -413,8 +611,8 @@ export default function ClassroomSolutions() {
         }}
       />
 
-      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[#9CF048]/10 blur-[85px]" />
-      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[#9CF048]/25 blur-[92px]" />
+      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_10%,transparent)] blur-[85px]" />
+      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_25%,transparent)] blur-[92px]" />
 
       <FloatingDot className="left-[21%] top-[18%] h-[13px] w-[13px]" delay={0.1} />
       <FloatingDot className="left-[64%] top-[15%] h-[9px] w-[9px]" delay={0.8} />
@@ -447,7 +645,7 @@ export default function ClassroomSolutions() {
           >
             <motion.div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 blur-[34px]"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[color-mix(in_srgb,var(--color-white)_35%,transparent)] blur-[34px]"
               animate={
                 shouldReduceMotion
                   ? undefined
@@ -480,18 +678,18 @@ export default function ClassroomSolutions() {
               className={[
                 "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
                 "h-[38px] min-w-[218px] rounded-full",
-                "bg-[linear-gradient(145deg,#f4ffe9_0%,#dfffbd_100%)]",
+                "bg-[linear-gradient(145deg,var(--color-secondary)_0%,var(--color-secondary)_100%)]",
                 "px-[24px] text-[13px] font-black leading-[38px]",
-                "whitespace-nowrap shadow-[0_16px_34px_rgba(35,96,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]",
-                "transition-shadow duration-500 hover:shadow-[0_22px_44px_rgba(35,96,0,0.16)]",
+                "whitespace-nowrap shadow-[0_16px_34px_color-mix(in srgb, var(--color-primary) 12%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 85%, transparent)]",
+                "transition-shadow duration-500 hover:shadow-[0_22px_44px_color-mix(in srgb, var(--color-primary) 16%, transparent)]",
               ].join(" ")}
               style={{ color: darkColor }}
             >
-              Student Achievement
+              {interfaceText[currentLanguage].studentAchievement}
 
               <motion.span
                 aria-hidden="true"
-                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[#d8e8c8]"
+                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--color-secondary)]"
               >
                 <motion.span
                   className="absolute left-0 top-0 h-[40%] w-full rounded-full"
@@ -515,17 +713,17 @@ export default function ClassroomSolutions() {
             <div
               className={[
                 "relative h-[536px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[#d8e8c8]/90",
-                "bg-white/24 p-[8px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09),inset_0_1px_0_rgba(255,255,255,0.78)]",
+                "rounded-[26px] border-[3px] border-[color-mix(in_srgb,var(--color-secondary)_90%,transparent)]",
+                "bg-[color-mix(in_srgb,var(--color-white)_24%,transparent)] p-[8px]",
+                "shadow-[0_28px_80px_color-mix(in srgb, var(--color-black) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,rgba(255,255,255,0.48),transparent_48%,rgba(156,240,72,0.075))]" />
+              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,color-mix(in srgb, var(--color-white) 48%, transparent),transparent_48%,color-mix(in srgb, var(--color-secondary) 8%, transparent))]" />
 
               <motion.span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-white/70"
+                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[color-mix(in_srgb,var(--color-white)_70%,transparent)]"
                 animate={
                   shouldReduceMotion
                     ? undefined
@@ -541,7 +739,7 @@ export default function ClassroomSolutions() {
               />
 
               <div className="relative z-10 grid grid-cols-2 gap-[8px]">
-                {products.map((product, index) => (
+                {localizedProducts.map((product, index) => (
                   <ProductTile key={product.id} item={product} index={index} />
                 ))}
               </div>
@@ -608,7 +806,7 @@ export default function ClassroomSolutions() {
         >
           <motion.div
             aria-hidden="true"
-            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[#0f172a]/18 blur-[18px]"
+            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[color-mix(in_srgb,var(--color-black)_18%,transparent)] blur-[18px]"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -641,11 +839,11 @@ export default function ClassroomSolutions() {
           >
             <Image
               src={rightImage}
-              alt="Classroom Solutions"
+              alt={interfaceText[currentLanguage].imageAlt}
               fill
               priority
               sizes="310px"
-              className="object-contain object-bottom drop-shadow-[0_28px_34px_rgba(15,23,42,0.18)]"
+              className="object-contain object-bottom drop-shadow-[0_28px_34px_color-mix(in_srgb,var(--color-black)_18%,transparent)]"
             />
           </motion.div>
         </motion.div>

@@ -20,6 +20,72 @@ import {
   MdOutlineHub,
   MdOutlinePsychology,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+
+type LanguageCode = "bn" | "en";
+
+const sectionTranslations: Record<string, string> = {
+  "Operational Excellence": "অপারেশনাল উৎকর্ষতা",
+  "Operations Hub": "অপারেশন হাব",
+  "Resource Planning": "রিসোর্স পরিকল্পনা",
+  "Planning": "পরিকল্পনা",
+  "Financial Strategy": "আর্থিক কৌশল",
+  "Allovue": "আর্থিক ব্যবস্থাপনা",
+  "ERP Systems": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা",
+  "Core ERP": "মূল এন্টারপ্রাইজ রিসোর্স পরিকল্পনা",
+  "Predictive Enrollment": "পূর্বাভাসভিত্তিক ভর্তি ব্যবস্থাপনা",
+  "Forecasting": "পূর্বাভাস",
+  "Talent Management": "প্রতিভা ব্যবস্থাপনা",
+  "People": "মানুষ",
+  "Recruiting and HR": "নিয়োগ ও মানবসম্পদ",
+  "Hiring": "নিয়োগ",
+  "Educator Support": "শিক্ষক সহায়তা",
+  "Staff Success": "স্টাফ সাফল্য",
+  "Hiring Workflow": "নিয়োগ কার্যধারা",
+  "Planning Hub": "পরিকল্পনা হাব",
+  "Finance Strategy": "আর্থিক কৌশল",
+  "Finance Planning": "আর্থিক পরিকল্পনা",
+  "Enrollment Forecasting": "ভর্তি পূর্বাভাস",
+  "People Operations": "মানবসম্পদ পরিচালনা",
+  "Talent Planning": "প্রতিভা পরিকল্পনা",
+  "Connected Operations": "সংযুক্ত অপারেশন",
+  "Connected Capability": "সংযুক্ত সক্ষমতা",
+  "ERP Core": "মূল এন্টারপ্রাইজ ব্যবস্থা",
+  "Close detail": "বিস্তারিত বন্ধ করুন",
+  "Open Section": "সেকশন খুলুন",
+  "Resource Planning helps school leaders align budgets, staffing, programs, and operational priorities with better visibility.": "রিসোর্স পরিকল্পনা স্কুল নেতৃত্বকে বাজেট, জনবল, কার্যক্রম এবং অপারেশনাল অগ্রাধিকার আরও পরিষ্কারভাবে মিলিয়ে নিতে সাহায্য করে।",
+  "Resource Planning helps leaders align people, budgets, programs, and priorities with better visibility.": "রিসোর্স পরিকল্পনা নেতৃত্বকে মানুষ, বাজেট, কার্যক্রম এবং অগ্রাধিকার আরও পরিষ্কারভাবে মিলিয়ে নিতে সাহায্য করে।",
+  "Resource Planning aligns people, programs, budgets, and priorities into a clearer planning process.": "রিসোর্স পরিকল্পনা মানুষ, কার্যক্রম, বাজেট এবং অগ্রাধিকারকে আরও পরিষ্কার পরিকল্পনা প্রক্রিয়ায় যুক্ত করে।",
+  "Financial Strategy connects budgets, spending visibility, finance planning, and operational priorities.": "আর্থিক কৌশল বাজেট, ব্যয়ের দৃশ্যমানতা, আর্থিক পরিকল্পনা এবং অপারেশনাল অগ্রাধিকারকে সংযুক্ত করে।",
+  "Financial Strategy connects budgets, spending visibility, and finance planning with operational priorities.": "আর্থিক কৌশল বাজেট, ব্যয়ের দৃশ্যমানতা এবং আর্থিক পরিকল্পনাকে অপারেশনাল অগ্রাধিকারের সাথে যুক্ত করে।",
+  "ERP Systems connect finance, HR, purchasing, payroll, operations, and administrative workflows into one central business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অর্থ, মানবসম্পদ, ক্রয়, পেরোল, অপারেশন এবং প্রশাসনিক কাজকে একটি কেন্দ্রীয় ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "ERP Systems connect finance, HR, purchasing, operations, and administrative workflows into one central business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অর্থ, মানবসম্পদ, ক্রয়, অপারেশন এবং প্রশাসনিক কাজকে একটি কেন্দ্রীয় ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "ERP Systems connect operations, finance, purchasing, payroll, HR, and administration through one trusted business system.": "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা অপারেশন, অর্থ, ক্রয়, পেরোল, মানবসম্পদ এবং প্রশাসনকে একটি নির্ভরযোগ্য ব্যবসায়িক ব্যবস্থায় যুক্ত করে।",
+  "Operational Excellence brings school business systems together so leaders can plan, manage, and act with confidence.": "অপারেশনাল উৎকর্ষতা স্কুলের ব্যবসায়িক ব্যবস্থাগুলোকে একত্র করে, যাতে নেতৃত্ব আত্মবিশ্বাসের সাথে পরিকল্পনা, ব্যবস্থাপনা এবং সিদ্ধান্ত নিতে পারে।",
+  "Operational Excellence brings every operational system together so leaders can plan, manage, and act with confidence.": "অপারেশনাল উৎকর্ষতা প্রতিটি অপারেশনাল ব্যবস্থাকে একত্র করে, যাতে নেতৃত্ব আত্মবিশ্বাসের সাথে পরিকল্পনা, ব্যবস্থাপনা এবং সিদ্ধান্ত নিতে পারে।",
+  "Talent Management supports staff growth, role planning, performance, and people-centered operational decisions.": "প্রতিভা ব্যবস্থাপনা স্টাফের বৃদ্ধি, ভূমিকা পরিকল্পনা, পারফরম্যান্স এবং মানুষকেন্দ্রিক অপারেশনাল সিদ্ধান্তকে সহায়তা করে।",
+  "Talent Management supports staff development, role planning, performance, and people-centered operational decisions.": "প্রতিভা ব্যবস্থাপনা স্টাফ উন্নয়ন, ভূমিকা পরিকল্পনা, পারফরম্যান্স এবং মানুষকেন্দ্রিক অপারেশনাল সিদ্ধান্তকে সহায়তা করে।",
+  "Talent Management supports employee growth, staff planning, role visibility, and people-centered school operations.": "প্রতিভা ব্যবস্থাপনা কর্মী উন্নয়ন, স্টাফ পরিকল্পনা, ভূমিকার দৃশ্যমানতা এবং মানুষকেন্দ্রিক স্কুল অপারেশনকে সহায়তা করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, applicant tracking, and human resource workflows with school operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড, আবেদনকারী ট্র্যাকিং এবং মানবসম্পদ কার্যধারাকে স্কুল অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, and HR workflows with school operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড এবং মানবসম্পদ কার্যধারাকে স্কুল অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, onboarding, staff records, and HR workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, অনবোর্ডিং, স্টাফ রেকর্ড এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, staff records, onboarding, and human resources workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, স্টাফ রেকর্ড, অনবোর্ডিং এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Recruiting and HR connects hiring, staff records, onboarding, and HR workflows with district operations.": "নিয়োগ ও মানবসম্পদ নিয়োগ, স্টাফ রেকর্ড, অনবোর্ডিং এবং মানবসম্পদ কার্যধারাকে ডিস্ট্রিক্ট অপারেশনের সাথে যুক্ত করে।",
+  "Educator Support helps leaders support teacher growth, staff development, coaching, and instructional success.": "শিক্ষক সহায়তা নেতৃত্বকে শিক্ষক উন্নয়ন, স্টাফ বিকাশ, কোচিং এবং পাঠদান সাফল্য সহায়তা করতে সাহায্য করে।"
+};
+
+function useSectionText() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+
+  return (text?: string) => {
+    if (!text) return "";
+    if (currentLanguage === "en") return text;
+    return sectionTranslations[text] ?? text;
+  };
+}
+
 
 type ProductCard = {
   id: string;
@@ -31,9 +97,9 @@ type ProductCard = {
 
 const rightImage = "/images/student-information-family.png";
 
-const themeColor = "#ECC6FE";
-const darkColor = "#5B1276";
-const glowColor = "rgba(236,198,254,0.28)";
+const themeColor = "var(--color-secondary)";
+const darkColor = "var(--color-primary)";
+const glowColor = "color-mix(in_srgb,var(--color-primary)_18%,transparent)";
 
 const products: ProductCard[] = [
   {
@@ -179,6 +245,7 @@ function formatTitle(title: string) {
 }
 
 function ProductTile({ item, index }: { item: ProductCard; index: number }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
@@ -210,23 +277,23 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         isActive
-          ? "bg-[linear-gradient(145deg,#fbecff_0%,#ECC6FE_52%,#fff7ff_100%)]"
-          : "bg-[linear-gradient(145deg,#ffffff_0%,#fcf6ff_55%,#f6e8ff_100%)]",
+          ? "bg-[linear-gradient(145deg,var(--color-secondary)_0%,var(--color-secondary)_52%,var(--color-white)_100%)]"
+          : "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-white)_55%,var(--color-secondary)_100%)]",
         isActive
-          ? "border-[3px] border-[#ECC6FE]"
-          : "border border-[#d8c7e4] bg-white/55",
+          ? "border-[3px] border-[var(--color-secondary)]"
+          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_55%,transparent)]",
         isActive
-          ? "shadow-[0_22px_50px_rgba(236,198,254,0.42),inset_0_1px_0_rgba(255,255,255,0.76)]"
-          : "shadow-[0_12px_30px_rgba(15,23,42,0.055),inset_0_1px_0_rgba(255,255,255,0.75)]",
-        "hover:shadow-[0_24px_58px_rgba(91,18,118,0.18),inset_0_1px_0_rgba(255,255,255,0.8)]",
-        "focus-visible:ring-2 focus-visible:ring-[#ECC6FE]/60 focus-visible:ring-offset-2",
+          ? "shadow-[0_22px_50px_color-mix(in_srgb,var(--color-primary)_26%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_76%,transparent)]"
+          : "shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_6%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_75%,transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_18%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_80%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.9),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.48),rgba(255,255,255,0)_48%,rgba(91,18,118,0.05))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in_srgb,var(--color-white)_90%,transparent),transparent_34%),linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_48%,transparent),transparent_48%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
         initial={{ x: "-30%" }}
         whileHover={
           shouldReduceMotion
@@ -243,10 +310,10 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
 
       {isActive ? (
         <>
-          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[#5B1276]/30" />
+          <span className="pointer-events-none absolute inset-0 rounded-[18px] border-[2px] border-[var(--color-primary)]/30" />
           <motion.span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[#ECC6FE]/70"
+            className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]/70"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -266,13 +333,13 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
 
       <FaRegStar
         className="absolute right-[8px] top-[8px] z-10 text-[12.5px] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110"
-        style={{ color: isActive ? darkColor : "#5f4b6b" }}
+        style={{ color: isActive ? darkColor : "var(--color-primary)" }}
       />
 
       {item.icon ? (
         <div
           className="relative z-10 mb-[7px] text-[25px] leading-none drop-shadow-sm transition-all duration-500 group-hover:scale-[1.15]"
-          style={{ color: isActive ? darkColor : "#5B1276" }}
+          style={{ color: isActive ? darkColor : "var(--color-primary)" }}
         >
           {item.icon}
         </div>
@@ -287,14 +354,14 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
             ? "text-[14px] leading-none"
             : "text-[11.5px] leading-[1.08]",
         ].join(" ")}
-        style={{ color: isActive ? "#111827" : "#1f2937" }}
+        style={{ color: isActive ? "var(--color-black)" : "var(--color-black)" }}
       >
-        {formatTitle(item.title)}
+        {formatTitle(t(item.title))}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[#32213d]/90">
-          {item.subtitle}
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[var(--color-primary)]/90">
+          {t(item.subtitle)}
         </p>
       ) : null}
     </motion.button>
@@ -308,6 +375,7 @@ function FloatingDot({
   className: string;
   delay?: number;
 }) {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -315,8 +383,8 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "bg-[linear-gradient(145deg,rgba(255,255,255,0.95),rgba(236,198,254,0.34))]",
-        "shadow-[0_12px_30px_rgba(15,23,42,0.08)]",
+        "bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_95%,transparent),color-mix(in_srgb,var(--color-primary)_22%,transparent))]",
+        "shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_8%,transparent)]",
         className,
       ].join(" ")}
       animate={
@@ -337,6 +405,7 @@ function FloatingDot({
 }
 
 export default function TalentManagement() {
+  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const [isSeparated, setIsSeparated] = useState(false);
   const [imageSettled, setImageSettled] = useState(false);
@@ -357,12 +426,12 @@ export default function TalentManagement() {
   }, []);
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-[#fbf7ff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#cbb7d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <section className="relative h-full w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-secondary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 blur-[78px]"
+        className="pointer-events-none absolute left-[38%] top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--color-white)_75%,transparent)] blur-[78px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -397,8 +466,8 @@ export default function TalentManagement() {
         }}
       />
 
-      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[#ECC6FE]/20 blur-[85px]" />
-      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[#ECC6FE]/30 blur-[92px]" />
+      <div className="pointer-events-none absolute left-[8%] top-[12%] h-[250px] w-[250px] rounded-full bg-[var(--color-secondary)]/20 blur-[85px]" />
+      <div className="pointer-events-none absolute bottom-[-12%] right-[24%] h-[260px] w-[260px] rounded-full bg-[var(--color-secondary)]/30 blur-[92px]" />
 
       <FloatingDot className="left-[21%] top-[18%] h-[13px] w-[13px]" delay={0.1} />
       <FloatingDot className="left-[64%] top-[15%] h-[9px] w-[9px]" delay={0.8} />
@@ -431,7 +500,7 @@ export default function TalentManagement() {
           >
             <motion.div
               aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[436px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 blur-[34px]"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[436px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[color-mix(in_srgb,var(--color-white)_35%,transparent)] blur-[34px]"
               animate={
                 shouldReduceMotion
                   ? undefined
@@ -462,18 +531,18 @@ export default function TalentManagement() {
               className={[
                 "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
                 "h-[38px] min-w-[228px] rounded-full",
-                "bg-[linear-gradient(145deg,#fff7ff_0%,#f0d5ff_100%)]",
+                "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
                 "px-[24px] text-[13px] font-black leading-[38px]",
-                "whitespace-nowrap shadow-[0_16px_34px_rgba(91,18,118,0.12),inset_0_1px_0_rgba(255,255,255,0.85)]",
-                "transition-shadow duration-500 hover:shadow-[0_22px_44px_rgba(91,18,118,0.16)]",
+                "whitespace-nowrap shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_85%,transparent)]",
+                "transition-shadow duration-500 hover:shadow-[0_22px_44px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
               ].join(" ")}
               style={{ color: darkColor }}
             >
-              Operational Excellence
+              {t("Operational Excellence")}
 
               <motion.span
                 aria-hidden="true"
-                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[#e8d5f3]"
+                className="absolute left-1/2 top-full h-[22px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full bg-[var(--color-secondary)]"
               >
                 <motion.span
                   className="absolute left-0 top-0 h-[40%] w-full rounded-full"
@@ -497,17 +566,17 @@ export default function TalentManagement() {
             <div
               className={[
                 "relative h-[430px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[#e8d5f3]/90",
-                "bg-white/24 p-[8px]",
-                "shadow-[0_28px_80px_rgba(15,23,42,0.09),inset_0_1px_0_rgba(255,255,255,0.78)]",
+                "rounded-[26px] border-[3px] border-[var(--color-secondary)]/90",
+                "bg-[color-mix(in_srgb,var(--color-white)_24%,transparent)] p-[8px]",
+                "shadow-[0_28px_80px_color-mix(in_srgb,var(--color-black)_9%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_78%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,rgba(255,255,255,0.48),transparent_48%,rgba(236,198,254,0.11))]" />
+              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,color-mix(in_srgb,var(--color-white)_48%,transparent),transparent_48%,color-mix(in_srgb,var(--color-primary)_8%,transparent))]" />
 
               <motion.span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-white/70"
+                className="pointer-events-none absolute inset-[-3px] rounded-[29px] border border-[color-mix(in_srgb,var(--color-white)_70%,transparent)]"
                 animate={
                   shouldReduceMotion
                     ? undefined
@@ -590,7 +659,7 @@ export default function TalentManagement() {
         >
           <motion.div
             aria-hidden="true"
-            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[#0f172a]/18 blur-[18px]"
+            className="absolute bottom-[24px] left-1/2 h-[42px] w-[210px] -translate-x-1/2 rounded-full bg-[var(--color-black)]/18 blur-[18px]"
             animate={
               shouldReduceMotion
                 ? undefined
@@ -627,7 +696,7 @@ export default function TalentManagement() {
               fill
               priority
               sizes="310px"
-              className="object-contain object-bottom drop-shadow-[0_28px_34px_rgba(15,23,42,0.18)]"
+              className="object-contain object-bottom drop-shadow-[0_28px_34px_color-mix(in_srgb,var(--color-black)_18%,transparent)]"
             />
           </motion.div>
         </motion.div>

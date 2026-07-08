@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { FaRegCircleQuestion, FaRegStar, FaStar, FaUsers } from "react-icons/fa6";
+import {
+  FaRegCircleQuestion,
+  FaRegStar,
+  FaStar,
+  FaUsers,
+} from "react-icons/fa6";
 import {
   MdOutlineAnalytics,
   MdOutlineAutoAwesome,
@@ -16,9 +21,41 @@ import {
   MdOutlineFavoriteBorder,
   MdOutlineMenuBook,
 } from "react-icons/md";
+import { useLanguage } from "@/lib/language";
+
+type LanguageCode = "bn" | "en";
+type ProductGroupId =
+  | "home-connections"
+  | "student-achievement"
+  | "operational-excellence";
+
+type ProductId =
+  | "student-information"
+  | "sis"
+  | "enrollment"
+  | "special-programs"
+  | "family-engagement"
+  | "communications"
+  | "attendance-support"
+  | "classroom-solutions"
+  | "learning-management-schoology"
+  | "assessment-performance-matters"
+  | "curriculum-instruction"
+  | "student-intervention"
+  | "mtss"
+  | "behavior-support"
+  | "college-career-life-readiness"
+  | "cclr-naviance"
+  | "resource-planning"
+  | "financial-strategy-allovue"
+  | "erp-systems"
+  | "predictive-enrollment"
+  | "talent-management"
+  | "recruiting-and-hr"
+  | "educator-support";
 
 type ProductItem = {
-  id: string;
+  id: ProductId;
   title: string;
   subtitle?: string;
   icon: ReactNode;
@@ -26,173 +63,337 @@ type ProductItem = {
 };
 
 type ProductGroup = {
-  id: string;
+  id: ProductGroupId;
   title: string;
-  color: string;
-  light: string;
-  dark: string;
   products: ProductItem[];
 };
 
 const STORAGE_KEY = "connected-os-saved-products";
 
-const groups: ProductGroup[] = [
+const colorPrimary = "var(--color-primary)";
+const colorSecondary = "var(--color-secondary)";
+const colorWhite = "var(--color-white)";
+const colorBlack = "var(--color-black)";
+
+const textContent = {
+  bn: {
+    saved: "সংরক্ষিত",
+    allProducts: "সব পণ্য",
+    noSavedTitle: "এখনও কোনো পণ্য সংরক্ষিত নেই",
+    noSavedDescription: "সংরক্ষণ করতে যেকোনো পণ্যের স্টার আইকনে ক্লিক করুন।",
+    saveProduct: "পণ্য সংরক্ষণ করুন",
+    groups: {
+      "home-connections": "হোম কানেকশন",
+      "student-achievement": "শিক্ষার্থী অর্জন",
+      "operational-excellence": "অপারেশনাল উৎকর্ষতা",
+    },
+    products: {
+      "student-information": {
+        title: "শিক্ষার্থীর তথ্য",
+      },
+      sis: {
+        title: "শিক্ষার্থী তথ্য ব্যবস্থা",
+        subtitle: "কেন্দ্রীয় শিক্ষার্থী সিস্টেম",
+      },
+      enrollment: {
+        title: "ভর্তি ব্যবস্থাপনা",
+      },
+      "special-programs": {
+        title: "বিশেষ কার্যক্রম",
+      },
+      "family-engagement": {
+        title: "পরিবারের সম্পৃক্ততা",
+      },
+      communications: {
+        title: "যোগাযোগ ব্যবস্থা",
+        subtitle: "স্কুল বার্তা",
+      },
+      "attendance-support": {
+        title: "উপস্থিতি সহায়তা",
+      },
+      "classroom-solutions": {
+        title: "শ্রেণিকক্ষ সমাধান",
+      },
+      "learning-management-schoology": {
+        title: "লার্নিং ব্যবস্থাপনা",
+        subtitle: "শেখার প্ল্যাটফর্ম",
+      },
+      "assessment-performance-matters": {
+        title: "মূল্যায়ন",
+        subtitle: "পারফরম্যান্স বিশ্লেষণ",
+      },
+      "curriculum-instruction": {
+        title: "কারিকুলাম ও পাঠদান",
+      },
+      "student-intervention": {
+        title: "শিক্ষার্থী সহায়তা",
+      },
+      mtss: {
+        title: "বহুস্তরীয় সহায়তা ব্যবস্থা",
+      },
+      "behavior-support": {
+        title: "আচরণগত সহায়তা",
+      },
+      "college-career-life-readiness": {
+        title: "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি",
+      },
+      "cclr-naviance": {
+        title: "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা",
+        subtitle: "ভবিষ্যৎ প্রস্তুতি",
+      },
+      "resource-planning": {
+        title: "রিসোর্স পরিকল্পনা",
+      },
+      "financial-strategy-allovue": {
+        title: "আর্থিক কৌশল",
+        subtitle: "আর্থিক ব্যবস্থাপনা",
+      },
+      "erp-systems": {
+        title: "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা",
+      },
+      "predictive-enrollment": {
+        title: "পূর্বাভাসভিত্তিক ভর্তি",
+      },
+      "talent-management": {
+        title: "প্রতিভা ব্যবস্থাপনা",
+      },
+      "recruiting-and-hr": {
+        title: "নিয়োগ ও মানবসম্পদ",
+      },
+      "educator-support": {
+        title: "শিক্ষক সহায়তা",
+      },
+    },
+  },
+  en: {
+    saved: "Saved",
+    allProducts: "All Products",
+    noSavedTitle: "No saved products yet",
+    noSavedDescription: "Click any star icon to save a product here.",
+    saveProduct: "Save product",
+    groups: {
+      "home-connections": "Home Connections",
+      "student-achievement": "Student Achievement",
+      "operational-excellence": "Operational Excellence",
+    },
+    products: {
+      "student-information": {
+        title: "Student Information",
+      },
+      sis: {
+        title: "Student Information System",
+        subtitle: "Central Student System",
+      },
+      enrollment: {
+        title: "Enrollment Management",
+      },
+      "special-programs": {
+        title: "Special Programs",
+      },
+      "family-engagement": {
+        title: "Family Engagement",
+      },
+      communications: {
+        title: "Communications",
+        subtitle: "School Messenger",
+      },
+      "attendance-support": {
+        title: "Attendance Support",
+      },
+      "classroom-solutions": {
+        title: "Classroom Solutions",
+      },
+      "learning-management-schoology": {
+        title: "Learning Management",
+        subtitle: "Learning Platform",
+      },
+      "assessment-performance-matters": {
+        title: "Assessment",
+        subtitle: "Performance Analytics",
+      },
+      "curriculum-instruction": {
+        title: "Curriculum and Instruction",
+      },
+      "student-intervention": {
+        title: "Student Intervention",
+      },
+      mtss: {
+        title: "Multi-Tiered System of Supports",
+      },
+      "behavior-support": {
+        title: "Behavior Support",
+      },
+      "college-career-life-readiness": {
+        title: "College, Career and Life Readiness",
+      },
+      "cclr-naviance": {
+        title: "Career and Life Readiness Guidance",
+        subtitle: "Future Readiness",
+      },
+      "resource-planning": {
+        title: "Resource Planning",
+      },
+      "financial-strategy-allovue": {
+        title: "Financial Strategy",
+        subtitle: "Financial Management",
+      },
+      "erp-systems": {
+        title: "Enterprise Resource Planning",
+      },
+      "predictive-enrollment": {
+        title: "Predictive Enrollment",
+      },
+      "talent-management": {
+        title: "Talent Management",
+      },
+      "recruiting-and-hr": {
+        title: "Recruiting and Human Resources",
+      },
+      "educator-support": {
+        title: "Educator Support",
+      },
+    },
+  },
+} as const;
+
+const productBase: Record<
+  ProductGroupId,
   {
-    id: "home-connections",
-    title: "Home Connections",
-    color: "#16423C",
-    light: "#EDE6B3",
-    dark: "#16423C",
+    products: Array<{
+      id: ProductId;
+      icon: ReactNode;
+      featured?: boolean;
+    }>;
+  }
+> = {
+  "home-connections": {
     products: [
       {
         id: "student-information",
-        title: "Student Information",
         icon: <MdOutlineSchool />,
         featured: true,
       },
       {
         id: "sis",
-        title: "SIS",
-        subtitle: "SIS",
         icon: <FaUsers />,
       },
       {
         id: "enrollment",
-        title: "Enrollment",
         icon: <MdOutlineFactCheck />,
       },
       {
         id: "special-programs",
-        title: "Special Programs",
         icon: <MdOutlineCelebration />,
       },
       {
         id: "family-engagement",
-        title: "Family Engagement",
         icon: <MdOutlineFamilyRestroom />,
         featured: true,
       },
       {
         id: "communications",
-        title: "Communications",
-        subtitle: "SchoolMessenger",
         icon: <MdOutlineChat />,
       },
       {
         id: "attendance-support",
-        title: "Attendance Support",
         icon: <FaRegCircleQuestion />,
       },
     ],
   },
-  {
-    id: "student-achievement",
-    title: "Student Achievement",
-    color: "#EDE6B3",
-    light: "#fff9d7",
-    dark: "#16423C",
+  "student-achievement": {
     products: [
       {
         id: "classroom-solutions",
-        title: "Classroom Solutions",
         icon: <MdOutlineGridView />,
         featured: true,
       },
       {
         id: "learning-management-schoology",
-        title: "Learning Management",
-        subtitle: "Schoology",
         icon: <MdOutlinePsychology />,
       },
       {
         id: "assessment-performance-matters",
-        title: "Assessment",
-        subtitle: "Performance Matters",
         icon: <MdOutlineAnalytics />,
       },
       {
         id: "curriculum-instruction",
-        title: "Curriculum & Instruction",
         icon: <MdOutlineMenuBook />,
       },
       {
         id: "student-intervention",
-        title: "Student Intervention",
         icon: <FaRegCircleQuestion />,
         featured: true,
       },
       {
         id: "mtss",
-        title: "MTSS",
         icon: <MdOutlineHub />,
       },
       {
         id: "behavior-support",
-        title: "Behavior Support",
         icon: <MdOutlineFavoriteBorder />,
       },
       {
         id: "college-career-life-readiness",
-        title: "College, Career & Life Readiness",
         icon: <FaRegStar />,
         featured: true,
       },
       {
         id: "cclr-naviance",
-        title: "CCLR Naviance",
-        subtitle: "Naviance",
         icon: <FaUsers />,
       },
     ],
   },
-  {
-    id: "operational-excellence",
-    title: "Operational Excellence",
-    color: "#16423C",
-    light: "#EDE6B3",
-    dark: "#16423C",
+  "operational-excellence": {
     products: [
       {
         id: "resource-planning",
-        title: "Resource Planning",
         icon: <MdOutlineGridView />,
         featured: true,
       },
       {
         id: "financial-strategy-allovue",
-        title: "Financial Strategy",
-        subtitle: "Allovue",
         icon: <MdOutlineAnalytics />,
       },
       {
         id: "erp-systems",
-        title: "ERP Systems",
         icon: <MdOutlineAutoAwesome />,
       },
       {
         id: "predictive-enrollment",
-        title: "Predictive Enrollment",
         icon: <FaUsers />,
       },
       {
         id: "talent-management",
-        title: "Talent Management",
         icon: <MdOutlinePsychology />,
         featured: true,
       },
       {
         id: "recruiting-and-hr",
-        title: "Recruiting & Human Resources",
         icon: <FaRegStar />,
       },
       {
         id: "educator-support",
-        title: "Educator Support",
         icon: <FaRegCircleQuestion />,
       },
     ],
   },
-];
+};
+
+function getGroups(language: LanguageCode): ProductGroup[] {
+  const text = textContent[language];
+
+  return (
+    Object.keys(productBase) as ProductGroupId[]
+  ).map((groupId) => ({
+    id: groupId,
+    title: text.groups[groupId],
+    products: productBase[groupId].products.map((product) => ({
+      ...product,
+      title: text.products[product.id].title,
+      subtitle: text.products[product.id].subtitle,
+    })),
+  }));
+}
 
 function scrollToProduct(id: string) {
   window.dispatchEvent(
@@ -217,28 +418,111 @@ function scrollToProduct(id: string) {
   }
 }
 
-function formatTitle(title: string) {
-  return title.replace("&", "&");
+function readSavedIds(): ProductId[] {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((item): item is ProductId => typeof item === "string");
+  } catch {
+    return [];
+  }
+}
+
+function ProductCard({
+  product,
+  isSaved,
+  onSave,
+}: {
+  product: ProductItem;
+  isSaved: boolean;
+  onSave: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => scrollToProduct(product.id)}
+      className={[
+        "group relative flex h-[124px] flex-col justify-center rounded-[18px] border p-3 text-center",
+        "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
+        "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
+        "transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)]",
+        "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+        product.featured ? "items-start text-left" : "items-center",
+      ].join(" ")}
+    >
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSave();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onSave();
+          }
+        }}
+        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition hover:scale-125"
+        aria-label="Save product"
+      >
+        {isSaved ? <FaStar /> : <FaRegStar />}
+      </span>
+
+      {!product.featured ? (
+        <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110">
+          {product.icon}
+        </div>
+      ) : (
+        <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110">
+          {product.icon}
+        </div>
+      )}
+
+      <h3
+        className={[
+          "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)]",
+          product.featured ? "uppercase" : "",
+        ].join(" ")}
+      >
+        {product.title}
+      </h3>
+
+      {product.subtitle ? (
+        <p className="mt-1 text-[11px] font-medium leading-none text-[var(--color-black)] opacity-65">
+          {product.subtitle}
+        </p>
+      ) : null}
+    </button>
+  );
 }
 
 export default function ProductRouterSection() {
+  const { language } = useLanguage();
+  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
+  const text = textContent[currentLanguage];
+
   const [tab, setTab] = useState<"saved" | "all">("all");
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [savedIds, setSavedIds] = useState<ProductId[]>([]);
+
+  const groups = useMemo(() => getGroups(currentLanguage), [currentLanguage]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setSavedIds(JSON.parse(saved));
-    }
+    setSavedIds(readSavedIds());
   }, []);
 
-  function toggleSaved(id: string) {
+  function toggleSaved(id: ProductId) {
     setSavedIds((current) => {
       const next = current.includes(id)
         ? current.filter((item) => item !== id)
         : [...current, id];
 
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+
       return next;
     });
   }
@@ -249,144 +533,92 @@ export default function ProductRouterSection() {
     return groups
       .map((group) => ({
         ...group,
-        products: group.products.filter((product) => savedIds.includes(product.id)),
+        products: group.products.filter((product) =>
+          savedIds.includes(product.id)
+        ),
       }))
       .filter((group) => group.products.length > 0);
-  }, [tab, savedIds]);
+  }, [tab, groups, savedIds]);
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[var(--sc-surface)] px-6 py-20">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.75]" />
+    <section className="relative min-h-screen overflow-hidden bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08]" />
 
-      <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center">
-        <div className="mb-12 flex overflow-hidden rounded-[10px] border border-[var(--sc-primary)] bg-white shadow-[0_12px_36px_rgba(15,23,42,0.08)]">
+      <div className="pointer-events-none absolute left-1/2 top-12 h-[280px] w-[280px] -translate-x-1/2 rounded-full bg-[var(--color-secondary)] opacity-70 blur-[90px]" />
+
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
+        <div className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
           <button
             type="button"
             onClick={() => setTab("saved")}
             className={[
-              "flex h-[54px] items-center gap-2 px-7 text-[18px] font-semibold transition",
+              "flex h-[50px] items-center gap-2 rounded-[12px] px-5 text-[15px] font-bold transition-all duration-300 sm:px-7 sm:text-[17px]",
               tab === "saved"
-                ? "bg-[var(--sc-primary)] text-white"
-                : "bg-white text-[var(--sc-primary)]",
+                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
             ].join(" ")}
           >
-            <FaStar className="text-[18px]" />
-            Saved
+            <FaStar className="text-[17px]" />
+            {text.saved}
           </button>
 
           <button
             type="button"
             onClick={() => setTab("all")}
             className={[
-              "h-[54px] px-8 text-[18px] font-semibold transition",
+              "h-[50px] rounded-[12px] px-5 text-[15px] font-bold transition-all duration-300 sm:px-8 sm:text-[17px]",
               tab === "all"
-                ? "bg-[var(--sc-primary)] text-white"
-                : "bg-white text-[var(--sc-primary)]",
+                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
             ].join(" ")}
           >
-            All Products
+            {text.allProducts}
           </button>
         </div>
 
         {visibleGroups.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white px-10 py-8 text-center shadow-xl">
-            <h3 className="text-2xl font-semibold text-slate-900">
-              No saved products yet
+          <div className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] px-8 py-8 text-center shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
+            <h3 className="text-2xl font-bold text-[var(--color-primary)]">
+              {text.noSavedTitle}
             </h3>
-            <p className="mt-2 text-slate-500">
-              Star a product to keep it here.
+
+            <p className="mt-2 text-[15px] font-medium text-[var(--color-black)] opacity-70">
+              {text.noSavedDescription}
             </p>
           </div>
         ) : (
-          <div className="grid w-full grid-cols-1 items-start gap-8 lg:grid-cols-3">
+          <div className="grid w-full grid-cols-1 items-start gap-8 md:grid-cols-2 xl:grid-cols-3">
             {visibleGroups.map((group) => (
               <div key={group.id} className="relative flex flex-col items-center">
                 <button
                   type="button"
                   onClick={() => scrollToProduct(group.id)}
-                  className="relative z-20 rounded-full px-7 py-3 text-[18px] font-semibold text-black shadow-[0_12px_26px_rgba(15,23,42,0.08)] transition hover:-translate-y-1"
-                  style={{ backgroundColor: group.color }}
+                  className={[
+                    "relative z-20 rounded-full border border-[var(--color-primary)] px-7 py-3 text-[16px] font-bold",
+                    "bg-[var(--color-primary)] text-[var(--color-white)]",
+                    "shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+                    "transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+                  ].join(" ")}
                 >
                   {group.title}
                 </button>
 
-                <div
-                  className="h-7 w-[4px]"
-                  style={{ backgroundColor: group.color }}
-                />
+                <div className="h-7 w-[4px] bg-[var(--color-primary)]" />
 
-                <div
-                  className="relative w-full rounded-[30px] border-[4px] bg-white/20 p-3 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
-                  style={{ borderColor: group.color }}
-                >
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="relative w-full rounded-[30px] border-[4px] border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
+                  <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[linear-gradient(180deg,var(--color-white),var(--color-secondary))] opacity-35" />
+
+                  <div className="relative z-10 grid grid-cols-2 gap-3">
                     {group.products.map((product) => {
                       const isSaved = savedIds.includes(product.id);
 
                       return (
-                        <button
+                        <ProductCard
                           key={product.id}
-                          type="button"
-                          onClick={() => scrollToProduct(product.id)}
-                          className={[
-                            "group relative flex h-[118px] flex-col items-center justify-center rounded-[16px] border border-slate-200 p-3 text-center",
-                            "transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_34px_rgba(15,23,42,0.12)]",
-                            product.featured ? "items-start text-left" : "bg-[var(--sc-secondary-light)]",
-                          ].join(" ")}
-                          style={{
-                            background: product.featured
-                              ? group.light
-                              : "linear-gradient(180deg,#ffffff,#fff9d7)",
-                          }}
-                        >
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleSaved(product.id);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                toggleSaved(product.id);
-                              }
-                            }}
-                            className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-slate-600 transition hover:scale-125"
-                            aria-label="Save product"
-                          >
-                            {isSaved ? (
-                              <FaStar style={{ color: group.dark }} />
-                            ) : (
-                              <FaRegStar />
-                            )}
-                          </span>
-
-                          {!product.featured ? (
-                            <div
-                              className="mb-2 text-[30px]"
-                              style={{ color: group.dark }}
-                            >
-                              {product.icon}
-                            </div>
-                          ) : null}
-
-                          <h3
-                            className={[
-                              "max-w-[115px] text-[13px] leading-[1.12] tracking-[-0.03em] text-black",
-                              product.featured ? "font-semibold uppercase" : "font-semibold",
-                            ].join(" ")}
-                          >
-                            {formatTitle(product.title)}
-                          </h3>
-
-                          {product.subtitle ? (
-                            <p className="mt-1 text-[11px] leading-none text-slate-500">
-                              {product.subtitle}
-                            </p>
-                          ) : null}
-                        </button>
+                          product={product}
+                          isSaved={isSaved}
+                          onSave={() => toggleSaved(product.id)}
+                        />
                       );
                     })}
                   </div>
