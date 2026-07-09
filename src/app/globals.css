@@ -245,9 +245,9 @@ div {
   padding-left: 0;
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1536px) {
   .site-content-shell {
-    padding-left: 320px;
+    padding-left: 340px;
   }
 }
 
@@ -262,7 +262,7 @@ div {
   transform: translateX(0);
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1536px) {
   .connected-sidebar {
     transform: translateX(0);
   }
@@ -308,7 +308,40 @@ div {
   color: var(--color-primary);
 }
 
-@media (min-width: 1100px) {
+/* Mobile and tablet: middle section hidden, right sidebar content full width */
+@media (max-width: 1279px) {
+  .connected-scroll-section {
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .connected-scroll-grid {
+    display: block;
+    min-height: auto;
+  }
+
+  .connected-middle-pane {
+    display: none !important;
+  }
+
+  .connected-right-pane {
+    width: 100%;
+    min-height: auto;
+    overflow: visible;
+    border-left: 0;
+  }
+
+  .connected-right-scroll-panel,
+  .right-scroll-panel {
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+}
+
+/* Laptop and desktop content split. Sidebar still remains drawer until 1536px. */
+@media (min-width: 1280px) {
   .connected-scroll-section {
     height: 100vh;
     height: 100svh;
@@ -319,7 +352,7 @@ div {
     height: 100vh;
     height: 100svh;
     min-height: 0;
-    grid-template-columns: minmax(0, 1fr) minmax(330px, 32vw);
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 34vw);
   }
 
   .connected-middle-pane {
@@ -349,21 +382,13 @@ div {
 
 @media (min-width: 1400px) {
   .connected-scroll-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(430px, 38vw);
+    grid-template-columns: minmax(0, 1fr) minmax(410px, 36vw);
   }
 }
 
 @media (min-width: 1536px) {
   .connected-scroll-grid {
     grid-template-columns: minmax(0, 1fr) 600px;
-  }
-}
-
-@media (max-width: 1099px) {
-  .right-scroll-panel {
-    height: auto;
-    min-height: 100svh;
-    overflow: visible;
   }
 }
 
@@ -520,5 +545,47 @@ html[data-lang="en"] .language-toggle-knob {
 @media (max-width: 1023px) {
   body {
     font-size: 15px;
+  }
+}
+
+/* Global responsive content sizing */
+:where(.connected-right-pane, .connected-right-scroll-panel) {
+  font-size: clamp(14px, 1.2vw, 16px);
+}
+
+:where(.connected-right-pane, .connected-right-scroll-panel) h1,
+:where(.connected-right-pane, .connected-right-scroll-panel) h2 {
+  font-size: clamp(25px, 3.4vw, 34px);
+  line-height: 1.08;
+}
+
+:where(.connected-right-pane, .connected-right-scroll-panel) h3 {
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.15;
+}
+
+:where(.connected-right-pane, .connected-right-scroll-panel) p {
+  font-size: clamp(14px, 1.15vw, 16px);
+}
+
+@media (max-width: 767px) {
+  :where(.connected-right-pane, .connected-right-scroll-panel) h1,
+  :where(.connected-right-pane, .connected-right-scroll-panel) h2 {
+    font-size: clamp(23px, 7vw, 29px);
+  }
+
+  :where(.connected-right-pane, .connected-right-scroll-panel) h3 {
+    font-size: clamp(15px, 4.8vw, 19px);
+  }
+
+  :where(.connected-right-pane, .connected-right-scroll-panel) p {
+    font-size: 14.5px;
+    line-height: 1.65;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .site-content-shell {
+    padding-left: 0;
   }
 }

@@ -104,12 +104,12 @@ export default function MiddleSection() {
   const ActiveComponent = sectionComponents[activeSection];
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.72]" />
+    <section className="relative h-screen w-full overflow-hidden bg-[var(--color-white)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08]" />
 
-      <div className="pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[#ff7438]/10 blur-[90px]" />
-      <div className="pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[#0068ff]/10 blur-[105px]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/55 blur-[85px]" />
+      <div className="pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
+      <div className="pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[105px]" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-60 blur-[85px]" />
 
       <div className="pointer-events-none absolute left-8 top-8 z-30 hidden lg:block">
         <motion.div
@@ -130,7 +130,7 @@ export default function MiddleSection() {
             duration: 0.38,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="rounded-full border border-[#ff7438]/20 bg-white/72 px-5 py-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#ff7438] shadow-[0_14px_34px_rgba(15,23,42,0.06)] backdrop-blur-md"
+          className="rounded-full border border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] px-5 py-2 text-[12px] font-black uppercase tracking-[0.12em] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] backdrop-blur-md"
         >
           {activeTitle}
         </motion.div>

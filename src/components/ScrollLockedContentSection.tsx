@@ -29,7 +29,7 @@ export default function ScrollLockedContentSection({
 
   const shouldUseLockedDesktopScroll = () => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth >= 1100;
+    return window.innerWidth >= 1280;
   };
 
   const getRightSectionIds = () => {
@@ -412,7 +412,7 @@ export default function ScrollLockedContentSection({
           {middle}
         </div>
 
-        <aside className="connected-right-pane bg-white shadow-[-18px_0_60px_rgba(15,23,42,0.04)]">
+        <aside className="connected-right-pane bg-[var(--color-white)] shadow-[-18px_0_60px_color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
           <div
             ref={rightScrollRef}
             className="connected-right-scroll-panel right-scroll-panel no-scrollbar overscroll-contain scroll-auto"
