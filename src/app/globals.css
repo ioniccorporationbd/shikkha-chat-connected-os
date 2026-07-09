@@ -3,32 +3,70 @@
 
 :root {
   /* Main Brand Colors */
-  --color-primary: #16423c;
-  --color-primary-dark: #0b2f2a;
-  --color-secondary: #ede6b3;
-  --color-secondary-light: #fff9d7;
+  --color-primary: #032521;
+  --color-secondary: #a2c4c0;
   --color-white: #ffffff;
-  --color-black: #071513;
-  --color-surface: #fbfcf7;
+  --color-black: #000000;
+
+  /* Derived Brand Colors */
+  --color-primary-dark: var(--color-primary);
+  --color-secondary-light: color-mix(
+    in srgb,
+    var(--color-secondary) 28%,
+    var(--color-white)
+  );
+  --color-surface: var(--color-white);
 
   /* Text Colors */
-  --color-text-primary: #111827;
-  --color-text-secondary: #31465d;
-  --color-text-blue: #2563eb;
-  --color-text-red: #dc2626;
-  --color-text-gray: #6b7280;
+  --color-text-primary: var(--color-black);
+  --color-text-secondary: var(--color-primary);
+  --color-text-gray: color-mix(
+    in srgb,
+    var(--color-black) 62%,
+    var(--color-white)
+  );
+  --color-text-blue: var(--color-primary);
+  --color-text-red: var(--color-primary);
   --color-text-inverse: var(--color-white);
 
   /* Soft UI Colors */
-  --color-border-soft: color-mix(in srgb, var(--color-primary) 14%, transparent);
-  --color-border-strong: color-mix(in srgb, var(--color-primary) 28%, transparent);
-  --color-shadow-soft: color-mix(in srgb, var(--color-primary) 14%, transparent);
-  --color-shadow-medium: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  --color-shadow-strong: color-mix(in srgb, var(--color-primary) 28%, transparent);
-  --color-blue-soft: color-mix(in srgb, var(--color-text-blue) 10%, var(--color-white));
-  --color-red-soft: color-mix(in srgb, var(--color-text-red) 10%, var(--color-white));
-  --color-primary-soft: color-mix(in srgb, var(--color-primary) 8%, var(--color-white));
-  --color-secondary-soft: color-mix(in srgb, var(--color-secondary) 42%, var(--color-white));
+  --color-border-soft: color-mix(
+    in srgb,
+    var(--color-primary) 14%,
+    transparent
+  );
+  --color-border-strong: color-mix(
+    in srgb,
+    var(--color-primary) 28%,
+    transparent
+  );
+  --color-shadow-soft: color-mix(
+    in srgb,
+    var(--color-primary) 14%,
+    transparent
+  );
+  --color-shadow-medium: color-mix(
+    in srgb,
+    var(--color-primary) 20%,
+    transparent
+  );
+  --color-shadow-strong: color-mix(
+    in srgb,
+    var(--color-primary) 28%,
+    transparent
+  );
+  --color-primary-soft: color-mix(
+    in srgb,
+    var(--color-primary) 8%,
+    var(--color-white)
+  );
+  --color-secondary-soft: color-mix(
+    in srgb,
+    var(--color-secondary) 42%,
+    var(--color-white)
+  );
+  --color-blue-soft: var(--color-secondary-light);
+  --color-red-soft: var(--color-secondary-light);
 
   /* Background / Foreground */
   --background: var(--color-white);
@@ -40,7 +78,7 @@
 
   /* Backward Compatibility For Old --sc-* Components */
   --sc-primary: var(--color-primary);
-  --sc-primary-dark: var(--color-primary-dark);
+  --sc-primary-dark: var(--color-primary);
   --sc-secondary: var(--color-secondary);
   --sc-secondary-light: var(--color-secondary-light);
   --sc-white: var(--color-white);
@@ -52,8 +90,8 @@
   --sc-text: var(--color-text-primary);
   --sc-text-secondary: var(--color-text-secondary);
   --sc-text-inverse: var(--color-text-inverse);
-  --sc-blue-soft: var(--color-blue-soft);
-  --sc-red-soft: var(--color-red-soft);
+  --sc-blue-soft: var(--color-secondary-light);
+  --sc-red-soft: var(--color-secondary-light);
 }
 
 *,
@@ -145,12 +183,17 @@ canvas {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-secondary) 72%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-secondary) 72%,
+    transparent
+  );
   color: var(--color-primary);
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  outline: 3px solid
+    color-mix(in srgb, var(--color-primary) 35%, transparent);
   outline-offset: 4px;
 }
 
@@ -173,7 +216,11 @@ canvas {
 /* Better visible scrollbar utility */
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, transparent)
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--color-primary) 35%,
+      transparent
+    )
     transparent;
 }
 
@@ -340,7 +387,7 @@ div {
   }
 }
 
-/* Laptop and desktop content split. Sidebar still remains drawer until 1536px. */
+/* Laptop and desktop content split. Sidebar remains drawer until 1536px. */
 @media (min-width: 1280px) {
   .connected-scroll-section {
     height: 100vh;
@@ -452,11 +499,11 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 .sc-blue-text {
-  color: var(--color-text-blue);
+  color: var(--color-primary);
 }
 
 .sc-red-text {
-  color: var(--color-text-red);
+  color: var(--color-primary);
 }
 
 .sc-primary-bg {
@@ -480,13 +527,13 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 .sc-blue-soft-bg {
-  background: var(--color-blue-soft);
-  color: var(--color-text-blue);
+  background: var(--color-secondary-light);
+  color: var(--color-primary);
 }
 
 .sc-red-soft-bg {
-  background: var(--color-red-soft);
-  color: var(--color-text-red);
+  background: var(--color-secondary-light);
+  color: var(--color-primary);
 }
 
 /* Home / Connected section helpers */
@@ -523,29 +570,6 @@ html[data-lang="en"] .language-toggle-knob {
   border: 1px solid var(--color-border-soft);
   background: var(--color-secondary-light);
   color: var(--color-primary);
-}
-
-/* Motion safe */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Mobile improvements */
-@media (max-width: 1023px) {
-  body {
-    font-size: 15px;
-  }
 }
 
 /* Global responsive content sizing */
@@ -587,5 +611,28 @@ html[data-lang="en"] .language-toggle-knob {
 @media (min-width: 1280px) and (max-width: 1535px) {
   .site-content-shell {
     padding-left: 0;
+  }
+}
+
+/* Mobile improvements */
+@media (max-width: 1023px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+/* Motion safe */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

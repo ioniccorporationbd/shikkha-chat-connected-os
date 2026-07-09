@@ -529,7 +529,7 @@ function CoreTile({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "group relative h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -849,7 +849,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
   if (selectedId === "sis") {
     return (
       <motion.div
-        className="pointer-events-none absolute inset-0 z-[25]"
+        className="pointer-events-none absolute inset-0 z-25"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -895,7 +895,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
         duration: 0.24,
         ease: premiumEase,
       }}
-      className="pointer-events-none absolute inset-0 z-[25]"
+      className="pointer-events-none absolute inset-0 z-25"
     >
       <svg
         className="h-full w-full"
@@ -1169,10 +1169,10 @@ export default function SIS() {
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-35" />
+              <span className="pointer-events-none absolute inset-0.5 rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-35" />
 
-              <div className="relative z-10 grid h-full grid-cols-[96px_1fr] gap-[14px]">
-                <div className="flex flex-col justify-center gap-[10px]">
+              <div className="relative z-10 grid h-full grid-cols-[96px_1fr] gap-3.5">
+                <div className="flex flex-col justify-center gap-2.5">
                   <CoreTile
                     item={coreCards[0]}
                     selected={selectedId === coreCards[0].id}

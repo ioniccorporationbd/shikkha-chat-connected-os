@@ -268,7 +268,7 @@ function MiniCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "group relative h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -283,7 +283,7 @@ function MiniCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-40 blur-[1px]"
+        className="pointer-events-none absolute left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-40 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -301,7 +301,7 @@ function MiniCard({
       {selected ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]"
+          className="pointer-events-none absolute -inset-0.5 rounded-3xl border border-[var(--color-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -318,17 +318,17 @@ function MiniCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-2 text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
 
       <div
         className={[
-          "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
+          "relative z-10 flex min-h-7.5 max-w-21.5 items-center justify-center",
           "text-center font-semibold tracking-[-0.04em] text-current",
           isSingleWord
             ? "text-[13.5px] leading-none"
@@ -373,7 +373,7 @@ function ActiveEnrollmentCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
+        "group relative h-39.5 w-39.5 overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
@@ -385,7 +385,7 @@ function ActiveEnrollmentCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-14 top-0 h-full w-12 skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -402,7 +402,7 @@ function ActiveEnrollmentCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--color-secondary)]"
+        className="pointer-events-none absolute -inset-0.5 rounded-3xl border border-[var(--color-secondary)]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -418,13 +418,13 @@ function ActiveEnrollmentCard({
         }}
       />
 
-      <FaRegStar className="absolute right-[10px] top-[10px] z-10 text-[13px] text-current opacity-85 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[13px] text-current opacity-85 transition-all duration-500 group-hover:rotate-12" />
 
       <div className="relative z-10 mb-4 text-[42px] leading-none text-current transition-all duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[130px] text-[15px] font-semibold leading-[1.08] tracking-[-0.04em] text-current">
+      <h3 className="relative z-10 max-w-32.5 text-[15px] font-semibold leading-[1.08] tracking-[-0.04em] text-current">
         {item.title}
       </h3>
 
@@ -483,7 +483,7 @@ function FloatingCard({
         delay: index * 0.08,
       }}
       className={[
-        "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "group absolute z-20 h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -501,7 +501,7 @@ function FloatingCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-14 top-0 h-full w-12   skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -519,7 +519,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]"
+          className="pointer-events-none absolute -inset-0.5 rounded-[20px] border border-[var(--color-secondary)]"
           animate={
             shouldReduceMotion
               ? undefined
@@ -536,13 +536,13 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-1.75 text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
+      <div className="relative z-10 flex max-w-21 items-center justify-center text-center text-[9.5px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(item.title)}
       </div>
     </motion.button>
@@ -651,7 +651,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
   if (selectedId === "enrollment") {
     return (
       <motion.div
-        className="pointer-events-none absolute inset-0 z-[25]"
+        className="pointer-events-none absolute inset-0 z-25"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -697,7 +697,7 @@ function ConnectorLine({ selectedId }: { selectedId: CardId }) {
         duration: 0.24,
         ease: premiumEase,
       }}
-      className="pointer-events-none absolute inset-0 z-[25]"
+      className="pointer-events-none absolute inset-0 z-25"
     >
       <svg
         className="h-full w-full"
@@ -768,9 +768,9 @@ function MobileTabletView({
   hint: string;
 }) {
   return (
-    <div className="relative z-10 mx-auto flex min-h-[640px] w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
-      <div className="rounded-[30px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] backdrop-blur-xl">
-        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-[var(--color-text-gray)]">
+    <div className="relative z-10 mx-auto flex min-h-160 w-full max-w-3xl flex-col justify-center px-5 py-10 md:px-8 lg:hidden">
+      <div className="rounded-[30px] border-[3px] border-(--color-primary)text-(--color-text-gray) p-5 shadow-[0_24px_70px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] backdrop-blur-xl">
+        <p className="mb-5 text-center text-[13px] font-normal tracking-[-0.02em] text-(--color-text-gray)">
           {hint}
         </p>
 
@@ -895,12 +895,12 @@ export default function Enrollment() {
   const selectedId = selectedCard?.id;
 
   return (
-    <section className="relative h-full min-h-[640px] w-full overflow-hidden bg-[var(--color-white)]">
+    <section className="relative h-full min-h-160 w-full overflow-hidden bg-[var(--color-white)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-border-soft)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-70 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-140 w-140 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-70 blur-[88px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -918,7 +918,7 @@ export default function Enrollment() {
 
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none absolute left-[52%] top-[48%] h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-secondary)] blur-[92px]"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-65 w-65 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-secondary)] blur-[92px]"
         animate={
           shouldReduceMotion
             ? undefined
@@ -965,7 +965,7 @@ export default function Enrollment() {
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={itemVariants} className="relative">
-            <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
+            <div className="absolute left-1/2 -top-16.5 z-20 -translate-x-1/2">
               <button
                 type="button"
                 onClick={() => {
@@ -973,10 +973,10 @@ export default function Enrollment() {
                   scrollRightSidebarTo("enrollment");
                 }}
                 className={[
-                  "h-[42px] min-w-[320px] rounded-full",
-                  "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] px-[44px]",
+                  "h-10.5 min-w-[320px] rounded-full",
+                  "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] px-11",
                   "text-center text-[13px] font-semibold uppercase tracking-[0.13em]",
-                  "leading-[36px] text-[var(--color-text-inverse)]",
+                  "leading-9 text-[var(--color-text-inverse)]",
                   "shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
                   "transition duration-300 hover:scale-[1.025] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
                   "whitespace-nowrap outline-none",
@@ -988,16 +988,16 @@ export default function Enrollment() {
 
             <div
               className={[
-                "relative h-[250px] w-[340px]",
+                "relative h-62.5 w-85",
                 "rounded-[26px] border-[3px] border-[var(--color-primary)]",
-                "bg-[var(--color-white)] p-[18px]",
+                "bg-[var(--color-white)] p-4.5",
                 "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
-                "backdrop-blur-[4px]",
+                "backdrop-blur-xs",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-35" />
+              <span className="pointer-events-none absolute inset-0.5 rounded-[22px] bg-[linear-gradient(180deg,var(--color-white),transparent_35%,var(--color-secondary-light))] opacity-35" />
 
-              <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
+              <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-12">
                 <MiniCard
                   item={centerCards[0]}
                   selected={selectedId === centerCards[0].id}
