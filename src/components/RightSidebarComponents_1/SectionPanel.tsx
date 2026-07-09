@@ -60,30 +60,38 @@ export default function SectionPanel({
       id={id}
       className="relative min-h-screen w-full bg-[var(--color-white)] px-5 py-5 text-[var(--color-primary)] sm:px-6 md:px-8 lg:px-9 lg:py-7"
     >
-      <div className="sticky top-5 z-30 bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] pb-4 pt-1 backdrop-blur-xl supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--color-white)_78%,transparent)]">
-        <div
-          className={[
-            "group relative flex min-h-[60px] w-full items-center gap-3 overflow-hidden rounded-[22px] border px-5",
-            "text-[15px] font-normal leading-[1.15] tracking-[-0.02em] transition-all duration-300",
-            "shadow-[0_18px_45px_color-mix(in_srgb,var(--color-primary)_11%,transparent)]",
-            "hover:-translate-y-0.5 hover:shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
-            isSolid
-              ? "border-transparent bg-[linear-gradient(135deg,var(--color-primary),var(--color-secondary))] text-[var(--color-white)]"
-              : "border-[color-mix(in_srgb,var(--color-primary)_54%,transparent)] bg-[linear-gradient(135deg,var(--color-white),var(--color-secondary))] text-[var(--color-primary)]",
-          ].join(" ")}
-        >
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,color-mix(in_srgb,var(--color-white)_88%,transparent),transparent_34%),linear-gradient(120deg,color-mix(in_srgb,var(--color-white)_54%,transparent),transparent_52%)]" />
-          <span className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[15px] text-[var(--color-white)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]">
-            ✦
-          </span>
-          <span className="relative z-10 min-w-0">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--color-primary)_68%,var(--color-white))]">
-              {text.activeProduct}
+      <div className="sticky top-4 z-30 pb-4 pt-1 sm:top-5">
+        <div className="rounded-[24px] bg-[var(--color-white)] p-1.5 shadow-[0_18px_46px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]">
+          <div
+            className={[
+              "group relative flex min-h-[58px] w-full items-center gap-3 overflow-hidden rounded-[20px] border",
+              "border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-[var(--color-white)]",
+              "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-white)_12%,transparent)]",
+              "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
+              "sm:min-h-[62px] sm:px-5",
+            ].join(" ")}
+          >
+            <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[var(--color-secondary)] opacity-20 blur-2xl" />
+            <span className="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-full bg-[var(--color-white)] opacity-10 blur-2xl" />
+
+            <span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--color-white)] bg-[var(--color-secondary)] text-[15px] font-black text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_18%,transparent)] transition duration-300 group-hover:scale-105">
+              ✦
             </span>
-            <span className="mt-0.5 block text-[15.5px] font-normal text-[var(--color-primary)]">
-              {pill}
+
+            <span className="relative z-10 min-w-0 flex-1">
+              <span className="block text-[9.5px] font-black uppercase tracking-[0.18em] text-[var(--color-secondary)] sm:text-[10px]">
+                {text.activeProduct}
+              </span>
+
+              <span className="mt-0.5 block truncate text-[15px] font-black leading-[1.1] tracking-[-0.025em] text-[var(--color-white)] sm:text-[16px] lg:text-[16.5px]">
+                {pill}
+              </span>
             </span>
-          </span>
+
+            <span className="relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[var(--color-white)] bg-[var(--color-white)] px-3 text-[12px] font-black text-[var(--color-primary)] sm:grid">
+              →
+            </span>
+          </div>
         </div>
       </div>
 
