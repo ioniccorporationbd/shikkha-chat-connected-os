@@ -93,7 +93,7 @@ export default function StudentAchievementVideoBanner() {
           aria-label={isPaused ? text.play : text.pause}
           className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)] shadow-[0_16px_38px_color-mix(in_srgb,var(--color-black)_12%,transparent)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-[var(--color-white)] hover:text-[var(--color-primary)] lg:right-12 lg:top-9"
         >
-          {isPaused ? <FaPlay className="text-[13px]" /> : <FaPause className="text-[13px]" />}
+          {isPaused ? <FaPlay className="" /> : <FaPause className="" />}
         </button>
 
         <div className="absolute inset-0 z-30 flex h-screen items-center justify-center px-6">
@@ -101,13 +101,13 @@ export default function StudentAchievementVideoBanner() {
             style={{ y: textY, opacity: textOpacity, scale: textScale }}
             className="text-start-animation mx-auto max-w-[780px] text-center lg:text-left"
           >
-            <div className="mb-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_25%,transparent)] px-7 text-[13px] font-black text-[var(--color-white)] backdrop-blur-md md:text-[14px]">
+            <div className="video-banner-pill-text mb-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_25%,transparent)] px-7 font-black leading-[1.3] text-[var(--color-white)] backdrop-blur-md">
               {text.pill}
             </div>
-            <h2 className="text-[32px] font-black leading-[1.06] tracking-[-0.05em] text-[var(--color-white)] drop-shadow-[0_8px_26px_color-mix(in_srgb,var(--color-black)_24%,transparent)] md:text-[50px] lg:text-[58px]">
+            <h2 className="video-banner-title-text font-black leading-[1.18] tracking-[-0.03em] text-[var(--color-white)] drop-shadow-[0_8px_26px_color-mix(in_srgb,var(--color-black)_24%,transparent)]">
               {text.title}
             </h2>
-            <p className="mt-5 max-w-[620px] text-[14px] font-medium leading-7 text-[color-mix(in_srgb,var(--color-white)_92%,transparent)] drop-shadow-[0_8px_22px_color-mix(in_srgb,var(--color-black)_18%,transparent)] md:text-[16px]">
+            <p className="video-banner-description-text mt-5 max-w-[620px] font-medium leading-[1.65] text-[color-mix(in_srgb,var(--color-white)_92%,transparent)] drop-shadow-[0_8px_22px_color-mix(in_srgb,var(--color-black)_18%,transparent)]">
               {text.description}
             </p>
           </motion.div>

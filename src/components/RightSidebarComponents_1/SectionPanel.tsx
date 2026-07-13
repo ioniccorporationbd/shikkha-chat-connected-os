@@ -65,7 +65,9 @@ export default function SectionPanel({
           <div
             className={[
               "group relative flex min-h-[58px] w-full items-center gap-3 overflow-hidden rounded-[20px] border",
-              "border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-[var(--color-white)]",
+              isSolid
+                ? "border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-[var(--color-white)]"
+                : "border-[var(--color-primary)] bg-[var(--color-white)] px-4 py-3 text-[var(--color-primary)]",
               "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-white)_12%,transparent)]",
               "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
               "sm:min-h-[62px] sm:px-5",
@@ -74,21 +76,26 @@ export default function SectionPanel({
             <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[var(--color-secondary)] opacity-20 blur-2xl" />
             <span className="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-full bg-[var(--color-white)] opacity-10 blur-2xl" />
 
-            <span className="relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--color-white)] bg-[var(--color-secondary)] text-[15px] font-black text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_18%,transparent)] transition duration-300 group-hover:scale-105">
+            <span className="interface-icon-text relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--color-white)] bg-[var(--color-secondary)] font-black leading-[1.2] text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_18%,transparent)] transition duration-300 group-hover:scale-105">
               ✦
             </span>
 
             <span className="relative z-10 min-w-0 flex-1">
-              <span className="block text-[9.5px] font-black uppercase tracking-[0.18em] text-[var(--color-secondary)] sm:text-[10px]">
+              <span className="active-product-text block font-bold uppercase leading-[1.3] tracking-[0.08em] text-[var(--color-secondary)]">
                 {text.activeProduct}
               </span>
 
-              <span className="mt-0.5 block truncate text-[15px] font-black leading-[1.1] tracking-[-0.025em] text-[var(--color-white)] sm:text-[16px] lg:text-[16.5px]">
+              <span
+                className={[
+                  "product-pill-text mt-0.5 block truncate font-bold leading-[1.3] tracking-[0.08em]",
+                  isSolid ? "text-[var(--color-white)]" : "text-[var(--color-primary)]",
+                ].join(" ")}
+              >
                 {pill}
               </span>
             </span>
 
-            <span className="relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[var(--color-white)] bg-[var(--color-white)] px-3 text-[12px] font-black text-[var(--color-primary)] sm:grid">
+            <span className="interface-icon-text relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[var(--color-white)] bg-[var(--color-white)] px-3 font-black leading-[1.3] text-[var(--color-primary)] sm:grid">
               →
             </span>
           </div>
@@ -96,11 +103,11 @@ export default function SectionPanel({
       </div>
 
       <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">
-        <h2 className="max-w-[455px] text-[28px] font-black leading-[1.08] tracking-[-0.045em] text-[var(--color-primary)] md:text-[34px]">
+        <h2 className="section-main-title max-w-[455px] font-extrabold leading-[1.18] tracking-[-0.03em] text-[var(--color-primary)]">
           {title}
         </h2>
 
-        <p className="mt-4 max-w-[455px] text-[15px] font-medium leading-[1.65] text-[color-mix(in_srgb,var(--color-black)_76%,var(--color-primary))] md:text-[16px]">
+        <p className="section-description mt-4 max-w-[455px] font-medium leading-[1.65] text-[color-mix(in_srgb,var(--color-black)_76%,var(--color-primary))]">
           {description}
         </p>
 
@@ -108,16 +115,17 @@ export default function SectionPanel({
           <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap">
             <a
               href="#"
-              className="inline-flex h-[48px] items-center justify-center gap-3 rounded-lg border border-[var(--color-primary)] bg-[var(--color-white)] px-5 text-[15px] font-black text-[var(--color-primary)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-primary)] hover:text-[var(--color-white)] hover:shadow-[0_14px_28px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]"
+              className="action-text inline-flex h-[48px] items-center justify-center gap-3 rounded-lg border border-[var(--color-primary)] bg-[var(--color-white)] px-5 font-bold leading-[1.3] text-[var(--color-primary)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-primary)] hover:text-[var(--color-white)] hover:shadow-[0_14px_28px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]"
             >
-              <span className="text-[18px]">→</span>
+              <span className="leading-[1.3]">→</span>
               {text.productDetails}
             </a>
+
             <button
               type="button"
-              className="inline-flex items-center gap-3 text-[15px] font-black text-[var(--color-primary)] transition-all duration-300 hover:translate-x-1 hover:text-[color-mix(in_srgb,var(--color-primary)_84%,var(--color-black))]"
+              className="action-text inline-flex items-center gap-3 font-bold leading-[1.3] text-[var(--color-primary)] transition-all duration-300 hover:translate-x-1 hover:text-[color-mix(in_srgb,var(--color-primary)_84%,var(--color-black))]"
             >
-              <span>☆</span>
+              <span className="leading-[1.3]">☆</span>
               {text.saveProduct}
             </button>
           </div>
@@ -127,10 +135,11 @@ export default function SectionPanel({
           <div className="mt-9 space-y-7">
             {stats.map((stat) => (
               <div key={stat.value}>
-                <h3 className="text-[46px] font-black leading-none tracking-[-0.06em] text-[var(--color-primary)] md:text-[54px]">
+                <h3 className="stat-value-text font-black leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)]">
                   {stat.value}
                 </h3>
-                <p className="mt-2 max-w-[450px] text-[14px] font-black leading-6 text-[var(--color-black)] md:text-[15px]">
+
+                <p className="stat-label-text mt-2 max-w-[450px] font-bold leading-[1.35] text-[var(--color-black)]">
                   {stat.label}
                 </p>
               </div>
@@ -140,11 +149,13 @@ export default function SectionPanel({
 
         {quote ? (
           <div className="mt-8 overflow-hidden rounded-[18px] bg-[var(--color-secondary)] p-5 shadow-[0_18px_45px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] sm:p-6">
-            <p className="text-[17px] font-medium leading-[1.5] text-[var(--color-black)] md:text-[18px]">
+            <p className="quote-text font-bold leading-[1.45] tracking-[-0.02em] text-[var(--color-black)]">
               “{quote}”
             </p>
+
             <div className="relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1.25px,transparent_1.25px)] [background-size:17px_17px] opacity-30" />
+
               <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8">
                 {image ? (
                   <img
@@ -153,16 +164,21 @@ export default function SectionPanel({
                     className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_15%,transparent)]"
                   />
                 ) : null}
-                <div className="flex h-[84px] w-[140px] items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_42%,transparent)] px-4 text-center text-[13px] font-black uppercase leading-tight text-[var(--color-primary)]">
+
+                <div className="brand-logo-text flex h-[84px] w-[140px] items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_42%,transparent)] px-4 text-center font-black uppercase leading-[1.2] text-[var(--color-primary)]">
                   {logo || text.schoolLogo}
                 </div>
               </div>
             </div>
+
             {author ? (
               <div className="mt-6">
-                <h3 className="text-[16px] font-black text-[var(--color-black)]">{author}</h3>
+                <h3 className="author-name-text font-extrabold leading-[1.3] text-[var(--color-black)]">
+                  {author}
+                </h3>
+
                 {role ? (
-                  <p className="mt-1 text-[14px] font-medium leading-6 text-[color-mix(in_srgb,var(--color-black)_74%,var(--color-primary))]">
+                  <p className="author-role-text mt-1 font-bold leading-[1.3] text-[color-mix(in_srgb,var(--color-black)_74%,var(--color-primary))]">
                     {role}
                   </p>
                 ) : null}

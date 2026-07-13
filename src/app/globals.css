@@ -1,82 +1,139 @@
+
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+Bengali:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 :root {
-  /* Main Brand Colors */
+  /* =========================================================
+     MAIN BRAND COLORS
+  ========================================================= */
+
   --color-primary: #032521;
   --color-secondary: #a2c4c0;
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* Derived Brand Colors */
+  /* =========================================================
+     DERIVED BRAND COLORS
+  ========================================================= */
+
   --color-primary-dark: var(--color-primary);
+
   --color-secondary-light: color-mix(
     in srgb,
     var(--color-secondary) 28%,
     var(--color-white)
   );
+
   --color-surface: var(--color-white);
 
-  /* Text Colors */
+  /* =========================================================
+     TEXT COLORS
+  ========================================================= */
+
   --color-text-primary: var(--color-black);
   --color-text-secondary: var(--color-primary);
+
   --color-text-gray: color-mix(
     in srgb,
     var(--color-black) 62%,
     var(--color-white)
   );
+
   --color-text-blue: var(--color-primary);
   --color-text-red: var(--color-primary);
   --color-text-inverse: var(--color-white);
 
-  /* Soft UI Colors */
+  /* =========================================================
+     SOFT UI COLORS
+  ========================================================= */
+
   --color-border-soft: color-mix(
     in srgb,
     var(--color-primary) 14%,
     transparent
   );
+
   --color-border-strong: color-mix(
     in srgb,
     var(--color-primary) 28%,
     transparent
   );
+
   --color-shadow-soft: color-mix(
     in srgb,
     var(--color-primary) 14%,
     transparent
   );
+
   --color-shadow-medium: color-mix(
     in srgb,
     var(--color-primary) 20%,
     transparent
   );
+
   --color-shadow-strong: color-mix(
     in srgb,
     var(--color-primary) 28%,
     transparent
   );
+
   --color-primary-soft: color-mix(
     in srgb,
     var(--color-primary) 8%,
     var(--color-white)
   );
+
   --color-secondary-soft: color-mix(
     in srgb,
     var(--color-secondary) 42%,
     var(--color-white)
   );
+
   --color-blue-soft: var(--color-secondary-light);
   --color-red-soft: var(--color-secondary-light);
 
-  /* Background / Foreground */
+  /* =========================================================
+     BACKGROUND / FOREGROUND
+  ========================================================= */
+
   --background: var(--color-white);
   --foreground: var(--color-text-primary);
 
-  /* Fonts */
+  /* =========================================================
+     FONTS
+  ========================================================= */
+
   --font-english: "Inter";
   --font-bangla: "Noto Serif Bengali";
 
-  /* Backward Compatibility For Old --sc-* Components */
+  /* =========================================================
+     GLOBAL RIGHT-SIDEBAR TEXT SIZES
+  ========================================================= */
+
+  --right-active-product-size: 13px;
+  --right-product-pill-size: 16px;
+  --right-main-title-size: 18px;
+  --right-description-size: 16px;
+  --right-stat-value-size: 18px;
+  --right-stat-label-size: 13px;
+  --right-quote-size: 16px;
+  --right-author-size: 13px;
+  --right-author-role-size: 13px;
+  --right-logo-size: 16px;
+
+  /* Additional interface text */
+  --right-action-size: 13px;
+  --right-interface-icon-size: 13px;
+
+  /* Video banner text */
+  --video-pill-size: 13px;
+  --video-title-size: 18px;
+  --video-description-size: 16px;
+
+  /* =========================================================
+     BACKWARD COMPATIBILITY FOR OLD --sc-* COMPONENTS
+  ========================================================= */
+
   --sc-primary: var(--color-primary);
   --sc-primary-dark: var(--color-primary);
   --sc-secondary: var(--color-secondary);
@@ -94,6 +151,10 @@
   --sc-red-soft: var(--color-secondary-light);
 }
 
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+
 *,
 *::before,
 *::after {
@@ -108,6 +169,10 @@ html {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* =========================================================
+   LANGUAGE FONT SYSTEM
+========================================================= */
 
 html[data-lang="bn"] {
   font-family:
@@ -193,17 +258,23 @@ canvas {
 
 :focus-visible {
   outline: 3px solid
-    color-mix(in srgb, var(--color-primary) 35%, transparent);
+    color-mix(
+      in srgb,
+      var(--color-primary) 35%,
+      transparent
+    );
   outline-offset: 4px;
 }
 
-/* Smooth native scrollbar behavior */
+/* =========================================================
+   SCROLL UTILITIES
+========================================================= */
+
 .scroll-smooth-native {
   scroll-behavior: smooth;
   overscroll-behavior: contain;
 }
 
-/* Hide scrollbar utility */
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -213,10 +284,10 @@ canvas {
   display: none;
 }
 
-/* Better visible scrollbar utility */
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(
+  scrollbar-color:
+    color-mix(
       in srgb,
       var(--color-primary) 35%,
       transparent
@@ -234,21 +305,31 @@ canvas {
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 35%,
+    transparent
+  );
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 55%,
+    transparent
+  );
 }
 
-/* Global smooth section motion */
+/* =========================================================
+   MOTION / WRAPPING UTILITIES
+========================================================= */
+
 .smooth-transform {
   transform: translateZ(0);
   backface-visibility: hidden;
   will-change: transform;
 }
 
-/* Better text wrapping */
 .text-balance {
   text-wrap: balance;
 }
@@ -257,7 +338,10 @@ canvas {
   text-wrap: pretty;
 }
 
-/* Right sidebar scroll section helper */
+/* =========================================================
+   RIGHT SCROLL PANEL
+========================================================= */
+
 .right-scroll-panel {
   height: 100%;
   overflow-y: auto;
@@ -272,14 +356,20 @@ canvas {
   display: none;
 }
 
-/* Middle section should stay still */
+/* =========================================================
+   MIDDLE SECTION
+========================================================= */
+
 .middle-still-section {
   position: relative;
   height: 100vh;
   overflow: hidden;
 }
 
-/* Prevent horizontal overflow from animation */
+/* =========================================================
+   PREVENT HORIZONTAL OVERFLOW
+========================================================= */
+
 section,
 main,
 aside,
@@ -287,7 +377,10 @@ div {
   min-width: 0;
 }
 
-/* Site shell */
+/* =========================================================
+   SITE SHELL
+========================================================= */
+
 .site-content-shell {
   padding-left: 0;
 }
@@ -298,7 +391,10 @@ div {
   }
 }
 
-/* Sidebar layout */
+/* =========================================================
+   SIDEBAR LAYOUT
+========================================================= */
+
 .connected-sidebar {
   transform: translateX(-100%);
   background: var(--color-primary);
@@ -321,7 +417,10 @@ div {
   }
 }
 
-/* Connected OS global layout */
+/* =========================================================
+   CONNECTED OS GLOBAL LAYOUT
+========================================================= */
+
 .connected-scroll-section {
   min-height: 100svh;
   overflow: visible;
@@ -355,7 +454,10 @@ div {
   color: var(--color-primary);
 }
 
-/* Mobile and tablet: middle section hidden, right sidebar content full width */
+/* =========================================================
+   MOBILE AND TABLET LAYOUT
+========================================================= */
+
 @media (max-width: 1279px) {
   .connected-scroll-section {
     min-height: auto;
@@ -387,7 +489,10 @@ div {
   }
 }
 
-/* Laptop and desktop content split. Sidebar remains drawer until 1536px. */
+/* =========================================================
+   LAPTOP AND DESKTOP LAYOUT
+========================================================= */
+
 @media (min-width: 1280px) {
   .connected-scroll-section {
     height: 100vh;
@@ -399,7 +504,9 @@ div {
     height: 100vh;
     height: 100svh;
     min-height: 0;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 34vw);
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(360px, 34vw);
   }
 
   .connected-middle-pane {
@@ -429,17 +536,24 @@ div {
 
 @media (min-width: 1400px) {
   .connected-scroll-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(410px, 36vw);
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(410px, 36vw);
   }
 }
 
 @media (min-width: 1536px) {
   .connected-scroll-grid {
-    grid-template-columns: minmax(0, 1fr) 600px;
+    grid-template-columns:
+      minmax(0, 1fr)
+      600px;
   }
 }
 
-/* Language toggle */
+/* =========================================================
+   LANGUAGE TOGGLE
+========================================================= */
+
 .language-toggle-knob {
   transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -448,7 +562,10 @@ html[data-lang="en"] .language-toggle-knob {
   transform: translateX(34px);
 }
 
-/* Global brand helper classes */
+/* =========================================================
+   GLOBAL BRAND HELPER CLASSES
+========================================================= */
+
 .sc-section-bg {
   background: var(--color-surface);
   color: var(--color-primary);
@@ -478,7 +595,11 @@ html[data-lang="en"] .language-toggle-knob {
   background: var(--color-primary);
   color: var(--color-text-inverse);
   box-shadow: 0 20px 54px
-    color-mix(in srgb, var(--color-primary) 24%, transparent);
+    color-mix(
+      in srgb,
+      var(--color-primary) 24%,
+      transparent
+    );
 }
 
 .sc-title-pill:hover {
@@ -536,7 +657,10 @@ html[data-lang="en"] .language-toggle-knob {
   color: var(--color-primary);
 }
 
-/* Home / Connected section helpers */
+/* =========================================================
+   HOME / CONNECTED SECTION HELPERS
+========================================================= */
+
 .home-connections-section {
   background: var(--color-white);
   color: var(--color-primary);
@@ -572,41 +696,108 @@ html[data-lang="en"] .language-toggle-knob {
   color: var(--color-primary);
 }
 
-/* Global responsive content sizing */
-:where(.connected-right-pane, .connected-right-scroll-panel) {
-  font-size: clamp(14px, 1.2vw, 16px);
+/* =========================================================
+   GLOBAL RIGHT-SIDEBAR TEXT SYSTEM
+   Approved scale: 13px / 16px / 18px
+========================================================= */
+
+/* Default all right-side text to the small 13px scale. */
+:where(
+  .connected-right-pane,
+  .connected-right-scroll-panel,
+  .right-scroll-panel
+),
+:where(
+  .connected-right-pane,
+  .connected-right-scroll-panel,
+  .right-scroll-panel
+) :where(span, a, button, label, li, small) {
+  font-size: 13px !important;
+  line-height: 1.5;
 }
 
-:where(.connected-right-pane, .connected-right-scroll-panel) h1,
-:where(.connected-right-pane, .connected-right-scroll-panel) h2 {
-  font-size: clamp(25px, 3.4vw, 34px);
-  line-height: 1.08;
+/* Default paragraph/body copy uses 16px. */
+:where(
+  .connected-right-pane,
+  .connected-right-scroll-panel,
+  .right-scroll-panel
+) p {
+  font-size: 16px !important;
+  line-height: 1.7;
 }
 
-:where(.connected-right-pane, .connected-right-scroll-panel) h3 {
-  font-size: clamp(16px, 2vw, 22px);
-  line-height: 1.15;
+/* Default headings use the large 18px scale. */
+:where(
+  .connected-right-pane,
+  .connected-right-scroll-panel,
+  .right-scroll-panel
+) :where(h1, h2, h3, h4, h5, h6) {
+  font-size: 18px !important;
+  line-height: 1.3;
 }
 
-:where(.connected-right-pane, .connected-right-scroll-panel) p {
-  font-size: clamp(14px, 1.15vw, 16px);
+/* Small labels and interface copy — 13px */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
+:is(.active-product-text, .home-floating-eyebrow, .stat-label-text,
+    .author-name-text, .author-role-text, .action-text,
+    .interface-icon-text, .video-banner-pill-text) {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
 }
 
-@media (max-width: 767px) {
-  :where(.connected-right-pane, .connected-right-scroll-panel) h1,
-  :where(.connected-right-pane, .connected-right-scroll-panel) h2 {
-    font-size: clamp(23px, 7vw, 29px);
+/* Medium text — 16px */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
+:is(.product-pill-text, .home-floating-title, .section-description,
+    .quote-text, .brand-logo-text, .video-banner-description-text) {
+  font-size: 16px !important;
+  line-height: 1.65 !important;
+}
+
+/* Large headings and statistic values — 18px */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
+:is(.section-main-title, .stat-value-text, .video-banner-title-text) {
+  font-size: 18px !important;
+  line-height: 1.3 !important;
+}
+
+/* Video banners can also render outside a nested panel wrapper. */
+.video-banner-pill-text {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+.video-banner-title-text {
+  font-size: 18px !important;
+  line-height: 1.3 !important;
+}
+.video-banner-description-text {
+  font-size: 16px !important;
+  line-height: 1.7 !important;
+}
+
+/* Mobile and tablet intentionally use exactly the same 13/16/18 scale. */
+@media (max-width: 1279px) {
+  :root {
+    --right-active-product-size: 13px;
+    --right-product-pill-size: 16px;
+    --right-main-title-size: 18px;
+    --right-description-size: 16px;
+    --right-stat-value-size: 18px;
+    --right-stat-label-size: 13px;
+    --right-quote-size: 16px;
+    --right-author-size: 13px;
+    --right-author-role-size: 13px;
+    --right-logo-size: 16px;
+    --right-action-size: 13px;
+    --right-interface-icon-size: 13px;
+    --video-pill-size: 13px;
+    --video-title-size: 18px;
+    --video-description-size: 16px;
   }
-
-  :where(.connected-right-pane, .connected-right-scroll-panel) h3 {
-    font-size: clamp(15px, 4.8vw, 19px);
-  }
-
-  :where(.connected-right-pane, .connected-right-scroll-panel) p {
-    font-size: 14.5px;
-    line-height: 1.65;
-  }
 }
+
+/* =========================================================
+   LAPTOP SHELL FIX
+========================================================= */
 
 @media (min-width: 1280px) and (max-width: 1535px) {
   .site-content-shell {
@@ -614,14 +805,20 @@ html[data-lang="en"] .language-toggle-knob {
   }
 }
 
-/* Mobile improvements */
+/* =========================================================
+   MOBILE BODY IMPROVEMENTS
+========================================================= */
+
 @media (max-width: 1023px) {
   body {
     font-size: 15px;
   }
 }
 
-/* Motion safe */
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
