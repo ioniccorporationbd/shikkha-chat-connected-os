@@ -3,10 +3,41 @@
 import { useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { FaPause, FaPlay } from "react-icons/fa6";
+import { useLanguage } from "@/lib/language";
+
+type LanguageCode = "bn" | "en";
+
+const bannerText = {
+  bn: {
+    pill: "কার্যক্রমের উৎকর্ষতা",
+    title: "আরও বুদ্ধিমত্তার সঙ্গে বিদ্যালয়ের কার্যক্রম পরিচালনা করুন",
+    description:
+      "সম্পদ পরিকল্পনা, অর্থ ব্যবস্থাপনা, ইআরপি, ভর্তি পূর্বাভাস, জনবল ব্যবস্থাপনা, মানবসম্পদ এবং শিক্ষক সহায়তাকে একটি সমন্বিত কার্যক্রম ব্যবস্থায় যুক্ত করুন।",
+    playVideo: "ভিডিও চালু করুন",
+    pauseVideo: "ভিডিও বিরতি দিন",
+  },
+
+  en: {
+    pill: "Operational Excellence",
+    title: "More power to run smarter school operations",
+    description:
+      "Connect resource planning, finance, ERP, enrollment forecasting, talent management, HR, and educator support into one operational excellence experience.",
+    playVideo: "Play video",
+    pauseVideo: "Pause video",
+  },
+} as const;
 
 export default function OperationalExcellenceVideoBanner() {
+  const { language } = useLanguage();
+
+  const currentLanguage: LanguageCode =
+    language === "en" ? "en" : "bn";
+
+  const text = bannerText[currentLanguage];
+
   const sectionRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const [isPaused, setIsPaused] = useState(false);
 
   const { scrollYProgress } = useScroll({
@@ -14,31 +45,78 @@ export default function OperationalExcellenceVideoBanner() {
     offset: ["start start", "end start"],
   });
 
-  const textY = useTransform(scrollYProgress, [0, 0.2, 0.44, 0.64], [0, -110, -350, -720]);
-  const textOpacity = useTransform(scrollYProgress, [0, 0.12, 0.5, 0.66], [1, 1, 0.95, 0]);
-  const textScale = useTransform(scrollYProgress, [0, 0.36, 0.66], [1, 0.96, 0.88]);
-  const videoScale = useTransform(scrollYProgress, [0, 1], [1.025, 1.075]);
+  const textY = useTransform(
+    scrollYProgress,
+    [0, 0.2, 0.44, 0.64],
+    [0, -110, -350, -720],
+  );
 
-  const toggleVideo = () => {
+  const textOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.12, 0.5, 0.66],
+    [1, 1, 0.95, 0],
+  );
+
+  const textScale = useTransform(
+    scrollYProgress,
+    [0, 0.36, 0.66],
+    [1, 0.96, 0.88],
+  );
+
+  const videoScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [1.025, 1.075],
+  );
+
+  const toggleVideo = async () => {
     if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPaused(false);
-    } else {
-      videoRef.current.pause();
-      setIsPaused(true);
+
+    try {
+      if (videoRef.current.paused) {
+        await videoRef.current.play();
+        setIsPaused(false);
+      } else {
+        videoRef.current.pause();
+        setIsPaused(true);
+      }
+    } catch (error) {
+      console.error("Video playback failed:", error);
     }
   };
 
   return (
-    <section ref={sectionRef} id="operational-excellence-video" className="relative overflow-visible bg-white">
+    <section
+      ref={sectionRef}
+      id="operational-excellence-video"
+      lang={currentLanguage}
+      className="relative overflow-visible bg-white"
+    >
       <style jsx>{`
         @keyframes textStart {
-          0% { opacity: 0; transform: scale(.82) translateY(34px); filter: blur(10px); }
-          60% { opacity: 1; transform: scale(1.05) translateY(-8px); filter: blur(0); }
-          100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+          0% {
+            opacity: 0;
+            transform: scale(0.82) translateY(34px);
+            filter: blur(10px);
+          }
+
+          60% {
+            opacity: 1;
+            transform: scale(1.05) translateY(-8px);
+            filter: blur(0);
+          }
+
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            filter: blur(0);
+          }
         }
-        .text-start-animation { animation: textStart 720ms cubic-bezier(.22,1,.36,1) both; }
+
+        .text-start-animation {
+          animation: textStart 720ms
+            cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
       `}</style>
 
       <div className="sticky top-0 h-[100svh] overflow-hidden">
@@ -57,33 +135,58 @@ export default function OperationalExcellenceVideoBanner() {
         </div>
 
         <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
+
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[var(--sc-secondary)]/28 via-transparent to-transparent" />
+
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[var(--sc-primary)]/22 via-transparent to-transparent" />
+
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
+
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-white/14 to-transparent" />
 
         <button
           type="button"
           onClick={toggleVideo}
-          aria-label={isPaused ? "Play video" : "Pause video"}
-          className="absolute right-6 top-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
+          aria-label={
+            isPaused ? text.playVideo : text.pauseVideo
+          }
+          title={
+            isPaused ? text.playVideo : text.pauseVideo
+          }
+          className="absolute right-6 top-6 z-40 flex h-[64px] w-[64px] items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
         >
-          {isPaused ? <FaPlay className="text-[13px]" /> : <FaPause className="text-[13px]" />}
+          {isPaused ? (
+            <FaPlay
+              className="text-[30px]"
+              aria-hidden="true"
+            />
+          ) : (
+            <FaPause
+              className="text-[30px]"
+              aria-hidden="true"
+            />
+          )}
         </button>
 
         <div className="absolute inset-0 z-30 flex h-[100svh] items-center justify-center px-6">
           <motion.div
-            style={{ y: textY, opacity: textOpacity, scale: textScale }}
-            className="text-start-animation mx-auto max-w-[780px] text-center lg:text-left"
+            style={{
+              y: textY,
+              opacity: textOpacity,
+              scale: textScale,
+            }}
+            className="text-start-animation mx-auto max-w-[900px] text-center lg:text-left"
           >
-            <div className="mb-4 inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/55 bg-white/25 px-7 text-[13px] font-black text-white backdrop-blur-md md:text-[14px]">
-              Operational Excellence
+            <div className="mb-5 inline-flex min-h-[58px] items-center justify-center rounded-full border border-white/55 bg-white/25 px-8 py-3 text-[30px] font-black leading-[1.25] text-white backdrop-blur-md">
+              {text.pill}
             </div>
-            <h2 className="text-[32px] font-black leading-[1.06] tracking-[-0.05em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.24)] md:text-[50px] lg:text-[58px]">
-              More power to run smarter school operations
+
+            <h2 className="text-[30px] font-black leading-[1.25] tracking-[-0.03em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.24)]">
+              {text.title}
             </h2>
-            <p className="mt-5 max-w-[620px] text-[14px] font-medium leading-7 text-white/92 drop-shadow-[0_8px_22px_rgba(0,0,0,0.18)] md:text-[16px]">
-              Connect resource planning, finance, ERP, enrollment forecasting, talent management, HR, and educator support into one operational excellence experience.
+
+            <p className="mt-6 max-w-[820px] text-[30px] font-medium leading-[1.55] text-white/95 drop-shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
+              {text.description}
             </p>
           </motion.div>
         </div>
