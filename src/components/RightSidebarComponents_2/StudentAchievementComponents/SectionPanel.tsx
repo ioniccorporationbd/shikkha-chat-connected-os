@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/lib/language";
 
 type Stat = { value: string; label: string };
@@ -24,15 +25,15 @@ const panelText = {
     activeProduct: "সক্রিয় পণ্য",
     productDetails: "পণ্যের বিস্তারিত",
     saveProduct: "পণ্য সংরক্ষণ করুন",
-    imageAlt: "স্কুল প্রতিনিধি",
-    logoFallback: "স্কুল লোগো",
+    schoolLeader: "স্কুল নেতৃত্ব",
+    schoolLogo: "স্কুল লোগো",
   },
   en: {
     activeProduct: "Active Product",
     productDetails: "Product Details",
     saveProduct: "Save Product",
-    imageAlt: "School leader",
-    logoFallback: "School Logo",
+    schoolLeader: "School leader",
+    schoolLogo: "School Logo",
   },
 } as const;
 
@@ -51,127 +52,223 @@ export default function SectionPanel({
   showButtons = true,
 }: SectionPanelProps) {
   const { language } = useLanguage();
-  const text = panelText[language === "en" ? "en" : "bn"];
+  const reduceMotion = useReducedMotion();
+  const currentLanguage = language === "en" ? "en" : "bn";
+  const text = panelText[currentLanguage];
   const isSolid = pillStyle === "solid";
+  const duration = reduceMotion ? 0 : 0.72;
 
   return (
-    <aside
+    <motion.aside
       id={id}
-      className="relative min-h-screen w-full bg-[var(--color-white)] px-5 py-5 text-[var(--color-black)] sm:px-6 md:px-8 lg:px-9 lg:py-7"
+      lang={currentLanguage}
+      className="right-panel-section relative min-h-screen w-full overflow-hidden bg-[var(--color-white)] px-5 py-5 text-[var(--color-primary)] sm:px-6 md:px-8 lg:px-9 lg:py-7"
+      initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="sticky top-4 z-30 pb-4 pt-1 sm:top-5">
-        <div className="rounded-[24px] bg-[var(--color-white)] p-1.5 shadow-[0_18px_46px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]">
-          <div
+      <motion.div
+        className="sticky top-4 z-30 pb-4 pt-1 sm:top-5"
+        initial={reduceMotion ? false : { opacity: 0, y: -18, scale: 0.985 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="right-product-shell rounded-[24px] bg-[var(--color-white)] p-1.5">
+          <motion.div
             className={[
-              "group relative flex min-h-[58px] w-full items-center gap-3 overflow-hidden rounded-[20px] border",
-              "border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-3 text-[var(--color-white)]",
-              "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-white)_12%,transparent)]",
-              "transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
-              "sm:min-h-[62px] sm:px-5",
+              "right-product-card group relative flex min-h-[62px] w-full items-center gap-3 overflow-hidden rounded-[20px] border px-4 py-3 sm:min-h-[66px] sm:px-5",
+              isSolid
+                ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-white)]"
+                : "border-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_86%,transparent)] text-[var(--color-primary)] backdrop-blur-xl",
             ].join(" ")}
+            whileHover={reduceMotion ? undefined : { y: -3, scale: 1.005 }}
+            transition={{ type: "spring", stiffness: 280, damping: 24 }}
           >
-            <span className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[var(--color-secondary)] opacity-20 blur-2xl" />
+            <motion.span
+              className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[var(--color-secondary)] opacity-20 blur-2xl"
+              animate={reduceMotion ? undefined : { x: [0, -8, 0], y: [0, 8, 0], scale: [1, 1.08, 1] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            />
             <span className="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-full bg-[var(--color-white)] opacity-10 blur-2xl" />
 
-            <span className="interface-icon-text relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--color-white)] bg-[var(--color-secondary)] font-black text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_18%,transparent)] transition duration-300 group-hover:scale-105">
+            <motion.span
+              className="interface-icon-text relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-white)_70%,transparent)] bg-[var(--color-secondary)] font-black text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_16%,transparent)]"
+              whileHover={reduceMotion ? undefined : { rotate: 10, scale: 1.08 }}
+              transition={{ type: "spring", stiffness: 360, damping: 18 }}
+            >
               ✦
-            </span>
+            </motion.span>
 
             <span className="relative z-10 min-w-0 flex-1">
-              <span className="active-product-text block font-black uppercase tracking-[0.18em] text-[var(--color-secondary)] ">
+              <span className="active-product-text block font-bold uppercase tracking-[0.08em] text-[var(--color-secondary)]">
                 {text.activeProduct}
               </span>
-
-              <span className="product-pill-text mt-0.5 block truncate font-black leading-[1.1] tracking-[-0.025em] text-[var(--color-white)] ">
+              <span
+                className={[
+                  "product-pill-text mt-0.5 block truncate font-bold tracking-[0.02em]",
+                  isSolid ? "text-[var(--color-white)]" : "text-[var(--color-primary)]",
+                ].join(" ")}
+              >
                 {pill}
               </span>
             </span>
 
-            <span className="interface-icon-text relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[var(--color-white)] bg-[var(--color-white)] px-3 font-black text-[var(--color-primary)] sm:grid">
+            <motion.span
+              className="interface-icon-text relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_75%,transparent)] bg-[var(--color-white)] px-3 font-black text-[var(--color-primary)] sm:grid"
+              whileHover={reduceMotion ? undefined : { x: 4 }}
+            >
               →
-            </span>
-          </div>
+            </motion.span>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-8 sm:pt-9">
-        <h2 className="section-main-title max-w-[455px] font-black leading-[1.08] tracking-[-0.045em] text-[var(--color-black)] ">
+      <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">
+        <motion.h2
+          className="section-main-title max-w-[520px] font-extrabold tracking-[-0.03em] text-[var(--color-primary)]"
+          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+        >
           {title}
-        </h2>
+        </motion.h2>
 
-        <p className="section-description mt-4 max-w-[455px] font-medium leading-[1.65] text-[var(--color-black)] ">
+        <motion.p
+          className="section-description mt-4 max-w-[520px] font-medium text-[color-mix(in_srgb,var(--color-black)_76%,var(--color-primary))]"
+          initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.45 }}
+          transition={{ duration, delay: 0.14, ease: [0.22, 1, 0.36, 1] }}
+        >
           {description}
-        </p>
+        </motion.p>
 
         {showButtons ? (
-          <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap">
-            <a
+          <motion.div
+            className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap"
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.a
               href="#"
-              className="action-text inline-flex h-[48px] items-center justify-center gap-3 rounded-lg border border-[var(--color-primary)] bg-[var(--color-white)] px-5 font-black text-[var(--color-primary)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
+              className="action-text inline-flex h-[48px] items-center justify-center gap-3 rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] px-5 font-bold text-[var(--color-primary)] shadow-[0_10px_28px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+              whileHover={reduceMotion ? undefined : { y: -3, scale: 1.02 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
-              <span className="">→</span>
+              <span>→</span>
               {text.productDetails}
-            </a>
-            <button
+            </motion.a>
+
+            <motion.button
               type="button"
-              className="action-text inline-flex items-center gap-3 font-black text-[var(--color-primary)] transition-all duration-300 hover:translate-x-1 hover:text-[var(--color-black)]"
+              className="action-text inline-flex items-center gap-3 font-bold text-[var(--color-primary)]"
+              whileHover={reduceMotion ? undefined : { x: 5 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span>☆</span>
               {text.saveProduct}
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
         ) : null}
 
         {stats.length ? (
-          <div className="mt-9 space-y-7">
+          <motion.div
+            className="mt-9 grid gap-5 sm:grid-cols-2"
+            initial={reduceMotion ? false : "hidden"}
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            variants={{
+              hidden: {},
+              show: { transition: { staggerChildren: reduceMotion ? 0 : 0.08 } },
+            }}
+          >
             {stats.map((stat) => (
-              <div key={stat.value}>
-                <h3 className="stat-value-text font-black leading-none tracking-[-0.06em] text-[var(--color-primary)] ">
+              <motion.div
+                key={`${stat.value}-${stat.label}`}
+                className="right-stat-card rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] p-4"
+                variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}
+                whileHover={reduceMotion ? undefined : { y: -3 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h3 className="stat-value-text font-black tracking-[-0.03em] text-[var(--color-primary)]">
                   {stat.value}
                 </h3>
-                <p className="stat-label-text mt-2 max-w-[450px] font-black leading-6 text-[var(--color-black)] ">
+                <p className="stat-label-text mt-2 max-w-[450px] font-bold text-[var(--color-black)]">
                   {stat.label}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : null}
 
         {quote ? (
-          <div className="mt-8 overflow-hidden rounded-[18px] bg-[var(--color-secondary)] p-5 shadow-[0_18px_45px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] sm:p-6">
-            <p className="quote-text font-medium leading-[1.5] text-[var(--color-black)] ">
+          <motion.div
+            className="right-quote-card mt-8 overflow-hidden rounded-[20px] bg-[var(--color-secondary)] p-5 sm:p-6"
+            initial={reduceMotion ? false : { opacity: 0, y: 26, scale: 0.985 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            whileHover={reduceMotion ? undefined : { y: -4 }}
+            transition={{ duration, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <motion.p
+              className="quote-text font-bold tracking-[-0.02em] text-[var(--color-black)]"
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.18 }}
+            >
               “{quote}”
-            </p>
-            <div className="relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
-              <div className="absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1.25px,transparent_1.25px)] bg-[length:17px_17px] opacity-55" />
-              <div className="relative z-10 flex flex-col items-center gap-5 sm:flex-row sm:gap-8">
+            </motion.p>
+
+            <div className="right-quote-media relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1.15px,transparent_1.15px)] [background-size:17px_17px] opacity-30" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent)]" />
+
+              <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8">
                 {image ? (
-                  <img
+                  <motion.img
                     src={image}
-                    alt={author || text.imageAlt}
-                    className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_18%,transparent)]"
+                    alt={author || text.schoolLeader}
+                    className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_15%,transparent)]"
+                    whileHover={reduceMotion ? undefined : { scale: 1.05, rotate: -1.5 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
                   />
                 ) : null}
-                <div className="brand-logo-text flex h-[84px] w-[140px] items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_42%,transparent)] px-4 text-center font-black uppercase leading-tight text-[var(--color-black)]">
-                  {logo || text.logoFallback}
-                </div>
+
+                <motion.div
+                  className="brand-logo-text flex min-h-[84px] w-[140px] items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_42%,transparent)] px-4 text-center font-black uppercase text-[var(--color-primary)] backdrop-blur-sm"
+                  whileHover={reduceMotion ? undefined : { scale: 1.035, rotate: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
+                  {logo || text.schoolLogo}
+                </motion.div>
               </div>
             </div>
+
             {author ? (
-              <div className="mt-6">
-                <h3 className="stat-value-text font-black text-[var(--color-black)]">
-                  {author}
-                </h3>
+              <motion.div
+                className="mt-6"
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.22 }}
+              >
+                <h3 className="author-name-text font-extrabold text-[var(--color-black)]">{author}</h3>
                 {role ? (
-                  <p className="author-role-text mt-1 font-medium leading-6 text-[var(--color-black)] opacity-75">
+                  <p className="author-role-text mt-1 font-bold text-[color-mix(in_srgb,var(--color-black)_74%,var(--color-primary))]">
                     {role}
                   </p>
                 ) : null}
-              </div>
+              </motion.div>
             ) : null}
-          </div>
+          </motion.div>
         ) : null}
       </div>
-    </aside>
+    </motion.aside>
   );
 }
