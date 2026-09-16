@@ -411,6 +411,7 @@ div {
   }
 
   .sidebar-open-button,
+  .sidebar-quick-login,
   .sidebar-mobile-backdrop,
   .sidebar-close-button {
     display: none !important;
@@ -922,5 +923,45 @@ html[data-lang="en"] .language-toggle-knob {
 
   .right-quote-card {
     border-radius: 18px;
+  }
+}
+
+/* =========================================================
+   SCROLL-BANNER TEXT ENTRANCE
+   Previously one `<style jsx>` block per banner component. styled-jsx
+   scopes those rules with a generated `jsx-<hash>` class that only the
+   server render emitted, so React reported a hydration attribute
+   mismatch on every banner (dev console + dev-server terminal). These
+   class names are already plain strings in the JSX, so plain CSS keeps
+   the exact same behaviour with no scope class at all.
+========================================================= */
+
+@keyframes textStart {
+  0% {
+    opacity: 0;
+    transform: scale(0.82) translateY(34px);
+    filter: blur(10px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-8px);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.text-start-animation {
+  animation: textStart 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-start-animation {
+    animation: none;
   }
 }

@@ -857,6 +857,16 @@ export default function LeftSidebar() {
         <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
       </button>
 
+      {/* The sidebar is a collapsed drawer below 1536px (it lives off-canvas at
+          translateX(-100%)); this compact twin keeps a sign-in button on screen
+          without opening the drawer. CSS hides it again from 1536px up, where
+          the real button is always visible. */}
+      {drawerOpen ? null : (
+        <div className="sidebar-quick-login fixed left-16 top-3 z-[80] sm:left-20 sm:top-4">
+          <SidebarAuthButton variant="compact" />
+        </div>
+      )}
+
       {drawerOpen ? (
         <button
           type="button"

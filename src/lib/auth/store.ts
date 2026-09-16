@@ -20,7 +20,10 @@ interface AuthState {
  * (the sidebar button) can render auth state without its own fetch.
  */
 export const useAuthStore = create<AuthState>((set) => ({
-  status: "loading",
+  // Starts as "guest", never "loading": the sidebar sign-in button is part of
+  // the server-rendered HTML, so the first client render must agree with it.
+  // `AuthBootstrap` upgrades this to "authenticated" once /api/auth/me answers.
+  status: "guest",
   user: null,
   setSession: (user) => set({ user, status: user ? "authenticated" : "guest" }),
   setStatus: (status) => set({ status }),
