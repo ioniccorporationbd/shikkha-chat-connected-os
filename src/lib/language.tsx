@@ -223,6 +223,22 @@ function normalizeText(text: string) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Bangla → English, so a node that already holds a translation can still be
+ * traced back to the string it was translated from.
+ *
+ * The language provider mutates the DOM after hydration, so on mount the tree it
+ * walks is whatever server-rendered HTML the browser got — which is Bangla by
+ * default, and English for strings rendered through `t()`. Caching that value as
+ * "the original text" makes a later switch back to English restore Bangla.
+ */
+const reverseTranslations = new Map<string, string>(
+  Object.entries(translations).map(([english, bangla]) => [
+    normalizeText(bangla),
+    english,
+  ])
+);
+
 function translateText(text: string, language: Language) {
   if (language === "en") return text;
 
@@ -232,20 +248,34 @@ function translateText(text: string, language: Language) {
   return translations[normalized] ?? text;
 }
 
-function getInitialLanguage(): Language {
-  if (typeof window === "undefined") return "bn";
+/** The language the server renders. The client must start here too. */
+export const DEFAULT_LANGUAGE: Language = "bn";
 
-  const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+/**
+ * The visitor's saved choice, or null when there is none.
+ *
+ * Never call this during a render: the server has no localStorage, so using it
+ * for the initial state makes the first client render disagree with the SSR HTML
+ * (every string rendered through `t()`, plus aria-labels and alt text, would then
+ * hydrate into a mismatch and React would throw away the server tree).
+ */
+function readStoredLanguage(): Language | null {
+  if (typeof window === "undefined") return null;
 
-  if (saved === "en" || saved === "bn") {
-    return saved;
+  try {
+    const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+
+    return saved === "en" || saved === "bn" ? saved : null;
+  } catch {
+    // Storage can throw (sandboxed iframe, blocked cookies, private mode).
+    return null;
   }
-
-  return "bn";
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+  // Start from the server's language so the first client render matches the SSR
+  // HTML; the visitor's saved choice is applied after mount (see the effect below).
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
   const originalTextRef = useRef(new WeakMap<Text, string>());
 
   const setLanguage = (nextLanguage: Language) => {
@@ -270,6 +300,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }),
     [language]
   );
+
+  // Adopt the stored preference after hydration, never during it.
+  useEffect(() => {
+    const stored = readStoredLanguage();
+
+    if (stored && stored !== language) {
+      setLanguageState(stored);
+    }
+    // Mount-only on purpose: re-running this on every language change would
+    // fight the toggle and the localStorage write in `setLanguage`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -305,7 +347,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const currentValue = node.nodeValue ?? "";
 
       if (!originalText.has(node)) {
-        originalText.set(node, currentValue);
+        originalText.set(
+          node,
+          reverseTranslations.get(normalizeText(currentValue)) ?? currentValue
+        );
       }
 
       const originalValue = originalText.get(node) ?? currentValue;

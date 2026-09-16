@@ -16,8 +16,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" data-lang="bn" className="h-full antialiased">
-      <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
+    <html lang="bn" data-lang="bn" className="h-full antialiased" suppressHydrationWarning>
+      <body
+        className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]"
+        // Browser extensions inject attributes here (e.g. cz-shortcut-listen,
+        // data-gr-ext-installed) before React hydrates; that is not our mismatch.
+        suppressHydrationWarning
+      >
         <QueryProvider>
           <LanguageProvider>
             {/* Hydrates the auth store so the sidebar and the dashboard agree. */}
