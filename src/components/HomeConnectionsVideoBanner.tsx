@@ -96,38 +96,6 @@ export default function HomeConnectionsVideoBanner() {
       lang={currentLanguage}
       className="relative overflow-visible bg-white"
     >
-      <style jsx>{`
-        @keyframes textStart {
-          0% {
-            opacity: 0;
-            transform: scale(0.82) translateY(34px);
-            filter: blur(10px);
-          }
-
-          60% {
-            opacity: 1;
-            transform: scale(1.05) translateY(-8px);
-            filter: blur(0);
-          }
-
-          100% {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            filter: blur(0);
-          }
-        }
-
-        .text-start-animation {
-          animation: textStart 720ms
-            cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .text-start-animation {
-            animation: none;
-          }
-        }
-      `}</style>
 
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden">

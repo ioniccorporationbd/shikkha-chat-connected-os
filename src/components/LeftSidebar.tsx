@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import { useLanguage } from "@/lib/language";
 
 type ActiveSectionId =
@@ -856,6 +857,16 @@ export default function LeftSidebar() {
         <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
       </button>
 
+      {/* The sidebar is a collapsed drawer below 1536px (it lives off-canvas at
+          translateX(-100%)); this compact twin keeps a sign-in button on screen
+          without opening the drawer. CSS hides it again from 1536px up, where
+          the real button is always visible. */}
+      {drawerOpen ? null : (
+        <div className="sidebar-quick-login fixed left-16 top-3 z-[80] sm:left-20 sm:top-4">
+          <SidebarAuthButton variant="compact" />
+        </div>
+      )}
+
       {drawerOpen ? (
         <button
           type="button"
@@ -896,7 +907,12 @@ export default function LeftSidebar() {
             ×
           </button>
 
-          <Logo language={currentLanguage} />
+          <div className="flex items-start gap-3 pr-9 2xl:pr-0">
+            <div className="min-w-0 flex-1">
+              <Logo language={currentLanguage} />
+            </div>
+            <SidebarAuthButton />
+          </div>
           <LanguageSwitch />
 
           <div className="mt-5 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:mt-6 sm:p-4">

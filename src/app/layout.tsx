@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import LeftSidebar from "@/components/LeftSidebar";
+
+import AuthBootstrap from "@/components/auth/AuthBootstrap";
+import QueryProvider from "@/components/providers/QueryProvider";
 import { LanguageProvider } from "@/lib/language";
 
 export const metadata: Metadata = {
@@ -15,13 +17,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bn" data-lang="bn" className="h-full antialiased">
+      {/*
+        No suppressHydrationWarning: the initial language is a deterministic
+        constant ("bn") for both the server render and the client's first
+        render, so React compares the tree for real. A browser extension that
+        injects attributes (cz-shortcut-listen, data-gr-ext-installed) before
+        hydration can still make React warn about <body> in that one browser —
+        verify hydration in Incognito/extensions-disabled mode.
+      */}
       <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
-        <LanguageProvider>
-          <LeftSidebar />
-          <div className="site-content-shell min-h-screen min-w-0 overflow-x-hidden">
+        <QueryProvider>
+          <LanguageProvider>
+            {/* Hydrates the auth store so the sidebar and the dashboard agree. */}
+            <AuthBootstrap />
             {children}
-          </div>
-        </LanguageProvider>
+          </LanguageProvider>
+        </QueryProvider>
       </body>
     </html>
   );
