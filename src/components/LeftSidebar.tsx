@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import { useLanguage } from "@/lib/language";
 
 type ActiveSectionId =
@@ -896,7 +897,12 @@ export default function LeftSidebar() {
             ×
           </button>
 
-          <Logo language={currentLanguage} />
+          <div className="flex items-start gap-3 pr-9 2xl:pr-0">
+            <div className="min-w-0 flex-1">
+              <Logo language={currentLanguage} />
+            </div>
+            <SidebarAuthButton />
+          </div>
           <LanguageSwitch />
 
           <div className="mt-5 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:mt-6 sm:p-4">
