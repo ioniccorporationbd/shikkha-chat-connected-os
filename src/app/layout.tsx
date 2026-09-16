@@ -16,13 +16,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" data-lang="bn" className="h-full antialiased" suppressHydrationWarning>
-      <body
-        className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]"
-        // Browser extensions inject attributes here (e.g. cz-shortcut-listen,
-        // data-gr-ext-installed) before React hydrates; that is not our mismatch.
-        suppressHydrationWarning
-      >
+    <html lang="bn" data-lang="bn" className="h-full antialiased">
+      {/*
+        No suppressHydrationWarning: the initial language is a deterministic
+        constant ("bn") for both the server render and the client's first
+        render, so React compares the tree for real. A browser extension that
+        injects attributes (cz-shortcut-listen, data-gr-ext-installed) before
+        hydration can still make React warn about <body> in that one browser —
+        verify hydration in Incognito/extensions-disabled mode.
+      */}
+      <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
         <QueryProvider>
           <LanguageProvider>
             {/* Hydrates the auth store so the sidebar and the dashboard agree. */}
