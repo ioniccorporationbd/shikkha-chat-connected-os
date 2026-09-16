@@ -18,6 +18,10 @@ type SectionPanelProps = {
   image?: string;
   logo?: string;
   showButtons?: boolean;
+  productDetailsText?: string;
+  saveProductText?: string;
+  activeProductText?: string;
+  imageAlt?: string;
 };
 
 const panelText = {
@@ -50,6 +54,10 @@ export default function SectionPanel({
   image,
   logo,
   showButtons = true,
+  productDetailsText,
+  saveProductText,
+  activeProductText,
+  imageAlt,
 }: SectionPanelProps) {
   const { language } = useLanguage();
   const reduceMotion = useReducedMotion();
@@ -103,7 +111,7 @@ export default function SectionPanel({
 
             <span className="relative z-10 min-w-0 flex-1">
               <span className="active-product-text block font-bold uppercase tracking-[0.08em] text-[var(--color-secondary)]">
-                {text.activeProduct}
+                {activeProductText ?? text.activeProduct}
               </span>
               <span
                 className={[
@@ -161,7 +169,7 @@ export default function SectionPanel({
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span>→</span>
-              {text.productDetails}
+              {productDetailsText ?? text.productDetails}
             </motion.a>
 
             <motion.button
@@ -171,7 +179,7 @@ export default function SectionPanel({
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span>☆</span>
-              {text.saveProduct}
+              {saveProductText ?? text.saveProduct}
             </motion.button>
           </motion.div>
         ) : null}
@@ -233,7 +241,7 @@ export default function SectionPanel({
                 {image ? (
                   <motion.img
                     src={image}
-                    alt={author || text.schoolLeader}
+                    alt={imageAlt || author || text.schoolLeader}
                     className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_15%,transparent)]"
                     whileHover={reduceMotion ? undefined : { scale: 1.05, rotate: -1.5 }}
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}

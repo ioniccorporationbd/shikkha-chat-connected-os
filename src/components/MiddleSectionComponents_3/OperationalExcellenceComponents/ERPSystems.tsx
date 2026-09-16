@@ -697,6 +697,7 @@ function DetailPanel({
   item: CardItem;
   onClose: () => void;
 }) {
+  const t = useSectionText();
   const isErp = item.id === "erp-systems";
 
   return (

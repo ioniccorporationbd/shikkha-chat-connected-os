@@ -659,6 +659,7 @@ function DetailPanel({
   item: CardItem;
   onClose: () => void;
 }) {
+  const t = useSectionText();
   const isRecruiting = item.id === "recruiting-and-hr";
 
   return (

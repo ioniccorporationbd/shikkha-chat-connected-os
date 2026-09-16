@@ -387,11 +387,14 @@ function getGroups(language: LanguageCode): ProductGroup[] {
   ).map((groupId) => ({
     id: groupId,
     title: text.groups[groupId],
-    products: productBase[groupId].products.map((product) => ({
-      ...product,
-      title: text.products[product.id].title,
-      subtitle: text.products[product.id].subtitle,
-    })),
+    products: productBase[groupId].products.map((product) => {
+      const productText = text.products[product.id];
+      return {
+        ...product,
+        title: productText.title,
+        subtitle: "subtitle" in productText ? productText.subtitle : undefined,
+      };
+    }),
   }));
 }
 

@@ -931,31 +931,31 @@ export default function SpecialPrograms() {
 
   const centerCards = useMemo<CardItem[]>(
     () =>
-      centerBase.map((card) => ({
-        ...card,
-        title: text.cards[card.id].title,
-        subtitle:
-          "subtitle" in text.cards[card.id]
-            ? text.cards[card.id].subtitle
-            : undefined,
-        label: text.cards[card.id].label,
-        description: text.cards[card.id].description,
-      })),
+      centerBase.map((card) => {
+        const cardText = text.cards[card.id];
+        return {
+          ...card,
+          title: cardText.title,
+          subtitle: (cardText as { subtitle?: string }).subtitle,
+          label: cardText.label,
+          description: cardText.description,
+        };
+      }),
     [text]
   );
 
   const floatingCards = useMemo<CardItem[]>(
     () =>
-      floatingBase.map((card) => ({
-        ...card,
-        title: text.cards[card.id].title,
-        subtitle:
-          "subtitle" in text.cards[card.id]
-            ? text.cards[card.id].subtitle
-            : undefined,
-        label: text.cards[card.id].label,
-        description: text.cards[card.id].description,
-      })),
+      floatingBase.map((card) => {
+        const cardText = text.cards[card.id];
+        return {
+          ...card,
+          title: cardText.title,
+          subtitle: (cardText as { subtitle?: string }).subtitle,
+          label: cardText.label,
+          description: cardText.description,
+        };
+      }),
     [text]
   );
 
