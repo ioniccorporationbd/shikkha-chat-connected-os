@@ -697,6 +697,7 @@ function DetailPanel({
   item: CardItem;
   onClose: () => void;
 }) {
+  const t = useSectionText();
   const isPredictive = item.id === "predictive-enrollment";
 
   return (

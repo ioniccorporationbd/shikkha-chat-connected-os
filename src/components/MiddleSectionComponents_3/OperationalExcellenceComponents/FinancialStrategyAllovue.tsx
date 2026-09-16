@@ -697,6 +697,7 @@ function DetailPanel({
   item: CardItem;
   onClose: () => void;
 }) {
+  const t = useSectionText();
   const isResourcePlanning = item.id === "resource-planning";
 
   return (
