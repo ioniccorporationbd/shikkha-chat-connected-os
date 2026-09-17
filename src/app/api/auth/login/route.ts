@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { callFrappe, extractSid } from "@/lib/api/frappe";
+import { callFrappe, extractSid, logAuthEvent } from "@/lib/api/frappe";
 import { fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import {
   DEFAULT_SESSION_SECONDS,
@@ -37,17 +37,28 @@ export async function POST(request: Request) {
     body: { usr, pwd },
   });
 
-  if (!result.ok) return fromFrappeFailure(result);
+  if (!result.ok) {
+    // Server-side trail; the ERP records the same attempt in its own Error Log.
+    logAuthEvent(
+      `login rejected for ${usr}: code=${result.code} status=${result.status} message=${result.message}`
+    );
+
+    return fromFrappeFailure(result);
+  }
 
   const sid = extractSid(result.setCookies);
 
   if (!sid) {
+    logAuthEvent(`login accepted for ${usr} but the ERP returned no sid cookie`);
+
     return jsonFail(
       "The ERP did not return a session. Please try again.",
       "no_session",
       502
     );
   }
+
+  logAuthEvent(`login ok for ${usr}`);
 
   const response: NextResponse = jsonOk(result.data);
 

@@ -54,6 +54,62 @@ export function frappeBaseUrl(): string {
   return raw.trim().replace(/\/+$/, "");
 }
 
+/** The configured ERP host — for error messages and logs, never for secrets. */
+function erpHost(): string {
+  const base = frappeBaseUrl();
+  if (!base) return "(FRAPPE_BASE_URL is not set)";
+
+  try {
+    return new URL(base).host;
+  } catch {
+    return base;
+  }
+}
+
+/** Frappe serves its error *page* (HTML) when a site is down or misrouted. */
+function looksLikeHtml(text: string): boolean {
+  const head = text.slice(0, 400);
+  return /<!doctype|<html|<\?xml/i.test(head) || /<title>[^<]*<\/title>/i.test(head);
+}
+
+/**
+ * Server-side logging switch.
+ *
+ * These lines land in the Next.js **server** output (`npm run dev`, `next start`,
+ * journald) — never in the browser console. Silence them with FRAPPE_DEBUG_LOG=0.
+ */
+function serverLoggingEnabled(): boolean {
+  return process.env.FRAPPE_DEBUG_LOG !== "0";
+}
+
+/**
+ * A one-line trail for sign-in attempts, written on the server. The ERP writes
+ * its own Error Log entry; this is what tells you *which* request failed when a
+ * 502 shows up in the browser console.
+ */
+export function logAuthEvent(message: string): void {
+  if (!serverLoggingEnabled()) return;
+  console.error(`[auth] ${message}`);
+}
+
+/**
+ * The portal's own server log.
+ *
+ * A 502 in the browser console is unactionable on its own, so every upstream
+ * failure is written server-side (visible in `npm run dev`, `next start` or the
+ * systemd journal) with the host, the status and the ERP's own error type.
+ */
+function logUpstreamFailure(method: string, detail: Record<string, unknown>): void {
+  if (!serverLoggingEnabled()) return;
+
+  const parts = Object.entries(detail)
+    .filter(([, value]) => value !== undefined && value !== "")
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join(" ");
+
+  console.error(`[frappe] ${method} -> ${erpHost()} failed: ${parts}`);
+}
+
 function parseJson(text: string): unknown {
   if (!text) return null;
   try {
@@ -129,11 +185,30 @@ function unwrapEnvelope<T>(payload: unknown): T {
   return envelope as T;
 }
 
-function normalizeFailure(response: Response, payload: unknown): FrappeFailure {
+function normalizeFailure(
+  response: Response,
+  payload: unknown,
+  rawText: string,
+  method: string
+): FrappeFailure {
   const status = response.status;
   const record = (payload ?? {}) as Record<string, unknown>;
   const excType = typeof record.exc_type === "string" ? record.exc_type : "";
   const message = extractMessage(payload, "The ERP rejected the request. Please try again.");
+  const host = erpHost();
+
+  // A site that is down (bad vhost, failed migration, app not installed on the
+  // right site) answers with Frappe's HTML error page instead of JSON. Saying
+  // that out loud is the difference between "502, good luck" and a cause.
+  const htmlError = !payload && looksLikeHtml(rawText);
+
+  logUpstreamFailure(method, {
+    host,
+    status,
+    excType: excType || undefined,
+    htmlError: htmlError || undefined,
+    body: htmlError ? undefined : rawText.slice(0, 300) || undefined,
+  });
 
   if (status === 429 || excType === "RateLimitExceededError") {
     return { ok: false, status: 429, code: "rate_limited", message };
@@ -154,6 +229,28 @@ function normalizeFailure(response: Response, payload: unknown): FrappeFailure {
     return { ok: false, status: 200, code: "validation_error", message };
   }
 
+  if (htmlError) {
+    return {
+      ok: false,
+      status: 502,
+      code: "upstream_error",
+      message:
+        `The ERP server at ${host} answered with an HTML error page (HTTP ${status}) instead of the API, ` +
+        "so the site is failing before it can serve any request. Check the ERP server log / Error Log.",
+    };
+  }
+
+  if (status >= 500) {
+    return {
+      ok: false,
+      status: 502,
+      code: "upstream_error",
+      message:
+        `The ERP server at ${host} returned an error (HTTP ${status}${excType ? ` ${excType}` : ""}). ` +
+        "Check the ERP Error Log for the traceback.",
+    };
+  }
+
   return { ok: false, status: 502, code: "upstream_error", message };
 }
 
@@ -164,6 +261,8 @@ export async function callFrappe<T>(
   const base = frappeBaseUrl();
 
   if (!base) {
+    logUpstreamFailure(method, { configured: false });
+
     return {
       ok: false,
       status: 502,
@@ -201,12 +300,27 @@ export async function callFrappe<T>(
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     });
-  } catch {
+  } catch (error) {
+    const timedOut =
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    const cause = (error as { cause?: { code?: string } }).cause?.code;
+    const reason = cause ?? (error instanceof Error ? error.message : String(error));
+
+    logUpstreamFailure(method, {
+      host: erpHost(),
+      unreachable: true,
+      reason,
+      timedOut: timedOut || undefined,
+    });
+
     return {
       ok: false,
       status: 502,
       code: "upstream_unreachable",
-      message: "The ERP server could not be reached. Please try again in a moment.",
+      message: timedOut
+        ? `The ERP server at ${erpHost()} did not answer within ${Math.round(timeoutMs / 1000)}s.`
+        : `The portal could not reach the ERP server at ${erpHost()} (${reason}). ` +
+          "Check FRAPPE_BASE_URL and that the site is running.",
     };
   }
 
@@ -222,7 +336,7 @@ export async function callFrappe<T>(
     };
   }
 
-  return normalizeFailure(response, parsed);
+  return normalizeFailure(response, parsed, text, method);
 }
 
 /** Read the ERP `sid` out of a login response's `Set-Cookie` headers. */

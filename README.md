@@ -17,6 +17,7 @@ npm run dev                    # http://localhost:3000
 | Variable | Scope | Purpose |
 |---|---|---|
 | `FRAPPE_BASE_URL` | **server only** | Base URL of the ERP site, e.g. `https://erp.example.com`. Never prefix with `NEXT_PUBLIC_` — the browser must not talk to Frappe directly. |
+| `FRAPPE_DEBUG_LOG` | **server only** | `1` (default) prints portal-side request logging on the Next.js server output — host, HTTP status and the ERP's exception type per failed call. `0` silences it. |
 
 ## Routes
 
@@ -63,6 +64,47 @@ Sign-in is the **only** POST that carries a session-less request; every
 authenticated call is a GET, because Frappe enforces a CSRF token on
 cookie-authenticated non-GET requests that a stateless proxy cannot mint.
 
+## Troubleshooting: `502 (Bad Gateway)` on sign-in
+
+A 502 from `/api/auth/login` is never a portal bug: it means the ERP did not
+answer with a usable response. The browser console shows only the status, so the
+portal logs the cause on the **server** output and repeats it in the response
+body:
+
+```
+[frappe] shikkha_os.api.v1.auth.login -> erp.example.com failed: host=erp.example.com status=500 excType=IndexError
+[auth]   login rejected for someone@example.com: code=upstream_error status=502 message=...
+```
+
+| Server log | Cause | Fix |
+|---|---|---|
+| `status=500 excType=…` on *every* route, `/` included | The site itself is broken (bad vhost, failed migration, dead bench) | `tail -n 80 ~/frappe-bench/logs/web.error.log`, then `bench --site <site> migrate` and `bench restart` |
+| `status=417 … App shikkha_os is not installed` | Hostname is a healthy Frappe site, but the app lives on another one | `bench --site <site> install-app shikkha_os` |
+| `unreachable=true reason=ENOTFOUND` | Wrong hostname / DNS | Re-check `FRAPPE_BASE_URL` |
+| `configured=false` | `FRAPPE_BASE_URL` is empty | Set it in `.env.local` |
+
+One command walks the whole chain — configuration, DNS/TLS, the Frappe site, the
+app and the login endpoint — and names the first failing link:
+
+```bash
+npm run check:erp                                   # uses FRAPPE_BASE_URL
+npm run check:erp -- --base https://erp.example.com # test a candidate host
+npm run check:erp -- --probe-login                  # also POST a fake sign-in
+```
+
+Two hostnames can point at the same server while only one is a working site, so
+probe before assuming the code is at fault.
+
+Failed sign-ins are also recorded **on the ERP**, in Error Log
+(`shikkha_os: failed login`, and `shikkha_os: login server error` for unexpected
+exceptions that carry the traceback). The record holds the account, the caller IP
+and the User-Agent — never the password. Turn the failed-sign-in entries off per
+site with:
+
+```bash
+bench --site <site> set-config shikkha_os_log_failed_logins 0
+```
+
 ## UI notes
 
 * The sign-in button sits in the sidebar immediately right of the logo, and
@@ -98,7 +140,8 @@ npm run dev            # dev server (Turbopack)
 npm run build          # production build
 npm run start          # serve the production build
 npm run lint           # eslint
-npx tsc --noEmit       # type check
+npm run typecheck      # tsc --noEmit
+npm run check:erp      # diagnose the portal -> ERP chain
 ```
 
 > `next.config.ts` sets `typescript.ignoreBuildErrors: true`, so `npm run build`
