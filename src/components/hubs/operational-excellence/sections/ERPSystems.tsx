@@ -698,6 +698,7 @@ function DetailPanel({
   onClose: () => void;
 }) {
   const isErp = item.id === "erp-systems";
+  const t = useSectionText();
 
   return (
     <motion.div

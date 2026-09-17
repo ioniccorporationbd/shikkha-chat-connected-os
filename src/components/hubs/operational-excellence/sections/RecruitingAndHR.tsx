@@ -660,6 +660,7 @@ function DetailPanel({
   onClose: () => void;
 }) {
   const isRecruiting = item.id === "recruiting-and-hr";
+  const t = useSectionText();
 
   return (
     <motion.div

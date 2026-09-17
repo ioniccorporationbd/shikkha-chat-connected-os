@@ -698,6 +698,7 @@ function DetailPanel({
   onClose: () => void;
 }) {
   const isPredictive = item.id === "predictive-enrollment";
+  const t = useSectionText();
 
   return (
     <motion.div

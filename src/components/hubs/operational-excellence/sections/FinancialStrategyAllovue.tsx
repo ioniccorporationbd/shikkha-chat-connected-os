@@ -698,6 +698,7 @@ function DetailPanel({
   onClose: () => void;
 }) {
   const isResourcePlanning = item.id === "resource-planning";
+  const t = useSectionText();
 
   return (
     <motion.div
