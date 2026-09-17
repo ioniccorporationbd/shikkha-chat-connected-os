@@ -6,11 +6,11 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { FiArrowLeft, FiEye, FiEyeOff, FiLock, FiMail, FiShield } from "react-icons/fi";
 
 import { ApiError, postJson } from "@/lib/api/http";
-import { authCopyFor, authErrorMessage } from "@/lib/auth/copy";
+import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
 import { safeRedirectPath } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { SessionPayload } from "@/lib/auth/types";
-import { useLanguage } from "@/lib/language";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const FIELD_CLASS =
   "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";

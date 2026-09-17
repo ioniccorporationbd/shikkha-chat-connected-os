@@ -3,7 +3,7 @@ import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
 import QueryProvider from "@/components/providers/QueryProvider";
-import { LanguageProvider } from "@/lib/language";
+import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export const metadata: Metadata = {
   title: "Shikkha Chat",

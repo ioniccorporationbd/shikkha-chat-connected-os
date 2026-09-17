@@ -1,4 +1,4 @@
-import LeftSidebar from "@/components/LeftSidebar";
+import LeftSidebar from "@/components/layout/LeftSidebar";
 
 /**
  * Marketing site shell. Kept out of the root layout so the auth and dashboard

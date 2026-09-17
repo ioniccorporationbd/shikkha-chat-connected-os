@@ -1,5 +1,5 @@
 import type { DashboardActivityRow } from "@/lib/auth/types";
-import { relativeTime, type DashboardCopy } from "@/lib/dashboard/copy";
+import { relativeTime, type DashboardCopy } from "@/lib/dashboard/messages";
 
 interface ActivityListProps {
   rows: DashboardActivityRow[];

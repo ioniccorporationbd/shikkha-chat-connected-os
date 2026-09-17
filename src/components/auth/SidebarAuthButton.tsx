@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { FiGrid, FiLogIn } from "react-icons/fi";
 
-import { authCopyFor } from "@/lib/auth/copy";
+import { authCopyFor } from "@/lib/auth/messages";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
-import { useLanguage } from "@/lib/language";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);

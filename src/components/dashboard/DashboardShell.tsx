@@ -14,9 +14,9 @@ import { useDashboardQuery } from "@/lib/auth/queries";
 import { LOGIN_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
-import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/copy";
+import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
-import { useLanguage } from "@/lib/language";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 interface DashboardShellProps {
   initialData?: DashboardPayload;

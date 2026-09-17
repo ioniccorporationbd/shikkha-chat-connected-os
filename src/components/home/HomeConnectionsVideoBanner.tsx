@@ -1,0 +1,174 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { FaPause, FaPlay } from "react-icons/fa6";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+
+type LanguageCode = "bn" | "en";
+
+const bannerText = {
+  bn: {
+    pill: "হোম কানেকশন",
+    title:
+      "প্রতিটি পরিবারের কাছে পৌঁছানো এবং শিক্ষার্থীদের সংযুক্ত রাখার আরও শক্তিশালী উপায়",
+    description:
+      "পারিবারিক যোগাযোগ, শিক্ষার্থীর হালনাগাদ তথ্য, উপস্থিতি সহায়তা এবং বিদ্যালয়ের সম্পৃক্ততাকে একটি সমন্বিত অভিজ্ঞতায় নিয়ে আসুন।",
+    playVideo: "ভিডিও চালু করুন",
+    pauseVideo: "ভিডিও বিরতি দিন",
+  },
+
+  en: {
+    pill: "Home Connections",
+    title:
+      "More power to reach every family and keep students connected",
+    description:
+      "Bring family communication, student updates, attendance support, and school engagement into one connected experience.",
+    playVideo: "Play video",
+    pauseVideo: "Pause video",
+  },
+} as const;
+
+export default function HomeConnectionsVideoBanner() {
+  const { language } = useLanguage();
+
+  const currentLanguage: LanguageCode =
+    language === "en" ? "en" : "bn";
+
+  const text = bannerText[currentLanguage];
+
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const [isPaused, setIsPaused] = useState(false);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const textY = useTransform(
+    scrollYProgress,
+    [0, 0.2, 0.44, 0.64],
+    [0, -110, -350, -720],
+  );
+
+  const textOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.12, 0.5, 0.66],
+    [1, 1, 0.95, 0],
+  );
+
+  const textScale = useTransform(
+    scrollYProgress,
+    [0, 0.36, 0.66],
+    [1, 0.96, 0.88],
+  );
+
+  const videoScale = useTransform(
+    scrollYProgress,
+    [0, 1],
+    [1.025, 1.075],
+  );
+
+  const toggleVideo = async () => {
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    try {
+      if (video.paused) {
+        await video.play();
+        setIsPaused(false);
+      } else {
+        video.pause();
+        setIsPaused(true);
+      }
+    } catch (error) {
+      console.error("Unable to control video playback:", error);
+    }
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      id="connect"
+      lang={currentLanguage}
+      className="relative overflow-visible bg-white"
+    >
+
+      <div className="sticky top-0 h-[100svh] overflow-hidden">
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <motion.video
+            ref={videoRef}
+            style={{ scale: videoScale }}
+            className="h-full w-full object-cover brightness-[1.04]"
+            src="https://www.powerschool.com/wp-content/uploads/2026/04/tour-home-connections-hero.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          />
+        </div>
+
+        <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
+
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[var(--sc-primary)]/20 via-transparent to-transparent" />
+
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[var(--sc-secondary)]/24 via-transparent to-transparent" />
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-white/14 to-transparent" />
+
+        <button
+          type="button"
+          onClick={toggleVideo}
+          aria-label={
+            isPaused ? text.playVideo : text.pauseVideo
+          }
+          title={
+            isPaused ? text.playVideo : text.pauseVideo
+          }
+          className="absolute right-6 top-6 z-40 flex h-[64px] w-[64px] items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:right-12 lg:top-9"
+        >
+          {isPaused ? (
+            <FaPlay
+              className="text-[30px]"
+              aria-hidden="true"
+            />
+          ) : (
+            <FaPause
+              className="text-[30px]"
+              aria-hidden="true"
+            />
+          )}
+        </button>
+
+        <div className="absolute inset-0 z-30 flex h-[100svh] items-center justify-center px-6">
+          <motion.div
+            style={{
+              y: textY,
+              opacity: textOpacity,
+              scale: textScale,
+            }}
+            className="text-start-animation mx-auto max-w-[900px] text-center lg:text-left"
+          >
+            <div className="mb-5 inline-flex min-h-[58px] items-center justify-center rounded-full border border-white/55 bg-white/25 px-8 py-3 text-[30px] font-black leading-[1.25] text-white backdrop-blur-md">
+              {text.pill}
+            </div>
+
+            <h2 className="text-[30px] font-black leading-[1.25] tracking-[-0.03em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.24)]">
+              {text.title}
+            </h2>
+
+            <p className="mt-6 max-w-[820px] text-[30px] font-medium leading-[1.55] text-white/95 drop-shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
+              {text.description}
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}

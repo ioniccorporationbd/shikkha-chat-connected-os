@@ -1,43 +1,43 @@
-import Banner from "@/components/Banner";
-import ConnectVideoBanner from "@/components/HomeConnectionsVideoBanner";
-import MiddleSection_1 from "@/components/MiddleSection_1";
-import MiddleSection_2 from "@/components/MiddleSection_2";
-import MiddleSection_3 from "@/components/MiddleSection_3";
-import OperationalExcellenceVideoBanner from "@/components/OperationalExcellenceVideoBanner";
-import ProductRouterSection from "@/components/ProductRouterSection";
-import RightSidebar_1 from "@/components/RightSidebar_1";
-import RightSidebar_2 from "@/components/RightSidebar_2";
-import RightSidebar_3 from "@/components/RightSidebar_3";
-import ScrollLockedContentSection from "@/components/ScrollLockedContentSection";
-import StudentAchievementVideoBanner from "@/components/StudentAchievementVideoBanner";
+import LandingHeroBanner from "@/components/home/LandingHeroBanner";
+import HomeConnectionsVideoBanner from "@/components/home/HomeConnectionsVideoBanner";
+import HomeConnectionsHub from "@/components/hubs/home-connections/HomeConnectionsHub";
+import StudentAchievementHub from "@/components/hubs/student-achievement/StudentAchievementHub";
+import OperationalExcellenceHub from "@/components/hubs/operational-excellence/OperationalExcellenceHub";
+import OperationalExcellenceVideoBanner from "@/components/home/OperationalExcellenceVideoBanner";
+import ProductRouterSection from "@/components/home/ProductRouterSection";
+import HomeConnectionsSidePanels from "@/components/hubs/home-connections/HomeConnectionsSidePanels";
+import StudentAchievementSidePanels from "@/components/hubs/student-achievement/StudentAchievementSidePanels";
+import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
+import ScrollLockedContentSection from "@/components/layout/ScrollLockedContentSection";
+import StudentAchievementVideoBanner from "@/components/home/StudentAchievementVideoBanner";
 
 export default function Page() {
   return (
     <>
-      <Banner />
+      <LandingHeroBanner />
 
-      <ConnectVideoBanner />
+      <HomeConnectionsVideoBanner />
 
       <ScrollLockedContentSection
         sectionId="home-connections-content"
-        middle={<MiddleSection_1 />}
-        right={<RightSidebar_1 />}
+        middle={<HomeConnectionsHub />}
+        right={<HomeConnectionsSidePanels />}
       />
 
       <StudentAchievementVideoBanner />
 
       <ScrollLockedContentSection
         sectionId="student-achievement-content"
-        middle={<MiddleSection_2 />}
-        right={<RightSidebar_2 />}
+        middle={<StudentAchievementHub />}
+        right={<StudentAchievementSidePanels />}
       />
 
       <OperationalExcellenceVideoBanner />
 
       <ScrollLockedContentSection
         sectionId="operational-excellence-content"
-        middle={<MiddleSection_3 />}
-        right={<RightSidebar_3 />}
+        middle={<OperationalExcellenceHub />}
+        right={<OperationalExcellenceSidePanels />}
       />
       <ProductRouterSection/>
     </>
