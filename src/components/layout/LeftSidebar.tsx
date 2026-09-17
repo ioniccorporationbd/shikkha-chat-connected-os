@@ -466,7 +466,7 @@ function Logo({ language }: { language: LanguageCode }) {
 
   return (
     <Link href="#intro" className="block w-full" aria-label={text.logoHome}>
-      <div className="relative h-[56px] w-full transition duration-500 hover:scale-[1.02] sm:h-[66px] xl:h-[76px] 2xl:h-[84px]">
+      <div className="relative h-[56px] w-full transition duration-300 hover:scale-[1.02] sm:h-[66px] xl:h-[76px] 2xl:h-[84px]">
         <Image
           src="/images/logo.png"
           alt={text.logoHome}
@@ -534,7 +534,7 @@ function MiniOsIcon({ activeId }: { activeId: string }) {
               (_, itemIndex) => (
                 <span
                   key={itemIndex}
-                  className="h-[10px] w-[10px] rounded-[3px] transition-all duration-500"
+                  className="h-[10px] w-[10px] rounded-[3px] transition duration-500"
                   style={{
                     background: col.active
                       ? col.color
@@ -629,7 +629,7 @@ function SidebarChildLink({
       }}
       className={[
         [
-          "group relative flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 transition-all duration-300",
+          "group relative flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 transition duration-300",
           sidebarDropdownLinkTextClass,
         ].join(" "),
         "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
@@ -702,8 +702,8 @@ function LanguageSwitch() {
       >
         <span
           className={[
-            "absolute top-1 h-9 w-[calc(50%-6px)] rounded-full bg-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-all duration-500 ease-out sm:h-10",
-            isBangla ? "left-1" : "left-[calc(50%+2px)]",
+            "absolute left-1 top-1 h-9 w-[calc(50%-6px)] rounded-full bg-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-transform duration-300 ease-out sm:h-10",
+            isBangla ? "translate-x-0" : "translate-x-[calc(100%+4px)]",
           ].join(" ")}
           aria-hidden="true"
         />
@@ -755,7 +755,7 @@ function SidebarLink({
       onClick={onClick}
       className={[
         [
-          "group relative block rounded-xl border border-transparent px-3 py-2.5 transition-all duration-300",
+          "group relative block rounded-xl border border-transparent px-3 py-2.5 transition duration-300",
           sidebarTitleTextClass,
         ].join(" "),
         "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
@@ -964,7 +964,7 @@ export default function LeftSidebar() {
                       }
                       className={[
                         [
-                          "group relative flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-3 text-left transition-all duration-300 ",
+                          "group relative flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-3 text-left transition duration-300 ",
                           sidebarDropdownTitleTextClass,
                         ].join(" "),
                         "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
@@ -1071,7 +1071,7 @@ export default function LeftSidebar() {
           <div className="mt-auto border-t border-[var(--color-primary)] bg-[var(--color-white)] pt-5">
             <Link
               href="#connect"
-              className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[16px] font-black text-[var(--color-white)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] sm:h-12"
+              className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[16px] font-black text-[var(--color-white)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] sm:h-12"
             >
               {text.talkToExpert}
             </Link>

@@ -7,15 +7,15 @@ interface ActivityListProps {
 }
 
 function dotClass(status: string): string {
-  if (status === "Failed") return "bg-[#b4453a]";
-  if (status === "Blocked") return "bg-[#c98a1f]";
-  return "bg-[#2f7d5a]";
+  if (status === "Failed") return "bg-[var(--color-danger)]";
+  if (status === "Blocked") return "bg-[var(--color-warning)]";
+  return "bg-[var(--color-success)]";
 }
 
 export default function ActivityList({ rows, copy }: ActivityListProps) {
   if (!rows.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+      <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
         {copy.activityEmpty}
       </p>
     );
@@ -31,14 +31,14 @@ export default function ActivityList({ rows, copy }: ActivityListProps) {
             <p className="truncate text-[13px] font-medium text-[var(--color-primary)]">
               {copy.events[row.event] ?? row.event}
             </p>
-            <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
+            <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
               {[copy.statuses[row.status] ?? row.status, row.client_ip]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
           </div>
 
-          <span className="shrink-0 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_54%,transparent)]">
+          <span className="shrink-0 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_54%,transparent)]">
             {relativeTime(row.creation, copy)}
           </span>
         </li>

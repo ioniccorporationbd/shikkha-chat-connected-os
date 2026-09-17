@@ -87,7 +87,7 @@ export default function LoginForm() {
           <p className="truncate text-[15px] font-semibold text-[var(--color-primary)]">
             Shikkha Chat
           </p>
-          <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
             {copy.panelSubtitle}
           </p>
         </div>
@@ -98,7 +98,7 @@ export default function LoginForm() {
       </h1>
 
       {expired ? (
-        <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[12.5px] text-[var(--color-primary)]">
+        <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
           <FiShield aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
           {copy.expiredNotice}
         </p>
@@ -106,7 +106,7 @@ export default function LoginForm() {
 
       <form className="mt-5 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] font-medium text-[var(--color-primary)]">
+          <span className="text-[13px] font-medium text-[var(--color-primary)]">
             {copy.emailLabel}
           </span>
           <span className={FIELD_WRAPPER_CLASS}>
@@ -128,7 +128,7 @@ export default function LoginForm() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-[12.5px] font-medium text-[var(--color-primary)]">
+          <span className="text-[13px] font-medium text-[var(--color-primary)]">
             {copy.passwordLabel}
           </span>
           <span className={FIELD_WRAPPER_CLASS}>
@@ -160,7 +160,7 @@ export default function LoginForm() {
         {error ? (
           <p
             role="alert"
-            className="rounded-2xl border border-[#b4453a33] bg-[#b4453a14] px-3.5 py-2.5 text-[12.5px] font-medium text-[#8f3329]"
+            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--color-danger-strong)]"
           >
             {error}
           </p>
@@ -169,7 +169,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={busy}
-          className="group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          className="group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
           {/* Same hover colour change as the sidebar sign-in pill. */}
           <span
@@ -182,13 +182,13 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
+      <p className="mt-4 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
         {copy.needHelp}
       </p>
 
       <Link
         href="/"
-        className="mt-5 inline-flex items-center gap-2 text-[12.5px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
+        className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
       >
         <FiArrowLeft aria-hidden />
         {copy.backHome}

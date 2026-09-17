@@ -2,6 +2,26 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Serif+Bengali:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
+/* =========================================================
+   THEME EXTENSIONS (Tailwind v4)
+   Motion: the stock 150ms / ease defaults made components feel
+   inconsistent and sluggish, so one duration + easing curve now
+   applies to every `transition-*` utility.
+   Status colours used to be hardcoded hex inside components; they
+   now come from a single place.
+========================================================= */
+@theme {
+  --default-transition-duration: 280ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --color-danger: #b4453a;
+  --color-danger-strong: #8f3329;
+  --color-warning: #c98a1f;
+  --color-success: #2f7d5a;
+}
+
 :root {
   /* =========================================================
      MAIN BRAND COLORS
@@ -204,7 +224,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: inherit;
-  text-rendering: geometricPrecision;
+  /* `text-rendering: geometricPrecision` removed: it made small/light text
+     render unevenly and slowed text layout in Chromium. `auto` + the
+     antialiasing below is sharper and smoother. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -595,6 +617,10 @@ html[data-lang="en"] .language-toggle-knob {
   border: 3px solid var(--color-primary);
   background: var(--color-primary);
   color: var(--color-text-inverse);
+  transition:
+    background-color 280ms var(--ease-smooth),
+    color 280ms var(--ease-smooth),
+    border-color 280ms var(--ease-smooth);
   box-shadow: 0 20px 54px
     color-mix(
       in srgb,
@@ -737,64 +763,28 @@ html[data-lang="en"] .language-toggle-knob {
   line-height: 1.3;
 }
 
-/* Small labels and interface copy — 13px */
-:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
-:is(.active-product-text, .home-floating-eyebrow, .stat-label-text,
-    .author-name-text, .author-role-text, .action-text,
-    .interface-icon-text, .video-banner-pill-text) {
-  font-size: 13px !important;
-  line-height: 1.45 !important;
-}
-
-/* Medium text — 16px */
-:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
-:is(.product-pill-text, .home-floating-title, .section-description,
-    .quote-text, .brand-logo-text, .video-banner-description-text) {
-  font-size: 16px !important;
-  line-height: 1.65 !important;
-}
-
-/* Large headings and statistic values — 18px */
-:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
-:is(.section-main-title, .stat-value-text, .video-banner-title-text) {
-  font-size: 18px !important;
-  line-height: 1.3 !important;
-}
+/* NOTE: the 13 / 16 / 18 px blocks that used to sit here were duplicates of the
+   canonical right-pane typography block further down this file (they only
+   disagreed on line-height, and the later block always won). Removed so the
+   type scale is declared exactly once. */
 
 /* Video banners can also render outside a nested panel wrapper. */
 .video-banner-pill-text {
   font-size: 13px !important;
-  line-height: 1.45 !important;
+  line-height: 1.5 !important;
 }
 .video-banner-title-text {
   font-size: 18px !important;
-  line-height: 1.3 !important;
+  line-height: 1.32 !important;
 }
 .video-banner-description-text {
   font-size: 16px !important;
-  line-height: 1.7 !important;
+  line-height: 1.68 !important;
 }
 
-/* Mobile and tablet intentionally use exactly the same 13/16/18 scale. */
-@media (max-width: 1279px) {
-  :root {
-    --right-active-product-size: 13px;
-    --right-product-pill-size: 16px;
-    --right-main-title-size: 18px;
-    --right-description-size: 16px;
-    --right-stat-value-size: 18px;
-    --right-stat-label-size: 13px;
-    --right-quote-size: 16px;
-    --right-author-size: 13px;
-    --right-author-role-size: 13px;
-    --right-logo-size: 16px;
-    --right-action-size: 13px;
-    --right-interface-icon-size: 13px;
-    --video-pill-size: 13px;
-    --video-title-size: 18px;
-    --video-description-size: 16px;
-  }
-}
+/* Mobile and tablet intentionally use the same 13/16/18 scale as desktop, so the
+   former `@media (max-width: 1279px)` override that re-declared identical values
+   (and set size tokens nothing referenced) has been removed. */
 
 /* =========================================================
    LAPTOP SHELL FIX

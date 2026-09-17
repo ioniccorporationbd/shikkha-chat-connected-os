@@ -318,10 +318,10 @@ function MiniCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-2 text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-2 text-[27px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -331,7 +331,7 @@ function MiniCard({
           "relative z-10 flex min-h-7.5 max-w-21.5 items-center justify-center",
           "text-center font-semibold tracking-[-0.04em] text-current",
           isSingleWord
-            ? "text-[13.5px] leading-none"
+            ? "text-[14px] leading-none"
             : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
@@ -377,7 +377,7 @@ function ActiveEnrollmentCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-        "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_26%,transparent)]",
+        "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_26%,transparent)]",
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
@@ -418,9 +418,9 @@ function ActiveEnrollmentCard({
         }}
       />
 
-      <FaRegStar className="absolute right-2 top-2 z-10 text-[13px] text-current opacity-85 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[13px] text-current opacity-85 transition duration-300 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-4 text-[42px] leading-none text-current transition-all duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-4 text-[42px] leading-none text-current transition duration-300 group-hover:scale-110">
         {item.icon}
       </div>
 
@@ -536,13 +536,13 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-2 top-2 z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-1.75 text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-1.75 text-[26px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-21 items-center justify-center text-center text-[9.5px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
+      <div className="relative z-10 flex max-w-21 items-center justify-center text-center text-[10px] font-semibold leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(item.title)}
       </div>
     </motion.button>
@@ -625,7 +625,7 @@ function DetailPanel({
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
+      <p className="mt-5 text-[16px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
         {item.description}
       </p>
 
@@ -823,7 +823,7 @@ function MobileTabletView({
                   </div>
                 </div>
 
-                <p className="mt-3 text-[13.5px] font-normal leading-6 text-current opacity-75">
+                <p className="mt-3 text-[14px] font-normal leading-6 text-current opacity-75">
                   {card.description}
                 </p>
               </button>

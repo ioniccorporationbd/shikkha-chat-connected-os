@@ -143,7 +143,7 @@ export default function LandingHeroBanner() {
           }}
           className="mx-auto text-center"
         >
-          <p className="mb-2 text-[7px] font-bold uppercase tracking-[0.17em] text-[var(--sc-primary)] md:text-[9px]">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--sc-primary)] md:text-[11px]">
             UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
           </p>
 

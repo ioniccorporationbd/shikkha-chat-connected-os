@@ -114,7 +114,7 @@ export default function StudentAchievementVideoBanner() {
 
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-[var(--sc-secondary)]/28 via-transparent to-transparent" />
 
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[#006642]/18 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-l from-[var(--color-primary)]/18 via-transparent to-transparent" />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
 
@@ -129,7 +129,7 @@ export default function StudentAchievementVideoBanner() {
           title={
             isPaused ? text.playVideo : text.pauseVideo
           }
-          className="absolute right-6 top-6 z-40 flex h-[64px] w-[64px] items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition-all duration-500 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
+          className="absolute right-6 top-6 z-40 flex h-[64px] w-[64px] items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
         >
           {isPaused ? (
             <FaPlay

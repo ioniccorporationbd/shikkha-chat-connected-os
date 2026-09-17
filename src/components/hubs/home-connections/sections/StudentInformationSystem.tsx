@@ -579,9 +579,9 @@ function CoreTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
         {item.icon}
       </div>
 
@@ -590,7 +590,7 @@ function CoreTile({
           "relative z-10 flex min-h-[32px] max-w-[86px] items-center justify-center",
           "text-center tracking-[-0.04em] text-current",
           isSis ? "font-black" : "font-semibold",
-          isSingleWord ? "text-[13.5px] leading-none" : "text-[11px] leading-[1.08]",
+          isSingleWord ? "text-[14px] leading-none" : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
@@ -699,9 +699,9 @@ function FloatingTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
-      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-500 group-hover:scale-110">
+      <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
         {item.icon}
       </div>
 
@@ -709,14 +709,14 @@ function FloatingTile({
         className={[
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
           "font-semibold tracking-[-0.04em] text-current",
-          isSingleWord ? "text-[10.5px] leading-none" : "text-[9.5px] leading-[1.05]",
+          isSingleWord ? "text-[11px] leading-none" : "text-[10px] leading-[1.05]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-current opacity-75">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[8px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -819,7 +819,7 @@ function DetailPanel({
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
+      <p className="mt-5 text-[16px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
         {item.description}
       </p>
 

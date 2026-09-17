@@ -333,10 +333,10 @@ function ProductTile({
         </>
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12.5px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[13px] text-current opacity-80 transition duration-300 group-hover:rotate-12 group-hover:scale-110" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current drop-shadow-sm transition-all duration-500 group-hover:scale-[1.15]">
+        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current drop-shadow-sm transition duration-300 group-hover:scale-[1.15]">
           {item.icon}
         </div>
       ) : null}
@@ -348,14 +348,14 @@ function ProductTile({
           "transition-colors duration-500",
           isSingleWord
             ? "text-[14px] leading-none"
-            : "text-[11.5px] leading-[1.08]",
+            : "text-[12px] leading-[1.08]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-current opacity-75">
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[8px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -600,7 +600,7 @@ export default function StudentInformation() {
                 "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)]",
                 "px-[28px] text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
-                "transition-all duration-500 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
+                "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
               ].join(" ")}
             >
               {text.title}

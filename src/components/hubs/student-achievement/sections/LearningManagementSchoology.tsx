@@ -610,12 +610,12 @@ function CoreTile({
       ) : null}
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition-all duration-500 group-hover:rotate-12"
+        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition duration-300 group-hover:rotate-12"
         style={{ color: darkColor }}
       />
 
       <div
-        className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-500 group-hover:scale-110"
+        className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-300 group-hover:scale-110"
         style={{ color: item.color }}
       >
         {item.icon}
@@ -627,7 +627,7 @@ function CoreTile({
           "text-center text-[var(--color-black)] tracking-[-0.04em]",
           isLearning ? "font-black" : "font-normal",
           isSingleWord
-            ? "text-[13.5px] leading-none"
+            ? "text-[14px] leading-none"
             : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
@@ -738,12 +738,12 @@ function FloatingTile({
       ) : null}
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--color-black)] transition-all duration-500 group-hover:rotate-12"
+        className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--color-black)] transition duration-300 group-hover:rotate-12"
         style={{ color: active ? darkColor : "var(--color-black)" }}
       />
 
       <div
-        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-500 group-hover:scale-110"
+        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-300 group-hover:scale-110"
         style={{ color: active ? darkColor : item.color }}
       >
         {item.icon}
@@ -754,15 +754,15 @@ function FloatingTile({
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
           "font-normal tracking-[-0.04em] text-[var(--color-black)]",
           isSingleWord
-            ? "text-[10.5px] leading-none"
-            : "text-[9.5px] leading-[1.05]",
+            ? "text-[11px] leading-none"
+            : "text-[10px] leading-[1.05]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[7px] font-normal leading-none text-[var(--color-primary)]">
+        <p className="relative z-10 mt-[2px] max-w-[82px] truncate whitespace-nowrap text-[8px] font-normal leading-none text-[var(--color-primary)]">
           {item.subtitle}
         </p>
       ) : null}
@@ -855,7 +855,7 @@ function DetailPanel({
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
+      <p className="mt-5 text-[16px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
         {item.description}
       </p>
 

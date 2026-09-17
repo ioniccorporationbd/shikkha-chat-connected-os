@@ -87,7 +87,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
             </span>
           </Link>
 
-          <p className="mt-6 px-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+          <p className="mt-6 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
             {copy.navHeading}
           </p>
 
@@ -117,7 +117,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                 >
                   <Icon className="text-[16px]" />
                   <span className="flex-1">{copy.nav[key]}</span>
-                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide">
+                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
                     {copy.soon}
                   </span>
                 </span>
@@ -157,7 +157,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
               </span>
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{copy.nav.overview}</p>
-                <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                   {copy.subtitle}
                 </p>
               </div>
@@ -178,7 +178,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                 className="relative grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] text-[15px]"
               >
                 <FiBell />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#b4453a]" />
+                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[var(--color-danger)]" />
               </span>
 
               {displayName ? (
@@ -186,7 +186,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                   <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--color-primary)] text-[10px] font-semibold text-[var(--color-white)]">
                     {initials(displayName)}
                   </span>
-                  <span className="hidden max-w-[150px] truncate text-[12.5px] font-medium sm:block">
+                  <span className="hidden max-w-[150px] truncate text-[13px] font-medium sm:block">
                     {displayName}
                   </span>
                 </span>
@@ -252,7 +252,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                 <section className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
                     <h2 className="text-[15px] font-semibold">{copy.metricsHeading}</h2>
-                    <p className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                    <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                       {copy.metricsHint}
                     </p>
                   </div>
@@ -268,7 +268,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                       ))}
                     </div>
                   ) : (
-                    <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                    <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                       {copy.metricsHint}
                     </p>
                   )}
@@ -287,7 +287,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                             <dt className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                               {copy.profileFields[row.label] ?? row.label}
                             </dt>
-                            <dd className="max-w-[60%] break-words text-right text-[12.5px] font-medium">
+                            <dd className="max-w-[60%] break-words text-right text-[13px] font-medium">
                               {row.value}
                             </dd>
                           </div>

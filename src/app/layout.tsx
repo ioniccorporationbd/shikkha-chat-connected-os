@@ -25,6 +25,13 @@ export default function RootLayout({
         hydration can still make React warn about <body> in that one browser —
         verify hydration in Incognito/extensions-disabled mode.
       */}
+      <head>
+        {/* Preconnect to the font hosts so the Latin + Noto Serif Bengali
+            webfonts start downloading before globals.css is parsed — the first
+            paint lands with the real typeface instead of a fallback flash. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
         <QueryProvider>
           <LanguageProvider>

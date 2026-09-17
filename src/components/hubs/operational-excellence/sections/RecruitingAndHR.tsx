@@ -445,13 +445,13 @@ function MiniCard({
       ) : null}
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition-all duration-500 group-hover:rotate-12"
+        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition duration-300 group-hover:rotate-12"
         style={{ color: darkColor }}
       />
 
       {item.icon ? (
         <div
-          className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-500 group-hover:scale-110"
+          className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-300 group-hover:scale-110"
           style={{ color: item.color ?? darkColor }}
         >
           {item.icon}
@@ -464,7 +464,7 @@ function MiniCard({
           "text-center text-[var(--color-black)] tracking-[-0.04em]",
           isRecruiting ? "font-black" : "font-normal",
           isSingleWord
-            ? "text-[13.5px] leading-none"
+            ? "text-[14px] leading-none"
             : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
@@ -512,7 +512,7 @@ function ActiveRecruitingCard({
         "flex flex-col items-center justify-center text-center outline-none",
         "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]",
-        "transition-shadow duration-500 hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_22%,transparent),0_0_0_7px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+        "transition-shadow duration-300 hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_22%,transparent),0_0_0_7px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
         "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
@@ -554,12 +554,12 @@ function ActiveRecruitingCard({
       />
 
       <FaRegStar
-        className="absolute right-[10px] top-[10px] z-10 text-[13px] transition-all duration-500 group-hover:rotate-12"
+        className="absolute right-[10px] top-[10px] z-10 text-[13px] transition duration-300 group-hover:rotate-12"
         style={{ color: darkColor }}
       />
 
       <div
-        className="relative z-10 mb-4 text-[42px] leading-none transition-all duration-500 group-hover:scale-110"
+        className="relative z-10 mb-4 text-[42px] leading-none transition duration-300 group-hover:scale-110"
         style={{ color: darkColor }}
       >
         {item.icon}
@@ -639,13 +639,13 @@ function FloatingCard({
       />
 
       <div
-        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-500 group-hover:scale-110"
+        className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-300 group-hover:scale-110"
         style={{ color: active ? darkColor : item.color ?? darkColor }}
       >
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[9.5px] font-normal leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
+      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[10px] font-normal leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
         {formatTitle(t(item.title))}
       </div>
     </motion.button>
@@ -734,7 +734,7 @@ function DetailPanel({
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
+      <p className="mt-5 text-[16px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-primary)]">
         {t(item.description)}
       </p>
 

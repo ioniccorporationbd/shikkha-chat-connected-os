@@ -332,13 +332,13 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
       ) : null}
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12.5px] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110"
+        className="absolute right-[8px] top-[8px] z-10 text-[13px] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
         style={{ color: isActive ? darkColor : "var(--color-primary)" }}
       />
 
       {item.icon ? (
         <div
-          className="relative z-10 mb-[7px] text-[25px] leading-none drop-shadow-sm transition-all duration-500 group-hover:scale-115"
+          className="relative z-10 mb-[7px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-115"
           style={{ color: isActive ? darkColor : "var(--color-primary)" }}
         >
           {item.icon}
@@ -352,7 +352,7 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
           "transition-colors duration-500",
           isSingleWord
             ? "text-[14px] leading-none"
-            : "text-[11.5px] leading-[1.08]",
+            : "text-[12px] leading-[1.08]",
         ].join(" ")}
         style={{ color: isActive ? "var(--color-black)" : "var(--color-black)" }}
       >
@@ -360,7 +360,7 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-[var(--color-primary)]/90">
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[8px] font-normal leading-none text-[var(--color-primary)]/90">
           {t(item.subtitle)}
         </p>
       ) : null}
@@ -534,7 +534,7 @@ export default function ResourcePlanning() {
                 "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
                 "px-[24px] text-[13px] font-black leading-[38px]",
                 "whitespace-nowrap shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_85%,transparent)]",
-                "transition-shadow duration-500 hover:shadow-[0_22px_44px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+                "transition-shadow duration-300 hover:shadow-[0_22px_44px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
               ].join(" ")}
               style={{ color: darkColor }}
             >

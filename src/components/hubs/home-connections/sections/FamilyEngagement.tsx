@@ -430,10 +430,10 @@ function ProductTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition-all duration-500 group-hover:rotate-12" />
+      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
       {item.icon ? (
-        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current transition-all duration-500 group-hover:scale-110">
+        <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current transition duration-300 group-hover:scale-110">
           {item.icon}
         </div>
       ) : null}
@@ -445,14 +445,14 @@ function ProductTile({
           isActive ? "font-semibold" : "font-normal",
           isSingleWord
             ? "text-[14px] leading-none"
-            : "text-[11.2px] leading-[1.08]",
+            : "text-[11px] leading-[1.08]",
         ].join(" ")}
       >
         {formatTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[7.4px] font-normal leading-none text-current opacity-75">
+        <p className="relative z-10 mt-[3px] max-w-[82px] truncate whitespace-nowrap text-[8px] font-normal leading-none text-current opacity-75">
           {item.subtitle}
         </p>
       ) : null}
@@ -538,7 +538,7 @@ function DetailPanel({
         </div>
       </div>
 
-      <p className="mt-5 text-[15.5px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
+      <p className="mt-5 text-[16px] font-normal leading-7 tracking-[-0.01em] text-[var(--color-text-gray)]">
         {item.description}
       </p>
 
@@ -738,7 +738,7 @@ function MobileTabletView({
                   </div>
                 </div>
 
-                <p className="mt-3 text-[13.5px] font-normal leading-6 text-current opacity-75">
+                <p className="mt-3 text-[14px] font-normal leading-6 text-current opacity-75">
                   {product.description}
                 </p>
               </button>
@@ -884,7 +884,7 @@ export default function FamilyEngagement() {
                 "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] px-[30px]",
                 "text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
-                "transition-all duration-300 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+                "transition duration-300 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
               ].join(" ")}
             >
               {text.groupTitle}

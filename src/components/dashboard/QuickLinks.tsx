@@ -13,7 +13,7 @@ interface QuickLinksProps {
 export default function QuickLinks({ links, emptyLabel, labels = {} }: QuickLinksProps) {
   if (!links.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+      <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
         {emptyLabel}
       </p>
     );

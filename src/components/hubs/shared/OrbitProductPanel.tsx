@@ -133,11 +133,11 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "shadow-[0_12px_30px_rgba(15,23,42,0.08)]",
+        "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 8%, transparent)]",
         className,
       ].join(" ")}
       style={{
-        background: `linear-gradient(145deg, rgba(255,255,255,0.95), ${themeColor}55)`,
+        background: `linear-gradient(145deg, color-mix(in srgb, var(--color-white) 95%, transparent), ${themeColor}55)`,
       }}
       animate={
         shouldReduceMotion
@@ -198,19 +198,19 @@ function ProductTile({
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "shadow-[0_12px_30px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.75)]",
-        "hover:shadow-[0_24px_58px_rgba(15,23,42,0.15),inset_0_1px_0_rgba(255,255,255,0.82)]",
+        "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 6%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 75%, transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 15%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 82%, transparent)]",
       ].join(" ")}
       style={{
         background: item.highlight
-          ? `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}cc 52%, #ffffff 100%)`
-          : "linear-gradient(145deg,#ffffff 0%,#f1f8ff 54%,#e5f2ff 100%)",
+          ? `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}cc 52%, var(--color-white) 100%)`
+          : "linear-gradient(145deg,var(--color-white) 0%,color-mix(in srgb, var(--color-secondary) 12%, var(--color-white)) 54%,color-mix(in srgb, var(--color-secondary) 20%, var(--color-white)) 100%)",
         boxShadow: item.highlight
-          ? `0 16px 34px ${themeColor}44, inset 0 1px 0 rgba(255,255,255,0.75)`
+          ? `0 16px 34px ${themeColor}44, inset 0 1px 0 color-mix(in srgb, var(--color-white) 75%, transparent)`
           : undefined,
       }}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.85),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.45),rgba(255,255,255,0)_48%,rgba(15,23,42,0.04))]" />
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in srgb, var(--color-white) 85%, transparent),transparent_34%),linear-gradient(145deg,color-mix(in srgb, var(--color-white) 45%, transparent),transparent_48%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
       <span
         className="pointer-events-none absolute inset-0 opacity-[0.12]"
@@ -238,13 +238,13 @@ function ProductTile({
       />
 
       <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12.5px] text-[#4b6377] transition-all duration-500 group-hover:rotate-12 group-hover:scale-110"
+        className="absolute right-[8px] top-[8px] z-10 text-[13px] text-[color-mix(in srgb, var(--color-primary) 55%, var(--color-white))] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
         style={{ color: item.highlight ? darkColor : undefined }}
       />
 
       {item.icon ? (
         <div
-          className="relative z-10 mb-[8px] text-[25px] leading-none drop-shadow-sm transition-all duration-500 group-hover:scale-110"
+          className="relative z-10 mb-[8px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110"
           style={{ color: darkColor }}
         >
           {item.icon}
@@ -254,20 +254,20 @@ function ProductTile({
       <div
         className={[
           "relative z-10 flex min-h-[34px] max-w-[88px] items-center justify-center",
-          "text-center font-normal text-black tracking-[-0.035em]",
-          "transition-colors duration-500 group-hover:text-[#111827]",
+          "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
+          "transition-colors duration-300 group-hover:text-[var(--color-primary)]",
           isSingleWord
             ? "text-[14px] leading-none"
             : isLongTitle
-              ? "text-[10.6px] leading-[1.08]"
-              : "text-[11.8px] leading-[1.1]",
+              ? "text-[11px] leading-[1.08]"
+              : "text-[12px] leading-[1.1]",
         ].join(" ")}
       >
         {formatCardTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[7.6px] font-normal leading-none text-[#243241]/90">
+        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90">
           {item.subtitle}
         </p>
       ) : null}
@@ -291,8 +291,8 @@ export default function OrbitProductPanel({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#f7fbff]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
+    <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"
@@ -323,7 +323,7 @@ export default function OrbitProductPanel({
         transition={{ duration: 4.4, ease: "easeInOut", repeat: Infinity }}
       />
 
-      <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[#7bb7ff]/10 blur-[82px]" />
+      <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[var(--color-secondary)]/10 blur-[82px]" />
       <div
         className="pointer-events-none absolute bottom-[-12%] right-[18%] h-[270px] w-[270px] rounded-full blur-[92px]"
         style={{ backgroundColor: glowColor }}
@@ -363,12 +363,12 @@ export default function OrbitProductPanel({
             className={[
               "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
               "h-[38px] min-w-[224px] rounded-full px-[30px]",
-              "text-[14px] font-black leading-[38px] text-black whitespace-nowrap",
+              "text-[14px] font-black leading-[38px] text-[var(--color-primary)] whitespace-nowrap",
               "transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
             ].join(" ")}
             style={{
-              background: `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}dd 55%, #ffffff 100%)`,
-              boxShadow: `0 18px 40px ${themeColor}55, inset 0 1px 0 rgba(255,255,255,0.45)`,
+              background: `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}dd 55%, var(--color-white) 100%)`,
+              boxShadow: `0 18px 40px ${themeColor}55, inset 0 1px 0 color-mix(in srgb, var(--color-white) 45%, transparent)`,
             }}
           >
             {title}
@@ -389,13 +389,13 @@ export default function OrbitProductPanel({
           <div
             className={[
               "relative w-[224px] rounded-[26px] border-[3px] bg-white/18 p-[8px]",
-              "shadow-[0_28px_80px_rgba(15,23,42,0.09),inset_0_1px_0_rgba(255,255,255,0.78)]",
+              "shadow-[0_28px_80px_color-mix(in srgb, var(--color-primary) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
               "backdrop-blur-[4px]",
               products.length > 8 ? "h-[538px]" : "h-[430px]",
             ].join(" ")}
             style={{ borderColor: themeColor }}
           >
-            <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.24),transparent_35%,rgba(255,116,56,0.06))]" />
+            <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in srgb, var(--color-white) 24%, transparent),transparent_35%,color-mix(in srgb, var(--color-secondary) 8%, transparent))]" />
 
             <motion.span
               aria-hidden="true"

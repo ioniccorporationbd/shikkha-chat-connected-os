@@ -52,7 +52,7 @@ const stickyOuterCardClass =
   "rounded-[24px] bg-[var(--color-white)] p-[6px] shadow-[0_18px_46px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
 
 const stickyInnerCardClass =
-  "group relative flex min-h-[58px] w-full items-center gap-[12px] overflow-hidden rounded-[20px] border border-[var(--color-primary)] bg-[var(--color-primary)] px-[16px] py-[12px] text-[var(--color-white)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-white)_12%,transparent)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_20%,transparent)] sm:min-h-[62px] sm:px-[20px]";
+  "group relative flex min-h-[58px] w-full items-center gap-[12px] overflow-hidden rounded-[20px] border border-[var(--color-primary)] bg-[var(--color-primary)] px-[16px] py-[12px] text-[var(--color-white)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-white)_12%,transparent)] transition duration-300 hover:-translate-y-[2px] hover:shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_20%,transparent)] sm:min-h-[62px] sm:px-[20px]";
 
 const topGlowClass =
   "pointer-events-none absolute -right-[40px] -top-[40px] h-[112px] w-[112px] rounded-full bg-[var(--color-secondary)] opacity-20 blur-[24px]";

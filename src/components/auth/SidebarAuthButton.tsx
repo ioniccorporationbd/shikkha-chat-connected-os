@@ -68,14 +68,14 @@ export default function SidebarAuthButton({
         data-no-translate="true"
         title={`${copy.signedInAs}: ${name}`}
         className={[
-          "flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
+          "flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] transition duration-300 hover:-translate-y-[2px] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
           compact ? "px-2.5 py-2" : "mt-1 px-2.5 py-2",
         ].join(" ")}
       >
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[var(--color-white)] text-[10px] font-semibold text-[var(--color-primary)]">
           {initials(name)}
         </span>
-        <span className="hidden max-w-[86px] truncate text-[12.5px] font-medium text-[var(--color-white)] sm:block">
+        <span className="hidden max-w-[86px] truncate text-[13px] font-medium text-[var(--color-white)] sm:block">
           {copy.openDashboard}
         </span>
         <FiGrid aria-hidden size={15} className="text-[var(--color-white)] sm:hidden" />
@@ -88,7 +88,7 @@ export default function SidebarAuthButton({
       href={LOGIN_PATH}
       data-no-translate="true"
       className={[
-        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] transition-all duration-300 ease-out",
+        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] transition duration-300 ease-out",
         "hover:-translate-y-[2px] hover:border-[color-mix(in_srgb,var(--color-primary)_68%,var(--color-secondary))] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
         "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-primary)_58%,transparent)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))] focus-visible:ring-offset-2",
@@ -106,7 +106,7 @@ export default function SidebarAuthButton({
       <span
         className={[
           "relative z-10 inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-white)]",
-          compact ? "text-[12.5px]" : "text-[13px]",
+          compact ? "text-[13px]" : "text-[13px]",
         ].join(" ")}
       >
         <FiLogIn aria-hidden size={15} />

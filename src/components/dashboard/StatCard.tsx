@@ -27,7 +27,7 @@ export default function StatCard({ stat, scopeLabel }: StatCardProps) {
 
       <p className="mt-2 text-[13px] font-medium text-[var(--color-primary)]">{stat.label}</p>
 
-      <p className="mt-1 text-[11.5px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
+      <p className="mt-1 text-[12px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
         {stat.hint}
       </p>
     </article>
