@@ -173,10 +173,11 @@ if (!ping.ok) {
       ? "The ERP is serving its HTML error page for every request — the site itself is broken"
       : "The ERP is throwing on every request — the site itself is broken"
   );
-  hint("On the server:  tail -n 80 ~/frappe-bench/logs/web.error.log");
-  hint("                tail -n 80 ~/frappe-bench/sites/<site>/logs/web.error.log");
-  hint("                bench --site <site> doctor   &&   bench --site <site> migrate");
-  hint("If two hostnames point at the same server, try the other one: npm run check:erp -- --base https://<other-host>");
+  hint("On the server:  tail -n 200 ~/frappe-bench/logs/web.error.log    # names the file + line");
+  hint("                tail -n 200 ~/frappe-bench/sites/<site>/logs/web.error.log");
+  hint("A 500 on EVERY route (even / and /robots.txt) usually comes from a per-request hook:");
+  hint("  bench --site <site> list-apps   |   grep -rn before_request ~/frappe-bench/apps/*/*/hooks.py");
+  hint("Then:  bench --site <site> migrate && bench --site <site> clear-cache && bench restart");
 } else if (ping.status === 200) {
   const pong = typeof ping.payload === "object" ? (ping.payload?.message ?? "") : "";
   line("ok", "site healthy", `HTTP 200 ${pong === "pong" ? "pong" : ""}`.trim());
