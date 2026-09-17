@@ -169,9 +169,14 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={busy}
-          className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-primary)] px-4 py-3 transition hover:opacity-92 disabled:cursor-not-allowed disabled:opacity-70"
+          className="group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition-all duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
-          <span className="text-[14px] font-semibold text-[var(--color-white)]">
+          {/* Same hover colour change as the sidebar sign-in pill. */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
+          />
+          <span className="relative z-10 text-[14px] font-semibold text-[var(--color-white)]">
             {busy ? copy.submitting : copy.submit}
           </span>
         </button>

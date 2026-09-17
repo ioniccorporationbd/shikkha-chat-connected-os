@@ -68,7 +68,7 @@ export default function SidebarAuthButton({
         data-no-translate="true"
         title={`${copy.signedInAs}: ${name}`}
         className={[
-          "flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] transition hover:opacity-92",
+          "flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
           compact ? "px-2.5 py-2" : "mt-1 px-2.5 py-2",
         ].join(" ")}
       >
@@ -88,13 +88,24 @@ export default function SidebarAuthButton({
       href={LOGIN_PATH}
       data-no-translate="true"
       className={[
-        "group inline-flex shrink-0 items-center whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] transition hover:bg-[var(--color-primary)]",
+        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] transition-all duration-300 ease-out",
+        "hover:-translate-y-[2px] hover:border-[color-mix(in_srgb,var(--color-primary)_68%,var(--color-secondary))] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
+        "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-primary)_58%,transparent)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))] focus-visible:ring-offset-2",
         compact ? "px-3 py-2" : "mt-1 px-3.5 py-2.5",
       ].join(" ")}
     >
+      {/*
+        Hover fill: a brand gradient that wipes in from the left (scale-x + fade)
+        so the colour change reads clearly without moving the label.
+      */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_60%,var(--color-secondary)))] opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:scale-x-100 group-hover:opacity-100"
+      />
       <span
         className={[
-          "inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] transition group-hover:text-[var(--color-white)]",
+          "relative z-10 inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-white)]",
           compact ? "text-[12.5px]" : "text-[13px]",
         ].join(" ")}
       >
