@@ -16,7 +16,7 @@ npm run dev                    # http://localhost:3000
 
 | Variable | Scope | Purpose |
 |---|---|---|
-| `FRAPPE_BASE_URL` | **server only** | Base URL of the ERP site, e.g. `https://erp.example.com`. Never prefix with `NEXT_PUBLIC_` — the browser must not talk to Frappe directly. |
+| `FRAPPE_BASE_URL` | **server only** | Base URL of the ERP site, e.g. `https://dash.example.com`. Never prefix with `NEXT_PUBLIC_` — the browser must not talk to Frappe directly. |
 | `FRAPPE_DEBUG_LOG` | **server only** | `1` (default) prints portal-side request logging on the Next.js server output — host, HTTP status and the ERP's exception type per failed call. `0` silences it. |
 
 ## Routes
@@ -72,7 +72,7 @@ portal logs the cause on the **server** output and repeats it in the response
 body:
 
 ```
-[frappe] shikkha_os.api.v1.auth.login -> erp.example.com failed: host=erp.example.com status=500 excType=IndexError
+[frappe] shikkha_os.api.v1.auth.login -> dash.example.com failed: host=dash.example.com status=500 excType=IndexError
 [auth]   login rejected for someone@example.com: code=upstream_error status=502 message=...
 ```
 
@@ -88,7 +88,7 @@ app and the login endpoint — and names the first failing link:
 
 ```bash
 npm run check:erp                                   # uses FRAPPE_BASE_URL
-npm run check:erp -- --base https://erp.example.com # test a candidate host
+npm run check:erp -- --base https://dash.example.com # test a candidate host
 npm run check:erp -- --probe-login                  # also POST a fake sign-in
 ```
 

@@ -7,7 +7,7 @@
  * shikkha_os app, and finally the login endpoint.
  *
  *   npm run check:erp                       # uses FRAPPE_BASE_URL
- *   npm run check:erp -- --base https://erp.example.com
+ *   npm run check:erp -- --base https://dash.example.com
  *   npm run check:erp -- --probe-login      # also POST a fake sign-in (writes an
  *                                           # Error Log entry on the ERP)
  *

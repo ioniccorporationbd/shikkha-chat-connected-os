@@ -124,10 +124,10 @@ function dashboardPayload() {
       { name: "SHIKKHA-AUD-2026-00005", event: "logout", status: "Success", creation: stamp, client_ip: "103.15.20.4" },
     ],
     quick_links: [
-      { key: "desk", label: "ERP Desk", description: "Open the Frappe desk", icon: "grid", href: "https://erp.example.com/app", external: true },
-      { key: "users", label: "Users", description: "Manage user accounts", icon: "users", href: "https://erp.example.com/app/user", external: true },
-      { key: "customers", label: "Customers", description: "Customer master records", icon: "customer", href: "https://erp.example.com/app/customer", external: true },
-      { key: "items", label: "Items", description: "Item master records", icon: "box", href: "https://erp.example.com/app/item", external: true },
+      { key: "desk", label: "ERP Desk", description: "Open the Frappe desk", icon: "grid", href: "https://dash.example.com/app", external: true },
+      { key: "users", label: "Users", description: "Manage user accounts", icon: "users", href: "https://dash.example.com/app/user", external: true },
+      { key: "customers", label: "Customers", description: "Customer master records", icon: "customer", href: "https://dash.example.com/app/customer", external: true },
+      { key: "items", label: "Items", description: "Item master records", icon: "box", href: "https://dash.example.com/app/item", external: true },
     ],
     system: {
       app: "shikkha_os",
