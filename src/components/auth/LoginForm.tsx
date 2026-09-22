@@ -7,7 +7,7 @@ import { FiArrowLeft, FiEye, FiEyeOff, FiLock, FiMail, FiShield } from "react-ic
 
 import { ApiError, postJson } from "@/lib/api/http";
 import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
-import { safeRedirectPath } from "@/lib/auth/session";
+import { preferredRedirect, safeRedirectPath } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { SessionPayload } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -28,6 +28,7 @@ export default function LoginForm() {
 
   const setSession = useAuthStore((state) => state.setSession);
   const status = useAuthStore((state) => state.status);
+  const user = useAuthStore((state) => state.user);
 
   const nextPath = useMemo(
     () => safeRedirectPath(searchParams.get("next")),
@@ -41,10 +42,11 @@ export default function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Already signed in: skip the form.
+  // Already signed in: skip the form — and land on the dashboard this account's
+  // role belongs on (`?next=` never decides that).
   useEffect(() => {
-    if (status === "authenticated") router.replace(nextPath);
-  }, [nextPath, router, status]);
+    if (status === "authenticated") router.replace(preferredRedirect(nextPath, user));
+  }, [nextPath, router, status, user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,7 +65,10 @@ export default function LoginForm() {
 
       // `busy` stays true on purpose: the button keeps its loading state until
       // the dashboard route takes over.
-      router.replace(safeRedirectPath(payload?.redirect_to ?? nextPath));
+      // The ERP decides the destination by role (`redirect_to`); the local
+      // helper is the guard that keeps a customer off the desk panel (and vice
+      // versa) if the ERP is older and still returns a single route.
+      router.replace(preferredRedirect(payload?.redirect_to ?? nextPath, payload?.user));
       router.refresh();
     } catch (thrown) {
       const apiError = thrown as ApiError;

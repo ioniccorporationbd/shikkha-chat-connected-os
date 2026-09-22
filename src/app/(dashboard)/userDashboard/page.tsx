@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { callFrappe } from "@/lib/api/frappe";
-import { DASHBOARD_PATH, LOGIN_PATH, SESSION_COOKIE } from "@/lib/auth/session";
+import {
+  CLIENT_DASHBOARD_PATH,
+  DASHBOARD_PATH,
+  dashboardPathFor,
+  LOGIN_PATH,
+  SESSION_COOKIE,
+} from "@/lib/auth/session";
 import type { DashboardPayload } from "@/lib/auth/types";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +39,11 @@ export default async function UserDashboardPage() {
 
   if (!result.ok && result.status === 401) {
     redirect(`${LOGIN_PATH}?next=${encodeURIComponent(DASHBOARD_PATH)}&expired=1`);
+  }
+
+  // Portal customers belong on `/clientDashboard`: this route is the desk shell.
+  if (result.ok && dashboardPathFor(result.data.user) === CLIENT_DASHBOARD_PATH) {
+    redirect(CLIENT_DASHBOARD_PATH);
   }
 
   return (

@@ -17,6 +17,18 @@ export interface AuthCopy {
   backHome: string;
   needHelp: string;
   expiredNotice: string;
+  /** Copy for the account dropdown on the signed-in user's name. */
+  userMenu: {
+    open: string;
+    profile: string;
+    accountType: string;
+    systemUser: string;
+    websiteUser: string;
+    roles: string;
+    dashboard: string;
+    signOut: string;
+    signingOut: string;
+  };
   errors: {
     validation_error: string;
     not_authenticated: string;
@@ -48,6 +60,17 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "হোমে ফিরে যান",
     needHelp: "লগইন করতে সমস্যা হলে আপনার প্রতিষ্ঠানের অ্যাডমিনের সাথে যোগাযোগ করুন।",
     expiredNotice: "আপনার সেশন শেষ হয়ে গেছে। আবার সাইন ইন করুন।",
+    userMenu: {
+      open: "অ্যাকাউন্ট মেনু",
+      profile: "প্রোফাইল তথ্য",
+      accountType: "অ্যাকাউন্টের ধরন",
+      systemUser: "সিস্টেম ইউজার",
+      websiteUser: "ওয়েবসাইট ইউজার (ক্লায়েন্ট)",
+      roles: "রোল",
+      dashboard: "ড্যাশবোর্ড",
+      signOut: "লগআউট",
+      signingOut: "লগআউট হচ্ছে…",
+    },
     errors: {
       validation_error: "ইমেইল ও পাসওয়ার্ড সঠিকভাবে লিখুন।",
       not_authenticated: "ইমেইল বা পাসওয়ার্ড ভুল।",
@@ -77,6 +100,17 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "Back to home",
     needHelp: "Cannot sign in? Contact your organisation's administrator.",
     expiredNotice: "Your session has expired. Please sign in again.",
+    userMenu: {
+      open: "Account menu",
+      profile: "Profile",
+      accountType: "Account type",
+      systemUser: "System User",
+      websiteUser: "Website User (client)",
+      roles: "Roles",
+      dashboard: "Dashboard",
+      signOut: "Sign out",
+      signingOut: "Signing out…",
+    },
     errors: {
       validation_error: "Enter your email and password.",
       not_authenticated: "Incorrect email or password.",

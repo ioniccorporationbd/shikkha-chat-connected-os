@@ -20,6 +20,8 @@ export interface DashboardCopy {
   greeting: string;
   greetingFallback: string;
   subtitle: string;
+  /** Subtitle for the customer-facing `/clientDashboard` panel. */
+  clientSubtitle: string;
   roleLabel: string;
   metricsHeading: string;
   metricsHint: string;
@@ -77,6 +79,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     greeting: "স্বাগতম",
     greetingFallback: "স্বাগতম",
     subtitle: "আপনার ওয়ার্কস্পেসের সর্বশেষ অবস্থা এক নজরে।",
+    clientSubtitle: "আপনার অ্যাকাউন্টের সারসংক্ষেপ এক নজরে।",
     roleLabel: "রোল",
     metricsHeading: "মূল সূচক",
     metricsHint: "আপনার অ্যাকাউন্ট ও প্রতিষ্ঠানের সারসংক্ষেপ",
@@ -157,6 +160,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     greeting: "Welcome back",
     greetingFallback: "Welcome",
     subtitle: "Here is the latest state of your workspace.",
+    clientSubtitle: "A snapshot of your account.",
     roleLabel: "Role",
     metricsHeading: "Key metrics",
     metricsHint: "A summary of your account and your organisation",

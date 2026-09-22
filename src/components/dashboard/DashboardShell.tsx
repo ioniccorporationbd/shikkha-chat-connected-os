@@ -9,6 +9,7 @@ import ActivityList from "@/components/dashboard/ActivityList";
 import PanelCard from "@/components/dashboard/PanelCard";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
+import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { useDashboardQuery } from "@/lib/auth/queries";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -21,22 +22,32 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 interface DashboardShellProps {
   initialData?: DashboardPayload;
   initialError?: string;
+  /**
+   * `staff` (default) is the desk panel at `/userDashboard`; `client` is the
+   * customer-facing panel at `/clientDashboard`. The two differ only in the nav
+   * they advertise and the subtitle they carry — every figure in the payload is
+   * already scoped to the account by the ERP.
+   */
+  scope?: "staff" | "client";
 }
 
-const NAV_KEYS = ["overview", "analytics", "reports", "users", "settings"] as const;
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
-  if (!parts.length) return "?";
-
-  return parts.map((part) => part.charAt(0).toUpperCase()).join("");
-}
+const STAFF_NAV_KEYS = ["overview", "analytics", "reports", "users", "settings"] as const;
+/** `users` is a desk concern; clients never see it. */
+const CLIENT_NAV_KEYS = ["overview", "analytics", "reports", "settings"] as const;
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]";
 
-export default function DashboardShell({ initialData, initialError }: DashboardShellProps) {
+export default function DashboardShell({
+  initialData,
+  initialError,
+  scope = "staff",
+}: DashboardShellProps) {
   const { language } = useLanguage();
   const copy = dashboardCopyFor(language);
+
+  const isClient = scope === "client";
+  const navKeys = isClient ? CLIENT_NAV_KEYS : STAFF_NAV_KEYS;
+  const subtitle = isClient ? copy.clientSubtitle : copy.subtitle;
 
   const router = useRouter();
   const resetSession = useAuthStore((state) => state.reset);
@@ -92,7 +103,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
           </p>
 
           <nav className="mt-2 flex flex-col gap-1.5">
-            {NAV_KEYS.map((key, index) => {
+            {navKeys.map((key, index) => {
               const Icon = NAV_ICONS[key];
               const active = index === 0;
 
@@ -158,7 +169,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{copy.nav.overview}</p>
                 <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                  {copy.subtitle}
+                  {subtitle}
                 </p>
               </div>
             </div>
@@ -181,15 +192,14 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                 <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[var(--color-danger)]" />
               </span>
 
-              {displayName ? (
-                <span className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1.5">
-                  <span className="grid h-6 w-6 place-items-center rounded-lg bg-[var(--color-primary)] text-[10px] font-semibold text-[var(--color-white)]">
-                    {initials(displayName)}
-                  </span>
-                  <span className="hidden max-w-[150px] truncate text-[13px] font-medium sm:block">
-                    {displayName}
-                  </span>
-                </span>
+              {user ? (
+                <UserMenu
+                  user={user}
+                  displayName={displayName}
+                  profile={data?.profile}
+                  signingOut={signingOut}
+                  onSignOut={handleSignOut}
+                />
               ) : null}
             </div>
           </header>
@@ -202,7 +212,7 @@ export default function DashboardShell({ initialData, initialError }: DashboardS
                 {displayName ? `${copy.greeting}, ${displayName}` : copy.greetingFallback}
               </h1>
               <p className="mt-1.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                {copy.subtitle}
+                {subtitle}
               </p>
 
               {user?.roles?.length ? (

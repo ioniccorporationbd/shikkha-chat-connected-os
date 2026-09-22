@@ -13,6 +13,10 @@ export interface SessionUser {
   designation?: string;
   department?: string;
   last_login?: string;
+  /** Frappe `User.user_type`: "System User" (desk) or "Website User" (portal). */
+  user_type?: string;
+  /** Role-aware landing route decided by the ERP (staff panel vs client dashboard). */
+  dashboard_route?: string;
 }
 
 export interface SessionPayload {

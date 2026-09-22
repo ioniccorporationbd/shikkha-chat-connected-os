@@ -3,17 +3,11 @@
 import Link from "next/link";
 import { FiGrid, FiLogIn } from "react-icons/fi";
 
+import UserAvatar from "@/components/dashboard/UserAvatar";
 import { authCopyFor } from "@/lib/auth/messages";
-import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/session";
+import { dashboardPathFor, LOGIN_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
-  if (!parts.length) return "?";
-
-  return parts.map((part) => part.charAt(0).toUpperCase()).join("");
-}
 
 type SidebarAuthButtonProps = {
   /**
@@ -64,7 +58,7 @@ export default function SidebarAuthButton({
 
     return (
       <Link
-        href={DASHBOARD_PATH}
+        href={dashboardPathFor(user)}
         data-no-translate="true"
         title={`${copy.signedInAs}: ${name}`}
         className={[
@@ -72,9 +66,7 @@ export default function SidebarAuthButton({
           compact ? "px-2.5 py-2" : "mt-1 px-2.5 py-2",
         ].join(" ")}
       >
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[var(--color-white)] text-[10px] font-semibold text-[var(--color-primary)]">
-          {initials(name)}
-        </span>
+        <UserAvatar user={user} size={24} rounded="rounded-lg" tone="soft" className="shrink-0" />
         <span className="hidden max-w-[86px] truncate text-[13px] font-medium text-[var(--color-white)] sm:block">
           {copy.openDashboard}
         </span>
