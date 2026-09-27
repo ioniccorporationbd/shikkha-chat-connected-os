@@ -8,12 +8,13 @@ src/
 ├─ app/                          # Next.js App Router (URL গুলো এখানেই — নাম বদলাবে না)
 │  ├─ (site)/                    #   /            → home page
 │  ├─ (auth)/login/              #   /login
+│  ├─ (auth)/register/           #   /register    → রেজিস্ট্রেশন (দুই ধাপ: তথ্য → OTP)
 │  ├─ (dashboard)/userDashboard/ #   /userDashboard
 │  └─ api/                       #   /api/auth/*, /api/dashboard/*
 ├─ proxy.ts                      # Next.js 16 middleware (ফাইলনাম fixed)
 ├─ lib/                          # app-নিরপেক্ষ লজিক
 │  ├─ api/         http.ts · frappe.ts     # HTTP/Frappe client
-│  ├─ auth/        store.ts · queries.ts · session.ts · messages.ts
+│  ├─ auth/        store.ts · queries.ts · session.ts · messages.ts · register-messages.ts
 │  ├─ dashboard/   messages.ts · icons.ts
 │  └─ i18n/        LanguageProvider.tsx    # ভাষা (default: bn)
 └─ components/
@@ -27,7 +28,7 @@ src/
    │  ├─ operational-excellence/   #   sections/ + panels/
    │  └─ shared/                   #   SectionPanel.tsx · OrbitProductPanel.tsx
    ├─ banners/  (home/ এর সাথে যুক্ত)
-   ├─ auth/        SidebarAuthButton.tsx · LoginForm.tsx · AuthBootstrap.tsx
+   ├─ auth/        SidebarAuthButton.tsx · SidebarRegisterButton.tsx · LoginForm.tsx · RegisterForm.tsx · AuthBootstrap.tsx
    ├─ dashboard/   DashboardShell.tsx · PanelCard.tsx · StatCard.tsx · ActivityList.tsx · QuickLinks.tsx
    └─ providers/   QueryProvider.tsx
 ```

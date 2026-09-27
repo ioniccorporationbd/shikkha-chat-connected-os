@@ -25,15 +25,24 @@ npm run dev                    # http://localhost:3000
 |---|---|
 | `/` | Marketing site (sidebar + long-form content) |
 | `/login` | Sign-in page |
+| `/register` | Self-service sign-up (two-step: details → OTP) |
 | `/userDashboard` | Signed-in panel |
+| `/clientDashboard` | Signed-in customer panel |
 | `/api/auth/login` | `POST` → ERP `auth.login`, stores the ERP `sid` as an HttpOnly cookie |
 | `/api/auth/logout` | `POST` → drops the ERP session, clears the cookie |
 | `/api/auth/me` | `GET` → session probe (also the keep-alive) |
+| `/api/auth/register` | `POST` → ERP `registration.send_otp` (OTP over MiMSMS SMS + SendGrid email) |
+| `/api/auth/register/verify` | `POST` → ERP `registration.verify_otp`, creates User + Customer, stores the `sid` |
+| `/api/auth/register/availability` | `GET` → live "is this email/mobile free?" probe |
 | `/api/dashboard/overview` | `GET` → dashboard payload |
 
-`/`, `/login` and `/userDashboard` live in route groups (`(site)`, `(auth)`,
-`(dashboard)`) so each can have its own shell: the marketing sidebar is not
-rendered on the auth or dashboard routes, while the URL paths stay unchanged.
+`/`, `/login`, `/register` and the two dashboards live in route groups (`(site)`,
+`(auth)`, `(dashboard)`) so each can have its own shell: the marketing sidebar is
+not rendered on the auth or dashboard routes, while the URL paths stay unchanged.
+
+The **home page** carries both a **Registration** and a **Login** button in the
+marketing sidebar (plus the compact floating twins while the sidebar is a drawer),
+so a visitor can sign up or sign in without opening a menu.
 
 ## How authentication works
 

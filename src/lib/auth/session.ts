@@ -9,6 +9,8 @@
 export const SESSION_COOKIE = "shikkha_os_sid";
 
 export const LOGIN_PATH = "/login";
+/** Self-service sign-up route (referenced by the home-page register button). */
+export const REGISTER_PATH = "/register";
 
 /** Desk-style panel route — System Users land here. */
 export const STAFF_DASHBOARD_PATH = "/userDashboard";

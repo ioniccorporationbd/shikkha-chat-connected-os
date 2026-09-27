@@ -142,6 +142,53 @@ function redirectFor(account) {
   return account.profile.dashboard_route;
 }
 
+// --- registration ---------------------------------------------------------- //
+// In-memory mirror of the shikkha_os registration flow so the sign-up path can
+// be exercised end to end. The generated OTP is printed to stdout (never
+// returned to the browser) exactly like the real gateway would text it.
+const pendingRegistrations = new Map(); // email -> { code, attempts, expires }
+const registeredUsers = new Set();
+const takenMobiles = new Set();
+
+function maskEmail(value) {
+  const [local = "", domain = ""] = String(value).split("@");
+  const shown = local.length <= 2 ? `${local[0] ?? ""}*` : `${local[0]}${"*".repeat(local.length - 2)}${local.slice(-1)}`;
+  return `${shown}@${domain}`;
+}
+
+function maskMobile(value) {
+  const digits = String(value).replace(/\D/g, "");
+  return digits.length <= 4 ? "****" : `${"*".repeat(digits.length - 4)}${digits.slice(-4)}`;
+}
+
+function normalizeMobile(value) {
+  let digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (!digits.startsWith("880")) digits = digits.startsWith("0") ? `880${digits.slice(1)}` : `880${digits}`;
+  return digits;
+}
+
+function accountExists(email) {
+  return Boolean(DEMO_USERS[email]) || registeredUsers.has(email);
+}
+
+function clientProfile(email, fullName) {
+  return {
+    authenticated: true,
+    name: email,
+    full_name: fullName,
+    email,
+    user_image: "",
+    time_zone: "Asia/Dhaka",
+    language: "bn",
+    user_type: "Website User",
+    roles: ["Customer"],
+    is_admin: false,
+    dashboard_route: "/clientDashboard",
+  };
+}
+
+
 /**
  * `dashboard.overview` payload, shaped per account type: a client sees the
  * personal cards and their own profile, with no org-wide figures and no desk
@@ -201,7 +248,7 @@ function dashboardPayload(account) {
       : [],
     system: {
       app: "shikkha_os",
-      version: "1.1.2",
+      version: "1.2.0",
       api: "shikkha_os.v1",
       base_url: `http://127.0.0.1:${PORT}`,
       session_expiry_hours: 24,
@@ -233,12 +280,15 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.1.2",
+      version: "1.2.0",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
         "shikkha_os.api.v1.auth.session",
         "shikkha_os.api.v1.dashboard.overview",
+        "shikkha_os.api.v1.registration.send_otp",
+        "shikkha_os.api.v1.registration.verify_otp",
+        "shikkha_os.api.v1.registration.availability",
       ],
       session_expiry_hours: 24,
     });
@@ -331,6 +381,113 @@ const server = createServer(async (request, response) => {
     }
 
     ok(response, dashboardPayload(account));
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.registration.availability") {
+    const email = (url.searchParams.get("email") ?? "").trim().toLowerCase();
+    const mobile = normalizeMobile(url.searchParams.get("mobile") ?? "");
+
+    ok(response, {
+      email_available: email ? !accountExists(email) : true,
+      mobile_available: mobile ? !takenMobiles.has(mobile) : true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.registration.send_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+    const mobile = normalizeMobile(body.mobile);
+    const password = typeof body.password === "string" ? body.password : "";
+
+    if (!fullName || !email || !mobile || !password) {
+      failure(response, 417, "ValidationError", "Please fill in every field.", "Registration");
+      return;
+    }
+
+    if (accountExists(email)) {
+      failure(response, 417, "ValidationError", "That email already has an account. Please sign in instead.", "Registration");
+      return;
+    }
+
+    if (takenMobiles.has(mobile)) {
+      failure(response, 417, "ValidationError", "That mobile number already has an account.", "Registration");
+      return;
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    pendingRegistrations.set(email, { code, attempts: 0, expires: Date.now() + 600_000 });
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] OTP ${email} = ${code}`);
+
+    ok(response, {
+      sent: true,
+      email: maskEmail(email),
+      mobile: maskMobile(mobile),
+      delivery: { sms: true, email: true },
+      expires_in_seconds: 600,
+      resend_after_seconds: 30,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.registration.verify_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const otp = String(body.otp ?? "").replace(/\D/g, "");
+    const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+    const mobile = normalizeMobile(body.mobile);
+
+    if (!email || !otp) {
+      failure(response, 417, "ValidationError", "Enter the OTP code we sent you.", "Registration");
+      return;
+    }
+
+    const pending = pendingRegistrations.get(email);
+    if (!pending) {
+      failure(response, 417, "ValidationError", "The OTP code has expired. Please request a new one.", "Registration");
+      return;
+    }
+
+    if (pending.code !== otp) {
+      pending.attempts += 1;
+      failure(response, 417, "ValidationError", "That OTP code is not correct. Please try again.", "Registration");
+      return;
+    }
+
+    pendingRegistrations.delete(email);
+    registeredUsers.add(email);
+
+    const profile = clientProfile(email, fullName || "New User");
+    const sid = randomUUID().replace(/-/g, "");
+    sessions.set(sid, email);
+    DEMO_USERS[email] = { password: typeof body.password === "string" ? body.password : PASSWORD, kind: "client", profile };
+    takenMobiles.add(mobile);
+
+    ok(
+      response,
+      {
+        authenticated: true,
+        user: profile,
+        redirect_to: "/clientDashboard",
+        session_expiry_seconds: 86400,
+        created: { user: email, customer: `CUST-${email.split("@")[0].toUpperCase()}` },
+      },
+      { "set-cookie": [`sid=${sid}; Path=/; HttpOnly; SameSite=Lax`] }
+    );
     return;
   }
 

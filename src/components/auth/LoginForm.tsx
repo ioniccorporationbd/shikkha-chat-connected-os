@@ -7,7 +7,8 @@ import { FiArrowLeft, FiEye, FiEyeOff, FiLock, FiMail, FiShield } from "react-ic
 
 import { ApiError, postJson } from "@/lib/api/http";
 import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
-import { preferredRedirect, safeRedirectPath } from "@/lib/auth/session";
+import { registerCopyFor } from "@/lib/auth/register-messages";
+import { preferredRedirect, REGISTER_PATH, safeRedirectPath } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { SessionPayload } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -22,6 +23,7 @@ const FIELD_WRAPPER_CLASS = "relative block text-[14px]";
 export default function LoginForm() {
   const { language } = useLanguage();
   const copy = authCopyFor(language);
+  const registerCopy = registerCopyFor(language);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -189,6 +191,16 @@ export default function LoginForm() {
 
       <p className="mt-4 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
         {copy.needHelp}
+      </p>
+
+      <p className="mt-4 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+        {registerCopy.newHere}{" "}
+        <Link
+          href={REGISTER_PATH}
+          className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
+        >
+          {registerCopy.button}
+        </Link>
       </p>
 
       <Link

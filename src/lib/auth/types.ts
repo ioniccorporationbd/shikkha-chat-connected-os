@@ -75,6 +75,26 @@ export interface DashboardPayload {
   system: DashboardSystem;
 }
 
+export interface RegisterStartPayload {
+  sent: boolean;
+  /** Masked destination (never the raw address). */
+  email: string;
+  mobile: string;
+  delivery: { sms: boolean; email: boolean };
+  expires_in_seconds: number;
+  resend_after_seconds: number;
+}
+
+export interface RegisterResultPayload extends SessionPayload {
+  /** Names of the records created server-side (null when a doctype is absent). */
+  created?: { user: string | null; customer: string | null };
+}
+
+export interface RegisterAvailabilityPayload {
+  email_available: boolean;
+  mobile_available: boolean;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;

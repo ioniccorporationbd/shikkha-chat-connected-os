@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
+import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 type ActiveSectionId =
@@ -863,7 +864,10 @@ export default function LeftSidebar() {
           the real button is always visible. */}
       {drawerOpen ? null : (
         <div className="sidebar-quick-login fixed left-16 top-3 z-[80] sm:left-20 sm:top-4">
-          <SidebarAuthButton variant="compact" />
+          <div className="flex items-center gap-2">
+            <SidebarRegisterButton variant="compact" />
+            <SidebarAuthButton variant="compact" />
+          </div>
         </div>
       )}
 
@@ -911,7 +915,11 @@ export default function LeftSidebar() {
             <div className="min-w-0 flex-1">
               <Logo language={currentLanguage} />
             </div>
-            <SidebarAuthButton />
+            {/* Sign-up sits beside sign-in so both CTAs are on the home page. */}
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <SidebarRegisterButton />
+              <SidebarAuthButton />
+            </div>
           </div>
           <LanguageSwitch />
 
