@@ -131,9 +131,17 @@ export default function RegisterForm() {
         };
         if (field === "email") setEmailHint(hint);
         else setMobileHint(hint);
-      } catch {
-        // A failed probe is not an error the user must act on; submit still
-        // enforces uniqueness server-side.
+      } catch (thrown) {
+        // A failed probe is not an error the user must act on - submit still
+        // enforces uniqueness server-side. But log *why* it failed so the
+        // console names the cause (e.g. code=upstream_error / not_configured)
+        // instead of leaving only a bare 502 from axios.
+        const apiError = thrown as ApiError;
+        console.error(
+          `[register] availability probe failed (${field}=${trimmed}): ` +
+            `status=${apiError?.status ?? "?"} code=${apiError?.code ?? "network_error"} ` +
+            `message=${apiError?.message ?? String(thrown)}`
+        );
         if (field === "email") setEmailHint(null);
         else setMobileHint(null);
       }
@@ -143,9 +151,14 @@ export default function RegisterForm() {
 
   function handleApiError(thrown: unknown) {
     const apiError = thrown as ApiError;
-    setError(
-      registerErrorMessage(language, apiError?.code ?? "network_error", apiError?.message ?? "")
-    );
+    const code = apiError?.code ?? "network_error";
+    const message = apiError?.message ?? String(thrown);
+
+    // Name the real cause in the console (code + portal/ERP message) so the
+    // only trace of a failure is not the generic axios line.
+    console.error(`[register] ${code}: ${message}`);
+
+    setError(registerErrorMessage(language, code, apiError?.message ?? ""));
     setBusy(false);
   }
 

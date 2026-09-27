@@ -58,12 +58,42 @@ function unwrap<T>(envelope: ApiEnvelope<T> | undefined): T {
   throw new ApiError(envelope.message, envelope.code, 200);
 }
 
+/**
+ * Surface every failed portal call in the browser console with the portal's own
+ * explanation (code + message). A bare "502 (Bad Gateway)" on its own never
+ * names the cause; the portal's JSON body does, e.g.
+ *   code=not_configured      the portal has no FRAPPE_BASE_URL
+ *   code=upstream_unreachable the ERP host did not answer (DNS / down / TLS)
+ *   code=upstream_error      the ERP answered 5xx / an HTML error page
+ *   code=validation_error    the ERP refused the input (a normal outcome)
+ */
+function logFailure(method: "GET" | "POST", url: string, error: unknown): void {
+  if (process.env.NEXT_PUBLIC_HTTP_DEBUG === "0") return;
+
+  const apiError = error as ApiError;
+  const status = apiError?.status ?? 0;
+  const code = apiError?.code ?? "network_error";
+  const message = apiError?.message ?? (error instanceof Error ? error.message : String(error));
+
+  console.error(`[http] ${method} ${url} failed: status=${status} code=${code} message=${message}`);
+}
+
 export async function postJson<T>(url: string, body?: unknown): Promise<T> {
-  const response = await api.post<ApiEnvelope<T>>(url, body ?? {});
-  return unwrap(response.data);
+  try {
+    const response = await api.post<ApiEnvelope<T>>(url, body ?? {});
+    return unwrap(response.data);
+  } catch (error) {
+    logFailure("POST", url, error);
+    throw error;
+  }
 }
 
 export async function getJson<T>(url: string): Promise<T> {
-  const response = await api.get<ApiEnvelope<T>>(url);
-  return unwrap(response.data);
+  try {
+    const response = await api.get<ApiEnvelope<T>>(url);
+    return unwrap(response.data);
+  } catch (error) {
+    logFailure("GET", url, error);
+    throw error;
+  }
 }
