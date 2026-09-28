@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Sign in · Shikkha Chat",
+  title: "লগইন · Shikkha Chat",
   description: "Sign in to the Shikkha Chat panel.",
 };
 

@@ -3,6 +3,7 @@ import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
 import QueryProvider from "@/components/providers/QueryProvider";
+import Toaster from "@/components/ui/Toaster";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export const metadata: Metadata = {
@@ -47,6 +48,8 @@ export default function RootLayout({
             {/* Hydrates the auth store so the sidebar and the dashboard agree. */}
             <AuthBootstrap />
             {children}
+            {/* Error / success / warning / info feedback for every surface. */}
+            <Toaster />
           </LanguageProvider>
         </QueryProvider>
       </body>

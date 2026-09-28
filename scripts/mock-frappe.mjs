@@ -514,17 +514,22 @@ const server = createServer(async (request, response) => {
 
     const body = await readBody(request);
     const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
-    const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const isEmail = raw.includes("@");
+    const found = isEmail
+      ? DEMO_USERS[raw.toLowerCase()]
+        ? { email: raw.toLowerCase(), account: DEMO_USERS[raw.toLowerCase()] }
+        : null
+      : findAccountByMobile(raw);
     const password = typeof body.password === "string" ? body.password : "";
-    const account = email ? DEMO_USERS[email] : null;
 
     // Two-factor: the password is checked before any code is minted, and a bad
     // password is indistinguishable from an unknown account (anti-enumeration).
-    if (!account || password !== account.password) {
+    if (!found || password !== found.account.password) {
       failure(response, 417, "ValidationError", "The email/mobile or password is not correct.", "Sign In");
       return;
     }
 
+    const email = found.email;
     const code = String(Math.floor(100000 + Math.random() * 900000));
     pendingLoginOtps.set(email, { code, attempts: 0, expires: Date.now() + 600_000 });
 
@@ -536,7 +541,7 @@ const server = createServer(async (request, response) => {
       sent: true,
       target: maskEmail(email),
       email: maskEmail(email),
-      mobile: maskMobile("8801712345678"),
+      mobile: maskMobile(isEmail ? "8801712345678" : normalizeMobile(raw)),
       delivery: {
         sms: smsOk,
         email: true,
@@ -557,15 +562,21 @@ const server = createServer(async (request, response) => {
 
     const body = await readBody(request);
     const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
-    const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const isEmail = raw.includes("@");
+    const found = isEmail
+      ? DEMO_USERS[raw.toLowerCase()]
+        ? { email: raw.toLowerCase(), account: DEMO_USERS[raw.toLowerCase()] }
+        : null
+      : findAccountByMobile(raw);
     const otp = String(body.otp ?? "").replace(/\D/g, "");
-    const account = email ? DEMO_USERS[email] : null;
 
-    if (!account || !otp) {
+    if (!found || !otp) {
       failure(response, 417, "ValidationError", "That code is not correct. Please try again.", "Sign In");
       return;
     }
 
+    const email = found.email;
+    const account = found.account;
     const pending = pendingLoginOtps.get(email);
     if (!pending) {
       failure(response, 417, "ValidationError", "The code has expired. Please request a new one.", "Sign In");

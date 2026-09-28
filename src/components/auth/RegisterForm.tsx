@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-  FiAlertTriangle,
   FiArrowLeft,
   FiCheck,
   FiEye,
   FiEyeOff,
+  FiHome,
   FiKey,
   FiLock,
   FiMail,
@@ -17,6 +17,7 @@ import {
   FiUser,
 } from "react-icons/fi";
 
+import AuthBrand from "@/components/auth/AuthBrand";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
 import {
   registerCopyFor,
@@ -25,12 +26,14 @@ import {
 } from "@/lib/auth/register-messages";
 import { dashboardPathFor, LOGIN_PATH, preferredRedirect } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
+import { AUTH_HOME_BUTTON_CLASS, AUTH_HOME_INNER_CLASS } from "@/lib/auth/ui";
 import type {
   RegisterAvailabilityPayload,
   RegisterResultPayload,
   RegisterStartPayload,
 } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
   "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";
@@ -42,6 +45,9 @@ const ICON_CLASS =
 
 const SUBMIT_CLASS =
   "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+
+const SUBMIT_SHEEN =
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
 
 function formatClock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
@@ -81,7 +87,6 @@ export default function RegisterForm() {
   const [mobileHint, setMobileHint] = useState<null | { ok: boolean; text: string }>(null);
 
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const otpInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -159,7 +164,7 @@ export default function RegisterForm() {
     // only trace of a failure is not the generic axios line.
     console.error(`[register] ${code}: ${message}`);
 
-    setError(registerErrorMessage(language, code, apiError?.message ?? ""));
+    toast.error(registerErrorMessage(language, code, apiError?.message ?? ""));
     setBusy(false);
   }
 
@@ -167,8 +172,12 @@ export default function RegisterForm() {
     event?.preventDefault();
     if (busy) return;
 
+    if (!fullName.trim() || !email.trim() || !mobile.trim() || !password) {
+      toast.warning(copy.errors.validation_error);
+      return;
+    }
+
     setBusy(true);
-    setError(null);
 
     try {
       const payload = await postJson<RegisterStartPayload>("/api/auth/register", {
@@ -187,6 +196,9 @@ export default function RegisterForm() {
       setOtp("");
       setStep("otp");
       setBusy(false);
+      toast.success(copy.otpSentNotice);
+      if (payload?.delivery?.sms === false) toast.warning(copy.smsNotSent);
+      if (payload?.delivery?.email === false) toast.warning(copy.emailNotSent);
 
       // Focus the code field once the OTP screen paints.
       window.setTimeout(() => otpInputRef.current?.focus(), 50);
@@ -200,7 +212,6 @@ export default function RegisterForm() {
     if (busy) return;
 
     setBusy(true);
-    setError(null);
 
     try {
       const payload = await postJson<RegisterResultPayload>("/api/auth/register/verify", {
@@ -225,19 +236,7 @@ export default function RegisterForm() {
       data-no-translate="true"
       className="relative z-10 w-full max-w-[460px] rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] p-6 shadow-[0_36px_80px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-8"
     >
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-primary)] text-[13px] font-semibold text-[var(--color-white)]">
-          SC
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold text-[var(--color-primary)]">
-            Shikkha Chat
-          </p>
-          <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {copy.panelSubtitle}
-          </p>
-        </div>
-      </div>
+      <AuthBrand subtitle={copy.panelSubtitle} />
 
       <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
         {step === "details" ? copy.panelTitle : copy.otpTitle}
@@ -245,15 +244,6 @@ export default function RegisterForm() {
       <p className="mt-1 text-[12px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
         {registerStepLabel(language, step === "details" ? 1 : 2)}
       </p>
-
-      {error ? (
-        <p
-          role="alert"
-          className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--color-danger-strong)]"
-        >
-          {error}
-        </p>
-      ) : null}
 
       {step === "details" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleSendOtp} noValidate>
@@ -361,10 +351,7 @@ export default function RegisterForm() {
           </label>
 
           <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
-            />
+            <span aria-hidden className={SUBMIT_SHEEN} />
             <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
               <FiShield aria-hidden size={15} />
               {busy ? copy.sendingOtp : copy.sendOtp}
@@ -377,19 +364,6 @@ export default function RegisterForm() {
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
             {copy.otpHint.replace("{target}", otpTarget)}
           </p>
-
-          {delivery && delivery.sms === false ? (
-            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-              {copy.smsNotSent}
-            </p>
-          ) : null}
-          {delivery && delivery.email === false ? (
-            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-              {copy.emailNotSent}
-            </p>
-          ) : null}
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
@@ -426,10 +400,7 @@ export default function RegisterForm() {
           </div>
 
           <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
-            />
+            <span aria-hidden className={SUBMIT_SHEEN} />
             <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
               <FiCheck aria-hidden size={16} />
               {busy ? copy.verifying : copy.verify}
@@ -438,10 +409,7 @@ export default function RegisterForm() {
 
           <button
             type="button"
-            onClick={() => {
-              setStep("details");
-              setError(null);
-            }}
+            onClick={() => setStep("details")}
             className="inline-flex items-center justify-center gap-2 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
           >
             <FiArrowLeft aria-hidden />
@@ -457,12 +425,11 @@ export default function RegisterForm() {
         </Link>
       </p>
 
-      <Link
-        href="/"
-        className="mt-4 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
-      >
-        <FiArrowLeft aria-hidden />
-        {copy.backHome}
+      <Link href="/" className={AUTH_HOME_BUTTON_CLASS}>
+        <span className={AUTH_HOME_INNER_CLASS}>
+          <FiHome aria-hidden size={15} />
+          {copy.backHome}
+        </span>
       </Link>
     </section>
   );

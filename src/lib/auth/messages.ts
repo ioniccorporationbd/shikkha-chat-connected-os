@@ -1,5 +1,7 @@
 /** Bilingual copy for the auth surface (sidebar button, login page). */
 
+import { looksTechnical } from "@/lib/auth/sanitize";
+
 export interface AuthCopy {
   signIn: string;
   signedInAs: string;
@@ -43,6 +45,9 @@ export interface AuthCopy {
   changeIdentifier: string;
   smsNotSent: string;
   emailNotSent: string;
+  otpSentNotice: string;
+  otpHintMobile: string; // "আমরা আপনার {target} নম্বরে ৬ ডিজিটের কোড পাঠিয়েছি।"
+  otpHintEmail: string; // "আমরা আপনার {target} ইমেইলে ৬ ডিজিটের কোড পাঠিয়েছি।"
 
   /** Forgot-password flow. */
   forgotPassword: string; // link on the main sign-in form
@@ -62,6 +67,10 @@ export interface AuthCopy {
   forgotBackToLogin: string;
   forgotSuccessTitle: string;
   forgotSuccessBody: string; // "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} এ পাঠানো হয়েছে।"
+  forgotSuccessBodyMobile: string;
+  forgotSuccessBodyEmail: string;
+  forgotOtpHintMobile: string;
+  forgotOtpHintEmail: string;
   forgotReturnToLogin: string;
   resetNotice: string; // banner on the sign-in form after a reset
 
@@ -132,6 +141,9 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     changeIdentifier: "ইমেইল/মোবাইল বদলান",
     smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
     emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
+    otpSentNotice: "আপনার কোড পাঠানো হয়েছে।",
+    otpHintMobile: "আমরা আপনার {target} নম্বরে ৬ ডিজিটের কোড পাঠিয়েছি।",
+    otpHintEmail: "আমরা আপনার {target} ইমেইলে ৬ ডিজিটের কোড পাঠিয়েছি।",
     forgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
     forgotTitle: "পাসওয়ার্ড রিসেট করুন",
     forgotHint: "আপনার অ্যাকাউন্টের ইমেইল বা মোবাইল নম্বর দিন — সেখানে একটি যাচাই কোড পাঠানো হবে।",
@@ -149,6 +161,10 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     forgotBackToLogin: "লগইনে ফিরে যান",
     forgotSuccessTitle: "নতুন পাসওয়ার্ড পাঠানো হয়েছে",
     forgotSuccessBody: "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} ঠিকানায় পাঠানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।",
+    forgotSuccessBodyMobile: "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} নম্বরে SMS-এ পাঠানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।",
+    forgotSuccessBodyEmail: "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} ইমেইলে পাঠানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।",
+    forgotOtpHintMobile: "আমরা আপনার {target} নম্বরে ৬ ডিজিটের কোড পাঠিয়েছি।",
+    forgotOtpHintEmail: "আমরা আপনার {target} ইমেইলে ৬ ডিজিটের কোড পাঠিয়েছি।",
     forgotReturnToLogin: "লগইন ফর্মে ফিরে যান",
     resetNotice: "নতুন পাসওয়ার্ড পাঠানো হয়েছে। এখন সেটি দিয়ে লগইন করুন।",
     userMenu: {
@@ -215,6 +231,9 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     changeIdentifier: "Change email/mobile",
     smsNotSent: "We could not send the SMS — the code went to your email instead.",
     emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
+    otpSentNotice: "A code has been sent to you.",
+    otpHintMobile: "We sent a 6-digit code to your number {target}.",
+    otpHintEmail: "We sent a 6-digit code to your email {target}.",
     forgotPassword: "Forgot password?",
     forgotTitle: "Reset your password",
     forgotHint: "Enter the email or mobile number on your account — we will send a verification code there.",
@@ -232,6 +251,10 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     forgotBackToLogin: "Back to sign in",
     forgotSuccessTitle: "Password sent",
     forgotSuccessBody: "Your new 6-digit password has been sent to {target}. Sign in with the new password.",
+    forgotSuccessBodyMobile: "Your new 6-digit password was sent by SMS to {target}. Sign in with it now.",
+    forgotSuccessBodyEmail: "Your new 6-digit password was emailed to {target}. Sign in with it now.",
+    forgotOtpHintMobile: "We sent a 6-digit code to your number {target}.",
+    forgotOtpHintEmail: "We sent a 6-digit code to your email {target}.",
     forgotReturnToLogin: "Back to the sign-in form",
     resetNotice: "Your new password has been sent. Sign in with it now.",
     userMenu: {
@@ -266,17 +289,19 @@ export function authCopyFor(language: string): AuthCopy {
 export function authErrorMessage(language: string, code: string, fallback: string): string {
   const copy = authCopyFor(language);
   const message = (fallback ?? "").trim();
+  const canned = copy.errors[code as keyof AuthCopy["errors"]];
 
   // `validation_error` is a generic bucket: the backend attaches the real,
-  // already-localised reason (a bad password, "too many attempts", …). Show
-  // that instead of the catch-all credential copy, which otherwise masks the
-  // true cause and shows "enter your email and password" for everything.
-  if (code === "validation_error" && message) {
+  // already-localised reason (a bad password, an expired code, …). Prefer that
+  // whenever it reads like human copy — never surface a raw technical string
+  // (an exception type, an HTTP status, a traceback fragment).
+  if ((code === "validation_error" || !canned) && message && !looksTechnical(message)) {
     return message;
   }
 
-  const known = copy.errors[code as keyof AuthCopy["errors"]];
+  if (canned) return canned;
 
-  // Unknown code: the backend already produced a human message - show it.
-  return known ?? message;
+  if (message && !looksTechnical(message)) return message;
+
+  return copy.errors.upstream_error;
 }

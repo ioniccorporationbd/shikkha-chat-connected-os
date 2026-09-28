@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-  FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
   FiCheckCircle,
   FiEye,
   FiEyeOff,
+  FiHome,
   FiKey,
   FiLock,
   FiMail,
@@ -17,11 +17,17 @@ import {
   FiUser,
 } from "react-icons/fi";
 
+import AuthBrand from "@/components/auth/AuthBrand";
 import { ApiError, postJson } from "@/lib/api/http";
 import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
 import { registerCopyFor } from "@/lib/auth/register-messages";
 import { preferredRedirect, REGISTER_PATH, safeRedirectPath } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
+import {
+  AUTH_HOME_BUTTON_CLASS,
+  AUTH_HOME_INNER_CLASS,
+  maskIdentity,
+} from "@/lib/auth/ui";
 import type {
   LoginOtpStartPayload,
   ResetDonePayload,
@@ -29,6 +35,7 @@ import type {
   SessionPayload,
 } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
   "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";
@@ -88,7 +95,8 @@ export default function LoginForm() {
 
   const [otp, setOtp] = useState("");
   const [maskedTarget, setMaskedTarget] = useState("");
-  const [delivery, setDelivery] = useState<{ sms: boolean; email: boolean } | null>(null);
+  const [maskedEmail, setMaskedEmail] = useState("");
+  const [maskedMobile, setMaskedMobile] = useState("");
   const [resendIn, setResendIn] = useState(0);
   const [ttl, setTtl] = useState(0);
 
@@ -96,19 +104,29 @@ export default function LoginForm() {
   const [forgotStep, setForgotStep] = useState<ForgotStep>("identify");
   const [forgotIdentifier, setForgotIdentifier] = useState("");
   const [forgotTarget, setForgotTarget] = useState("");
+  const [forgotChannel, setForgotChannel] = useState<"email" | "sms" | null>(null);
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotResendIn, setForgotResendIn] = useState(0);
   const [forgotTtl, setForgotTtl] = useState(0);
 
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+
+  const expiredNotified = useRef(false);
 
   // Already signed in: skip the form — and land on the dashboard this account's
   // role belongs on (`?next=` never decides that).
   useEffect(() => {
     if (status === "authenticated") router.replace(preferredRedirect(nextPath, user));
   }, [nextPath, router, status, user]);
+
+  // A just-expired session is context, not a field error — surface it once as an
+  // info toast rather than a permanent inline banner.
+  useEffect(() => {
+    if (expired && !expiredNotified.current) {
+      expiredNotified.current = true;
+      toast.info(copy.expiredNotice);
+    }
+  }, [copy.expiredNotice, expired]);
 
   // Countdowns are client-only state started after mount, so the server and the
   // first client render always agree (no hydration mismatch).
@@ -144,21 +162,26 @@ export default function LoginForm() {
     const code = apiError?.code ?? "network_error";
     const message = apiError?.message ?? String(thrown);
     console.error(`[login] ${code}: ${message}`);
-    setError(authErrorMessage(language, code, apiError?.message ?? ""));
+    toast.error(authErrorMessage(language, code, apiError?.message ?? ""));
     setBusy(false);
   }
+
+  // The code goes to both channels at sign-in; whichever address the caller
+  // typed is the one we name back to them (masked, never the raw value).
+  const typedEmail = identifier.includes("@");
+  const loginTarget = typedEmail
+    ? maskedEmail || maskedTarget || maskIdentity(identifier)
+    : maskedMobile || maskedTarget || maskIdentity(identifier);
 
   async function sendLoginOtp() {
     if (busy) return;
 
     if (!identifier.trim() || !pwd) {
-      setError(authErrorMessage(language, "validation_error", ""));
+      toast.warning(authErrorMessage(language, "validation_error", ""));
       return;
     }
 
     setBusy(true);
-    setError(null);
-    setNotice(null);
 
     try {
       const payload = await postJson<LoginOtpStartPayload>("/api/auth/login/otp", {
@@ -167,13 +190,17 @@ export default function LoginForm() {
         language,
       });
 
-      setMaskedTarget(payload?.target ?? identifier.trim());
-      setDelivery(payload?.delivery ?? null);
+      setMaskedTarget(payload?.target ?? maskIdentity(identifier));
+      setMaskedEmail(payload?.email ?? "");
+      setMaskedMobile(payload?.mobile ?? "");
       setResendIn(payload?.resend_after_seconds ?? 30);
       setTtl(payload?.expires_in_seconds ?? 0);
       setOtp("");
       setStep("otp");
       setBusy(false);
+      toast.success(copy.otpSentNotice);
+      if (payload?.delivery?.sms === false) toast.warning(copy.smsNotSent);
+      if (payload?.delivery?.email === false) toast.warning(copy.emailNotSent);
     } catch (thrown) {
       handleApiError(thrown);
     }
@@ -189,7 +216,6 @@ export default function LoginForm() {
     if (busy) return;
 
     setBusy(true);
-    setError(null);
 
     try {
       const payload = await postJson<SessionPayload>("/api/auth/login/otp/verify", {
@@ -207,20 +233,17 @@ export default function LoginForm() {
   }
 
   function backToCredentials() {
-    setError(null);
     setOtp("");
-    setDelivery(null);
     setResendIn(0);
     setTtl(0);
     setStep("credentials");
   }
 
   function openForgot() {
-    setError(null);
-    setNotice(null);
     setForgotIdentifier(identifier.trim());
     setForgotOtp("");
     setForgotTarget("");
+    setForgotChannel(null);
     setForgotResendIn(0);
     setForgotTtl(0);
     setForgotStep("identify");
@@ -228,7 +251,6 @@ export default function LoginForm() {
   }
 
   function backToLoginForm() {
-    setError(null);
     setView("login");
     setStep("credentials");
   }
@@ -237,12 +259,11 @@ export default function LoginForm() {
     if (busy) return;
 
     if (!forgotIdentifier.trim()) {
-      setError(authErrorMessage(language, "validation_error", ""));
+      toast.warning(authErrorMessage(language, "validation_error", ""));
       return;
     }
 
     setBusy(true);
-    setError(null);
 
     try {
       const payload = await postJson<ResetOtpStartPayload>("/api/auth/forgot/otp", {
@@ -250,12 +271,14 @@ export default function LoginForm() {
         language,
       });
 
-      setForgotTarget(payload?.target ?? forgotIdentifier.trim());
+      setForgotTarget(payload?.target ?? maskIdentity(forgotIdentifier));
+      setForgotChannel(payload?.channel ?? null);
       setForgotResendIn(payload?.resend_after_seconds ?? 30);
       setForgotTtl(payload?.expires_in_seconds ?? 0);
       setForgotOtp("");
       setForgotStep("otp");
       setBusy(false);
+      toast.success(copy.otpSentNotice);
     } catch (thrown) {
       handleApiError(thrown);
     }
@@ -271,7 +294,6 @@ export default function LoginForm() {
     if (busy) return;
 
     setBusy(true);
-    setError(null);
 
     try {
       const payload = await postJson<ResetDonePayload>("/api/auth/forgot/otp/verify", {
@@ -281,8 +303,10 @@ export default function LoginForm() {
       });
 
       setForgotTarget(payload?.target ?? forgotTarget);
+      setForgotChannel(payload?.channel ?? forgotChannel);
       setForgotStep("done");
       setBusy(false);
+      toast.success(copy.forgotSuccessTitle);
     } catch (thrown) {
       handleApiError(thrown);
     }
@@ -293,13 +317,11 @@ export default function LoginForm() {
     setStep("credentials");
     setPwd("");
     setOtp("");
-    setDelivery(null);
     setResendIn(0);
     setTtl(0);
     setForgotStep("identify");
     setForgotOtp("");
-    setError(null);
-    setNotice(copy.resetNotice);
+    toast.success(copy.resetNotice);
   }
 
   const isLogin = view === "login";
@@ -329,27 +351,23 @@ export default function LoginForm() {
       ? copy.forgotHint
       : null;
 
-  const loginSmsFailed = isLogin && step === "otp" && delivery?.sms === false;
-  const loginEmailFailed = isLogin && step === "otp" && delivery?.email === false;
+  const loginOtpHint = (typedEmail ? copy.otpHintEmail : copy.otpHintMobile).replace(
+    "{target}",
+    loginTarget
+  );
+  const forgotOtpHint = (
+    forgotChannel === "email" ? copy.forgotOtpHintEmail : copy.forgotOtpHintMobile
+  ).replace("{target}", forgotTarget);
+  const forgotDoneBody = (
+    forgotChannel === "email" ? copy.forgotSuccessBodyEmail : copy.forgotSuccessBodyMobile
+  ).replace("{target}", forgotTarget);
 
   return (
     <section
       data-no-translate="true"
       className="relative z-10 w-full max-w-[460px] rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] p-6 shadow-[0_36px_80px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-8"
     >
-      <div className="flex items-center gap-3">
-        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-primary)] text-[13px] font-semibold text-[var(--color-white)]">
-          SC
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold text-[var(--color-primary)]">
-            Shikkha Chat
-          </p>
-          <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {copy.panelSubtitle}
-          </p>
-        </div>
-      </div>
+      <AuthBrand subtitle={copy.panelSubtitle} />
 
       <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
         {title}
@@ -381,29 +399,6 @@ export default function LoginForm() {
       {hint ? (
         <p className="mt-3 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
           {hint}
-        </p>
-      ) : null}
-
-      {expired && isLogin ? (
-        <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-          <FiShield aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-          {copy.expiredNotice}
-        </p>
-      ) : null}
-
-      {notice && isLogin ? (
-        <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-          <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-          {notice}
-        </p>
-      ) : null}
-
-      {error ? (
-        <p
-          role="alert"
-          className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,transparent)] px-3.5 py-2.5 text-[13px] font-medium text-[var(--color-danger-strong)]"
-        >
-          {error}
         </p>
       ) : null}
 
@@ -484,21 +479,8 @@ export default function LoginForm() {
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerifyOtp} noValidate>
           <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-            {copy.otpHint.replace("{target}", maskedTarget)}
+            {loginOtpHint}
           </p>
-
-          {loginSmsFailed ? (
-            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-              {copy.smsNotSent}
-            </p>
-          ) : null}
-          {loginEmailFailed ? (
-            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-              {copy.emailNotSent}
-            </p>
-          ) : null}
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
@@ -600,7 +582,7 @@ export default function LoginForm() {
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleForgotVerify} noValidate>
           <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
-            {copy.forgotOtpHint.replace("{target}", forgotTarget)}
+            {forgotOtpHint}
           </p>
 
           <label className="flex flex-col gap-1.5">
@@ -650,7 +632,6 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => {
-              setError(null);
               setForgotOtp("");
               setForgotStep("identify");
             }}
@@ -666,7 +647,7 @@ export default function LoginForm() {
         <div className="mt-5 flex flex-col gap-4">
           <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)]">
             <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[15px]" />
-            {copy.forgotSuccessBody.replace("{target}", forgotTarget)}
+            {forgotDoneBody}
           </p>
 
           <button type="button" onClick={returnToLogin} className={SUBMIT_CLASS}>
@@ -695,12 +676,11 @@ export default function LoginForm() {
         </p>
       ) : null}
 
-      <Link
-        href="/"
-        className="mt-5 inline-flex items-center gap-2 text-[13px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
-      >
-        <FiArrowLeft aria-hidden />
-        {copy.backHome}
+      <Link href="/" className={AUTH_HOME_BUTTON_CLASS}>
+        <span className={AUTH_HOME_INNER_CLASS}>
+          <FiHome aria-hidden size={15} />
+          {copy.backHome}
+        </span>
       </Link>
     </section>
   );

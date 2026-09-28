@@ -1,5 +1,7 @@
 /** Bilingual copy for the self-service registration surface (button, form, OTP step). */
 
+import { looksTechnical } from "@/lib/auth/sanitize";
+
 export interface RegisterCopy {
   /** Home-page / sidebar button label. */
   button: string;
@@ -44,6 +46,7 @@ export interface RegisterCopy {
   mobileTaken: string;
   smsNotSent: string;
   emailNotSent: string;
+  otpSentNotice: string;
 
   errors: {
     validation_error: string;
@@ -96,6 +99,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     mobileTaken: "এই মোবাইল নম্বর আগেই নেওয়া হয়েছে।",
     smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
     emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
+    otpSentNotice: "আপনার কোড পাঠানো হয়েছে।",
     errors: {
       validation_error: "আবার লিখে চেষ্টা করুন।",
       rate_limited: "অনেকবার চেষ্টা করা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।",
@@ -145,6 +149,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     mobileTaken: "That mobile number is already registered.",
     smsNotSent: "We could not send the SMS — the code went to your email instead.",
     emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
+    otpSentNotice: "A code has been sent to you.",
     errors: {
       validation_error: "Please review the form and try again.",
       rate_limited: "Too many attempts. Please wait a few minutes and try again.",
@@ -185,10 +190,15 @@ export function registerErrorMessage(
   fallback: string
 ): string {
   const copy = registerCopyFor(language);
+  const message = (fallback ?? "").trim();
+
   if (code in copy.errors && CANNED_CODES.has(code)) {
     return copy.errors[code as keyof RegisterCopy["errors"]];
   }
-  if (fallback && fallback.trim()) return fallback;
+
+  // Never surface a raw technical string — only human-readable backend copy.
+  if (message && !looksTechnical(message)) return message;
+
   return copy.errors.validation_error;
 }
 
