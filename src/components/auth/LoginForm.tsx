@@ -308,6 +308,20 @@ export default function LoginForm() {
 
       {step === "password" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleSendOtp} noValidate>
+          {/* Accessibility: a password form needs a username field inside the
+              same form. The identifier is collected in the previous step, so
+              mirror it here, visually hidden, to satisfy the browser's
+              password-manager/autofill heuristics. */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={identifier}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5">
             <span className="min-w-0 truncate text-[13px] text-[var(--color-primary)]">
               {identifier.trim()}

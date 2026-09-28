@@ -206,8 +206,18 @@ export function authCopyFor(language: string): AuthCopy {
 
 export function authErrorMessage(language: string, code: string, fallback: string): string {
   const copy = authCopyFor(language);
+  const message = (fallback ?? "").trim();
+
+  // `validation_error` is a generic bucket: the backend attaches the real,
+  // already-localised reason (a bad password, "too many attempts", …). Show
+  // that instead of the catch-all credential copy, which otherwise masks the
+  // true cause and shows "enter your email and password" for everything.
+  if (code === "validation_error" && message) {
+    return message;
+  }
+
   const known = copy.errors[code as keyof AuthCopy["errors"]];
 
   // Unknown code: the backend already produced a human message - show it.
-  return known ?? fallback;
+  return known ?? message;
 }
