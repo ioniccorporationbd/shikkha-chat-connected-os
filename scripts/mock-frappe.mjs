@@ -150,6 +150,7 @@ const pendingRegistrations = new Map(); // email -> { code, attempts, expires }
 const registeredUsers = new Set();
 const takenMobiles = new Set();
 const pendingLoginOtps = new Map(); // email -> { code, attempts, expires }
+const pendingResetOtps = new Map(); // email -> { code, attempts, channel, expires }
 
 function maskEmail(value) {
   const [local = "", domain = ""] = String(value).split("@");
@@ -167,6 +168,18 @@ function normalizeMobile(value) {
   if (!digits) return "";
   if (!digits.startsWith("880")) digits = digits.startsWith("0") ? `880${digits.slice(1)}` : `880${digits}`;
   return digits;
+}
+
+// Demo mobile -> email, so the forgot-password flow can be driven by a mobile
+// number too (the real site resolves User.mobile_no).
+const DEMO_MOBILES = {
+  "8801712345678": "tamim@ioniccorporation.com",
+};
+
+function findAccountByMobile(value) {
+  const email = DEMO_MOBILES[normalizeMobile(value)];
+  if (!email || !DEMO_USERS[email]) return null;
+  return { email, account: DEMO_USERS[email] };
 }
 
 function accountExists(email) {
@@ -580,6 +593,99 @@ const server = createServer(async (request, response) => {
       },
       { "set-cookie": [`sid=${sid}; Path=/; HttpOnly; SameSite=Lax`] }
     );
+    return;
+  }
+
+  // --- Forgot password (mirrors shikkha_os.api.v1.auth.send_reset_otp / verify_reset_otp) ---
+  if (method === "shikkha_os.api.v1.auth.send_reset_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
+    const isEmail = raw.includes("@");
+    const found = isEmail
+      ? DEMO_USERS[raw.toLowerCase()]
+        ? { email: raw.toLowerCase(), account: DEMO_USERS[raw.toLowerCase()] }
+        : null
+      : findAccountByMobile(raw);
+
+    if (!found) {
+      failure(response, 417, "ValidationError", "No account was found for that email or mobile number.", "Forgot Password");
+      return;
+    }
+
+    const channel = isEmail ? "email" : "sms";
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    pendingResetOtps.set(found.email, { code, attempts: 0, channel, expires: Date.now() + 600_000 });
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] RESET OTP ${found.email} = ${code}`);
+
+    ok(response, {
+      sent: true,
+      channel,
+      target: channel === "email" ? maskEmail(found.email) : maskMobile("8801712345678"),
+      delivery: {
+        sms: channel === "sms",
+        email: channel === "email",
+        sms_code: channel === "sms" ? "sent" : "not_attempted",
+        email_code: channel === "email" ? "sent" : "not_attempted",
+      },
+      expires_in_seconds: 600,
+      resend_after_seconds: 30,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.auth.verify_reset_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
+    const isEmail = raw.includes("@");
+    const found = isEmail
+      ? DEMO_USERS[raw.toLowerCase()]
+        ? { email: raw.toLowerCase(), account: DEMO_USERS[raw.toLowerCase()] }
+        : null
+      : findAccountByMobile(raw);
+    const otp = String(body.otp ?? "").replace(/\D/g, "");
+
+    if (!found || !otp) {
+      failure(response, 417, "ValidationError", "That code is not correct. Please try again.", "Forgot Password");
+      return;
+    }
+
+    const pending = pendingResetOtps.get(found.email);
+    if (!pending) {
+      failure(response, 417, "ValidationError", "The code has expired. Please request a new one.", "Forgot Password");
+      return;
+    }
+
+    if (pending.code !== otp) {
+      pending.attempts += 1;
+      failure(response, 417, "ValidationError", "That code is not correct. Please try again.", "Forgot Password");
+      return;
+    }
+
+    pendingResetOtps.delete(found.email);
+    const newPassword = String(Math.floor(100000 + Math.random() * 900000));
+    found.account.password = newPassword;
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] RESET PASSWORD ${found.email} = ${newPassword}`);
+
+    ok(response, {
+      reset: true,
+      channel: pending.channel,
+      target: pending.channel === "email" ? maskEmail(found.email) : maskMobile("8801712345678"),
+      delivery: { sms: pending.channel === "sms", email: pending.channel === "email" },
+    });
     return;
   }
 

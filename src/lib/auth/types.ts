@@ -112,6 +112,34 @@ export interface LoginOtpStartPayload {
   resend_after_seconds: number;
 }
 
+export interface ResetOtpStartPayload {
+  sent: boolean;
+  /** Which channel the reset code went to. */
+  channel: "email" | "sms";
+  /** Masked destination the code went to. */
+  target: string;
+  delivery: {
+    sms: boolean;
+    email: boolean;
+    sms_code?: string;
+    email_code?: string;
+  };
+  expires_in_seconds: number;
+  resend_after_seconds: number;
+}
+
+export interface ResetDonePayload {
+  reset: boolean;
+  /** Channel the new password was sent on. */
+  channel: "email" | "sms";
+  /** Masked destination the new password went to. */
+  target: string;
+  delivery: {
+    sms: boolean;
+    email: boolean;
+  };
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;

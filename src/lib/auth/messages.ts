@@ -18,8 +18,8 @@ export interface AuthCopy {
   needHelp: string;
   expiredNotice: string;
 
-  /** Three-step sign-in: email/mobile -> password -> one-time code. */
-  stepLabel: string; // "ধাপ {n}/৩"
+  /** Two-step sign-in: email/mobile + password -> one-time code. */
+  stepLabel: string; // "ধাপ {n}/২"
   identifierStepTitle: string;
   passwordStepTitle: string;
   otpStepTitle: string;
@@ -43,6 +43,27 @@ export interface AuthCopy {
   changeIdentifier: string;
   smsNotSent: string;
   emailNotSent: string;
+
+  /** Forgot-password flow. */
+  forgotPassword: string; // link on the main sign-in form
+  forgotTitle: string;
+  forgotHint: string;
+  forgotIdentifierLabel: string;
+  forgotIdentifierPlaceholder: string;
+  forgotSend: string;
+  forgotSending: string;
+  forgotOtpTitle: string;
+  forgotOtpHint: string; // "আমরা {target} এ কোড পাঠিয়েছি"
+  forgotVerify: string;
+  forgotVerifying: string;
+  forgotResend: string;
+  forgotResendWait: string; // "আবার পাঠান ({s}s)"
+  forgotChangeIdentifier: string;
+  forgotBackToLogin: string;
+  forgotSuccessTitle: string;
+  forgotSuccessBody: string; // "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} এ পাঠানো হয়েছে।"
+  forgotReturnToLogin: string;
+  resetNotice: string; // banner on the sign-in form after a reset
 
   /** Copy for the account dropdown on the signed-in user's name. */
   userMenu: {
@@ -87,7 +108,7 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "হোমে ফিরে যান",
     needHelp: "লগইন করতে সমস্যা হলে আপনার প্রতিষ্ঠানের অ্যাডমিনের সাথে যোগাযোগ করুন।",
     expiredNotice: "আপনার সেশন শেষ হয়ে গেছে। আবার সাইন ইন করুন।",
-    stepLabel: "ধাপ {n}/৩",
+    stepLabel: "ধাপ {n}/২",
     identifierStepTitle: "লগইন করুন",
     passwordStepTitle: "পাসওয়ার্ড দিন",
     otpStepTitle: "OTP যাচাই করুন",
@@ -111,6 +132,25 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     changeIdentifier: "ইমেইল/মোবাইল বদলান",
     smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
     emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
+    forgotPassword: "পাসওয়ার্ড ভুলে গেছেন?",
+    forgotTitle: "পাসওয়ার্ড রিসেট করুন",
+    forgotHint: "আপনার অ্যাকাউন্টের ইমেইল বা মোবাইল নম্বর দিন — সেখানে একটি যাচাই কোড পাঠানো হবে।",
+    forgotIdentifierLabel: "ইমেইল বা মোবাইল নম্বর",
+    forgotIdentifierPlaceholder: "you@example.com অথবা 01XXXXXXXXX",
+    forgotSend: "রিসেট কোড পাঠান",
+    forgotSending: "পাঠানো হচ্ছে…",
+    forgotOtpTitle: "কোড যাচাই করুন",
+    forgotOtpHint: "আমরা {target} ঠিকানায় একটি ৬ ডিজিটের কোড পাঠিয়েছি।",
+    forgotVerify: "যাচাই করুন",
+    forgotVerifying: "যাচাই করা হচ্ছে…",
+    forgotResend: "আবার কোড পাঠান",
+    forgotResendWait: "আবার পাঠান ({s}s)",
+    forgotChangeIdentifier: "ইমেইল/মোবাইল বদলান",
+    forgotBackToLogin: "লগইনে ফিরে যান",
+    forgotSuccessTitle: "নতুন পাসওয়ার্ড পাঠানো হয়েছে",
+    forgotSuccessBody: "আপনার নতুন ৬ ডিজিটের পাসওয়ার্ড {target} ঠিকানায় পাঠানো হয়েছে। এখন নতুন পাসওয়ার্ড দিয়ে লগইন করুন।",
+    forgotReturnToLogin: "লগইন ফর্মে ফিরে যান",
+    resetNotice: "নতুন পাসওয়ার্ড পাঠানো হয়েছে। এখন সেটি দিয়ে লগইন করুন।",
     userMenu: {
       open: "অ্যাকাউন্ট মেনু",
       profile: "প্রোফাইল তথ্য",
@@ -151,7 +191,7 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "Back to home",
     needHelp: "Cannot sign in? Contact your organisation's administrator.",
     expiredNotice: "Your session has expired. Please sign in again.",
-    stepLabel: "Step {n}/3",
+    stepLabel: "Step {n}/2",
     identifierStepTitle: "Sign in",
     passwordStepTitle: "Enter your password",
     otpStepTitle: "Verify your OTP",
@@ -175,6 +215,25 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     changeIdentifier: "Change email/mobile",
     smsNotSent: "We could not send the SMS — the code went to your email instead.",
     emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
+    forgotPassword: "Forgot password?",
+    forgotTitle: "Reset your password",
+    forgotHint: "Enter the email or mobile number on your account — we will send a verification code there.",
+    forgotIdentifierLabel: "Email or mobile number",
+    forgotIdentifierPlaceholder: "you@example.com or 01XXXXXXXXX",
+    forgotSend: "Send reset code",
+    forgotSending: "Sending…",
+    forgotOtpTitle: "Verify the code",
+    forgotOtpHint: "We sent a 6-digit code to {target}.",
+    forgotVerify: "Verify",
+    forgotVerifying: "Verifying…",
+    forgotResend: "Resend code",
+    forgotResendWait: "Resend in {s}s",
+    forgotChangeIdentifier: "Change email/mobile",
+    forgotBackToLogin: "Back to sign in",
+    forgotSuccessTitle: "Password sent",
+    forgotSuccessBody: "Your new 6-digit password has been sent to {target}. Sign in with the new password.",
+    forgotReturnToLogin: "Back to the sign-in form",
+    resetNotice: "Your new password has been sent. Sign in with it now.",
     userMenu: {
       open: "Account menu",
       profile: "Profile",

@@ -7,6 +7,7 @@ import {
   FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
+  FiCheckCircle,
   FiEye,
   FiEyeOff,
   FiKey,
@@ -21,7 +22,12 @@ import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
 import { registerCopyFor } from "@/lib/auth/register-messages";
 import { preferredRedirect, REGISTER_PATH, safeRedirectPath } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
-import type { LoginOtpStartPayload, SessionPayload } from "@/lib/auth/types";
+import type {
+  LoginOtpStartPayload,
+  ResetDonePayload,
+  ResetOtpStartPayload,
+  SessionPayload,
+} from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 const FIELD_CLASS =
@@ -47,11 +53,13 @@ function formatClock(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// Sign-in is a fixed three-step flow: give the email/mobile, then the password,
-// then the one-time code that the password step sends to both channels.
-type Step = "identifier" | "password" | "otp";
+// Sign-in is a two-step flow: one form holds email/mobile AND the password, then
+// the one-time code the password step sends to both channels.
+type LoginStep = "credentials" | "otp";
+const LOGIN_STEPS: LoginStep[] = ["credentials", "otp"];
 
-const STEP_ORDER: Step[] = ["identifier", "password", "otp"];
+// Forgot password: email/mobile -> code -> the new password is on its way.
+type ForgotStep = "identify" | "otp" | "done";
 
 export default function LoginForm() {
   const { language } = useLanguage();
@@ -71,7 +79,8 @@ export default function LoginForm() {
   );
   const expired = searchParams.get("expired") === "1";
 
-  const [step, setStep] = useState<Step>("identifier");
+  const [view, setView] = useState<"login" | "forgot">("login");
+  const [step, setStep] = useState<LoginStep>("credentials");
 
   const [identifier, setIdentifier] = useState("");
   const [pwd, setPwd] = useState("");
@@ -83,8 +92,17 @@ export default function LoginForm() {
   const [resendIn, setResendIn] = useState(0);
   const [ttl, setTtl] = useState(0);
 
+  // Forgot-password flow.
+  const [forgotStep, setForgotStep] = useState<ForgotStep>("identify");
+  const [forgotIdentifier, setForgotIdentifier] = useState("");
+  const [forgotTarget, setForgotTarget] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotResendIn, setForgotResendIn] = useState(0);
+  const [forgotTtl, setForgotTtl] = useState(0);
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Already signed in: skip the form — and land on the dashboard this account's
   // role belongs on (`?next=` never decides that).
@@ -106,6 +124,21 @@ export default function LoginForm() {
     return () => window.clearInterval(id);
   }, [ttl]);
 
+  useEffect(() => {
+    if (forgotResendIn <= 0) return;
+    const id = window.setInterval(
+      () => setForgotResendIn((value) => (value <= 1 ? 0 : value - 1)),
+      1000
+    );
+    return () => window.clearInterval(id);
+  }, [forgotResendIn]);
+
+  useEffect(() => {
+    if (forgotTtl <= 0) return;
+    const id = window.setInterval(() => setForgotTtl((value) => (value <= 1 ? 0 : value - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [forgotTtl]);
+
   function handleApiError(thrown: unknown) {
     const apiError = thrown as ApiError;
     const code = apiError?.code ?? "network_error";
@@ -115,44 +148,17 @@ export default function LoginForm() {
     setBusy(false);
   }
 
-  function handleIdentifier(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function sendLoginOtp() {
     if (busy) return;
 
-    if (!identifier.trim()) {
-      setError(authErrorMessage(language, "validation_error", ""));
-      return;
-    }
-
-    setError(null);
-    setStep("password");
-  }
-
-  function backToIdentifier() {
-    setError(null);
-    setStep("identifier");
-  }
-
-  function backToPassword() {
-    setError(null);
-    setOtp("");
-    setDelivery(null);
-    setResendIn(0);
-    setTtl(0);
-    setStep("password");
-  }
-
-  async function handleSendOtp(event?: FormEvent<HTMLFormElement>) {
-    event?.preventDefault();
-    if (busy) return;
-
-    if (!pwd) {
+    if (!identifier.trim() || !pwd) {
       setError(authErrorMessage(language, "validation_error", ""));
       return;
     }
 
     setBusy(true);
     setError(null);
+    setNotice(null);
 
     try {
       const payload = await postJson<LoginOtpStartPayload>("/api/auth/login/otp", {
@@ -171,6 +177,11 @@ export default function LoginForm() {
     } catch (thrown) {
       handleApiError(thrown);
     }
+  }
+
+  function handleCredentials(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendLoginOtp();
   }
 
   async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
@@ -195,22 +206,131 @@ export default function LoginForm() {
     }
   }
 
-  const smsFailed = step === "otp" && delivery?.sms === false;
-  const emailFailed = step === "otp" && delivery?.email === false;
+  function backToCredentials() {
+    setError(null);
+    setOtp("");
+    setDelivery(null);
+    setResendIn(0);
+    setTtl(0);
+    setStep("credentials");
+  }
 
-  const stepIndex = STEP_ORDER.indexOf(step);
-  const stepTitle =
-    step === "identifier"
+  function openForgot() {
+    setError(null);
+    setNotice(null);
+    setForgotIdentifier(identifier.trim());
+    setForgotOtp("");
+    setForgotTarget("");
+    setForgotResendIn(0);
+    setForgotTtl(0);
+    setForgotStep("identify");
+    setView("forgot");
+  }
+
+  function backToLoginForm() {
+    setError(null);
+    setView("login");
+    setStep("credentials");
+  }
+
+  async function sendForgotOtp() {
+    if (busy) return;
+
+    if (!forgotIdentifier.trim()) {
+      setError(authErrorMessage(language, "validation_error", ""));
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const payload = await postJson<ResetOtpStartPayload>("/api/auth/forgot/otp", {
+        identifier: forgotIdentifier.trim(),
+        language,
+      });
+
+      setForgotTarget(payload?.target ?? forgotIdentifier.trim());
+      setForgotResendIn(payload?.resend_after_seconds ?? 30);
+      setForgotTtl(payload?.expires_in_seconds ?? 0);
+      setForgotOtp("");
+      setForgotStep("otp");
+      setBusy(false);
+    } catch (thrown) {
+      handleApiError(thrown);
+    }
+  }
+
+  function handleForgotSend(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void sendForgotOtp();
+  }
+
+  async function handleForgotVerify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+
+    setBusy(true);
+    setError(null);
+
+    try {
+      const payload = await postJson<ResetDonePayload>("/api/auth/forgot/otp/verify", {
+        identifier: forgotIdentifier.trim(),
+        otp: forgotOtp.trim(),
+        language,
+      });
+
+      setForgotTarget(payload?.target ?? forgotTarget);
+      setForgotStep("done");
+      setBusy(false);
+    } catch (thrown) {
+      handleApiError(thrown);
+    }
+  }
+
+  function returnToLogin() {
+    setView("login");
+    setStep("credentials");
+    setPwd("");
+    setOtp("");
+    setDelivery(null);
+    setResendIn(0);
+    setTtl(0);
+    setForgotStep("identify");
+    setForgotOtp("");
+    setError(null);
+    setNotice(copy.resetNotice);
+  }
+
+  const isLogin = view === "login";
+
+  const stepIndex = isLogin
+    ? LOGIN_STEPS.indexOf(step)
+    : forgotStep === "identify"
+      ? 0
+      : 1;
+  const showDots = isLogin || forgotStep !== "done";
+
+  const title = isLogin
+    ? step === "credentials"
       ? copy.identifierStepTitle
-      : step === "password"
-        ? copy.passwordStepTitle
-        : copy.otpStepTitle;
-  const stepHint =
-    step === "identifier"
+      : copy.otpStepTitle
+    : forgotStep === "identify"
+      ? copy.forgotTitle
+      : forgotStep === "otp"
+        ? copy.forgotOtpTitle
+        : copy.forgotSuccessTitle;
+
+  const hint = isLogin
+    ? step === "credentials"
       ? copy.identifierStepHint
-      : step === "password"
-        ? copy.passwordStepHint
-        : null;
+      : null
+    : forgotStep === "identify"
+      ? copy.forgotHint
+      : null;
+
+  const loginSmsFailed = isLogin && step === "otp" && delivery?.sms === false;
+  const loginEmailFailed = isLogin && step === "otp" && delivery?.email === false;
 
   return (
     <section
@@ -232,37 +352,49 @@ export default function LoginForm() {
       </div>
 
       <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
-        {stepTitle}
+        {title}
       </h1>
 
-      {/* Step indicator: email/mobile -> password -> OTP. */}
-      <p className="mt-2 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-        {copy.stepLabel.replace("{n}", String(stepIndex + 1))}
-      </p>
-      <div className="mt-2 flex gap-1.5" aria-hidden>
-        {STEP_ORDER.map((name, index) => (
-          <span
-            key={name}
-            className={[
-              "h-1.5 flex-1 rounded-full transition-colors duration-300",
-              index <= stepIndex
-                ? "bg-[var(--color-primary)]"
-                : "bg-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
-            ].join(" ")}
-          />
-        ))}
-      </div>
+      {/* Step indicator: sign-in is email/mobile+password -> OTP; reset is
+          email/mobile -> OTP. The success screen has no step. */}
+      {showDots ? (
+        <>
+          <p className="mt-2 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+            {copy.stepLabel.replace("{n}", String(stepIndex + 1))}
+          </p>
+          <div className="mt-2 flex gap-1.5" aria-hidden>
+            {[0, 1].map((index) => (
+              <span
+                key={index}
+                className={[
+                  "h-1.5 flex-1 rounded-full transition-colors duration-300",
+                  index <= stepIndex
+                    ? "bg-[var(--color-primary)]"
+                    : "bg-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+                ].join(" ")}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
 
-      {stepHint ? (
+      {hint ? (
         <p className="mt-3 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-          {stepHint}
+          {hint}
         </p>
       ) : null}
 
-      {expired ? (
+      {expired && isLogin ? (
         <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
           <FiShield aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
           {copy.expiredNotice}
+        </p>
+      ) : null}
+
+      {notice && isLogin ? (
+        <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+          <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+          {notice}
         </p>
       ) : null}
 
@@ -275,8 +407,11 @@ export default function LoginForm() {
         </p>
       ) : null}
 
-      {step === "identifier" ? (
-        <form className="mt-5 flex flex-col gap-4" onSubmit={handleIdentifier} noValidate>
+      {/* ---------------------------------------------------------------- */}
+      {/* Sign in: one form (email/mobile + password) -> OTP               */}
+      {/* ---------------------------------------------------------------- */}
+      {isLogin && step === "credentials" ? (
+        <form className="mt-5 flex flex-col gap-4" onSubmit={handleCredentials} noValidate>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.identifierLabel}
@@ -285,7 +420,7 @@ export default function LoginForm() {
               <FiUser aria-hidden className={ICON_CLASS} />
               <input
                 type="text"
-                name="identifier"
+                name="username"
                 autoComplete="username"
                 required
                 value={identifier}
@@ -296,47 +431,6 @@ export default function LoginForm() {
             </span>
           </label>
 
-          <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span aria-hidden className={SUBMIT_SHEEN} />
-            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
-              {copy.next}
-              <FiArrowRight aria-hidden size={15} />
-            </span>
-          </button>
-        </form>
-      ) : null}
-
-      {step === "password" ? (
-        <form className="mt-5 flex flex-col gap-4" onSubmit={handleSendOtp} noValidate>
-          {/* Accessibility: a password form needs a username field inside the
-              same form. The identifier is collected in the previous step, so
-              mirror it here, visually hidden, to satisfy the browser's
-              password-manager/autofill heuristics. */}
-          <input
-            type="text"
-            name="username"
-            autoComplete="username"
-            value={identifier}
-            readOnly
-            tabIndex={-1}
-            aria-hidden="true"
-            className="sr-only"
-          />
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5">
-            <span className="min-w-0 truncate text-[13px] text-[var(--color-primary)]">
-              {identifier.trim()}
-            </span>
-            <button
-              type="button"
-              onClick={backToIdentifier}
-              className="shrink-0 rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_34%,transparent)]"
-            >
-              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
-                {copy.backToIdentifier}
-              </span>
-            </button>
-          </div>
-
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.passwordLabel}
@@ -345,7 +439,7 @@ export default function LoginForm() {
               <FiLock aria-hidden className={ICON_CLASS} />
               <input
                 type={reveal ? "text" : "password"}
-                name="pwd"
+                name="password"
                 autoComplete="current-password"
                 required
                 value={pwd}
@@ -364,6 +458,18 @@ export default function LoginForm() {
             </span>
           </label>
 
+          <div className="-mt-1 flex justify-end">
+            <button
+              type="button"
+              onClick={openForgot}
+              className="rounded-xl px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)]"
+            >
+              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+                {copy.forgotPassword}
+              </span>
+            </button>
+          </div>
+
           <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
             <span aria-hidden className={SUBMIT_SHEEN} />
             <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
@@ -374,20 +480,20 @@ export default function LoginForm() {
         </form>
       ) : null}
 
-      {step === "otp" ? (
+      {isLogin && step === "otp" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerifyOtp} noValidate>
           <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
             {copy.otpHint.replace("{target}", maskedTarget)}
           </p>
 
-          {smsFailed ? (
+          {loginSmsFailed ? (
             <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
               <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
               {copy.smsNotSent}
             </p>
           ) : null}
-          {emailFailed ? (
+          {loginEmailFailed ? (
             <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
               <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
               {copy.emailNotSent}
@@ -419,11 +525,13 @@ export default function LoginForm() {
             <span>{ttl > 0 ? copy.otpTtl.replace("{time}", formatClock(ttl)) : ""}</span>
             <button
               type="button"
-              onClick={() => void handleSendOtp()}
+              onClick={() => void sendLoginOtp()}
               disabled={busy || resendIn > 0}
-              className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
-              {resendIn > 0 ? copy.resendWait.replace("{s}", String(resendIn)) : copy.resend}
+              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
+                {resendIn > 0 ? copy.resendWait.replace("{s}", String(resendIn)) : copy.resend}
+              </span>
             </button>
           </div>
 
@@ -436,28 +544,156 @@ export default function LoginForm() {
 
           <button
             type="button"
-            onClick={backToPassword}
-            className="inline-flex items-center justify-center gap-2 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
+            onClick={backToCredentials}
+            className="inline-flex items-center justify-center gap-2 rounded-xl py-1 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 transition hover:text-[var(--color-primary)] hover:underline"
           >
             <FiArrowLeft aria-hidden />
-            {copy.backToPassword}
+            {copy.backToIdentifier}
           </button>
         </form>
+      ) : null}
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Forgot password: email/mobile -> OTP -> new password sent         */}
+      {/* ---------------------------------------------------------------- */}
+      {!isLogin && forgotStep === "identify" ? (
+        <form className="mt-5 flex flex-col gap-4" onSubmit={handleForgotSend} noValidate>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium text-[var(--color-primary)]">
+              {copy.forgotIdentifierLabel}
+            </span>
+            <span className={FIELD_WRAPPER_CLASS}>
+              <FiUser aria-hidden className={ICON_CLASS} />
+              <input
+                type="text"
+                name="identifier"
+                autoComplete="username"
+                required
+                value={forgotIdentifier}
+                onChange={(event) => setForgotIdentifier(event.target.value)}
+                placeholder={copy.forgotIdentifierPlaceholder}
+                className={FIELD_CLASS}
+              />
+            </span>
+          </label>
+
+          <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
+            <span aria-hidden className={SUBMIT_SHEEN} />
+            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
+              <FiMail aria-hidden size={15} />
+              {busy ? copy.forgotSending : copy.forgotSend}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={backToLoginForm}
+            className="inline-flex items-center justify-center gap-2 rounded-xl py-1 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 transition hover:text-[var(--color-primary)] hover:underline"
+          >
+            <FiArrowLeft aria-hidden />
+            {copy.forgotBackToLogin}
+          </button>
+        </form>
+      ) : null}
+
+      {!isLogin && forgotStep === "otp" ? (
+        <form className="mt-5 flex flex-col gap-4" onSubmit={handleForgotVerify} noValidate>
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+            {copy.forgotOtpHint.replace("{target}", forgotTarget)}
+          </p>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium text-[var(--color-primary)]">
+              {copy.otpLabel}
+            </span>
+            <span className={FIELD_WRAPPER_CLASS}>
+              <FiKey aria-hidden className={ICON_CLASS} />
+              <input
+                type="text"
+                name="otp"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                required
+                value={forgotOtp}
+                onChange={(event) => setForgotOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder={copy.otpPlaceholder}
+                className={`${FIELD_CLASS} tracking-[0.4em]`}
+              />
+            </span>
+          </label>
+
+          <div className="flex items-center justify-between text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+            <span>{forgotTtl > 0 ? copy.otpTtl.replace("{time}", formatClock(forgotTtl)) : ""}</span>
+            <button
+              type="button"
+              onClick={() => void sendForgotOtp()}
+              disabled={busy || forgotResendIn > 0}
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
+                {forgotResendIn > 0
+                  ? copy.forgotResendWait.replace("{s}", String(forgotResendIn))
+                  : copy.forgotResend}
+              </span>
+            </button>
+          </div>
+
+          <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
+            <span aria-hidden className={SUBMIT_SHEEN} />
+            <span className="relative z-10 text-[14px] font-semibold text-[var(--color-white)]">
+              {busy ? copy.forgotVerifying : copy.forgotVerify}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setForgotOtp("");
+              setForgotStep("identify");
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl py-1 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 transition hover:text-[var(--color-primary)] hover:underline"
+          >
+            <FiArrowLeft aria-hidden />
+            {copy.forgotChangeIdentifier}
+          </button>
+        </form>
+      ) : null}
+
+      {!isLogin && forgotStep === "done" ? (
+        <div className="mt-5 flex flex-col gap-4">
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)]">
+            <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[15px]" />
+            {copy.forgotSuccessBody.replace("{target}", forgotTarget)}
+          </p>
+
+          <button type="button" onClick={returnToLogin} className={SUBMIT_CLASS}>
+            <span aria-hidden className={SUBMIT_SHEEN} />
+            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
+              <FiArrowRight aria-hidden size={15} />
+              {copy.forgotReturnToLogin}
+            </span>
+          </button>
+        </div>
       ) : null}
 
       <p className="mt-4 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
         {copy.needHelp}
       </p>
 
-      <p className="mt-4 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
-        {registerCopy.newHere}{" "}
-        <Link
-          href={REGISTER_PATH}
-          className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
-        >
-          {registerCopy.button}
-        </Link>
-      </p>
+      {isLogin ? (
+        <p className="mt-4 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+          {registerCopy.newHere}{" "}
+          <Link
+            href={REGISTER_PATH}
+            className="font-medium text-[var(--color-primary)] underline-offset-4 hover:underline"
+          >
+            {registerCopy.button}
+          </Link>
+        </p>
+      ) : null}
 
       <Link
         href="/"
