@@ -164,6 +164,7 @@ export default function LandingHeroBanner() {
                 src="/Banner-imaes/orange-impact.png"
                 alt="Home Connections"
                 fill
+                sizes="(max-width: 768px) 34vw, 460px"
                 priority
                 className="object-contain object-top"
               />
@@ -184,6 +185,7 @@ export default function LandingHeroBanner() {
                   src="/Banner-imaes/orange-people.png"
                   alt="Home Connections people"
                   fill
+                sizes="(max-width: 768px) 26vw, 340px"
                   priority
                   className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
                 />
@@ -200,6 +202,7 @@ export default function LandingHeroBanner() {
                 src="/Banner-imaes/green-impact.png"
                 alt="Student Achievement"
                 fill
+                sizes="(max-width: 768px) 34vw, 460px"
                 priority
                 className="object-contain object-top"
               />
@@ -220,6 +223,7 @@ export default function LandingHeroBanner() {
                   src="/Banner-imaes/green-people.png"
                   alt="Student Achievement person"
                   fill
+                sizes="(max-width: 768px) 26vw, 340px"
                   priority
                   className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
                 />
@@ -236,6 +240,7 @@ export default function LandingHeroBanner() {
                 src="/Banner-imaes/purple-impact.png"
                 alt="Operational Excellence"
                 fill
+                sizes="(max-width: 768px) 34vw, 460px"
                 priority
                 className="object-contain object-top"
               />
@@ -256,6 +261,7 @@ export default function LandingHeroBanner() {
                   src="/Banner-imaes/purple-people.png"
                   alt="Operational Excellence people"
                   fill
+                sizes="(max-width: 768px) 26vw, 340px"
                   priority
                   className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
                 />

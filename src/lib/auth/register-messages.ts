@@ -42,6 +42,8 @@ export interface RegisterCopy {
   availabilityChecking: string;
   emailTaken: string;
   mobileTaken: string;
+  smsNotSent: string;
+  emailNotSent: string;
 
   errors: {
     validation_error: string;
@@ -92,6 +94,8 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     availabilityChecking: "যাচাই করা হচ্ছে…",
     emailTaken: "এই ইমেইল আগেই নেওয়া হয়েছে।",
     mobileTaken: "এই মোবাইল নম্বর আগেই নেওয়া হয়েছে।",
+    smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
+    emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
     errors: {
       validation_error: "আবার লিখে চেষ্টা করুন।",
       rate_limited: "অনেকবার চেষ্টা করা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।",
@@ -139,6 +143,8 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     availabilityChecking: "Checking…",
     emailTaken: "That email is already registered.",
     mobileTaken: "That mobile number is already registered.",
+    smsNotSent: "We could not send the SMS — the code went to your email instead.",
+    emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
     errors: {
       validation_error: "Please review the form and try again.",
       rate_limited: "Too many attempts. Please wait a few minutes and try again.",

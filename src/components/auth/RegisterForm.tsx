@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
+  FiAlertTriangle,
   FiArrowLeft,
   FiCheck,
   FiEye,
@@ -376,6 +377,19 @@ export default function RegisterForm() {
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
             {copy.otpHint.replace("{target}", otpTarget)}
           </p>
+
+          {delivery && delivery.sms === false ? (
+            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+              {copy.smsNotSent}
+            </p>
+          ) : null}
+          {delivery && delivery.email === false ? (
+            <p className="flex items-start gap-2 rounded-2xl border border-[#f0d18a] bg-[#fdf7e6] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+              <FiAlertTriangle aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+              {copy.emailNotSent}
+            </p>
+          ) : null}
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">

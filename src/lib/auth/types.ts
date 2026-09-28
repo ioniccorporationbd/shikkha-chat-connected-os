@@ -95,6 +95,23 @@ export interface RegisterAvailabilityPayload {
   mobile_available: boolean;
 }
 
+export interface LoginOtpStartPayload {
+  sent: boolean;
+  /** Masked destination the code went to (email or mobile). */
+  target: string;
+  email?: string;
+  mobile?: string;
+  delivery: {
+    sms: boolean;
+    email: boolean;
+    /** Stable per-channel reason code: sent | not_configured | gateway_error | ... */
+    sms_code?: string;
+    email_code?: string;
+  };
+  expires_in_seconds: number;
+  resend_after_seconds: number;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;

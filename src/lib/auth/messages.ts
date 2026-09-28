@@ -17,6 +17,26 @@ export interface AuthCopy {
   backHome: string;
   needHelp: string;
   expiredNotice: string;
+
+  /** One-time-code sign-in (mobile + email OTP). */
+  modePassword: string;
+  modeOtp: string;
+  identifierLabel: string;
+  identifierPlaceholder: string;
+  sendOtp: string;
+  sendingOtp: string;
+  otpLabel: string;
+  otpPlaceholder: string;
+  verifyOtp: string;
+  verifyingOtp: string;
+  otpHint: string; // "আমরা {target} এ কোড পাঠিয়েছি"
+  otpTtl: string; // "কোডটি আর {time} সক্রিয়"
+  resend: string;
+  resendWait: string; // "আবার পাঠান ({s}s)"
+  changeIdentifier: string;
+  smsNotSent: string;
+  emailNotSent: string;
+
   /** Copy for the account dropdown on the signed-in user's name. */
   userMenu: {
     open: string;
@@ -60,6 +80,23 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "হোমে ফিরে যান",
     needHelp: "লগইন করতে সমস্যা হলে আপনার প্রতিষ্ঠানের অ্যাডমিনের সাথে যোগাযোগ করুন।",
     expiredNotice: "আপনার সেশন শেষ হয়ে গেছে। আবার সাইন ইন করুন।",
+    modePassword: "পাসওয়ার্ড দিয়ে লগইন",
+    modeOtp: "OTP দিয়ে লগইন",
+    identifierLabel: "ইমেইল বা মোবাইল নম্বর",
+    identifierPlaceholder: "you@example.com অথবা 01XXXXXXXXX",
+    sendOtp: "OTP পাঠান",
+    sendingOtp: "পাঠানো হচ্ছে…",
+    otpLabel: "OTP কোড",
+    otpPlaceholder: "৬ ডিজিটের কোড",
+    verifyOtp: "যাচাই করে লগইন করুন",
+    verifyingOtp: "যাচাই করা হচ্ছে…",
+    otpHint: "আমরা {target} ঠিকানায় একটি ৬ ডিজিটের কোড পাঠিয়েছি।",
+    otpTtl: "কোডটি আর {time} সক্রিয় থাকবে।",
+    resend: "আবার কোড পাঠান",
+    resendWait: "আবার পাঠান ({s}s)",
+    changeIdentifier: "ইমেইল/মোবাইল বদলান",
+    smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
+    emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
     userMenu: {
       open: "অ্যাকাউন্ট মেনু",
       profile: "প্রোফাইল তথ্য",
@@ -100,6 +137,23 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "Back to home",
     needHelp: "Cannot sign in? Contact your organisation's administrator.",
     expiredNotice: "Your session has expired. Please sign in again.",
+    modePassword: "Sign in with password",
+    modeOtp: "Sign in with OTP",
+    identifierLabel: "Email or mobile number",
+    identifierPlaceholder: "you@example.com or 01XXXXXXXXX",
+    sendOtp: "Send OTP",
+    sendingOtp: "Sending…",
+    otpLabel: "OTP code",
+    otpPlaceholder: "6-digit code",
+    verifyOtp: "Verify & sign in",
+    verifyingOtp: "Verifying…",
+    otpHint: "We sent a 6-digit code to {target}.",
+    otpTtl: "The code stays valid for another {time}.",
+    resend: "Resend code",
+    resendWait: "Resend in {s}s",
+    changeIdentifier: "Change email/mobile",
+    smsNotSent: "We could not send the SMS — the code went to your email instead.",
+    emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
     userMenu: {
       open: "Account menu",
       profile: "Profile",

@@ -149,6 +149,7 @@ function redirectFor(account) {
 const pendingRegistrations = new Map(); // email -> { code, attempts, expires }
 const registeredUsers = new Set();
 const takenMobiles = new Set();
+const pendingLoginOtps = new Map(); // email -> { code, attempts, expires }
 
 function maskEmail(value) {
   const [local = "", domain = ""] = String(value).split("@");
@@ -485,6 +486,94 @@ const server = createServer(async (request, response) => {
         redirect_to: "/clientDashboard",
         session_expiry_seconds: 86400,
         created: { user: email, customer: `CUST-${email.split("@")[0].toUpperCase()}` },
+      },
+      { "set-cookie": [`sid=${sid}; Path=/; HttpOnly; SameSite=Lax`] }
+    );
+    return;
+  }
+
+  // --- OTP sign-in (mirrors shikkha_os.api.v1.auth.send_login_otp / verify_login_otp) ---
+  if (method === "shikkha_os.api.v1.auth.send_login_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
+    const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(response, 417, "ValidationError", "No account was found for that email or mobile number.", "Sign In");
+      return;
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    pendingLoginOtps.set(email, { code, attempts: 0, expires: Date.now() + 600_000 });
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] LOGIN OTP ${email} = ${code}`);
+
+    const smsOk = process.env.MOCK_SMS_FAIL !== "1";
+    ok(response, {
+      sent: true,
+      target: maskEmail(email),
+      email: maskEmail(email),
+      mobile: maskMobile("8801712345678"),
+      delivery: {
+        sms: smsOk,
+        email: true,
+        sms_code: smsOk ? "sent" : "not_configured",
+        email_code: "sent",
+      },
+      expires_in_seconds: 600,
+      resend_after_seconds: 30,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.auth.verify_login_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
+    const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const otp = String(body.otp ?? "").replace(/\D/g, "");
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account || !otp) {
+      failure(response, 417, "ValidationError", "That code is not correct. Please try again.", "Sign In");
+      return;
+    }
+
+    const pending = pendingLoginOtps.get(email);
+    if (!pending) {
+      failure(response, 417, "ValidationError", "The code has expired. Please request a new one.", "Sign In");
+      return;
+    }
+
+    if (pending.code !== otp) {
+      pending.attempts += 1;
+      failure(response, 417, "ValidationError", "That code is not correct. Please try again.", "Sign In");
+      return;
+    }
+
+    pendingLoginOtps.delete(email);
+
+    const sid = randomUUID().replace(/-/g, "");
+    sessions.set(sid, email);
+
+    ok(
+      response,
+      {
+        authenticated: true,
+        user: account.profile,
+        redirect_to: redirectFor(account),
+        session_expiry_seconds: 86400,
       },
       { "set-cookie": [`sid=${sid}; Path=/; HttpOnly; SameSite=Lax`] }
     );
