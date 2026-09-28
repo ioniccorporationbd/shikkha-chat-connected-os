@@ -24,15 +24,20 @@ export async function POST(request: Request) {
 
   const payload = (body ?? {}) as Record<string, unknown>;
   const identifier = typeof payload.identifier === "string" ? payload.identifier.trim() : "";
+  const password = typeof payload.password === "string" ? payload.password : "";
   const language = typeof payload.language === "string" && payload.language.trim() ? payload.language.trim() : "bn";
 
   if (!identifier) {
     return jsonFail("Enter your email or mobile number.", "validation_error", 200);
   }
 
+  if (!password) {
+    return jsonFail("Enter your password.", "validation_error", 200);
+  }
+
   const result = await callFrappe<LoginOtpStartPayload>(
     "shikkha_os.api.v1.auth.send_login_otp",
-    { httpMethod: "POST", body: { identifier, language } }
+    { httpMethod: "POST", body: { identifier, password, language } }
   );
 
   if (!result.ok) {

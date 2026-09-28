@@ -6,13 +6,14 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   FiAlertTriangle,
   FiArrowLeft,
+  FiArrowRight,
   FiEye,
   FiEyeOff,
   FiKey,
   FiLock,
   FiMail,
-  FiPhone,
   FiShield,
+  FiUser,
 } from "react-icons/fi";
 
 import { ApiError, postJson } from "@/lib/api/http";
@@ -36,6 +37,9 @@ const ICON_CLASS =
 const SUBMIT_CLASS =
   "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
 
+const SUBMIT_SHEEN =
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
+
 function formatClock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
   const m = Math.floor(safe / 60);
@@ -43,7 +47,11 @@ function formatClock(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-type Mode = "password" | "otp";
+// Sign-in is a fixed three-step flow: give the email/mobile, then the password,
+// then the one-time code that the password step sends to both channels.
+type Step = "identifier" | "password" | "otp";
+
+const STEP_ORDER: Step[] = ["identifier", "password", "otp"];
 
 export default function LoginForm() {
   const { language } = useLanguage();
@@ -63,15 +71,13 @@ export default function LoginForm() {
   );
   const expired = searchParams.get("expired") === "1";
 
-  const [mode, setMode] = useState<Mode>("password");
+  const [step, setStep] = useState<Step>("identifier");
 
-  const [usr, setUsr] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [pwd, setPwd] = useState("");
   const [reveal, setReveal] = useState(false);
 
-  const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [maskedTarget, setMaskedTarget] = useState("");
   const [delivery, setDelivery] = useState<{ sms: boolean; email: boolean } | null>(null);
   const [resendIn, setResendIn] = useState(0);
@@ -100,15 +106,6 @@ export default function LoginForm() {
     return () => window.clearInterval(id);
   }, [ttl]);
 
-  function switchMode(next: Mode) {
-    if (busy || next === mode) return;
-    setMode(next);
-    setError(null);
-    setOtpSent(false);
-    setOtp("");
-    setDelivery(null);
-  }
-
   function handleApiError(thrown: unknown) {
     const apiError = thrown as ApiError;
     const code = apiError?.code ?? "network_error";
@@ -118,36 +115,38 @@ export default function LoginForm() {
     setBusy(false);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleIdentifier(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
 
-    setBusy(true);
-    setError(null);
-
-    try {
-      const payload = await postJson<SessionPayload>("/api/auth/login", {
-        usr: usr.trim(),
-        pwd,
-      });
-
-      setSession(payload?.user ?? null);
-
-      // `busy` stays true on purpose: the button keeps its loading state until
-      // the dashboard route takes over.
-      router.replace(preferredRedirect(payload?.redirect_to ?? nextPath, payload?.user));
-      router.refresh();
-    } catch (thrown) {
-      handleApiError(thrown);
+    if (!identifier.trim()) {
+      setError(authErrorMessage(language, "validation_error", ""));
+      return;
     }
+
+    setError(null);
+    setStep("password");
+  }
+
+  function backToIdentifier() {
+    setError(null);
+    setStep("identifier");
+  }
+
+  function backToPassword() {
+    setError(null);
+    setOtp("");
+    setDelivery(null);
+    setResendIn(0);
+    setTtl(0);
+    setStep("password");
   }
 
   async function handleSendOtp(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     if (busy) return;
 
-    const target = identifier.trim();
-    if (!target) {
+    if (!pwd) {
       setError(authErrorMessage(language, "validation_error", ""));
       return;
     }
@@ -157,16 +156,17 @@ export default function LoginForm() {
 
     try {
       const payload = await postJson<LoginOtpStartPayload>("/api/auth/login/otp", {
-        identifier: target,
+        identifier: identifier.trim(),
+        password: pwd,
         language,
       });
 
-      setMaskedTarget(payload?.target ?? target);
+      setMaskedTarget(payload?.target ?? identifier.trim());
       setDelivery(payload?.delivery ?? null);
       setResendIn(payload?.resend_after_seconds ?? 30);
       setTtl(payload?.expires_in_seconds ?? 0);
       setOtp("");
-      setOtpSent(true);
+      setStep("otp");
       setBusy(false);
     } catch (thrown) {
       handleApiError(thrown);
@@ -195,13 +195,22 @@ export default function LoginForm() {
     }
   }
 
-  const smsFailed = otpSent && delivery?.sms === false;
-  const emailFailed = otpSent && delivery?.email === false;
+  const smsFailed = step === "otp" && delivery?.sms === false;
+  const emailFailed = step === "otp" && delivery?.email === false;
 
-  const tabs: { key: Mode; label: string }[] = [
-    { key: "password", label: copy.modePassword },
-    { key: "otp", label: copy.modeOtp },
-  ];
+  const stepIndex = STEP_ORDER.indexOf(step);
+  const stepTitle =
+    step === "identifier"
+      ? copy.identifierStepTitle
+      : step === "password"
+        ? copy.passwordStepTitle
+        : copy.otpStepTitle;
+  const stepHint =
+    step === "identifier"
+      ? copy.identifierStepHint
+      : step === "password"
+        ? copy.passwordStepHint
+        : null;
 
   return (
     <section
@@ -223,44 +232,32 @@ export default function LoginForm() {
       </div>
 
       <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
-        {copy.panelTitle}
+        {stepTitle}
       </h1>
 
-      {/* Password vs OTP sign-in. */}
-      <div
-        role="tablist"
-        aria-label={copy.panelTitle}
-        className="mt-4 grid grid-cols-2 gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] p-1"
-      >
-        {tabs.map((tab) => {
-          const active = mode === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => switchMode(tab.key)}
-              disabled={busy}
-              className={[
-                "rounded-xl px-3 py-2 transition duration-200 disabled:cursor-not-allowed disabled:opacity-70",
-                active
-                  ? "bg-[var(--color-primary)] shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)]"
-                  : "bg-transparent hover:bg-[color-mix(in_srgb,var(--color-secondary)_34%,transparent)]",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "block text-[13px] font-semibold",
-                  active ? "text-[var(--color-white)]" : "text-[var(--color-primary)]",
-                ].join(" ")}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+      {/* Step indicator: email/mobile -> password -> OTP. */}
+      <p className="mt-2 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+        {copy.stepLabel.replace("{n}", String(stepIndex + 1))}
+      </p>
+      <div className="mt-2 flex gap-1.5" aria-hidden>
+        {STEP_ORDER.map((name, index) => (
+          <span
+            key={name}
+            className={[
+              "h-1.5 flex-1 rounded-full transition-colors duration-300",
+              index <= stepIndex
+                ? "bg-[var(--color-primary)]"
+                : "bg-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+            ].join(" ")}
+          />
+        ))}
       </div>
+
+      {stepHint ? (
+        <p className="mt-3 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          {stepHint}
+        </p>
+      ) : null}
 
       {expired ? (
         <p className="mt-4 flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
@@ -278,33 +275,60 @@ export default function LoginForm() {
         </p>
       ) : null}
 
-      {mode === "password" ? (
-        <form className="mt-5 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+      {step === "identifier" ? (
+        <form className="mt-5 flex flex-col gap-4" onSubmit={handleIdentifier} noValidate>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
-              {copy.emailLabel}
+              {copy.identifierLabel}
             </span>
             <span className={FIELD_WRAPPER_CLASS}>
-              <FiMail aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]" />
+              <FiUser aria-hidden className={ICON_CLASS} />
               <input
-                type="email"
-                name="usr"
+                type="text"
+                name="identifier"
                 autoComplete="username"
                 required
-                value={usr}
-                onChange={(event) => setUsr(event.target.value)}
-                placeholder={copy.emailPlaceholder}
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                placeholder={copy.identifierPlaceholder}
                 className={FIELD_CLASS}
               />
             </span>
           </label>
+
+          <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
+            <span aria-hidden className={SUBMIT_SHEEN} />
+            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
+              {copy.next}
+              <FiArrowRight aria-hidden size={15} />
+            </span>
+          </button>
+        </form>
+      ) : null}
+
+      {step === "password" ? (
+        <form className="mt-5 flex flex-col gap-4" onSubmit={handleSendOtp} noValidate>
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5">
+            <span className="min-w-0 truncate text-[13px] text-[var(--color-primary)]">
+              {identifier.trim()}
+            </span>
+            <button
+              type="button"
+              onClick={backToIdentifier}
+              className="shrink-0 rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_34%,transparent)]"
+            >
+              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
+                {copy.backToIdentifier}
+              </span>
+            </button>
+          </div>
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.passwordLabel}
             </span>
             <span className={FIELD_WRAPPER_CLASS}>
-              <FiLock aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]" />
+              <FiLock aria-hidden className={ICON_CLASS} />
               <input
                 type={reveal ? "text" : "password"}
                 name="pwd"
@@ -327,16 +351,16 @@ export default function LoginForm() {
           </label>
 
           <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
-            />
-            <span className="relative z-10 text-[14px] font-semibold text-[var(--color-white)]">
-              {busy ? copy.submitting : copy.submit}
+            <span aria-hidden className={SUBMIT_SHEEN} />
+            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
+              <FiShield aria-hidden size={15} />
+              {busy ? copy.sendingOtp : copy.sendOtp}
             </span>
           </button>
         </form>
-      ) : otpSent ? (
+      ) : null}
+
+      {step === "otp" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerifyOtp} noValidate>
           <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
             <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
@@ -390,10 +414,7 @@ export default function LoginForm() {
           </div>
 
           <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
-            />
+            <span aria-hidden className={SUBMIT_SHEEN} />
             <span className="relative z-10 text-[14px] font-semibold text-[var(--color-white)]">
               {busy ? copy.verifyingOtp : copy.verifyOtp}
             </span>
@@ -401,50 +422,14 @@ export default function LoginForm() {
 
           <button
             type="button"
-            onClick={() => {
-              setOtpSent(false);
-              setOtp("");
-              setError(null);
-            }}
+            onClick={backToPassword}
             className="inline-flex items-center justify-center gap-2 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] underline-offset-4 hover:text-[var(--color-primary)] hover:underline"
           >
             <FiArrowLeft aria-hidden />
-            {copy.changeIdentifier}
+            {copy.backToPassword}
           </button>
         </form>
-      ) : (
-        <form className="mt-5 flex flex-col gap-4" onSubmit={handleSendOtp} noValidate>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-medium text-[var(--color-primary)]">
-              {copy.identifierLabel}
-            </span>
-            <span className={FIELD_WRAPPER_CLASS}>
-              <FiPhone aria-hidden className={ICON_CLASS} />
-              <input
-                type="text"
-                name="identifier"
-                autoComplete="username"
-                required
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
-                placeholder={copy.identifierPlaceholder}
-                className={FIELD_CLASS}
-              />
-            </span>
-          </label>
-
-          <button type="submit" disabled={busy} className={SUBMIT_CLASS}>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0"
-            />
-            <span className="relative z-10 inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
-              <FiShield aria-hidden size={15} />
-              {busy ? copy.sendingOtp : copy.sendOtp}
-            </span>
-          </button>
-        </form>
-      )}
+      ) : null}
 
       <p className="mt-4 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
         {copy.needHelp}

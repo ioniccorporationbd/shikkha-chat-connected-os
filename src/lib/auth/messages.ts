@@ -18,9 +18,16 @@ export interface AuthCopy {
   needHelp: string;
   expiredNotice: string;
 
-  /** One-time-code sign-in (mobile + email OTP). */
-  modePassword: string;
-  modeOtp: string;
+  /** Three-step sign-in: email/mobile -> password -> one-time code. */
+  stepLabel: string; // "ধাপ {n}/৩"
+  identifierStepTitle: string;
+  passwordStepTitle: string;
+  otpStepTitle: string;
+  identifierStepHint: string;
+  passwordStepHint: string;
+  next: string;
+  backToIdentifier: string;
+  backToPassword: string;
   identifierLabel: string;
   identifierPlaceholder: string;
   sendOtp: string;
@@ -80,8 +87,15 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "হোমে ফিরে যান",
     needHelp: "লগইন করতে সমস্যা হলে আপনার প্রতিষ্ঠানের অ্যাডমিনের সাথে যোগাযোগ করুন।",
     expiredNotice: "আপনার সেশন শেষ হয়ে গেছে। আবার সাইন ইন করুন।",
-    modePassword: "পাসওয়ার্ড দিয়ে লগইন",
-    modeOtp: "OTP দিয়ে লগইন",
+    stepLabel: "ধাপ {n}/৩",
+    identifierStepTitle: "লগইন করুন",
+    passwordStepTitle: "পাসওয়ার্ড দিন",
+    otpStepTitle: "OTP যাচাই করুন",
+    identifierStepHint: "ইমেইল বা মোবাইল নম্বর দিয়ে শুরু করুন।",
+    passwordStepHint: "পাসওয়ার্ড যাচাইয়ের পর আপনার ইমেইল ও মোবাইলে একটি ৬ ডিজিটের কোড পাঠানো হবে।",
+    next: "পরবর্তী",
+    backToIdentifier: "ইমেইল/মোবাইল বদলান",
+    backToPassword: "পাসওয়ার্ড বদলান",
     identifierLabel: "ইমেইল বা মোবাইল নম্বর",
     identifierPlaceholder: "you@example.com অথবা 01XXXXXXXXX",
     sendOtp: "OTP পাঠান",
@@ -137,8 +151,15 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
     backHome: "Back to home",
     needHelp: "Cannot sign in? Contact your organisation's administrator.",
     expiredNotice: "Your session has expired. Please sign in again.",
-    modePassword: "Sign in with password",
-    modeOtp: "Sign in with OTP",
+    stepLabel: "Step {n}/3",
+    identifierStepTitle: "Sign in",
+    passwordStepTitle: "Enter your password",
+    otpStepTitle: "Verify your OTP",
+    identifierStepHint: "Start with the email or mobile number on your account.",
+    passwordStepHint: "After we check your password, we will send a 6-digit code to your email and mobile.",
+    next: "Next",
+    backToIdentifier: "Change email/mobile",
+    backToPassword: "Change password",
     identifierLabel: "Email or mobile number",
     identifierPlaceholder: "you@example.com or 01XXXXXXXXX",
     sendOtp: "Send OTP",

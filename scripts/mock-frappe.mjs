@@ -502,10 +502,13 @@ const server = createServer(async (request, response) => {
     const body = await readBody(request);
     const raw = typeof body.identifier === "string" ? body.identifier.trim() : "";
     const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
     const account = email ? DEMO_USERS[email] : null;
 
-    if (!account) {
-      failure(response, 417, "ValidationError", "No account was found for that email or mobile number.", "Sign In");
+    // Two-factor: the password is checked before any code is minted, and a bad
+    // password is indistinguishable from an unknown account (anti-enumeration).
+    if (!account || password !== account.password) {
+      failure(response, 417, "ValidationError", "The email/mobile or password is not correct.", "Sign In");
       return;
     }
 
