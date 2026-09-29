@@ -46,6 +46,35 @@ export interface ProfileCopy {
 
   emailLocked: string;
   fieldLabels: Record<string, string>;
+
+  /* profile-change OTP step */
+  otpTitle: string;
+  otpSubtitle: string;
+  otpLabel: string;
+  otpPlaceholder: string;
+  otpVerify: string;
+  otpVerifying: string;
+  otpResend: string;
+  otpResendIn: (n: number) => string;
+  otpSentTo: (target: string) => string;
+  otpBack: string;
+  otpInvalid: string;
+  otpExpired: string;
+  otpLocked: string;
+  otpDeliveryFailed: string;
+
+  /* profile image */
+  imageTitle: string;
+  imageHint: string;
+  imageChoose: string;
+  imageChange: string;
+  imageRemove: string;
+  imageUploading: string;
+  imageTooLarge: string;
+
+  /* form section headings */
+  sectionBasics: string;
+  sectionAbout: string;
 }
 
 export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
@@ -101,6 +130,32 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
       bio: "সংক্ষিপ্ত পরিচিতি",
       time_zone: "টাইম জোন",
     },
+
+    otpTitle: "পরিবর্তন নিশ্চিত করুন",
+    otpSubtitle: "নিরাপত্তার জন্য তথ্য সংরক্ষণের আগে যাচাই কোড দিন।",
+    otpLabel: "৬ ডিজিটের কোড",
+    otpPlaceholder: "৬ ডিজিটের কোডটি লিখুন",
+    otpVerify: "যাচাই করে সংরক্ষণ করুন",
+    otpVerifying: "যাচাই হচ্ছে…",
+    otpResend: "কোড আবার পাঠান",
+    otpResendIn: (n) => `আবার পাঠান (${n}s)`,
+    otpSentTo: (target) => `আমরা ${target}-এ একটি কোড পাঠিয়েছি।`,
+    otpBack: "তথ্য সম্পাদনায় ফিরুন",
+    otpInvalid: "কোডটি সঠিক নয়। আবার চেষ্টা করুন।",
+    otpExpired: "কোডের সময় শেষ হয়েছে। নতুন কোড নিন।",
+    otpLocked: "অনেকবার ভুল কোড দেওয়া হয়েছে। নতুন কোড নিন।",
+    otpDeliveryFailed: "কোড পাঠানো যায়নি। কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+
+    imageTitle: "প্রোফাইল ছবি",
+    imageHint: "PNG, JPG বা WEBP — সর্বোচ্চ ২ MB।",
+    imageChoose: "ছবি নির্বাচন করুন",
+    imageChange: "ছবি পরিবর্তন করুন",
+    imageRemove: "সরান",
+    imageUploading: "আপলোড হচ্ছে…",
+    imageTooLarge: "ছবিটি ২ MB-এর চেয়ে বড়।",
+
+    sectionBasics: "মূল তথ্য",
+    sectionAbout: "অতিরিক্ত তথ্য",
   },
   en: {
     menuEdit: "Edit profile",
@@ -154,6 +209,32 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
       bio: "Short bio",
       time_zone: "Time zone",
     },
+
+    otpTitle: "Confirm your changes",
+    otpSubtitle: "For your security, enter the code before we save the changes.",
+    otpLabel: "6-digit code",
+    otpPlaceholder: "Enter the 6-digit code",
+    otpVerify: "Verify & save",
+    otpVerifying: "Verifying…",
+    otpResend: "Resend code",
+    otpResendIn: (n) => `Resend in ${n}s`,
+    otpSentTo: (target) => `We sent a code to ${target}.`,
+    otpBack: "Back to editing",
+    otpInvalid: "The code is not correct. Please try again.",
+    otpExpired: "The code has expired. Request a new one.",
+    otpLocked: "Too many wrong codes. Request a new one.",
+    otpDeliveryFailed: "We could not send the code. Please try again in a moment.",
+
+    imageTitle: "Profile picture",
+    imageHint: "PNG, JPG or WEBP — up to 2 MB.",
+    imageChoose: "Choose an image",
+    imageChange: "Change image",
+    imageRemove: "Remove",
+    imageUploading: "Uploading…",
+    imageTooLarge: "The image is larger than 2 MB.",
+
+    sectionBasics: "Basic information",
+    sectionAbout: "Additional information",
   },
 };
 

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { IconType } from "react-icons";
+import { FiAward, FiBriefcase, FiGrid, FiHome } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -54,6 +56,14 @@ type MenuGroup = {
 const colorPrimary = "var(--color-primary)";
 const colorSecondary = "var(--color-secondary)";
 const colorWhite = "var(--color-white)";
+
+/** Leading icon for each rail group, so links read as icon + label. */
+const GROUP_ICONS: Record<string, IconType> = {
+  home: FiHome,
+  student: FiAward,
+  operational: FiBriefcase,
+  myOs: FiGrid,
+};
 
 const sidebarWidthClass =
   "w-[min(88vw,300px)] sm:w-[310px] xl:w-[320px] 2xl:w-[340px]";
@@ -653,11 +663,13 @@ function SidebarChildLink({
       ) : null}
 
       <span
-        className="grid h-5 w-5 shrink-0 place-items-center rounded-md border border-[var(--color-primary)] text-[9px] font-bold"
-        style={{
-          background: active ? color : colorSecondary,
-          color: active ? colorWhite : colorPrimary,
-        }}
+        className={[
+          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-[10px] font-bold transition duration-300",
+          active
+            ? "border-transparent text-[var(--color-white)] shadow-[0_8px_18px_-10px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+            : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
+        ].join(" ")}
+        style={active ? { background: color, borderColor: color, color: colorWhite } : undefined}
       >
         {index}
       </span>
@@ -742,12 +754,14 @@ function SidebarLink({
   href,
   active,
   color,
+  icon,
   onClick,
 }: {
   title: string;
   href: string;
   active: boolean;
   color: string;
+  icon?: IconType;
   onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
@@ -778,7 +792,27 @@ function SidebarLink({
         />
       ) : null}
 
-      <span className="text-[16px] font-bold leading-[1.18]">{title}</span>
+      <span className="flex items-center gap-2.5">
+        {icon ? (
+          (() => {
+            const LinkIcon = icon;
+            return (
+              <span
+                className={[
+                  "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
+                  active
+                    ? "border-transparent text-[var(--color-white)]"
+                    : "border-transparent bg-[var(--color-primary)] text-[var(--color-white)]",
+                ].join(" ")}
+                style={active ? { background: color } : undefined}
+              >
+                <LinkIcon size={15} />
+              </span>
+            );
+          })()
+        ) : null}
+        <span className="text-[16px] font-bold leading-[1.18]">{title}</span>
+      </span>
     </Link>
   );
 }
@@ -994,8 +1028,24 @@ export default function LeftSidebar() {
                         />
                       ) : null}
 
-                      <span className="text-[17px] font-bold leading-[1.18]">
-                        {item.title}
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          className={[
+                            "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
+                            activeGroup
+                              ? "border-transparent text-[var(--color-white)]"
+                              : "border-transparent bg-[var(--color-primary)] text-[var(--color-white)]",
+                          ].join(" ")}
+                          style={activeGroup ? { background: color } : undefined}
+                        >
+                          {(() => {
+                            const GroupIcon = GROUP_ICONS[group ?? ""] ?? FiGrid;
+                            return <GroupIcon size={15} />;
+                          })()}
+                        </span>
+                        <span className="text-[17px] font-bold leading-[1.18]">
+                          {item.title}
+                        </span>
                       </span>
 
                       <span
@@ -1065,6 +1115,7 @@ export default function LeftSidebar() {
                   href={item.href}
                   active={active}
                   color={color}
+                  icon={GROUP_ICONS.myOs}
                   onClick={(event) => {
                     event.preventDefault();
                     setOpenGroup(null);

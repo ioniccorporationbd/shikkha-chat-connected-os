@@ -6,7 +6,6 @@ import {
   FiChevronDown,
   FiEdit2,
   FiHome,
-  FiLock,
   FiLogOut,
   FiRefreshCw,
 } from "react-icons/fi";
@@ -27,18 +26,20 @@ type UserMenuProps = {
   refreshing?: boolean;
   onSignOut: () => void;
   onEditProfile: () => void;
-  onChangePassword: () => void;
   onReload: () => void;
 };
 
 /** The header already shows the name and email, so the body skips them. */
 const SKIP_ROWS = new Set(["Full Name", "Email"]);
 const MAX_ROWS = 4;
+/** Roles shown before the "+N more" control appears. */
+const MAX_ROLES = 3;
 
 /**
  * The account dropdown in the dashboard header, styled after the SSPL panel:
  * a brand-gradient identity header, a small info card per profile field, the
- * account's roles, then the account actions.
+ * account's roles (collapsed to three with a "+N more" toggle), then the account
+ * actions.
  *
  * Every value is dynamic (from the session/dashboard payload) — nothing here is
  * hardcoded demo data.
@@ -56,7 +57,6 @@ export default function UserMenu({
   refreshing = false,
   onSignOut,
   onEditProfile,
-  onChangePassword,
   onReload,
 }: UserMenuProps) {
   const { language } = useLanguage();
@@ -65,6 +65,7 @@ export default function UserMenu({
   const dashCopy = dashboardCopyFor(language);
 
   const [open, setOpen] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -99,6 +100,10 @@ export default function UserMenu({
       ? copy.systemUser
       : copy.websiteUser
     : "";
+
+  const roles = user.roles ?? [];
+  const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
+  const visibleRoles = rolesOpen ? roles : roles.slice(0, MAX_ROLES);
 
   const runThen = (action: () => void) => () => {
     setOpen(false);
@@ -135,7 +140,7 @@ export default function UserMenu({
           id={menuId}
           role="menu"
           aria-label={copy.open}
-          className="absolute right-0 z-50 mt-2 w-[318px] max-w-[calc(100vw-1.5rem)] origin-top-right overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_30px_64px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+          className="absolute right-0 z-50 mt-2 w-[326px] max-w-[calc(100vw-1.5rem)] origin-top-right overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_30px_64px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
         >
           {/* identity header — brand gradient like the SSPL account summary */}
           <div className="flex items-center gap-3 bg-[linear-gradient(135deg,var(--color-primary)_0%,color-mix(in_srgb,var(--color-primary)_80%,var(--color-secondary))_100%)] px-4 py-4">
@@ -177,12 +182,12 @@ export default function UserMenu({
             </div>
           ) : null}
 
-          {user.roles?.length ? (
+          {roles.length ? (
             <div className="flex flex-wrap items-center gap-1.5 px-4 pb-3">
               <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                 {copy.roles}
               </span>
-              {user.roles.slice(0, 4).map((role) => (
+              {visibleRoles.map((role) => (
                 <span
                   key={role}
                   className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] px-2 py-0.5 text-[11px] font-medium text-[var(--color-primary)]"
@@ -190,6 +195,18 @@ export default function UserMenu({
                   {role}
                 </span>
               ))}
+              {hiddenRoles > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setRolesOpen((value) => !value)}
+                  aria-expanded={rolesOpen}
+                  className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2 py-0.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                >
+                  <span className="text-[11px] font-semibold text-[var(--color-primary)]">
+                    {rolesOpen ? dashCopy.lessRoles : dashCopy.moreRoles(hiddenRoles)}
+                  </span>
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -203,18 +220,6 @@ export default function UserMenu({
               <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
                 <FiEdit2 aria-hidden size={15} />
                 {copy.editProfile}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              role="menuitem"
-              onClick={runThen(onChangePassword)}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
-            >
-              <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
-                <FiLock aria-hidden size={15} />
-                {copy.changePassword}
               </span>
             </button>
 
@@ -249,9 +254,9 @@ export default function UserMenu({
               role="menuitem"
               onClick={runThen(onSignOut)}
               disabled={signingOut}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] disabled:opacity-60"
+              className="flex items-center gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_9%,var(--color-white))] px-3 py-2.5 text-left transition hover:border-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_15%,var(--color-white))] disabled:opacity-60"
             >
-              <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-danger-strong)]">
+              <span className="inline-flex items-center gap-2.5 text-[13px] font-semibold text-[var(--color-danger-strong)]">
                 <FiLogOut aria-hidden size={15} />
                 {signingOut ? copy.signingOut : copy.signOut}
               </span>

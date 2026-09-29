@@ -14,6 +14,8 @@ export interface DashboardCopy {
   };
   soon: string;
   backToSite: string;
+  /** Prominent "back to home" label for the sidebar action (item 3). */
+  backHome: string;
   signOut: string;
   signingOut: string;
   refresh: string;
@@ -23,6 +25,18 @@ export interface DashboardCopy {
   /** Subtitle for the customer-facing `/clientDashboard` panel. */
   clientSubtitle: string;
   roleLabel: string;
+  /** Label for the login/username row in the profile card. */
+  usernameLabel: string;
+  /** Roles collapse control in the account summary. */
+  moreRoles: (n: number) => string;
+  lessRoles: string;
+  /** Overview top profile card. */
+  accountHeading: string;
+  accountHint: string;
+  /** Informational cards for the non-overview rail sections. */
+  modulesHeading: string;
+  modulesHint: string;
+  sectionInfo: Record<string, { title: string; hint: string }>;
   metricsHeading: string;
   metricsHint: string;
   scopePersonal: string;
@@ -77,6 +91,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     },
     soon: "শীঘ্রই",
     backToSite: "মূল সাইটে ফিরুন",
+    backHome: "হোমে ফিরে যান",
     signOut: "লগআউট",
     signingOut: "লগআউট হচ্ছে…",
     refresh: "রিফ্রেশ",
@@ -85,6 +100,31 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     subtitle: "আপনার ওয়ার্কস্পেসের সর্বশেষ অবস্থা এক নজরে।",
     clientSubtitle: "আপনার অ্যাকাউন্টের সারসংক্ষেপ এক নজরে।",
     roleLabel: "রোল",
+    usernameLabel: "ব্যবহারকারী নাম",
+    moreRoles: (n) => `+${n} আরও`,
+    lessRoles: "কম দেখান",
+    accountHeading: "আপনার অ্যাকাউন্ট",
+    accountHint: "প্রোফাইল ও অ্যাকাউন্ট-সংক্রান্ত দ্রুত অ্যাকশন",
+    modulesHeading: "আপনার ওয়ার্কস্পেস",
+    modulesHint: "ড্যাশবোর্ডের বাকি অংশগুলো এক নজরে",
+    sectionInfo: {
+      analytics: {
+        title: "অ্যানালিটিক্স",
+        hint: "আপনার অ্যাকাউন্ট-কেন্দ্রিক লগইন, সেশন ও রোল সক্রিয়তার ভিজ্যুয়াল সারসংক্ষেপ।",
+      },
+      reports: {
+        title: "রিপোর্ট",
+        hint: "আপনার অ্যাকাউন্ট ও প্রতিষ্ঠানের তথ্য থেকে তৈরি ডাউনলোডযোগ্য সামারি রিপোর্ট।",
+      },
+      users: {
+        title: "ইউজার",
+        hint: "ERP ডেস্কে ইউজার অ্যাকাউন্ট ব্যবস্থাপনা — ডেস্ক অ্যাক্সেসসহ স্টাফদের জন্য।",
+      },
+      settings: {
+        title: "সেটিংস",
+        hint: "অ্যাকাউন্ট, ভাষা ও সংযোগ-সংক্রান্ত প্রেফারেন্স এক জায়গায়।",
+      },
+    },
     metricsHeading: "মূল সূচক",
     metricsHint: "আপনার অ্যাকাউন্ট ও প্রতিষ্ঠানের সারসংক্ষেপ",
     scopePersonal: "আপনি",
@@ -162,6 +202,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     },
     soon: "Soon",
     backToSite: "Back to site",
+    backHome: "Back to home",
     signOut: "Sign out",
     signingOut: "Signing out…",
     refresh: "Refresh",
@@ -170,6 +211,31 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     subtitle: "Here is the latest state of your workspace.",
     clientSubtitle: "A snapshot of your account.",
     roleLabel: "Role",
+    usernameLabel: "Username",
+    moreRoles: (n) => `+${n} more`,
+    lessRoles: "Show less",
+    accountHeading: "Your account",
+    accountHint: "Profile and account actions at a glance",
+    modulesHeading: "Your workspace",
+    modulesHint: "The rest of your dashboard at a glance",
+    sectionInfo: {
+      analytics: {
+        title: "Analytics",
+        hint: "A visual summary of your account-centric sign-ins, sessions and role activity.",
+      },
+      reports: {
+        title: "Reports",
+        hint: "Downloadable summary reports built from your account and organisation data.",
+      },
+      users: {
+        title: "Users",
+        hint: "User account management in the ERP desk — for staff with desk access.",
+      },
+      settings: {
+        title: "Settings",
+        hint: "Account, language and connection preferences in one place.",
+      },
+    },
     metricsHeading: "Key metrics",
     metricsHint: "A summary of your account and your organisation",
     scopePersonal: "You",

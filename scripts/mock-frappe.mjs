@@ -151,6 +151,7 @@ const registeredUsers = new Set();
 const takenMobiles = new Set();
 const pendingLoginOtps = new Map(); // email -> { code, attempts, expires }
 const pendingResetOtps = new Map(); // email -> { code, attempts, channel, expires }
+const pendingProfileOtps = new Map(); // email -> { code, attempts, values, expires }
 
 // --- self-service profile (mirrors shikkha_os.api.v1.profile.*) ------------- //
 const profileExtras = new Map(); // email -> { mobile_no, phone, location, bio }
@@ -309,14 +310,16 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.0",
+      version: "1.3.1",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
         "shikkha_os.api.v1.auth.session",
         "shikkha_os.api.v1.dashboard.overview",
         "shikkha_os.api.v1.profile.details",
-        "shikkha_os.api.v1.profile.update",
+        "shikkha_os.api.v1.profile.request_update_otp",
+        "shikkha_os.api.v1.profile.verify_update_otp",
+        "shikkha_os.api.v1.profile.upload_image",
         "shikkha_os.api.v1.profile.change_password",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
@@ -741,7 +744,7 @@ const server = createServer(async (request, response) => {
     return;
   }
 
-  if (method === "shikkha_os.api.v1.profile.update") {
+  if (method === "shikkha_os.api.v1.profile.request_update_otp") {
     if (request.method !== "POST") {
       failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
       return;
@@ -756,17 +759,114 @@ const server = createServer(async (request, response) => {
     }
 
     const body = await readBody(request);
-    const extra = profileExtras.get(email) ?? {};
+    const current = profileValues(account, email);
+    const changed = ["full_name", "mobile_no", "phone", "location", "bio"].filter(
+      (field) => typeof body[field] === "string" && body[field].trim() !== (current[field] ?? "")
+    );
+    const hasImage = typeof body.user_image === "string" && body.user_image.trim();
 
-    if (typeof body.full_name === "string" && body.full_name.trim()) {
-      account.profile.full_name = body.full_name.trim();
+    if (!changed.length && !hasImage) {
+      failure(response, 417, "ValidationError", "There is nothing to update.", "Edit Profile");
+      return;
+    }
+
+    const mobileNo = profileExtras.get(email)?.mobile_no || "8801712345678";
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const values = {};
+    for (const field of ["full_name", "mobile_no", "phone", "location", "bio"]) {
+      if (typeof body[field] === "string") values[field] = body[field].trim();
+    }
+    if (hasImage) values.user_image = body.user_image.trim();
+
+    pendingProfileOtps.set(email, { code, attempts: 0, values, expires: Date.now() + 10 * 60 * 1000 });
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] PROFILE OTP ${email} = ${code}`);
+
+    ok(response, {
+      sent: true,
+      target: maskEmail(email),
+      email: maskEmail(email),
+      mobile: maskMobile(mobileNo),
+      delivery: { sms: true, email: true, sms_code: "sent", email_code: "sent" },
+      expires_in_seconds: 600,
+      resend_after_seconds: 30,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.profile.verify_update_otp") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(response, 403, "PermissionError", "Login to access this resource.", "Method Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const code = String(body.otp ?? "").replace(/\D/g, "");
+
+    const pending = pendingProfileOtps.get(email);
+    if (!pending || pending.expires < Date.now()) {
+      pendingProfileOtps.delete(email);
+      failure(response, 417, "ValidationError", "The OTP has expired. Please request a new one.", "Edit Profile");
+      return;
+    }
+    if (pending.attempts >= 5) {
+      pendingProfileOtps.delete(email);
+      failure(response, 417, "ValidationError", "Too many wrong codes. Please request a new one.", "Edit Profile");
+      return;
+    }
+    if (code !== pending.code) {
+      pending.attempts += 1;
+      failure(response, 417, "ValidationError", "The OTP you entered is not correct. Please try again.", "Edit Profile");
+      return;
+    }
+
+    pendingProfileOtps.delete(email);
+
+    const extra = profileExtras.get(email) ?? {};
+    if (typeof pending.values.full_name === "string" && pending.values.full_name.trim()) {
+      account.profile.full_name = pending.values.full_name.trim();
     }
     for (const field of ["mobile_no", "phone", "location", "bio"]) {
-      if (typeof body[field] === "string") extra[field] = body[field].trim();
+      if (typeof pending.values[field] === "string") extra[field] = pending.values[field].trim();
     }
     profileExtras.set(email, extra);
+    if (typeof pending.values.user_image === "string" && pending.values.user_image.trim()) {
+      account.profile.user_image = pending.values.user_image.trim();
+    }
 
     ok(response, { updated: true, user: account.profile, values: profileValues(account, email) });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.profile.upload_image") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    if (!email || !DEMO_USERS[email]) {
+      failure(response, 403, "PermissionError", "Login to access this resource.", "Method Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const data = String(body.file_data ?? "");
+    if (!data.startsWith("data:image/")) {
+      failure(response, 417, "ValidationError", "Only image files can be used.", "Edit Profile");
+      return;
+    }
+
+    ok(response, { file_url: `/private/files/profile-${Date.now()}.png` });
     return;
   }
 

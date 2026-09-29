@@ -161,6 +161,8 @@ export interface ProfileDetails {
   full_name: string;
   email: string;
   user_image: string;
+  /** Current mobile number (read-only in the form hint). */
+  mobile_no?: string;
   user_type: string;
   roles: string[];
   /** Fieldnames the site's User DocType exposes for editing. */
@@ -173,6 +175,28 @@ export interface ProfileUpdateResult {
   updated: boolean;
   user: SessionUser;
   values: Record<string, string>;
+}
+
+/** Result of `profile.request_update_otp` — where the confirm code landed. */
+export interface ProfileOtpStartPayload {
+  sent: boolean;
+  /** Masked destination the code went to (email or mobile). */
+  target: string;
+  email?: string;
+  mobile?: string;
+  delivery: {
+    sms: boolean;
+    email: boolean;
+    sms_code?: string;
+    email_code?: string;
+  };
+  expires_in_seconds: number;
+  resend_after_seconds: number;
+}
+
+/** Result of `profile.upload_image` — the staged file's site-relative url. */
+export interface ProfileImageUploadResult {
+  file_url: string;
 }
 
 export interface ChangePasswordResult {
