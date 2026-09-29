@@ -152,3 +152,29 @@ export interface ApiFailure {
 }
 
 export type ApiEnvelope<T> = ApiSuccess<T> | ApiFailure;
+
+/* ------------------------------------------------------------------ profile */
+
+/** Editable self-service profile (own account), from `profile.details`. */
+export interface ProfileDetails {
+  name: string;
+  full_name: string;
+  email: string;
+  user_image: string;
+  user_type: string;
+  roles: string[];
+  /** Fieldnames the site's User DocType exposes for editing. */
+  editable: string[];
+  /** Current value keyed by fieldname (only the editable ones). */
+  values: Record<string, string>;
+}
+
+export interface ProfileUpdateResult {
+  updated: boolean;
+  user: SessionUser;
+  values: Record<string, string>;
+}
+
+export interface ChangePasswordResult {
+  changed: boolean;
+}

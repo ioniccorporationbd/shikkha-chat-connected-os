@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 
 import { getJson } from "@/lib/api/http";
-import type { DashboardPayload, SessionPayload } from "@/lib/auth/types";
+import type { DashboardPayload, ProfileDetails, SessionPayload } from "@/lib/auth/types";
 
 /** `GET /api/auth/me` - the single source of truth for portal auth state. */
 export function useSessionQuery(): UseQueryResult<SessionPayload, Error> {
@@ -22,5 +22,16 @@ export function useDashboardQuery(initialData?: DashboardPayload) {
     queryFn: () => getJson<DashboardPayload>("/api/dashboard/overview"),
     initialData,
     staleTime: 30_000,
+  });
+}
+
+/** `GET /api/auth/profile` - the caller's own editable profile, fetched on demand. */
+export function useProfileQuery(enabled: boolean): UseQueryResult<ProfileDetails, Error> {
+  return useQuery({
+    queryKey: ["profile"],
+    queryFn: () => getJson<ProfileDetails>("/api/auth/profile"),
+    enabled,
+    staleTime: 0,
+    retry: false,
   });
 }

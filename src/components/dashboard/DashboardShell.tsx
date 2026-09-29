@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { FiBell, FiHome, FiLogOut, FiRefreshCw } from "react-icons/fi";
+import { FiHome, FiLogOut, FiMenu, FiRefreshCw, FiX } from "react-icons/fi";
 
 import ActivityList from "@/components/dashboard/ActivityList";
+import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
+import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import PanelCard from "@/components/dashboard/PanelCard";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
@@ -18,6 +20,7 @@ import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { toast } from "@/lib/ui/toast";
 
 interface DashboardShellProps {
   initialData?: DashboardPayload;
@@ -35,7 +38,8 @@ const STAFF_NAV_KEYS = ["overview", "analytics", "reports", "users", "settings"]
 /** `users` is a desk concern; clients never see it. */
 const CLIENT_NAV_KEYS = ["overview", "analytics", "reports", "settings"] as const;
 
-const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]";
+const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
+const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 export default function DashboardShell({
   initialData,
@@ -54,6 +58,9 @@ export default function DashboardShell({
   const storeUser = useAuthStore((state) => state.user);
 
   const [signingOut, setSigningOut] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const { data, isFetching, isError, error, refetch } = useDashboardQuery(initialData);
 
@@ -74,17 +81,63 @@ export default function DashboardShell({
     router.refresh();
   }, [resetSession, router]);
 
+  const handleReload = useCallback(async () => {
+    try {
+      const result = await refetch();
+      if (result.error) toast.error(copy.reloadFailed);
+      else toast.success(copy.reloadDone);
+    } catch {
+      toast.error(copy.reloadFailed);
+    }
+  }, [refetch, copy]);
+
   const displayName = user?.full_name || user?.name || "";
+
+  /** The rail nav, shared by the desktop sidebar and the mobile drawer. */
+  const renderNav = () =>
+    navKeys.map((key, index) => {
+      const Icon = NAV_ICONS[key];
+      const active = index === 0;
+
+      if (active) {
+        return (
+          <span
+            key={key}
+            aria-current="page"
+            className="flex items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
+          >
+            <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-[var(--color-white)]">
+              <Icon className="text-[16px]" />
+              {copy.nav[key]}
+            </span>
+          </span>
+        );
+      }
+
+      return (
+        <span
+          key={key}
+          aria-disabled="true"
+          className="flex cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-2.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+        >
+          <Icon className="text-[16px]" />
+          <span className="flex-1">{copy.nav[key]}</span>
+          <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+            {copy.soon}
+          </span>
+        </span>
+      );
+    });
 
   return (
     <div
       data-no-translate="true"
       className="min-h-screen w-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
     >
-      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-0 lg:flex-row lg:gap-6 lg:px-5 lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col lg:flex-row lg:gap-6 lg:px-5 lg:py-6">
         {/* ---------------------------------------------------------- rail */}
         <aside
-          className={`hidden w-[252px] shrink-0 flex-col rounded-3xl border ${CARD_BORDER} bg-[var(--color-white)] p-4 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] lg:flex`}
+          className={`hidden w-[252px] shrink-0 flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:flex`}
         >
           <Link href="/" className="flex items-center gap-3 rounded-2xl px-1 py-1.5">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-primary)] text-[15px] font-semibold text-[var(--color-white)]">
@@ -102,39 +155,7 @@ export default function DashboardShell({
             {copy.navHeading}
           </p>
 
-          <nav className="mt-2 flex flex-col gap-1.5">
-            {navKeys.map((key, index) => {
-              const Icon = NAV_ICONS[key];
-              const active = index === 0;
-
-              if (active) {
-                return (
-                  <span
-                    key={key}
-                    aria-current="page"
-                    className="flex items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 text-[13px] font-medium text-[var(--color-white)] shadow-[0_12px_26px_color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-                  >
-                    <Icon className="text-[16px]" />
-                    {copy.nav[key]}
-                  </span>
-                );
-              }
-
-              return (
-                <span
-                  key={key}
-                  aria-disabled="true"
-                  className="flex cursor-not-allowed items-center gap-3 rounded-2xl px-3 py-2.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
-                >
-                  <Icon className="text-[16px]" />
-                  <span className="flex-1">{copy.nav[key]}</span>
-                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                    {copy.soon}
-                  </span>
-                </span>
-              );
-            })}
-          </nav>
+          <nav className="mt-2 flex flex-col gap-1.5">{renderNav()}</nav>
 
           <div className="mt-auto flex flex-col gap-2 pt-6">
             <Link
@@ -157,15 +178,87 @@ export default function DashboardShell({
           </div>
         </aside>
 
+        {/* ------------------------------------------------- mobile drawer */}
+        {navOpen ? (
+          <div className="fixed inset-0 z-[120] lg:hidden" data-no-translate="true">
+            <div
+              aria-hidden
+              onClick={() => setNavOpen(false)}
+              className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm"
+            />
+            <div className="absolute inset-y-0 left-0 flex w-[270px] max-w-[82vw] flex-col overflow-y-auto rounded-r-[26px] border-r border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+              <div className="flex items-center justify-between">
+                <Link
+                  href="/"
+                  onClick={() => setNavOpen(false)}
+                  className="flex items-center gap-2.5 rounded-2xl px-1 py-1"
+                >
+                  <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--color-primary)] text-[13px] font-semibold text-[var(--color-white)]">
+                    SC
+                  </span>
+                  <span className="text-[14px] font-semibold text-[var(--color-primary)]">
+                    Shikkha Chat
+                  </span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setNavOpen(false)}
+                  aria-label={copy.closeMenu}
+                  className="grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
+                >
+                  <span className="text-[var(--color-primary)]">
+                    <FiX size={16} />
+                  </span>
+                </button>
+              </div>
+
+              <p className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                {copy.navHeading}
+              </p>
+              <nav className="mt-2 flex flex-col gap-1.5">{renderNav()}</nav>
+
+              <div className="mt-auto flex flex-col gap-2 pt-6">
+                <Link
+                  href="/"
+                  onClick={() => setNavOpen(false)}
+                  className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]"
+                >
+                  <FiHome size={16} />
+                  <span className="text-[13px]">{copy.backToSite}</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2.5 text-left transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] disabled:opacity-60"
+                >
+                  <FiLogOut size={16} />
+                  <span className="text-[13px]">{signingOut ? copy.signingOut : copy.signOut}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {/* ---------------------------------------------------------- main */}
         <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 sm:p-5 lg:p-0">
           <header
-            className={`flex items-center justify-between gap-3 rounded-3xl border ${CARD_BORDER} bg-[var(--color-white)] px-4 py-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] sm:px-5`}
+            className={`flex items-center justify-between gap-3 rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] px-4 py-3 ${CARD_SHADOW} sm:px-5`}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--color-primary)] text-[12px] font-semibold text-[var(--color-white)] lg:hidden">
-                SC
-              </span>
+              <button
+                type="button"
+                onClick={() => setNavOpen(true)}
+                aria-label={copy.openMenu}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] lg:hidden"
+              >
+                <span className="text-[var(--color-primary)]">
+                  <FiMenu size={16} />
+                </span>
+              </button>
+
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{copy.nav.overview}</p>
                 <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
@@ -177,20 +270,16 @@ export default function DashboardShell({
             <div className="flex shrink-0 items-center gap-2">
               <button
                 type="button"
-                onClick={() => refetch()}
+                onClick={handleReload}
+                disabled={isFetching}
                 aria-label={copy.refresh}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))]"
+                title={copy.refresh}
+                className="grid h-9 w-9 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] disabled:opacity-70"
               >
-                <FiRefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
+                <span className="text-[var(--color-primary)]">
+                  <FiRefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
+                </span>
               </button>
-
-              <span
-                aria-hidden
-                className="relative grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] text-[15px]"
-              >
-                <FiBell />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[var(--color-danger)]" />
-              </span>
 
               {user ? (
                 <UserMenu
@@ -198,7 +287,11 @@ export default function DashboardShell({
                   displayName={displayName}
                   profile={data?.profile}
                   signingOut={signingOut}
+                  refreshing={isFetching}
                   onSignOut={handleSignOut}
+                  onEditProfile={() => setEditOpen(true)}
+                  onChangePassword={() => setPasswordOpen(true)}
+                  onReload={handleReload}
                 />
               ) : null}
             </div>
@@ -206,7 +299,7 @@ export default function DashboardShell({
 
           <main className="flex min-w-0 flex-col gap-4 pb-4">
             <section
-              className={`rounded-3xl border ${CARD_BORDER} bg-[var(--color-white)] px-4 py-5 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] sm:px-6`}
+              className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] px-4 py-5 ${CARD_SHADOW} sm:px-6`}
             >
               <h1 className="text-[22px] font-semibold leading-tight sm:text-[26px]">
                 {displayName ? `${copy.greeting}, ${displayName}` : copy.greetingFallback}
@@ -342,6 +435,14 @@ export default function DashboardShell({
           </main>
         </div>
       </div>
+
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        fallbackName={displayName}
+        fallbackEmail={user?.email}
+      />
+      <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
     </div>
   );
 }

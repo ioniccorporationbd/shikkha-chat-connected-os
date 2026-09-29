@@ -83,6 +83,9 @@ export interface AuthCopy {
     websiteUser: string;
     roles: string;
     dashboard: string;
+    editProfile: string;
+    changePassword: string;
+    backToSite: string;
     signOut: string;
     signingOut: string;
   };
@@ -175,6 +178,9 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
       websiteUser: "ওয়েবসাইট ইউজার (ক্লায়েন্ট)",
       roles: "রোল",
       dashboard: "ড্যাশবোর্ড",
+      editProfile: "প্রোফাইল সম্পাদনা",
+      changePassword: "পাসওয়ার্ড পরিবর্তন",
+      backToSite: "মূল সাইটে ফিরুন",
       signOut: "লগআউট",
       signingOut: "লগআউট হচ্ছে…",
     },
@@ -265,6 +271,9 @@ export const authCopy: Record<"bn" | "en", AuthCopy> = {
       websiteUser: "Website User (client)",
       roles: "Roles",
       dashboard: "Dashboard",
+      editProfile: "Edit profile",
+      changePassword: "Change password",
+      backToSite: "Back to site",
       signOut: "Sign out",
       signingOut: "Signing out…",
     },

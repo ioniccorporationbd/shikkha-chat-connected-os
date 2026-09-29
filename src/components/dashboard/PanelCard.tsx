@@ -11,7 +11,7 @@ interface PanelCardProps {
 export default function PanelCard({ title, hint, action, children, className }: PanelCardProps) {
   return (
     <section
-      className={`rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] sm:p-5 ${
+      className={`rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] sm:p-5 ${
         className ?? ""
       }`}
     >

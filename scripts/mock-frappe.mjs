@@ -152,6 +152,21 @@ const takenMobiles = new Set();
 const pendingLoginOtps = new Map(); // email -> { code, attempts, expires }
 const pendingResetOtps = new Map(); // email -> { code, attempts, channel, expires }
 
+// --- self-service profile (mirrors shikkha_os.api.v1.profile.*) ------------- //
+const profileExtras = new Map(); // email -> { mobile_no, phone, location, bio }
+const PROFILE_EDITABLE = ["full_name", "mobile_no", "phone", "location", "bio"];
+
+function profileValues(account, email) {
+  const extra = profileExtras.get(email) ?? {};
+  return {
+    full_name: account.profile.full_name || "",
+    mobile_no: extra.mobile_no ?? "",
+    phone: extra.phone ?? "",
+    location: extra.location ?? "",
+    bio: extra.bio ?? "",
+  };
+}
+
 function maskEmail(value) {
   const [local = "", domain = ""] = String(value).split("@");
   const shown = local.length <= 2 ? `${local[0] ?? ""}*` : `${local[0]}${"*".repeat(local.length - 2)}${local.slice(-1)}`;
@@ -262,7 +277,7 @@ function dashboardPayload(account) {
       : [],
     system: {
       app: "shikkha_os",
-      version: "1.2.0",
+      version: "1.3.0",
       api: "shikkha_os.v1",
       base_url: `http://127.0.0.1:${PORT}`,
       session_expiry_hours: 24,
@@ -294,12 +309,15 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.2.0",
+      version: "1.3.0",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
         "shikkha_os.api.v1.auth.session",
         "shikkha_os.api.v1.dashboard.overview",
+        "shikkha_os.api.v1.profile.details",
+        "shikkha_os.api.v1.profile.update",
+        "shikkha_os.api.v1.profile.change_password",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -697,6 +715,94 @@ const server = createServer(async (request, response) => {
       target: pending.channel === "email" ? maskEmail(found.email) : maskMobile("8801712345678"),
       delivery: { sms: pending.channel === "sms", email: pending.channel === "email" },
     });
+    return;
+  }
+
+  // --- self-service profile (mirrors shikkha_os.api.v1.profile.*) ---
+  if (method === "shikkha_os.api.v1.profile.details") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(response, 403, "PermissionError", "Login to access this resource.", "Method Not Allowed");
+      return;
+    }
+
+    ok(response, {
+      name: email,
+      full_name: account.profile.full_name,
+      email,
+      user_image: account.profile.user_image || "",
+      user_type: account.profile.user_type,
+      roles: account.profile.roles,
+      editable: PROFILE_EDITABLE,
+      values: profileValues(account, email),
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.profile.update") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(response, 403, "PermissionError", "Login to access this resource.", "Method Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const extra = profileExtras.get(email) ?? {};
+
+    if (typeof body.full_name === "string" && body.full_name.trim()) {
+      account.profile.full_name = body.full_name.trim();
+    }
+    for (const field of ["mobile_no", "phone", "location", "bio"]) {
+      if (typeof body[field] === "string") extra[field] = body[field].trim();
+    }
+    profileExtras.set(email, extra);
+
+    ok(response, { updated: true, user: account.profile, values: profileValues(account, email) });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.profile.change_password") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(response, 403, "PermissionError", "Login to access this resource.", "Method Not Allowed");
+      return;
+    }
+
+    const body = await readBody(request);
+    const current = String(body.current_password ?? "");
+    const next = String(body.new_password ?? "");
+
+    if (!current || !next) {
+      failure(response, 417, "ValidationError", "Enter your current and new password.", "Change Password");
+      return;
+    }
+    if (next.length < 6) {
+      failure(response, 417, "ValidationError", "The new password must be at least 6 characters.", "Change Password");
+      return;
+    }
+    if (current !== account.password) {
+      failure(response, 417, "ValidationError", "Your current password is not correct.", "Change Password");
+      return;
+    }
+
+    account.password = next;
+    ok(response, { changed: true });
     return;
   }
 
