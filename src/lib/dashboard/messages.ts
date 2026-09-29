@@ -25,6 +25,8 @@ export interface DashboardCopy {
   /** Subtitle for the customer-facing `/clientDashboard` panel. */
   clientSubtitle: string;
   roleLabel: string;
+  /** Label for the language selector in the rail footer. */
+  languageLabel: string;
   /** Label for the login/username row in the profile card. */
   usernameLabel: string;
   /** Roles collapse control in the account summary. */
@@ -100,6 +102,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     subtitle: "আপনার ওয়ার্কস্পেসের সর্বশেষ অবস্থা এক নজরে।",
     clientSubtitle: "আপনার অ্যাকাউন্টের সারসংক্ষেপ এক নজরে।",
     roleLabel: "রোল",
+    languageLabel: "ভাষা",
     usernameLabel: "ব্যবহারকারী নাম",
     moreRoles: (n) => `+${n} আরও`,
     lessRoles: "কম দেখান",
@@ -211,6 +214,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     subtitle: "Here is the latest state of your workspace.",
     clientSubtitle: "A snapshot of your account.",
     roleLabel: "Role",
+    languageLabel: "Language",
     usernameLabel: "Username",
     moreRoles: (n) => `+${n} more`,
     lessRoles: "Show less",

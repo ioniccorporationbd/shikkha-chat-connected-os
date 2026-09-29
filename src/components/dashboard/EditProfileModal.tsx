@@ -7,6 +7,7 @@ import {
   FiCamera,
   FiCheckCircle,
   FiImage,
+  FiLock,
   FiSave,
   FiShield,
 } from "react-icons/fi";
@@ -19,6 +20,7 @@ import { useProfileQuery } from "@/lib/auth/queries";
 import { looksTechnical } from "@/lib/auth/sanitize";
 import { useAuthStore } from "@/lib/auth/store";
 import type {
+  ProfileFieldMeta,
   ProfileImageUploadResult,
   ProfileOtpStartPayload,
   ProfileUpdateResult,
@@ -34,16 +36,19 @@ interface EditProfileModalProps {
   fallbackEmail?: string;
 }
 
-/** Fields that get a textarea instead of a single-line input. */
-const TEXTAREA_FIELDS = new Set(["bio"]);
-/** Fields shown in the "basic information" group; the rest go to "additional". */
-const BASIC_FIELDS = new Set(["full_name", "mobile_no", "phone"]);
+/** Fieldtypes that get a textarea rather than a single-line input. */
+const TEXTAREA_FIELDTYPES = new Set(["Text", "Small Text", "Long Text", "Text Editor"]);
+/** The order the form renders the ERP's sections in. */
+const SECTION_ORDER = ["basic", "personal", "work", "additional"] as const;
 /** A profile picture is capped by the ERP (2 MB) — reject early with a toast. */
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 /** Shared input styling; layout here, readable copy carried by the label span. */
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)] disabled:cursor-not-allowed";
+
+const LABEL_CLASS =
+  "text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]";
 
 export default function EditProfileModal({
   open,
@@ -84,6 +89,30 @@ export default function EditProfileModal({
   const name = data?.full_name || fallbackName || "";
   const previewSrc = staged?.preview ?? null;
 
+  /** Field presentation meta from the ERP, with a safe local fallback. */
+  const fields = useMemo<ProfileFieldMeta[]>(() => {
+    if (data?.fields?.length) return data.fields;
+
+    return editable.map((field) => ({
+      fieldname: field,
+      label: copy.fieldLabels[field] ?? field,
+      fieldtype: field === "bio" ? "Small Text" : "Data",
+      options: [],
+      section: field === "full_name" || field === "phone" ? "basic" : "additional",
+      required: field === "full_name",
+    }));
+  }, [data, editable, copy]);
+
+  const groupedFields = useMemo(() => {
+    const map = new Map<string, ProfileFieldMeta[]>();
+    for (const field of fields) {
+      const list = map.get(field.section) ?? [];
+      list.push(field);
+      map.set(field.section, list);
+    }
+    return map;
+  }, [fields]);
+
   const setField = (field: string, value: string) =>
     setDraft((prev) => ({ ...(prev ?? data?.values ?? {}), [field]: value }));
 
@@ -121,8 +150,6 @@ export default function EditProfileModal({
   }, [data, editable, values]);
 
   const hasChanges = changedFields.length > 0 || Boolean(staged);
-
-  const inputType = "text";
 
   const handlePickImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -168,6 +195,8 @@ export default function EditProfileModal({
     const payload: Record<string, string> = {};
     for (const field of editable) payload[field] = (values[field] ?? "").trim();
     if (staged) payload.user_image = staged.fileUrl;
+    // The OTP message language follows the portal's own language switch.
+    payload.ui_language = language;
     return payload;
   };
 
@@ -254,29 +283,81 @@ export default function EditProfileModal({
     }
   };
 
-  const basics = editable.filter((field) => BASIC_FIELDS.has(field));
-  const others = editable.filter((field) => !BASIC_FIELDS.has(field));
+  /** One field, rendered by the ERP's fieldtype. */
+  const renderField = (field: ProfileFieldMeta) => {
+    const value = values[field.fieldname] ?? "";
+    const label = copy.fieldLabels[field.fieldname] ?? field.label;
+    const isTextarea = TEXTAREA_FIELDTYPES.has(field.fieldtype) || field.fieldname === "bio";
+    const isDate = field.fieldtype === "Date";
+    const isChoice =
+      field.fieldtype === "Select" || (field.fieldtype === "Link" && field.options.length > 0);
 
-  const renderField = (field: string) => (
-    <label key={field} className="flex flex-col gap-1.5">
-      <span className="text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-        {copy.fieldLabels[field] ?? field}
-      </span>
-      {TEXTAREA_FIELDS.has(field) ? (
-        <textarea
-          rows={3}
-          value={values[field] ?? ""}
-          onChange={(event) => setField(field, event.target.value)}
-          className={`${FIELD_CLASS} resize-y`}
-        />
-      ) : (
+    return (
+      <label key={field.fieldname} className="flex flex-col gap-1.5">
+        <span className={LABEL_CLASS}>
+          {label}
+          {field.required ? " *" : ""}
+        </span>
+
+        {isTextarea ? (
+          <textarea
+            rows={3}
+            value={value}
+            onChange={(event) => setField(field.fieldname, event.target.value)}
+            className={`${FIELD_CLASS} resize-y`}
+          />
+        ) : isDate ? (
+          <input
+            type="date"
+            value={value}
+            onChange={(event) => setField(field.fieldname, event.target.value)}
+            className={FIELD_CLASS}
+          />
+        ) : isChoice ? (
+          <select
+            value={value}
+            onChange={(event) => setField(field.fieldname, event.target.value)}
+            className={FIELD_CLASS}
+          >
+            <option value="">{copy.selectPlaceholder}</option>
+            {field.options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={(event) => setField(field.fieldname, event.target.value)}
+            className={FIELD_CLASS}
+          />
+        )}
+      </label>
+    );
+  };
+
+  /** The mobile number is a recovery channel — always shown, never editable. */
+  const renderMobileReadonly = () => (
+    <label className="flex flex-col gap-1.5">
+      <span className={LABEL_CLASS}>{copy.fieldLabels.mobile_no}</span>
+      <span className="relative block">
         <input
-          type={inputType}
-          value={values[field] ?? ""}
-          onChange={(event) => setField(field, event.target.value)}
-          className={FIELD_CLASS}
+          type="text"
+          value={data?.mobile_no ?? ""}
+          readOnly
+          disabled
+          aria-readonly="true"
+          className={`${FIELD_CLASS} pr-10 opacity-80`}
         />
-      )}
+        <span className="pointer-events-none absolute inset-y-0 right-0 grid w-10 place-items-center text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+          <FiLock size={14} />
+        </span>
+      </span>
+      <span className="text-[11px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+        {copy.mobileLocked}
+      </span>
     </label>
   );
 
@@ -352,9 +433,7 @@ export default function EditProfileModal({
           </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-              {copy.otpLabel}
-            </span>
+            <span className={LABEL_CLASS}>{copy.otpLabel}</span>
             <input
               type="text"
               inputMode="numeric"
@@ -479,28 +558,24 @@ export default function EditProfileModal({
           ) : null}
 
           {!isLoading && !isError ? (
-            <div className="mt-4 flex flex-col gap-4">
-              {basics.length ? (
-                <section className="flex flex-col gap-3">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                    {copy.sectionBasics}
-                  </h3>
-                  <div className="grid gap-3.5 sm:grid-cols-2">
-                    {basics.map(renderField)}
-                  </div>
-                </section>
-              ) : null}
+            <div className="mt-4 flex flex-col gap-5">
+              {SECTION_ORDER.map((section) => {
+                const list = groupedFields.get(section) ?? [];
+                const isBasic = section === "basic";
+                if (!list.length && !isBasic) return null;
 
-              {others.length ? (
-                <section className="flex flex-col gap-3">
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                    {copy.sectionAbout}
-                  </h3>
-                  <div className="grid gap-3.5 sm:grid-cols-2">
-                    {others.map(renderField)}
-                  </div>
-                </section>
-              ) : null}
+                return (
+                  <section key={section} className="flex flex-col gap-3">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                      {copy.sectionLabels[section] ?? section}
+                    </h3>
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                      {isBasic ? renderMobileReadonly() : null}
+                      {list.map(renderField)}
+                    </div>
+                  </section>
+                );
+              })}
 
               <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-3.5 py-2.5 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                 {copy.emailLocked}

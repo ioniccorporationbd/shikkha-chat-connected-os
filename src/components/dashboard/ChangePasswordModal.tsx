@@ -5,7 +5,7 @@ import { FiEye, FiEyeOff, FiLock } from "react-icons/fi";
 
 import DashboardModal from "@/components/dashboard/DashboardModal";
 import { postJson } from "@/lib/api/http";
-import { profileCopyFor } from "@/lib/auth/profile-messages";
+import { profileCopyFor, type ProfileCopy } from "@/lib/auth/profile-messages";
 import { looksTechnical } from "@/lib/auth/sanitize";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ChangePasswordResult } from "@/lib/auth/types";
@@ -17,7 +17,61 @@ interface ChangePasswordModalProps {
 }
 
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 pr-12 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]";
+
+const LABEL_CLASS =
+  "text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]";
+
+/**
+ * A password input with its own show/hide control.
+ *
+ * The eye button is a real, keyboard-focusable <button> that sits inside the
+ * input's right padding (so the field never reflows), carries an aria-label and
+ * aria-pressed for AT, and stays put on mobile.
+ */
+function PasswordField({
+  label,
+  value,
+  placeholder,
+  autoComplete,
+  onChange,
+  copy,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  autoComplete: string;
+  onChange: (value: string) => void;
+  copy: ProfileCopy;
+}) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className={LABEL_CLASS}>{label}</span>
+      <span className="relative block">
+        <input
+          type={show ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className={FIELD_CLASS}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((current) => !current)}
+          aria-label={show ? copy.hidePassword : copy.showPassword}
+          aria-pressed={show}
+          title={show ? copy.hidePassword : copy.showPassword}
+          className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-2xl text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)] transition hover:text-[var(--color-primary)] focus-visible:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)]"
+        >
+          {show ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+        </button>
+      </span>
+    </label>
+  );
+}
 
 export default function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps) {
   const { language } = useLanguage();
@@ -26,14 +80,12 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setCurrent("");
     setNext("");
     setConfirm("");
-    setShow(false);
   };
 
   const handleSubmit = async () => {
@@ -62,8 +114,6 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
       setBusy(false);
     }
   };
-
-  const inputType = show ? "text" : "password";
 
   return (
     <DashboardModal
@@ -106,64 +156,36 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
           void handleSubmit();
         }}
       >
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-            {copy.currentPassword}
-          </span>
-          <input
-            type={inputType}
-            autoComplete="current-password"
-            value={current}
-            placeholder={copy.currentPasswordPlaceholder}
-            onChange={(event) => setCurrent(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </label>
+        <PasswordField
+          label={copy.currentPassword}
+          value={current}
+          placeholder={copy.currentPasswordPlaceholder}
+          autoComplete="current-password"
+          onChange={setCurrent}
+          copy={copy}
+        />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-            {copy.newPassword}
-          </span>
-          <input
-            type={inputType}
-            autoComplete="new-password"
-            value={next}
-            placeholder={copy.newPasswordPlaceholder}
-            onChange={(event) => setNext(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </label>
+        <PasswordField
+          label={copy.newPassword}
+          value={next}
+          placeholder={copy.newPasswordPlaceholder}
+          autoComplete="new-password"
+          onChange={setNext}
+          copy={copy}
+        />
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-            {copy.confirmPassword}
-          </span>
-          <input
-            type={inputType}
-            autoComplete="new-password"
-            value={confirm}
-            placeholder={copy.confirmPasswordPlaceholder}
-            onChange={(event) => setConfirm(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </label>
+        <PasswordField
+          label={copy.confirmPassword}
+          value={confirm}
+          placeholder={copy.confirmPasswordPlaceholder}
+          autoComplete="new-password"
+          onChange={setConfirm}
+          copy={copy}
+        />
 
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setShow((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
-          >
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-primary)]">
-              {show ? <FiEyeOff size={14} /> : <FiEye size={14} />}
-              {show ? copy.hidePassword : copy.showPassword}
-            </span>
-          </button>
-
-          <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-            {copy.passwordHint}
-          </span>
-        </div>
+        <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+          {copy.passwordHint}
+        </span>
       </form>
     </DashboardModal>
   );

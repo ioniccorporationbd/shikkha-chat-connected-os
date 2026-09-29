@@ -235,6 +235,8 @@ export default function LandingHeroBanner() {
 
       <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/10 blur-[120px]" />
 
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--sc-primary)_7%,transparent),transparent_46%)]" />
+
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
         <motion.div
           initial={{
@@ -254,9 +256,13 @@ export default function LandingHeroBanner() {
             UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
           </p>
 
-          <h1 className="text-[30px] font-black leading-[1.08] tracking-[-0.05em] text-[var(--sc-primary)]">
+          <h1 className="text-[30px] font-black leading-[1.08] tracking-[-0.05em] text-[var(--sc-primary)] sm:text-[34px] md:text-[40px] lg:text-[44px]">
             The K–12 Connected Operating System
           </h1>
+
+          <p className="mx-auto mt-3 max-w-[660px] text-[13px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_72%,transparent)] md:text-[15px]">
+            One connected platform for school, family and learning — tap a section to explore it.
+          </p>
         </motion.div>
 
         <div className="relative mt-5 flex flex-1 items-center justify-center lg:mt-8">

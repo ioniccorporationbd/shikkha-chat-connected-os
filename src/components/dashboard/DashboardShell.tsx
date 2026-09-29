@@ -17,6 +17,7 @@ import {
 
 import ActivityList from "@/components/dashboard/ActivityList";
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
+import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import PanelCard from "@/components/dashboard/PanelCard";
 import QuickLinks from "@/components/dashboard/QuickLinks";
@@ -206,6 +207,13 @@ export default function DashboardShell({
 
   const renderSidebarFooter = () => (
     <div className="mt-auto flex flex-col gap-2 pt-6">
+      <div className="flex items-center justify-between gap-2 px-1">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+          {copy.languageLabel}
+        </span>
+        <DashboardLanguageToggle />
+      </div>
+
       <button
         type="button"
         onClick={handleSignOut}
@@ -305,6 +313,8 @@ export default function DashboardShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
+              <DashboardLanguageToggle />
+
               <button
                 type="button"
                 onClick={handleReload}

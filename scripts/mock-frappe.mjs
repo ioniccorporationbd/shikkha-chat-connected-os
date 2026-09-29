@@ -154,18 +154,54 @@ const pendingResetOtps = new Map(); // email -> { code, attempts, channel, expir
 const pendingProfileOtps = new Map(); // email -> { code, attempts, values, expires }
 
 // --- self-service profile (mirrors shikkha_os.api.v1.profile.*) ------------- //
-const profileExtras = new Map(); // email -> { mobile_no, phone, location, bio }
-const PROFILE_EDITABLE = ["full_name", "mobile_no", "phone", "location", "bio"];
+const profileExtras = new Map(); // email -> editable extras (except full_name)
+// Mirrors the ERP allow-list. `mobile_no` is a recovery channel: read-only in
+// the form, never editable, so it is deliberately absent here.
+const PROFILE_EDITABLE = [
+  "full_name",
+  "phone",
+  "location",
+  "bio",
+  "time_zone",
+  "gender",
+  "birth_date",
+  "designation",
+  "department",
+  "language",
+];
+
+// Field presentation meta, shaped exactly like shikkha_os _field_meta().
+const PROFILE_FIELDS = [
+  { fieldname: "full_name", label: "Full Name", fieldtype: "Data", options: [], section: "basic", required: true },
+  { fieldname: "phone", label: "Phone", fieldtype: "Data", options: [], section: "basic", required: false },
+  { fieldname: "gender", label: "Gender", fieldtype: "Select", options: ["Male", "Female", "Other"], section: "personal", required: false },
+  { fieldname: "birth_date", label: "Birth Date", fieldtype: "Date", options: [], section: "personal", required: false },
+  { fieldname: "location", label: "Location", fieldtype: "Data", options: [], section: "personal", required: false },
+  { fieldname: "bio", label: "Bio", fieldtype: "Small Text", options: [], section: "personal", required: false },
+  { fieldname: "designation", label: "Designation", fieldtype: "Data", options: [], section: "work", required: false },
+  { fieldname: "department", label: "Department", fieldtype: "Data", options: [], section: "work", required: false },
+  { fieldname: "time_zone", label: "Time Zone", fieldtype: "Data", options: [], section: "work", required: false },
+  { fieldname: "language", label: "Language", fieldtype: "Select", options: ["bn", "en"], section: "work", required: false },
+];
 
 function profileValues(account, email) {
   const extra = profileExtras.get(email) ?? {};
   return {
     full_name: account.profile.full_name || "",
-    mobile_no: extra.mobile_no ?? "",
     phone: extra.phone ?? "",
     location: extra.location ?? "",
     bio: extra.bio ?? "",
+    time_zone: extra.time_zone ?? account.profile.time_zone ?? "",
+    gender: extra.gender ?? "",
+    birth_date: extra.birth_date ?? "",
+    designation: extra.designation ?? account.profile.designation ?? "",
+    department: extra.department ?? account.profile.department ?? "",
+    language: extra.language ?? account.profile.language ?? "",
   };
+}
+
+function profileMobile(email) {
+  return profileExtras.get(email)?.mobile_no ?? "8801712345678";
 }
 
 function maskEmail(value) {
@@ -736,9 +772,11 @@ const server = createServer(async (request, response) => {
       full_name: account.profile.full_name,
       email,
       user_image: account.profile.user_image || "",
+      mobile_no: profileMobile(email),
       user_type: account.profile.user_type,
       roles: account.profile.roles,
       editable: PROFILE_EDITABLE,
+      fields: PROFILE_FIELDS,
       values: profileValues(account, email),
     });
     return;
@@ -760,7 +798,7 @@ const server = createServer(async (request, response) => {
 
     const body = await readBody(request);
     const current = profileValues(account, email);
-    const changed = ["full_name", "mobile_no", "phone", "location", "bio"].filter(
+    const changed = PROFILE_EDITABLE.filter(
       (field) => typeof body[field] === "string" && body[field].trim() !== (current[field] ?? "")
     );
     const hasImage = typeof body.user_image === "string" && body.user_image.trim();
@@ -770,10 +808,10 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    const mobileNo = profileExtras.get(email)?.mobile_no || "8801712345678";
+    const mobileNo = profileMobile(email);
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const values = {};
-    for (const field of ["full_name", "mobile_no", "phone", "location", "bio"]) {
+    for (const field of PROFILE_EDITABLE) {
       if (typeof body[field] === "string") values[field] = body[field].trim();
     }
     if (hasImage) values.user_image = body.user_image.trim();
@@ -835,7 +873,8 @@ const server = createServer(async (request, response) => {
     if (typeof pending.values.full_name === "string" && pending.values.full_name.trim()) {
       account.profile.full_name = pending.values.full_name.trim();
     }
-    for (const field of ["mobile_no", "phone", "location", "bio"]) {
+    for (const field of PROFILE_EDITABLE) {
+      if (field === "full_name") continue;
       if (typeof pending.values[field] === "string") extra[field] = pending.values[field].trim();
     }
     profileExtras.set(email, extra);

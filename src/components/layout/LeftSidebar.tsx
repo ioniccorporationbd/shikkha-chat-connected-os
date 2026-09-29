@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { FiAward, FiBriefcase, FiGrid, FiHome } from "react-icons/fi";
+import { FiAward, FiBriefcase, FiChevronDown, FiGrid, FiHome } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -945,12 +945,11 @@ export default function LeftSidebar() {
             ×
           </button>
 
-          <div className="flex items-start gap-3 pr-9 2xl:pr-0">
-            <div className="min-w-0 flex-1">
-              <Logo language={currentLanguage} />
-            </div>
-            {/* Sign-up sits beside sign-in so both CTAs are on the home page. */}
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-col gap-3 pr-9 2xl:pr-0">
+            <Logo language={currentLanguage} />
+
+            {/* Registration + Login, directly beneath the logo (item 6). */}
+            <div className="flex flex-wrap items-center gap-2">
               <SidebarRegisterButton />
               <SidebarAuthButton />
             </div>
@@ -1050,12 +1049,12 @@ export default function LeftSidebar() {
 
                       <span
                         className={[
-                          "text-[16px] font-bold transition-transform duration-300",
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] text-[var(--color-primary)] transition-transform duration-300",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
                         aria-hidden="true"
                       >
-                        ⌄
+                        <FiChevronDown size={15} />
                       </span>
                     </button>
 

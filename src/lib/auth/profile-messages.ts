@@ -72,9 +72,12 @@ export interface ProfileCopy {
   imageUploading: string;
   imageTooLarge: string;
 
-  /* form section headings */
-  sectionBasics: string;
-  sectionAbout: string;
+  /* form sections — keyed by the ERP field's `section` id */
+  sectionLabels: Record<string, string>;
+  /** Note under the read-only mobile field. */
+  mobileLocked: string;
+  /** Placeholder for an empty <select>. */
+  selectPlaceholder: string;
 }
 
 export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
@@ -129,6 +132,11 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
       location: "লোকেশন",
       bio: "সংক্ষিপ্ত পরিচিতি",
       time_zone: "টাইম জোন",
+      gender: "লিঙ্গ",
+      birth_date: "জন্ম তারিখ",
+      designation: "পদবি",
+      department: "বিভাগ",
+      language: "ভাষা",
     },
 
     otpTitle: "পরিবর্তন নিশ্চিত করুন",
@@ -154,8 +162,15 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
     imageUploading: "আপলোড হচ্ছে…",
     imageTooLarge: "ছবিটি ২ MB-এর চেয়ে বড়।",
 
-    sectionBasics: "মূল তথ্য",
-    sectionAbout: "অতিরিক্ত তথ্য",
+    sectionLabels: {
+      basic: "মূল তথ্য",
+      personal: "ব্যক্তিগত তথ্য",
+      work: "কর্ম / অ্যাকাউন্ট তথ্য",
+      additional: "অতিরিক্ত তথ্য",
+    },
+    mobileLocked:
+      "মোবাইল নম্বর এখান থেকে পরিবর্তন করা যায় না — সহায়তার জন্য অ্যাডমিনের সাথে যোগাযোগ করুন।",
+    selectPlaceholder: "নির্বাচন করুন",
   },
   en: {
     menuEdit: "Edit profile",
@@ -208,6 +223,11 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
       location: "Location",
       bio: "Short bio",
       time_zone: "Time zone",
+      gender: "Gender",
+      birth_date: "Birth date",
+      designation: "Designation",
+      department: "Department",
+      language: "Language",
     },
 
     otpTitle: "Confirm your changes",
@@ -233,8 +253,15 @@ export const profileCopy: Record<"bn" | "en", ProfileCopy> = {
     imageUploading: "Uploading…",
     imageTooLarge: "The image is larger than 2 MB.",
 
-    sectionBasics: "Basic information",
-    sectionAbout: "Additional information",
+    sectionLabels: {
+      basic: "Basic information",
+      personal: "Personal information",
+      work: "Work / Account information",
+      additional: "Additional information",
+    },
+    mobileLocked:
+      "The mobile number cannot be changed here — contact an administrator for help.",
+    selectPlaceholder: "Select",
   },
 };
 

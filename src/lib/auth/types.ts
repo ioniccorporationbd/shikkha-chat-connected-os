@@ -155,6 +155,19 @@ export type ApiEnvelope<T> = ApiSuccess<T> | ApiFailure;
 
 /* ------------------------------------------------------------------ profile */
 
+/** One editable field's shape, supplied by the ERP's own User DocType meta. */
+export interface ProfileFieldMeta {
+  fieldname: string;
+  label: string;
+  /** Frappe fieldtype: Data, Small Text, Date, Select, Link, ... */
+  fieldtype: string;
+  /** Allowed values for a Select/Link field (empty when free text). */
+  options: string[];
+  /** basic | personal | work | additional — the form section. */
+  section: string;
+  required: boolean;
+}
+
 /** Editable self-service profile (own account), from `profile.details`. */
 export interface ProfileDetails {
   name: string;
@@ -167,6 +180,8 @@ export interface ProfileDetails {
   roles: string[];
   /** Fieldnames the site's User DocType exposes for editing. */
   editable: string[];
+  /** Per-field presentation meta, in the same order as `editable`. */
+  fields?: ProfileFieldMeta[];
   /** Current value keyed by fieldname (only the editable ones). */
   values: Record<string, string>;
 }
