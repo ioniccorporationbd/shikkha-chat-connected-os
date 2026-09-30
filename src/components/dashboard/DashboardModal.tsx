@@ -40,6 +40,18 @@ export default function DashboardModal({
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
+  // Keep the latest onClose in a ref so the focus/scroll-lock effect below can
+  // depend on `open` alone. When callers pass a fresh onClose every render
+  // (inline arrows, non-memoised handlers), an [open, onClose] dependency made
+  // the effect tear down and re-run on EVERY render — its cleanup restored
+  // focus to the element captured at open while the 40ms timer re-focused the
+  // first field, so each keystroke dropped focus out of the active input.
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -48,7 +60,7 @@ export default function DashboardModal({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose();
+        onCloseRef.current();
       }
     }
 
@@ -69,7 +81,7 @@ export default function DashboardModal({
       window.clearTimeout(focusTimer);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

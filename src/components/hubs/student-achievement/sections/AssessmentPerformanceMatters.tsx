@@ -882,7 +882,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
   if (selectedId === "assessment-performance-matters") {
     return (
       <motion.div
-        className="pointer-events-none absolute inset-0 z-[25]"
+        className="hidden pointer-events-none absolute inset-0 z-[25]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -928,7 +928,7 @@ function ConnectorLine({ selectedId }: { selectedId: string }) {
         duration: 0.24,
         ease: premiumEase,
       }}
-      className="pointer-events-none absolute inset-0 z-[25]"
+      className="hidden pointer-events-none absolute inset-0 z-[25]"
     >
       <svg
         className="h-full w-full"

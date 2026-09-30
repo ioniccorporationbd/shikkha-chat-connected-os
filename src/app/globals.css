@@ -998,3 +998,42 @@ html[data-lang="en"] .language-toggle-knob {
     animation: none;
   }
 }
+
+/* ---- react-toastify shell ----------------------------------------------
+   The visual card lives in <ToastBody /> and paints its own themed surface,
+   so strip react-toastify's default padding/background/rounding and let it
+   only handle stacking, positioning and animation. */
+.sc-toast-container {
+  width: min(380px, calc(100vw - 24px));
+  padding: 0;
+  z-index: 210;
+}
+
+.sc-toast.Toastify__toast {
+  padding: 0;
+  min-height: 0;
+  margin-bottom: 10px;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.sc-toast .Toastify__toast-body {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.sc-toast__progress {
+  background: color-mix(in srgb, var(--color-white) 72%, transparent);
+}
+
+@media (max-width: 640px) {
+  .sc-toast-container.Toastify__toast-container--top-right {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}

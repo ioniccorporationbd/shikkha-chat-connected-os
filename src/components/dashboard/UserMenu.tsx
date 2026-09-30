@@ -10,6 +10,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 
+import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import { authCopyFor } from "@/lib/auth/messages";
 import { profileCopyFor } from "@/lib/auth/profile-messages";
@@ -248,6 +249,14 @@ export default function UserMenu({
                 {copy.backToSite}
               </span>
             </Link>
+
+            {/* Full-width language switch, directly above Sign out (item 15). */}
+            <div className="px-2 pb-0.5 pt-1.5">
+              <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                {dashCopy.languageLabel}
+              </p>
+              <DashboardLanguageToggle variant="full" />
+            </div>
 
             <button
               type="button"

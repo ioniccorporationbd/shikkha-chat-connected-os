@@ -372,18 +372,6 @@ export default function OrbitProductPanel({
             }}
           >
             {title}
-
-            <motion.span
-              aria-hidden="true"
-              className="absolute left-1/2 top-full h-[21px] w-[3px] -translate-x-1/2 overflow-hidden rounded-full"
-              style={{ backgroundColor: themeColor }}
-            >
-              <motion.span
-                className="absolute left-0 top-0 h-[40%] w-full rounded-full bg-white"
-                animate={shouldReduceMotion ? undefined : { y: ["-120%", "260%"] }}
-                transition={{ duration: 1.75, ease: "easeInOut", repeat: Infinity }}
-              />
-            </motion.span>
           </motion.button>
 
           <div

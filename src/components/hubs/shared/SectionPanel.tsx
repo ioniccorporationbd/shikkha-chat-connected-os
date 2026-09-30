@@ -18,18 +18,24 @@ type SectionPanelProps = {
   image?: string;
   logo?: string;
   showButtons?: boolean;
+  /**
+   * Overrides some panels pass through. They are optional and kept for API
+   * compatibility — the copy falls back to `panelText` when they are absent.
+   */
+  productDetailsText?: string;
+  saveProductText?: string;
+  activeProductText?: string;
+  imageAlt?: string;
 };
 
 const panelText = {
   bn: {
-    activeProduct: "সক্রিয় পণ্য",
     productDetails: "পণ্যের বিস্তারিত",
     saveProduct: "পণ্য সংরক্ষণ করুন",
     schoolLeader: "স্কুল নেতৃত্ব",
     schoolLogo: "স্কুল লোগো",
   },
   en: {
-    activeProduct: "Active Product",
     productDetails: "Product Details",
     saveProduct: "Save Product",
     schoolLeader: "School leader",
@@ -37,10 +43,17 @@ const panelText = {
   },
 } as const;
 
+/**
+ * A right-hand detail card.
+ *
+ * Previously every card carried a sticky "সক্রিয় পণ্য / Active Product" bar at
+ * the top; that repetitive chrome was removed (item 3) and each card now opens
+ * with a clean header — a relevant icon plus the product label — above its
+ * title and short description (item 4).
+ */
 export default function SectionPanel({
   id,
   pill,
-  pillStyle = "outline",
   title,
   description,
   stats = [],
@@ -50,13 +63,18 @@ export default function SectionPanel({
   image,
   logo,
   showButtons = true,
+  productDetailsText,
+  saveProductText,
+  imageAlt,
 }: SectionPanelProps) {
   const { language } = useLanguage();
   const reduceMotion = useReducedMotion();
   const currentLanguage = language === "en" ? "en" : "bn";
   const text = panelText[currentLanguage];
-  const isSolid = pillStyle === "solid";
   const duration = reduceMotion ? 0 : 0.72;
+
+  const detailsLabel = productDetailsText ?? text.productDetails;
+  const saveLabel = saveProductText ?? text.saveProduct;
 
   return (
     <motion.aside
@@ -68,64 +86,28 @@ export default function SectionPanel({
       viewport={{ once: true, amount: 0.12 }}
       transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
-      <motion.div
-        className="sticky top-4 z-30 pb-4 pt-1 sm:top-5"
-        initial={reduceMotion ? false : { opacity: 0, y: -18, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true, amount: 0.4 }}
-        transition={{ duration, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="right-product-shell rounded-[24px] bg-[var(--color-white)] p-1.5">
-          <motion.div
-            className={[
-              "right-product-card group relative flex min-h-[62px] w-full items-center gap-3 overflow-hidden rounded-[20px] border px-4 py-3 sm:min-h-[66px] sm:px-5",
-              isSolid
-                ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-white)]"
-                : "border-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_86%,transparent)] text-[var(--color-primary)] backdrop-blur-xl",
-            ].join(" ")}
-            whileHover={reduceMotion ? undefined : { y: -3, scale: 1.005 }}
-            transition={{ type: "spring", stiffness: 280, damping: 24 }}
-          >
-            <motion.span
-              className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[var(--color-secondary)] opacity-20 blur-2xl"
-              animate={reduceMotion ? undefined : { x: [0, -8, 0], y: [0, 8, 0], scale: [1, 1.08, 1] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <span className="pointer-events-none absolute -bottom-12 left-10 h-24 w-24 rounded-full bg-[var(--color-white)] opacity-10 blur-2xl" />
-
-            <motion.span
-              className="interface-icon-text relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-white)_70%,transparent)] bg-[var(--color-secondary)] font-black text-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-black)_16%,transparent)]"
-              whileHover={reduceMotion ? undefined : { rotate: 10, scale: 1.08 }}
-              transition={{ type: "spring", stiffness: 360, damping: 18 }}
-            >
-              ✦
-            </motion.span>
-
-            <span className="relative z-10 min-w-0 flex-1">
-              <span className="active-product-text block font-bold uppercase tracking-[0.08em] text-[var(--color-secondary)]">
-                {text.activeProduct}
-              </span>
-              <span
-                className={[
-                  "product-pill-text mt-0.5 block truncate font-bold tracking-[0.02em]",
-                  isSolid ? "text-[var(--color-white)]" : "text-[var(--color-primary)]",
-                ].join(" ")}
-              >
-                {pill}
-              </span>
-            </span>
-
-            <motion.span
-              className="interface-icon-text relative z-10 hidden h-8 min-w-8 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_75%,transparent)] bg-[var(--color-white)] px-3 font-black text-[var(--color-primary)] sm:grid"
-              whileHover={reduceMotion ? undefined : { x: 4 }}
-            >
-              →
-            </motion.span>
-          </motion.div>
-        </div>
-      </motion.div>
-
       <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">
+        <motion.div
+          className="mb-5 flex items-center gap-3"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration, delay: 0.04, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.span
+            aria-hidden
+            className="interface-icon-text grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-secondary)] font-black text-[var(--color-primary)] shadow-[0_14px_26px_-16px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+            whileHover={reduceMotion ? undefined : { rotate: 8, scale: 1.06 }}
+            transition={{ type: "spring", stiffness: 340, damping: 18 }}
+          >
+            ✦
+          </motion.span>
+
+          <span className="product-pill-text inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+            {pill}
+          </span>
+        </motion.div>
+
         <motion.h2
           className="section-main-title max-w-[520px] font-extrabold tracking-[-0.03em] text-[var(--color-primary)]"
           initial={reduceMotion ? false : { opacity: 0, y: 20 }}
@@ -161,7 +143,7 @@ export default function SectionPanel({
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span>→</span>
-              {text.productDetails}
+              {detailsLabel}
             </motion.a>
 
             <motion.button
@@ -171,7 +153,7 @@ export default function SectionPanel({
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span>☆</span>
-              {text.saveProduct}
+              {saveLabel}
             </motion.button>
           </motion.div>
         ) : null}
@@ -233,7 +215,7 @@ export default function SectionPanel({
                 {image ? (
                   <motion.img
                     src={image}
-                    alt={author || text.schoolLeader}
+                    alt={imageAlt || author || text.schoolLeader}
                     className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_15%,transparent)]"
                     whileHover={reduceMotion ? undefined : { scale: 1.05, rotate: -1.5 }}
                     transition={{ type: "spring", stiffness: 260, damping: 20 }}

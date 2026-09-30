@@ -313,8 +313,6 @@ export default function DashboardShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <DashboardLanguageToggle />
-
               <button
                 type="button"
                 onClick={handleReload}

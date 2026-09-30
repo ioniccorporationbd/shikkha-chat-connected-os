@@ -433,6 +433,17 @@ export function useLanguage() {
   return context;
 }
 
+/**
+ * Context-safe read for surfaces that may render outside `LanguageProvider`
+ * (Next.js `global-error`, for example): yields the default language instead of
+ * throwing.
+ */
+export function useOptionalLanguage(): { language: Language } {
+  const context = useContext(LanguageContext);
+
+  return { language: context?.language ?? DEFAULT_LANGUAGE };
+}
+
 export function T({ children }: { children: string }) {
   const { t } = useLanguage();
 
