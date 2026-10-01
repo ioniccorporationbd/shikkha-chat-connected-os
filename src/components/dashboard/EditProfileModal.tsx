@@ -438,6 +438,7 @@ export default function EditProfileModal({
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
+              autoFocus
               maxLength={6}
               value={code}
               placeholder={copy.otpPlaceholder}

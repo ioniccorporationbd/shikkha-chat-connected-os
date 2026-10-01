@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FiEye, FiEyeOff, FiLock } from "react-icons/fi";
 
 import DashboardModal from "@/components/dashboard/DashboardModal";
@@ -45,12 +45,14 @@ function PasswordField({
   copy: ProfileCopy;
 }) {
   const [show, setShow] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <label className="flex flex-col gap-1.5">
       <span className={LABEL_CLASS}>{label}</span>
       <span className="relative block">
         <input
+          ref={inputRef}
           type={show ? "text" : "password"}
           autoComplete={autoComplete}
           value={value}
@@ -60,7 +62,12 @@ function PasswordField({
         />
         <button
           type="button"
-          onClick={() => setShow((current) => !current)}
+          // Toggling visibility must not deactivate the field: hand focus back
+          // to the input so typed/autofilled text stays usable.
+          onClick={() => {
+            setShow((current) => !current);
+            inputRef.current?.focus();
+          }}
           aria-label={show ? copy.hidePassword : copy.showPassword}
           aria-pressed={show}
           title={show ? copy.hidePassword : copy.showPassword}

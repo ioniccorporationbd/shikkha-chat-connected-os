@@ -55,6 +55,7 @@ export default function DashboardModal({
   useEffect(() => {
     if (!open) return;
 
+    const panel = panelRef.current;
     previouslyFocused.current = (document.activeElement as HTMLElement) ?? null;
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -68,18 +69,55 @@ export default function DashboardModal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    // On open, move focus to the first REAL, visible text field.
+    //
+    // Two traps this avoids: (1) the old flat query ("input, textarea, select,
+    // button …") matched the header ✕ close button first, since it precedes the
+    // body inputs in DOM order — so every modal opened with focus on ✕. (2) The
+    // profile-image picker is an <input type="file"> that is visually hidden;
+    // its .focus() is a silent no-op and left focus stranded on <body>. We now
+    // skip hidden/file/button-type inputs and anything without layout. A modal
+    // with no usable field falls back to the first focusable element.
+    //
+    // The timer is also guarded: if the user has already focused something
+    // inside the panel (e.g. clicked a field within the 40ms window), we leave
+    // it untouched instead of snapping focus away and deactivating the input.
     const focusTimer = window.setTimeout(() => {
-      const target = panelRef.current?.querySelector<HTMLElement>(
-        "input, textarea, select, button, [href], [tabindex]"
+      const node = panelRef.current;
+      if (!node || node.contains(document.activeElement)) return;
+
+      const isUsableField = (el: HTMLElement): boolean => {
+        if (el.hasAttribute("disabled")) return false;
+        if (el.tagName.toLowerCase() === "input") {
+          const type = (el as HTMLInputElement).type;
+          if (
+            ["hidden", "file", "submit", "button", "reset", "image", "checkbox", "radio"].includes(type)
+          ) {
+            return false;
+          }
+        }
+        // Ignore elements with no layout box (display:none / likely hidden).
+        return el.getClientRects().length > 0;
+      };
+
+      const fields = Array.from(
+        node.querySelectorAll<HTMLElement>('input, textarea, select, [contenteditable="true"]')
       );
-      target?.focus();
+      const firstField = fields.find(isUsableField);
+      const fallback = node.querySelector<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      (firstField ?? fallback)?.focus();
     }, 40);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
       window.clearTimeout(focusTimer);
-      previouslyFocused.current?.focus?.();
+      // Hand focus back to the trigger on close, but only if it is still in the
+      // document (never focus a node that was unmounted while the modal was up).
+      const trigger = previouslyFocused.current;
+      if (trigger && document.contains(trigger)) trigger.focus?.();
     };
   }, [open]);
 
