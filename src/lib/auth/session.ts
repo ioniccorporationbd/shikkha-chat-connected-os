@@ -30,6 +30,12 @@ export const DASHBOARD_PATH = STAFF_DASHBOARD_PATH;
  */
 export const CREATE_CUSTOMER_PATH = `${STAFF_DASHBOARD_PATH}/create-customer`;
 
+/**
+ * Staff-only sub-route that renders the Employee Check In / Out card, again on
+ * its own URL inside the dashboard shell so opening it is a real navigation.
+ */
+export const CHECKIN_PATH = `${STAFF_DASHBOARD_PATH}/check-in-out`;
+
 /** Every route that renders the dashboard shell. */
 export const DASHBOARD_PATHS: readonly string[] = [STAFF_DASHBOARD_PATH, CLIENT_DASHBOARD_PATH];
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
+  FiClock,
   FiEdit2,
   FiHome,
   FiLock,
@@ -16,6 +17,7 @@ import {
 
 import ActivityList from "@/components/dashboard/ActivityList";
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
+import CheckInOutView from "@/components/dashboard/CheckInOutView";
 import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import PanelCard from "@/components/dashboard/PanelCard";
@@ -92,7 +94,9 @@ export default function DashboardShell({
   // browser Back button works. The client scope has no such sub-route.
   const basePath = isClient ? CLIENT_DASHBOARD_PATH : STAFF_DASHBOARD_PATH;
   const createCustomerPath = `${basePath}/create-customer`;
+  const checkinPath = `${basePath}/check-in-out`;
   const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
+  const onCheckinView = !isClient && pathname.startsWith(checkinPath);
 
   const { data, isFetching, isError, error, refetch } = useDashboardQuery(initialData);
 
@@ -135,6 +139,7 @@ export default function DashboardShell({
   // staff panel — a Website User (portal customer) never sees it.
   const isSystemUser = accountType.toLowerCase() === "system user" || Boolean(user?.is_admin);
   const showCreateCustomer = !isClient && isSystemUser;
+  const showCheckin = !isClient && isSystemUser;
 
   const roles = user?.roles ?? [];
   const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
@@ -156,7 +161,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView;
+      const active = !onCreateView && !onCheckinView;
 
       return (
         <button
@@ -195,6 +200,29 @@ export default function DashboardShell({
           <span className={navLabelClass(active)}>
             <CreateIcon className="text-[16px]" />
             {copy.nav.customers}
+          </span>
+        </button>
+      );
+    }
+
+    if (showCheckin) {
+      const CheckinIcon = NAV_ICONS.checkin;
+      const active = onCheckinView;
+
+      items.push(
+        <button
+          key="check-in-out"
+          type="button"
+          onClick={() => {
+            router.push(checkinPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <CheckinIcon className="text-[16px]" />
+            {copy.nav.checkin}
           </span>
         </button>
       );
@@ -372,6 +400,8 @@ export default function DashboardShell({
           <main className="flex min-w-0 flex-col gap-4 pb-4">
             {onCreateView ? (
               <CreateCustomerView onBack={() => router.push(basePath)} />
+            ) : onCheckinView ? (
+              <CheckInOutView onBack={() => router.push(basePath)} />
             ) : (
               <>
             {/* Overview top profile section (item 1) */}
@@ -480,6 +510,33 @@ export default function DashboardShell({
                 </div>
               ) : null}
             </section>
+
+            {showCheckin ? (
+              <section
+                className={`flex flex-col gap-3 rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:flex-row sm:items-center sm:justify-between sm:p-6`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)] shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]">
+                    <FiClock size={20} />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold">{copy.nav.checkin}</h2>
+                    <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.checkinCardHint}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push(checkinPath)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5"
+                >
+                  <span className="text-[13px] font-semibold text-[var(--color-white)]">
+                    {copy.openAction}
+                  </span>
+                </button>
+              </section>
+            ) : null}
 
             {loadError ? (
               <PanelCard title={copy.errorTitle} hint={loadError}>

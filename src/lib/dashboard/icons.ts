@@ -5,6 +5,7 @@ import {
   FiBarChart2,
   FiBox,
   FiBriefcase,
+  FiClock,
   FiFileText,
   FiGrid,
   FiMonitor,
@@ -35,6 +36,7 @@ export function statIcon(key: string): IconType {
 export const NAV_ICONS: Record<string, IconType> = {
   overview: FiGrid,
   customers: FiUserPlus,
+  checkin: FiClock,
   analytics: FiBarChart2,
   reports: FiFileText,
   users: FiUsers,

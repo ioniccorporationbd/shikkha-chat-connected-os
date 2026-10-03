@@ -8,6 +8,7 @@ export interface DashboardCopy {
   nav: {
     overview: string;
     customers: string;
+    checkin: string;
     analytics: string;
     reports: string;
     users: string;
@@ -66,6 +67,9 @@ export interface DashboardCopy {
   closeMenu: string;
   reloadDone: string;
   reloadFailed: string;
+  /** Check In / Out quick-access card on the overview. */
+  checkinCardHint: string;
+  openAction: string;
   /** Per-stat presentation, keyed by the API's `stat.key`; unknown keys fall
    *  back to the label/hint the backend sent. */
   stats: Record<string, { label: string; hint: string }>;
@@ -88,6 +92,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     nav: {
       overview: "ওভারভিউ",
       customers: "কাস্টমার তৈরি করুন",
+      checkin: "চেক ইন / আউট",
       analytics: "অ্যানালিটিক্স",
       reports: "রিপোর্ট",
       users: "ইউজার",
@@ -156,6 +161,8 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     closeMenu: "মেনু বন্ধ করুন",
     reloadDone: "ড্যাশবোর্ডের তথ্য হালনাগাদ হয়েছে।",
     reloadFailed: "রিফ্রেশ করা যায়নি। আবার চেষ্টা করুন।",
+    checkinCardHint: "চেক ইন / আউট করুন এবং আপনার দৈনিক উপস্থিতি রেকর্ড করুন।",
+    openAction: "খুলুন",
     stats: {
       roles: { label: "রোল", hint: "আপনার অ্যাকাউন্টে বরাদ্দ করা রোল" },
       signins: { label: "লগইন (৭ দিন)", hint: "আপনার অ্যাকাউন্টে রেকর্ড করা সফল লগইন" },
@@ -201,6 +208,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     nav: {
       overview: "Overview",
       customers: "Create Customer",
+      checkin: "Check In / Out",
       analytics: "Analytics",
       reports: "Reports",
       users: "Users",
@@ -269,6 +277,8 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     closeMenu: "Close menu",
     reloadDone: "Dashboard data refreshed.",
     reloadFailed: "Could not refresh. Please try again.",
+    checkinCardHint: "Check in or out and record your daily attendance.",
+    openAction: "Open",
     stats: {
       roles: { label: "Roles", hint: "Roles assigned to your account" },
       signins: { label: "Sign-ins (7 days)", hint: "Successful sign-ins recorded for your account" },

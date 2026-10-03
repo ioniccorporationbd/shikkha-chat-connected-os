@@ -182,6 +182,43 @@ function customerGate(account) {
   return null;
 }
 
+// --- Employee check-in (mirrors shikkha_os.api.v1.checkin.*) --------------- //
+// The employee is resolved from the logged-in user (never the body), exactly
+// like the real endpoint. `HR-EMP-00001` mirrors the reference document.
+const DEMO_EMPLOYEES = {
+  "tamim@ioniccorporation.com": { name: "HR-EMP-00001", employee_name: "Tamim Hasan Tast" },
+  "sales@ioniccorporation.com": { name: "HR-EMP-00002", employee_name: "Sales Executive" },
+};
+
+const checkinRecords = [];
+let checkinCounter = 0;
+
+function employeeFor(email) {
+  const employee = DEMO_EMPLOYEES[email];
+  return employee ? { name: employee.name, employee_name: employee.employee_name } : null;
+}
+
+function latestCheckin(employee) {
+  const rows = checkinRecords.filter((row) => row.employee === employee);
+  return rows.length ? rows[rows.length - 1] : null;
+}
+
+function lastCheckinOfType(employee, logType) {
+  const rows = checkinRecords.filter(
+    (row) => row.employee === employee && row.log_type === logType
+  );
+  return rows.length ? rows[rows.length - 1] : null;
+}
+
+function checkinState(employee) {
+  const latest = latestCheckin(employee);
+  return latest && latest.log_type === "IN" ? "in" : "out";
+}
+
+function nowStamp() {
+  return new Date().toISOString().slice(0, 19).replace("T", " ");
+}
+
 // --- registration ---------------------------------------------------------- //
 // In-memory mirror of the shikkha_os registration flow so the sign-up path can
 // be exercised end to end. The generated OTP is printed to stdout (never
@@ -463,6 +500,8 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.customer.form_schema",
         "shikkha_os.api.v1.customer.link_options",
         "shikkha_os.api.v1.customer.create",
+        "shikkha_os.api.v1.checkin.status",
+        "shikkha_os.api.v1.checkin.punch",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -1048,6 +1087,129 @@ const server = createServer(async (request, response) => {
 
     account.password = next;
     ok(response, { changed: true });
+    return;
+  }
+
+  // --- Employee check-in (mirrors shikkha_os.api.v1.checkin.*) ---
+  if (method === "shikkha_os.api.v1.checkin.status") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account) {
+      failure(
+        response,
+        403,
+        "PermissionError",
+        "You are not permitted to access this resource. Login to access.",
+        "Method Not Allowed"
+      );
+      return;
+    }
+
+    const employee = employeeFor(email);
+    if (!employee) {
+      ok(response, {
+        doctype: "Employee Checkin",
+        linked: false,
+        employee: null,
+        state: "out",
+        checked_in: false,
+        last: null,
+        last_in: null,
+        last_out: null,
+        server_time: nowStamp(),
+      });
+      return;
+    }
+
+    const state = checkinState(employee.name);
+    const latest = latestCheckin(employee.name);
+
+    ok(response, {
+      doctype: "Employee Checkin",
+      linked: true,
+      employee,
+      state,
+      checked_in: state === "in",
+      last: latest,
+      last_in: lastCheckinOfType(employee.name, "IN"),
+      last_out: lastCheckinOfType(employee.name, "OUT"),
+      server_time: nowStamp(),
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.checkin.punch") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to check in or out.", "Check In / Out");
+      return;
+    }
+
+    const employee = employeeFor(email);
+    if (!employee) {
+      failure(
+        response,
+        403,
+        "PermissionError",
+        "No Employee record is linked to your account. Please contact an HR administrator.",
+        "Check In / Out"
+      );
+      return;
+    }
+
+    const body = await readBody(request);
+    const logType = String(body.log_type ?? "").trim().toUpperCase();
+
+    if (logType !== "IN" && logType !== "OUT") {
+      failure(response, 417, "ValidationError", "Invalid check in / out request.", "Check In / Out");
+      return;
+    }
+
+    const state = checkinState(employee.name);
+    if (logType === "IN" && state === "in") {
+      failure(response, 417, "ValidationError", "You are already checked in.", "Check In / Out");
+      return;
+    }
+    if (logType === "OUT" && state === "out") {
+      failure(response, 417, "ValidationError", "You are already checked out.", "Check In / Out");
+      return;
+    }
+
+    const latitude = Number(body.latitude);
+    const longitude = Number(body.longitude);
+    checkinCounter += 1;
+
+    const record = {
+      name: `EMP-CKIN-10-2026-${String(checkinCounter).padStart(6, "0")}`,
+      employee: employee.name,
+      employee_name: employee.employee_name,
+      log_type: logType,
+      time: nowStamp(),
+      device_id: String(body.device_id ?? "").slice(0, 140),
+      latitude: Number.isFinite(latitude) ? latitude : 0,
+      longitude: Number.isFinite(longitude) ? longitude : 0,
+      geolocation: String(body.geolocation ?? ""),
+      creation: nowStamp(),
+    };
+    checkinRecords.push(record);
+
+    console.log(`[mock-frappe] CHECKIN ${record.name} ${employee.name} ${logType}`);
+
+    ok(response, {
+      record,
+      employee,
+      state: logType === "IN" ? "in" : "out",
+      checked_in: logType === "IN",
+      verified: true,
+    });
     return;
   }
 
