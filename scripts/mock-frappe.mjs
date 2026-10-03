@@ -362,31 +362,23 @@ function dashboardPayload(account) {
   };
 }
 
-/** Representative ERPNext `Customer` field catalogue (metadata-shaped). */
+/**
+ * Representative ERPNext `Customer` field catalogue, SIMPLIFIED.
+ *
+ * Mirrors shikkha_os.api.v1.customer._build_sections(): only the mandatory plus a
+ * few genuinely-important optional fields, grouped into three meaningful sections.
+ * No Check / technical / advanced surfaces. The real backend derives this from
+ * frappe.get_meta("Customer"); this fixture stands in for that output locally.
+ */
 const CUSTOMER_SECTIONS = [
   {
-    key: "basic_information",
-    label: "Basic Information",
+    key: "customer_information",
+    label: "Customer Information",
     fields: [
       { fieldname: "customer_name", label: "Customer Name", fieldtype: "Data", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "The full name of the customer.", placeholder: "", depends_on: "" },
       { fieldname: "customer_type", label: "Customer Type", fieldtype: "Select", options: ["Company", "Individual"], link_doctype: "", required: true, read_only: false, default: "Company", description: "", placeholder: "", depends_on: "" },
       { fieldname: "customer_group", label: "Customer Group", fieldtype: "Link", options: [], link_doctype: "Customer Group", required: false, read_only: false, default: "Commercial", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "salutation", label: "Salutation", fieldtype: "Link", options: [], link_doctype: "Salutation", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "first_name", label: "First Name", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "last_name", label: "Last Name", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "gender", label: "Gender", fieldtype: "Link", options: [], link_doctype: "Gender", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "lead_name", label: "Lead Name", fieldtype: "Link", options: [], link_doctype: "Lead", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-    ],
-  },
-  {
-    key: "customer_details",
-    label: "Customer Details",
-    fields: [
-      { fieldname: "account_manager", label: "Account Manager", fieldtype: "Link", options: [], link_doctype: "User", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "default_currency", label: "Default Currency", fieldtype: "Link", options: [], link_doctype: "Currency", required: false, read_only: false, default: "BDT", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "default_price_list", label: "Default Price List", fieldtype: "Link", options: [], link_doctype: "Price List", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "industry", label: "Industry", fieldtype: "Link", options: [], link_doctype: "Industry", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "is_internal_customer", label: "Is Internal Customer", fieldtype: "Check", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "Set if this customer represents a subsidiary.", placeholder: "", depends_on: "" },
+      { fieldname: "territory", label: "Territory", fieldtype: "Link", options: [], link_doctype: "Territory", required: false, read_only: false, default: "Bangladesh", description: "", placeholder: "", depends_on: "" },
     ],
   },
   {
@@ -395,42 +387,16 @@ const CUSTOMER_SECTIONS = [
     fields: [
       { fieldname: "mobile_no", label: "Mobile Number", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "017XXXXXXXX", depends_on: "" },
       { fieldname: "email_id", label: "Email Id", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "name@example.com", depends_on: "" },
-      { fieldname: "phone", label: "Phone", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
       { fieldname: "website", label: "Website", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "https://", depends_on: "" },
     ],
   },
   {
-    key: "address_information",
-    label: "Address Information",
-    fields: [
-      { fieldname: "customer_primary_address", label: "Customer Primary Address", fieldtype: "Link", options: [], link_doctype: "Address", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "customer_primary_contact", label: "Customer Primary Contact", fieldtype: "Link", options: [], link_doctype: "Contact", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-    ],
-  },
-  {
-    key: "tax_identification",
-    label: "Tax / Identification",
+    key: "business_tax",
+    label: "Business & Tax",
     fields: [
       { fieldname: "tax_id", label: "Tax Id", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "Tax identification number.", placeholder: "", depends_on: "" },
-      { fieldname: "tax_category", label: "Tax Category", fieldtype: "Link", options: [], link_doctype: "Tax Category", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "tax_withholding_category", label: "Tax Withholding Category", fieldtype: "Link", options: [], link_doctype: "Tax Withholding Category", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-    ],
-  },
-  {
-    key: "territory_market",
-    label: "Territory / Market",
-    fields: [
-      { fieldname: "territory", label: "Territory", fieldtype: "Link", options: [], link_doctype: "Territory", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "market_segment", label: "Market Segment", fieldtype: "Link", options: [], link_doctype: "Market Segment", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-    ],
-  },
-  {
-    key: "additional_information",
-    label: "Additional Information",
-    fields: [
-      { fieldname: "language", label: "Language", fieldtype: "Link", options: [], link_doctype: "Language", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "disabled", label: "Disabled", fieldtype: "Check", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "notes", label: "Notes", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "default_currency", label: "Default Currency", fieldtype: "Link", options: [], link_doctype: "Currency", required: false, read_only: false, default: "BDT", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "default_price_list", label: "Default Price List", fieldtype: "Link", options: [], link_doctype: "Price List", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
     ],
   },
 ];

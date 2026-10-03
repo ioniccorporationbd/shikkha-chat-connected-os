@@ -27,6 +27,8 @@ export interface CustomerCopy {
   empty: string;
   /** Per-field states. */
   requiredMark: string;
+  /** Small legend near the top of the form about the required marker. */
+  requiredNote: string;
   selectPlaceholder: string;
   searchPlaceholder: string;
   linkLoading: string;
@@ -46,7 +48,7 @@ export interface CustomerCopy {
 export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
   bn: {
     heading: "কাস্টমার তৈরি করুন",
-    hint: "ERPNext-এ সরাসরি একটি নতুন কাস্টমার যোগ করুন।",
+    hint: "ERPNext-এ নতুন কাস্টমার তৈরি করুন।",
     back: "ড্যাশবোর্ডে ফিরুন",
     createdLabel: "তৈরি হয়েছে",
     createdName: (name) => `কাস্টমার আইডি: ${name}`,
@@ -67,6 +69,7 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
       "আপনার অ্যাকাউন্টে Customer তৈরির অনুমতি দেওয়া নেই। একজন সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন অথবা আপনার রোল-এ Customer তৈরির অনুমতি যোগ করান।",
     empty: "এই ডকটাইপে কোনো ইনপুট ফিল্ড পাওয়া যায়নি।",
     requiredMark: "আবশ্যক",
+    requiredNote: "* চিহ্নিত ফিল্ডগুলো আবশ্যক।",
     selectPlaceholder: "নির্বাচন করুন",
     searchPlaceholder: "খুঁজুন…",
     linkLoading: "লোড হচ্ছে…",
@@ -79,10 +82,12 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     validationTitle: "তথ্য অসম্পূর্ণ",
     missingRequired: (label) => `"${label}" আবশ্যক।`,
     sectionLabels: {
+      "Customer Information": "কাস্টমার তথ্য",
       "Basic Information": "মৌলিক তথ্য",
       "Customer Details": "কাস্টমার বিবরণ",
       "Contact Information": "যোগাযোগ তথ্য",
       "Address Information": "ঠিকানা তথ্য",
+      "Business & Tax": "ব্যবসা ও কর",
       "Tax / Identification": "ট্যাক্স / পরিচিতি",
       "Territory / Market": "টেরিটরি / মার্কেট",
       "Additional Information": "অতিরিক্ত তথ্য",
@@ -93,7 +98,7 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
   },
   en: {
     heading: "Create Customer",
-    hint: "Add a new Customer directly in ERPNext.",
+    hint: "Create a new Customer in ERPNext.",
     back: "Back to dashboard",
     createdLabel: "Created",
     createdName: (name) => `Customer ID: ${name}`,
@@ -114,6 +119,7 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
       "Your account is missing the Customer: create permission. Ask a system administrator to grant it, or add it to your role.",
     empty: "No input fields were found on this DocType.",
     requiredMark: "Required",
+    requiredNote: "Fields marked with * are required.",
     selectPlaceholder: "Select",
     searchPlaceholder: "Search…",
     linkLoading: "Loading…",

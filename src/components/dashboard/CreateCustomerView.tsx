@@ -22,10 +22,10 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
 const CARD =
-  "rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] sm:p-5";
+  "rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-28px_color-mix(in_srgb,var(--color-primary)_40%,transparent)] sm:p-5";
 
 const INPUT_BASE =
-  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
+  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
 
 const LABEL = "text-[12px] font-semibold text-[var(--color-primary)]";
 const HELPER = "text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]";
@@ -171,6 +171,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   }, [schema, buildInitialValues]);
 
   const sections = schema?.sections ?? [];
+  const hasRequired = sections.some((section) => section.fields.some((field) => field.required));
 
   const heading = (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -183,6 +184,11 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
           <p className="mt-0.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
             {copy.hint}
           </p>
+          {hasRequired ? (
+            <p className="mt-1 text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+              {copy.requiredNote}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -339,9 +345,12 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
 
       {sections.map((section) => (
         <section key={section.key} className={CARD}>
-          <h3 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
-            {copy.sectionLabels[section.label] ?? section.label}
-          </h3>
+          <div className="flex items-center gap-2">
+            <span aria-hidden className="h-4 w-1 rounded-full bg-[var(--color-primary)]" />
+            <h3 className="text-[12.5px] font-semibold uppercase tracking-[0.07em] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+              {copy.sectionLabels[section.label] ?? section.label}
+            </h3>
+          </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {section.fields.map((field) => (
@@ -373,6 +382,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
         <button
           type="submit"
           disabled={submitting}
+          aria-busy={submitting}
           className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 text-[13px] font-semibold text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? <FiRefreshCw size={15} className="animate-spin" /> : <FiUserPlus size={15} />}
@@ -398,14 +408,11 @@ function FieldRow({ field, value, invalid, errorText, copy, language, onChange }
 
   return (
     <div className={isWide ? "sm:col-span-2" : ""}>
-      <label className="flex items-center gap-2">
-        <span className={LABEL}>
-          {field.label}
-          {field.required ? <span className="ml-1 text-[var(--color-danger)]">*</span> : null}
-        </span>
+      <label className="flex items-center gap-1">
+        <span className={LABEL}>{field.label}</span>
         {field.required ? (
-          <span className="rounded-full bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))] px-2 py-[1px] text-[10px] font-semibold text-[var(--color-danger-strong)]">
-            {copy.requiredMark}
+          <span aria-hidden className="text-[13px] leading-none text-[var(--color-danger)]">
+            *
           </span>
         ) : null}
       </label>
@@ -416,6 +423,7 @@ function FieldRow({ field, value, invalid, errorText, copy, language, onChange }
             type="button"
             role="switch"
             aria-checked={value === true}
+            aria-label={field.label}
             disabled={field.read_only}
             onClick={() => onChange(!(value === true))}
             className={`inline-flex h-7 w-12 items-center rounded-full border transition ${
