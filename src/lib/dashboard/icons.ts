@@ -11,6 +11,7 @@ import {
   FiSettings,
   FiShield,
   FiUserCheck,
+  FiUserPlus,
   FiUsers,
 } from "react-icons/fi";
 
@@ -33,6 +34,7 @@ export function statIcon(key: string): IconType {
 
 export const NAV_ICONS: Record<string, IconType> = {
   overview: FiGrid,
+  customers: FiUserPlus,
   analytics: FiBarChart2,
   reports: FiFileText,
   users: FiUsers,

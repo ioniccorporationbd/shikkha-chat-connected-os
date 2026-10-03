@@ -7,7 +7,6 @@ import { useCallback, useState } from "react";
 import {
   FiEdit2,
   FiHome,
-  FiInfo,
   FiLock,
   FiLogOut,
   FiMenu,
@@ -17,7 +16,7 @@ import {
 
 import ActivityList from "@/components/dashboard/ActivityList";
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
-import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
+import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import PanelCard from "@/components/dashboard/PanelCard";
 import QuickLinks from "@/components/dashboard/QuickLinks";
@@ -47,15 +46,18 @@ interface DashboardShellProps {
   scope?: "staff" | "client";
 }
 
-const STAFF_NAV_KEYS = ["overview", "analytics", "reports", "users", "settings"] as const;
-/** `users` is a desk concern; clients never see it. */
-const CLIENT_NAV_KEYS = ["overview", "analytics", "reports", "settings"] as const;
+/**
+ * Only real, working navigation lives in the rail. The former placeholder
+ * entries (analytics / reports / users / settings) pointed at static "coming
+ * soon" cards and have been removed — the rail now advertises exactly what the
+ * dashboard can actually do.
+ */
+const STAFF_NAV_KEYS = ["overview"] as const;
+const CLIENT_NAV_KEYS = ["overview"] as const;
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
-/** Where the non-overview rail actions scroll to. */
-const MODULES_ANCHOR = "dashboard-modules";
 /** Profile rows already shown in the identity header of the account card. */
 const SKIP_PROFILE_ROWS = new Set(["Full Name", "Email"]);
 /** Roles shown before the "+N more" control appears. */
@@ -83,6 +85,8 @@ export default function DashboardShell({
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
+  /** `overview` is the default panel; `create-customer` renders in the same shell. */
+  const [view, setView] = useState<"overview" | "create-customer">("overview");
 
   const { data, isFetching, isError, error, refetch } = useDashboardQuery(initialData);
 
@@ -113,13 +117,6 @@ export default function DashboardShell({
     }
   }, [refetch, copy]);
 
-  const scrollToModules = useCallback((key: string) => {
-    setNavOpen(false);
-    const node = document.getElementById(MODULES_ANCHOR);
-    if (node) node.scrollIntoView({ behavior: "smooth", block: "start" });
-    else toast.info(copy.sectionInfo[key]?.title ?? copy.modulesHeading);
-  }, [copy]);
-
   const displayName = user?.full_name || user?.name || "";
   const accountType = (user?.user_type ?? "").trim();
   const accountLabel = accountType
@@ -127,6 +124,11 @@ export default function DashboardShell({
       ? authCopy.systemUser
       : authCopy.websiteUser
     : "";
+
+  // The "Create Customer" rail link is visible to a System User only, on the
+  // staff panel — a Website User (portal customer) never sees it.
+  const isSystemUser = accountType.toLowerCase() === "system user" || Boolean(user?.is_admin);
+  const showCreateCustomer = !isClient && isSystemUser;
 
   const roles = user?.roles ?? [];
   const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
@@ -136,44 +138,64 @@ export default function DashboardShell({
     .filter((row) => !SKIP_PROFILE_ROWS.has(row.label))
     .slice(0, 4);
 
-  /** The rail nav, shared by the desktop sidebar and the mobile drawer. */
-  const renderNav = () =>
-    navKeys.map((key) => {
-      const Icon = NAV_ICONS[key];
-      const isOverview = key === "overview";
-      const info = copy.sectionInfo[key];
+  const navButtonClass = (active: boolean) =>
+    active
+      ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
+      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] hover:text-[var(--color-primary)]";
 
-      if (isOverview) {
-        return (
-          <span
-            key={key}
-            aria-current="page"
-            className="flex items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
-          >
-            <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-[var(--color-white)]">
-              <Icon className="text-[16px]" />
-              {copy.nav[key]}
-            </span>
-          </span>
-        );
-      }
+  const navLabelClass = (active: boolean) =>
+    `inline-flex items-center gap-3 text-[13px] ${active ? "font-semibold text-[var(--color-white)]" : "font-medium"}`;
+
+  /** The rail nav, shared by the desktop sidebar and the mobile drawer. */
+  const renderNav = () => {
+    const items = navKeys.map((key) => {
+      const Icon = NAV_ICONS[key];
+      const active = view === "overview";
 
       return (
         <button
           key={key}
           type="button"
-          onClick={() => scrollToModules(key)}
-          title={info?.hint}
-          className="group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
+          onClick={() => {
+            setView("overview");
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
         >
-          <span className="inline-flex flex-1 items-center gap-3 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] group-hover:text-[var(--color-primary)]">
+          <span className={navLabelClass(active)}>
             <Icon className="text-[16px]" />
             {copy.nav[key]}
           </span>
-          <FiInfo className="shrink-0 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]" />
         </button>
       );
     });
+
+    if (showCreateCustomer) {
+      const CreateIcon = NAV_ICONS.customers;
+      const active = view === "create-customer";
+
+      items.push(
+        <button
+          key="create-customer"
+          type="button"
+          onClick={() => {
+            setView("create-customer");
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <CreateIcon className="text-[16px]" />
+            {copy.nav.customers}
+          </span>
+        </button>
+      );
+    }
+
+    return items;
+  };
 
   /** Brand logo, shared by the desktop rail and the mobile drawer. */
   const renderLogo = (onClick?: () => void) => (
@@ -205,15 +227,13 @@ export default function DashboardShell({
     </Link>
   );
 
+  /**
+   * The rail footer holds a single action — sign out. The language switch that
+   * used to live here was a duplicate of the one in the account dropdown and
+   * has been removed (the dropdown is the one place language is chosen).
+   */
   const renderSidebarFooter = () => (
-    <div className="mt-auto flex flex-col gap-2 pt-6">
-      <div className="flex items-center justify-between gap-2 px-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
-          {copy.languageLabel}
-        </span>
-        <DashboardLanguageToggle />
-      </div>
-
+    <div className="mt-5 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
       <button
         type="button"
         onClick={handleSignOut}
@@ -233,10 +253,10 @@ export default function DashboardShell({
       data-no-translate="true"
       className="min-h-screen w-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
     >
-      <div className="mx-auto flex w-full max-w-[1480px] flex-col lg:flex-row lg:gap-6 lg:px-5 lg:py-6">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-5 lg:py-6">
         {/* ---------------------------------------------------------- rail */}
         <aside
-          className={`hidden w-[252px] shrink-0 flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:flex`}
+          className={`hidden w-[252px] shrink-0 self-start flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:flex`}
         >
           {renderLogo()}
 
@@ -305,7 +325,9 @@ export default function DashboardShell({
               </button>
 
               <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold">{copy.nav.overview}</p>
+                <p className="truncate text-[15px] font-semibold">
+                  {view === "create-customer" ? copy.nav.customers : copy.nav.overview}
+                </p>
                 <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                   {subtitle}
                 </p>
@@ -342,6 +364,10 @@ export default function DashboardShell({
           </header>
 
           <main className="flex min-w-0 flex-col gap-4 pb-4">
+            {view === "create-customer" ? (
+              <CreateCustomerView onBack={() => setView("overview")} />
+            ) : (
+              <>
             {/* Overview top profile section (item 1) */}
             <section
               className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}
@@ -554,44 +580,10 @@ export default function DashboardShell({
                     </PanelCard>
                   </div>
                 </div>
-
-                {/* Meaningful informational cards for the non-overview sections
-                    (item 12) — static, honest descriptions, never invented data. */}
-                <section id={MODULES_ANCHOR} className="flex scroll-mt-6 flex-col gap-3">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
-                    <h2 className="text-[15px] font-semibold">{copy.modulesHeading}</h2>
-                    <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                      {copy.modulesHint}
-                    </p>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {navKeys
-                      .filter((key) => key !== "overview")
-                      .map((key) => {
-                        const Icon = NAV_ICONS[key];
-                        const info = copy.sectionInfo[key];
-                        if (!info) return null;
-
-                        return (
-                          <article
-                            key={key}
-                            className={`rounded-[22px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW}`}
-                          >
-                            <span className="grid h-10 w-10 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] text-[17px] text-[var(--color-primary)]">
-                              <Icon />
-                            </span>
-                            <h3 className="mt-3 text-[14px] font-semibold">{info.title}</h3>
-                            <p className="mt-1 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                              {info.hint}
-                            </p>
-                          </article>
-                        );
-                      })}
-                  </div>
-                </section>
               </>
             ) : null}
+              </>
+            )}
           </main>
         </div>
       </div>

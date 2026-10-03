@@ -322,6 +322,103 @@ function dashboardPayload(account) {
   };
 }
 
+/** Representative ERPNext `Customer` field catalogue (metadata-shaped). */
+const CUSTOMER_SECTIONS = [
+  {
+    key: "basic_information",
+    label: "Basic Information",
+    fields: [
+      { fieldname: "customer_name", label: "Customer Name", fieldtype: "Data", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "The full name of the customer.", placeholder: "", depends_on: "" },
+      { fieldname: "customer_type", label: "Customer Type", fieldtype: "Select", options: ["Company", "Individual"], link_doctype: "", required: true, read_only: false, default: "Company", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "customer_group", label: "Customer Group", fieldtype: "Link", options: [], link_doctype: "Customer Group", required: false, read_only: false, default: "Commercial", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "salutation", label: "Salutation", fieldtype: "Link", options: [], link_doctype: "Salutation", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "first_name", label: "First Name", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "last_name", label: "Last Name", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "gender", label: "Gender", fieldtype: "Link", options: [], link_doctype: "Gender", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "lead_name", label: "Lead Name", fieldtype: "Link", options: [], link_doctype: "Lead", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+  {
+    key: "customer_details",
+    label: "Customer Details",
+    fields: [
+      { fieldname: "account_manager", label: "Account Manager", fieldtype: "Link", options: [], link_doctype: "User", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "default_currency", label: "Default Currency", fieldtype: "Link", options: [], link_doctype: "Currency", required: false, read_only: false, default: "BDT", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "default_price_list", label: "Default Price List", fieldtype: "Link", options: [], link_doctype: "Price List", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "industry", label: "Industry", fieldtype: "Link", options: [], link_doctype: "Industry", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "is_internal_customer", label: "Is Internal Customer", fieldtype: "Check", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "Set if this customer represents a subsidiary.", placeholder: "", depends_on: "" },
+    ],
+  },
+  {
+    key: "contact_information",
+    label: "Contact Information",
+    fields: [
+      { fieldname: "mobile_no", label: "Mobile Number", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "017XXXXXXXX", depends_on: "" },
+      { fieldname: "email_id", label: "Email Id", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "name@example.com", depends_on: "" },
+      { fieldname: "phone", label: "Phone", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "website", label: "Website", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "https://", depends_on: "" },
+    ],
+  },
+  {
+    key: "address_information",
+    label: "Address Information",
+    fields: [
+      { fieldname: "customer_primary_address", label: "Customer Primary Address", fieldtype: "Link", options: [], link_doctype: "Address", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "customer_primary_contact", label: "Customer Primary Contact", fieldtype: "Link", options: [], link_doctype: "Contact", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+  {
+    key: "tax_identification",
+    label: "Tax / Identification",
+    fields: [
+      { fieldname: "tax_id", label: "Tax Id", fieldtype: "Data", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "Tax identification number.", placeholder: "", depends_on: "" },
+      { fieldname: "tax_category", label: "Tax Category", fieldtype: "Link", options: [], link_doctype: "Tax Category", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "tax_withholding_category", label: "Tax Withholding Category", fieldtype: "Link", options: [], link_doctype: "Tax Withholding Category", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+  {
+    key: "territory_market",
+    label: "Territory / Market",
+    fields: [
+      { fieldname: "territory", label: "Territory", fieldtype: "Link", options: [], link_doctype: "Territory", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "market_segment", label: "Market Segment", fieldtype: "Link", options: [], link_doctype: "Market Segment", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+  {
+    key: "additional_information",
+    label: "Additional Information",
+    fields: [
+      { fieldname: "language", label: "Language", fieldtype: "Link", options: [], link_doctype: "Language", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "disabled", label: "Disabled", fieldtype: "Check", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "notes", label: "Notes", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+];
+
+/** Link data sources, keyed by the target DocType the ERP would return. */
+const CUSTOMER_LINK_OPTIONS = {
+  "Customer Group": ["Commercial", "Government", "Individual", "Non Profit", "Residential", "Retail", "Distributor"],
+  Territory: ["Bangladesh", "Dhaka", "Chattogram", "Khulna", "Rajshahi"],
+  Salutation: ["Mr", "Mrs", "Ms", "Dr"],
+  Gender: ["Male", "Female", "Other"],
+  Lead: ["LEAD-0001", "LEAD-0002"],
+  Opportunity: ["OPP-0001", "OPP-0002"],
+  User: ["tamim@ioniccorporation.com", "Administrator"],
+  Currency: ["BDT", "USD", "EUR"],
+  "Price List": ["Standard Selling"],
+  Industry: ["Education", "Retail", "Manufacturing", "Technology"],
+  "Market Segment": ["Education", "Government", "Corporate"],
+  "Tax Category": ["In-State", "Out-of-State"],
+  "Tax Withholding Category": ["TDS"],
+  Language: ["en", "bn"],
+  Address: ["Primary Address"],
+  Contact: ["Primary Contact"],
+};
+
+/** Customers created through the panel during this mock run. */
+const createdCustomers = new Map();
+let customerCounter = 0;
+
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
   const method = url.pathname.replace(/^\/api\/method\//, "");
@@ -346,7 +443,7 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.1",
+      version: "1.3.3",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
@@ -357,6 +454,9 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.profile.verify_update_otp",
         "shikkha_os.api.v1.profile.upload_image",
         "shikkha_os.api.v1.profile.change_password",
+        "shikkha_os.api.v1.customer.form_schema",
+        "shikkha_os.api.v1.customer.link_options",
+        "shikkha_os.api.v1.customer.create",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -942,6 +1042,93 @@ const server = createServer(async (request, response) => {
 
     account.password = next;
     ok(response, { changed: true });
+    return;
+  }
+
+  // --- Customer creation (mirrors shikkha_os.api.v1.customer.*) ---
+  if (method === "shikkha_os.api.v1.customer.form_schema") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+      return;
+    }
+
+    ok(response, {
+      doctype: "Customer",
+      title: "Customer",
+      sections: CUSTOMER_SECTIONS,
+      meta: { title_field: "name", search_fields: ["customer_name"] },
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.customer.link_options") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+      return;
+    }
+
+    const target = (url.searchParams.get("doctype") ?? "").trim();
+    const txt = (url.searchParams.get("txt") ?? "").trim().toLowerCase();
+    const all = CUSTOMER_LINK_OPTIONS[target] ?? [];
+    const options = all
+      .filter((value) => !txt || value.toLowerCase().includes(txt))
+      .map((value) => ({ value, label: value }));
+
+    ok(response, { doctype: target, options });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.customer.create") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+      return;
+    }
+
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : {};
+
+    const name = String(data.customer_name ?? "").trim();
+    const type = String(data.customer_type ?? "").trim();
+
+    if (!name) {
+      failure(response, 417, "ValidationError", "Customer Name is required.", "Customer");
+      return;
+    }
+    if (!type) {
+      failure(response, 417, "ValidationError", "Customer Type is required.", "Customer");
+      return;
+    }
+
+    if (createdCustomers.has(name.toLowerCase())) {
+      failure(response, 417, "DuplicateEntryError", "A customer with that name already exists.", "Customer");
+      return;
+    }
+
+    customerCounter += 1;
+    const docName = `CUST-${String(customerCounter).padStart(4, "0")}`;
+    const creation = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const record = { name: docName, customer_name: name, customer_type: type, owner: email, creation };
+    createdCustomers.set(name.toLowerCase(), record);
+    createdCustomers.set(docName.toLowerCase(), record);
+
+    // eslint-disable-next-line no-console
+    console.log(`[mock-frappe] CUSTOMER CREATED ${docName} (${name}) by ${email}`);
+
+    ok(response, record);
     return;
   }
 

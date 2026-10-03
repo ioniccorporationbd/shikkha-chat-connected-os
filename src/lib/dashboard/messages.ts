@@ -7,6 +7,7 @@ export interface DashboardCopy {
   navHeading: string;
   nav: {
     overview: string;
+    customers: string;
     analytics: string;
     reports: string;
     users: string;
@@ -86,6 +87,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     navHeading: "মেনু",
     nav: {
       overview: "ওভারভিউ",
+      customers: "কাস্টমার তৈরি করুন",
       analytics: "অ্যানালিটিক্স",
       reports: "রিপোর্ট",
       users: "ইউজার",
@@ -198,6 +200,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     navHeading: "Menu",
     nav: {
       overview: "Overview",
+      customers: "Create Customer",
       analytics: "Analytics",
       reports: "Reports",
       users: "Users",
