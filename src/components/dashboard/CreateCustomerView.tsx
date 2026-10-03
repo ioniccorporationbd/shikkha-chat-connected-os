@@ -39,6 +39,31 @@ function borderClass(invalid: boolean): string {
 const TEXTAREA_TYPES = new Set(["Small Text", "Text", "Long Text", "Text Editor"]);
 const NUMBER_TYPES = new Set(["Int", "Float", "Currency", "Percent"]);
 
+/**
+ * Whether a schema-load failure is really a permission refusal.
+ *
+ * The current backend raises the refusal as `PermissionError`, which the API
+ * layer maps to `not_permitted`. An older backend instead reports it as a
+ * `validation_error` whose message is the localized "no permission" text — so
+ * match on that text too, otherwise the user sees a scary "could not load" card
+ * for what is actually an actionable "you need the Customer: create role".
+ */
+const PERMISSION_HINTS = [
+  "permission to create",
+  "do not have permission",
+  "not permitted",
+  "only system users",
+  "অনুমতি নেই",
+  "সিস্টেম ইউজার",
+];
+
+function isPermissionRefusal(code?: string, message?: string): boolean {
+  if (code === "not_permitted" || code === "no_permission") return true;
+  if (code !== "validation_error") return false;
+  const haystack = (message ?? "").toLowerCase();
+  return PERMISSION_HINTS.some((hint) => haystack.includes(hint.toLowerCase()));
+}
+
 interface CreateCustomerViewProps {
   /** Return to the dashboard overview (keeps the same shell — no new dashboard). */
   onBack: () => void;
@@ -192,7 +217,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
 
   if (loadError) {
     const isAuth = loadError.code === "not_authenticated";
-    const isPermission = loadError.code === "not_permitted";
+    const isPermission = isPermissionRefusal(loadError.code, loadError.message);
     return (
       <section className={CARD}>
         {heading}

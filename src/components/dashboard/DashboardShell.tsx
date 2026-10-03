@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
   FiEdit2,
@@ -26,7 +26,7 @@ import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
-import { LOGIN_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
@@ -77,6 +77,7 @@ export default function DashboardShell({
   const subtitle = isClient ? copy.clientSubtitle : copy.subtitle;
 
   const router = useRouter();
+  const pathname = usePathname();
   const resetSession = useAuthStore((state) => state.reset);
   const storeUser = useAuthStore((state) => state.user);
 
@@ -85,8 +86,13 @@ export default function DashboardShell({
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
-  /** `overview` is the default panel; `create-customer` renders in the same shell. */
-  const [view, setView] = useState<"overview" | "create-customer">("overview");
+
+  // The active panel is driven by the URL, not local state: "Create Customer"
+  // has its own route inside this shell, so the address bar reflects it and the
+  // browser Back button works. The client scope has no such sub-route.
+  const basePath = isClient ? CLIENT_DASHBOARD_PATH : STAFF_DASHBOARD_PATH;
+  const createCustomerPath = `${basePath}/create-customer`;
+  const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
 
   const { data, isFetching, isError, error, refetch } = useDashboardQuery(initialData);
 
@@ -150,14 +156,14 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = view === "overview";
+      const active = !onCreateView;
 
       return (
         <button
           key={key}
           type="button"
           onClick={() => {
-            setView("overview");
+            router.push(basePath);
             setNavOpen(false);
           }}
           aria-current={active ? "page" : undefined}
@@ -173,14 +179,14 @@ export default function DashboardShell({
 
     if (showCreateCustomer) {
       const CreateIcon = NAV_ICONS.customers;
-      const active = view === "create-customer";
+      const active = onCreateView;
 
       items.push(
         <button
           key="create-customer"
           type="button"
           onClick={() => {
-            setView("create-customer");
+            router.push(createCustomerPath);
             setNavOpen(false);
           }}
           aria-current={active ? "page" : undefined}
@@ -326,7 +332,7 @@ export default function DashboardShell({
 
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">
-                  {view === "create-customer" ? copy.nav.customers : copy.nav.overview}
+                  {onCreateView ? copy.nav.customers : copy.nav.overview}
                 </p>
                 <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                   {subtitle}
@@ -364,8 +370,8 @@ export default function DashboardShell({
           </header>
 
           <main className="flex min-w-0 flex-col gap-4 pb-4">
-            {view === "create-customer" ? (
-              <CreateCustomerView onBack={() => setView("overview")} />
+            {onCreateView ? (
+              <CreateCustomerView onBack={() => router.push(basePath)} />
             ) : (
               <>
             {/* Overview top profile section (item 1) */}

@@ -23,6 +23,13 @@ export const CLIENT_DASHBOARD_PATH = "/clientDashboard";
  */
 export const DASHBOARD_PATH = STAFF_DASHBOARD_PATH;
 
+/**
+ * Staff-only sub-route that renders the Create Customer form. It lives on its
+ * own URL inside the dashboard shell so opening the form is a real navigation
+ * (the address bar changes, Back works) instead of a silent in-place panel swap.
+ */
+export const CREATE_CUSTOMER_PATH = `${STAFF_DASHBOARD_PATH}/create-customer`;
+
 /** Every route that renders the dashboard shell. */
 export const DASHBOARD_PATHS: readonly string[] = [STAFF_DASHBOARD_PATH, CLIENT_DASHBOARD_PATH];
 
