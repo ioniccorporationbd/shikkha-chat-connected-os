@@ -67,6 +67,13 @@ function unwrap<T>(envelope: ApiEnvelope<T> | undefined): T {
  *   code=upstream_error      the ERP answered 5xx / an HTML error page
  *   code=validation_error    the ERP refused the input (a normal outcome)
  */
+// Failures that are a normal part of the flow (the ERP refused the input, or the
+// portal user lacks a permission) are expected outcomes, not bugs - the comment
+// above even calls validation_error "a normal outcome". Log those quietly with
+// console.debug so they never shout on the error channel; keep console.error for
+// the ones that are genuinely broken (unreachable host, misconfig, 5xx).
+const QUIET_CODES = new Set(["validation_error", "not_permitted"]);
+
 function logFailure(method: "GET" | "POST", url: string, error: unknown): void {
   if (process.env.NEXT_PUBLIC_HTTP_DEBUG === "0") return;
 
@@ -74,8 +81,14 @@ function logFailure(method: "GET" | "POST", url: string, error: unknown): void {
   const status = apiError?.status ?? 0;
   const code = apiError?.code ?? "network_error";
   const message = apiError?.message ?? (error instanceof Error ? error.message : String(error));
+  const line = `[http] ${method} ${url} failed: status=${status} code=${code} message=${message}`;
 
-  console.error(`[http] ${method} ${url} failed: status=${status} code=${code} message=${message}`);
+  if (QUIET_CODES.has(code)) {
+    console.debug(line);
+    return;
+  }
+
+  console.error(line);
 }
 
 export async function postJson<T>(url: string, body?: unknown): Promise<T> {

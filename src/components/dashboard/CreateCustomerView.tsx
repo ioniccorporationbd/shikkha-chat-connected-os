@@ -263,6 +263,22 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
             <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
               {copy.createdLabel}: <span className="font-semibold">{created.name}</span>
             </p>
+            {created.customer_group || created.territory ? (
+              <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {[
+                  created.customer_group ? `${copy.groupLabel}: ${created.customer_group}` : "",
+                  created.territory ? `${copy.territoryLabel}: ${created.territory}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            ) : null}
+            {created.verified ? (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-success)]">
+                <FiCheckCircle size={14} />
+                {copy.verifiedLabel}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-2">

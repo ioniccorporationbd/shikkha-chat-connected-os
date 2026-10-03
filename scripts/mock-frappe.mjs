@@ -103,6 +103,7 @@ const DEMO_USERS = {
   "tamim@ioniccorporation.com": {
     password: PASSWORD,
     kind: "staff",
+    can_create_customer: true,
     profile: {
       authenticated: true,
       name: "tamim@ioniccorporation.com",
@@ -116,6 +117,29 @@ const DEMO_USERS = {
       is_admin: true,
       designation: "Junior Developer",
       department: "Engineering",
+      dashboard_route: "/userDashboard",
+    },
+  },
+  // A System User who LACKS Customer:create - the exact case that used to surface a
+  // generic red "load failed" card. The portal must now show a clean, actionable
+  // permission state instead (spec item 6), never a broken form or a raw error.
+  "sales@ioniccorporation.com": {
+    password: PASSWORD,
+    kind: "staff",
+    can_create_customer: false,
+    profile: {
+      authenticated: true,
+      name: "sales@ioniccorporation.com",
+      full_name: "Sales Executive",
+      email: "sales@ioniccorporation.com",
+      user_image: "",
+      time_zone: "Asia/Dhaka",
+      language: "bn",
+      user_type: "System User",
+      roles: ["Sales User"],
+      is_admin: false,
+      designation: "Sales Executive",
+      department: "Sales",
       dashboard_route: "/userDashboard",
     },
   },
@@ -140,6 +164,22 @@ const DEMO_USERS = {
 
 function redirectFor(account) {
   return account.profile.dashboard_route;
+}
+
+/**
+ * Mirrors shikkha_os.api.v1.customer._require_creator: only a System User who
+ * holds Customer:create may proceed. Returns a failure descriptor, or null when
+ * allowed. A System User without the permission is refused with a PermissionError
+ * (not a ValidationError) so the portal can show the dedicated permission state.
+ */
+function customerGate(account) {
+  if (!account || account.kind !== "staff") {
+    return { status: 403, exc: "ValidationError", message: "Only System Users can create customers." };
+  }
+  if (account.can_create_customer === false) {
+    return { status: 403, exc: "PermissionError", message: "You do not have permission to create Customers." };
+  }
+  return null;
 }
 
 // --- registration ---------------------------------------------------------- //
@@ -1050,8 +1090,9 @@ const server = createServer(async (request, response) => {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;
 
-    if (!account || account.kind !== "staff") {
-      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
       return;
     }
 
@@ -1068,8 +1109,9 @@ const server = createServer(async (request, response) => {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;
 
-    if (!account || account.kind !== "staff") {
-      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
       return;
     }
 
@@ -1093,8 +1135,9 @@ const server = createServer(async (request, response) => {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;
 
-    if (!account || account.kind !== "staff") {
-      failure(response, 403, "ValidationError", "Only System Users can create customers.", "Customer");
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
       return;
     }
 
@@ -1121,7 +1164,16 @@ const server = createServer(async (request, response) => {
     customerCounter += 1;
     const docName = `CUST-${String(customerCounter).padStart(4, "0")}`;
     const creation = new Date().toISOString().slice(0, 19).replace("T", " ");
-    const record = { name: docName, customer_name: name, customer_type: type, owner: email, creation };
+    const record = {
+      name: docName,
+      customer_name: name,
+      customer_type: type,
+      customer_group: String(data.customer_group ?? "").trim(),
+      territory: String(data.territory ?? "").trim(),
+      owner: email,
+      creation,
+      verified: true,
+    };
     createdCustomers.set(name.toLowerCase(), record);
     createdCustomers.set(docName.toLowerCase(), record);
 

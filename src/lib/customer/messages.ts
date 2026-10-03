@@ -7,6 +7,10 @@ export interface CustomerCopy {
   /** Live "Created: <name>" confirmation. */
   createdLabel: string;
   createdName: (name: string) => string;
+  /** Success-summary field labels. */
+  groupLabel: string;
+  territoryLabel: string;
+  verifiedLabel: string;
   createAnother: string;
   submit: string;
   submitting: string;
@@ -46,6 +50,9 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     back: "ড্যাশবোর্ডে ফিরুন",
     createdLabel: "তৈরি হয়েছে",
     createdName: (name) => `কাস্টমার আইডি: ${name}`,
+    groupLabel: "গ্রুপ",
+    territoryLabel: "টেরিটরি",
+    verifiedLabel: "ERPNext-এ যাচাই করা হয়েছে",
     createAnother: "আরেকটি তৈরি করুন",
     submit: "কাস্টমার তৈরি করুন",
     submitting: "তৈরি হচ্ছে…",
@@ -90,6 +97,9 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     back: "Back to dashboard",
     createdLabel: "Created",
     createdName: (name) => `Customer ID: ${name}`,
+    groupLabel: "Group",
+    territoryLabel: "Territory",
+    verifiedLabel: "Verified in ERPNext",
     createAnother: "Create another",
     submit: "Create Customer",
     submitting: "Creating…",

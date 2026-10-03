@@ -49,9 +49,14 @@ export interface CustomerCreateResult {
   name: string;
   customer_name: string;
   customer_type?: string;
+  /** Summary fields mirrored from the created document. */
+  customer_group?: string;
+  territory?: string;
   /** Frappe audit fields (written by the standard insert flow). */
   owner?: string;
   creation?: string;
+  /** Backend self-check: the row exists in the Customer table (frappe.db.exists). */
+  verified?: boolean;
 }
 
 /** A single form value — text, number, date string, or a Check boolean. */
