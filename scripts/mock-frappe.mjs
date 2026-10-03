@@ -594,7 +594,7 @@ const server = createServer(async (request, response) => {
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    pendingRegistrations.set(email, { code, attempts: 0, expires: Date.now() + 600_000 });
+    pendingRegistrations.set(email, { code, attempts: 0, expires: Date.now() + 300_000 });
 
     // eslint-disable-next-line no-console
     console.log(`[mock-frappe] OTP ${email} = ${code}`);
@@ -604,7 +604,7 @@ const server = createServer(async (request, response) => {
       email: maskEmail(email),
       mobile: maskMobile(mobile),
       delivery: { sms: true, email: true },
-      expires_in_seconds: 600,
+      expires_in_seconds: 300,
       resend_after_seconds: 30,
     });
     return;
@@ -688,7 +688,7 @@ const server = createServer(async (request, response) => {
 
     const email = found.email;
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    pendingLoginOtps.set(email, { code, attempts: 0, expires: Date.now() + 600_000 });
+    pendingLoginOtps.set(email, { code, attempts: 0, expires: Date.now() + 300_000 });
 
     // eslint-disable-next-line no-console
     console.log(`[mock-frappe] LOGIN OTP ${email} = ${code}`);
@@ -705,7 +705,7 @@ const server = createServer(async (request, response) => {
         sms_code: smsOk ? "sent" : "not_configured",
         email_code: "sent",
       },
-      expires_in_seconds: 600,
+      expires_in_seconds: 300,
       resend_after_seconds: 30,
     });
     return;
@@ -787,7 +787,7 @@ const server = createServer(async (request, response) => {
 
     const channel = isEmail ? "email" : "sms";
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    pendingResetOtps.set(found.email, { code, attempts: 0, channel, expires: Date.now() + 600_000 });
+    pendingResetOtps.set(found.email, { code, attempts: 0, channel, expires: Date.now() + 300_000 });
 
     // eslint-disable-next-line no-console
     console.log(`[mock-frappe] RESET OTP ${found.email} = ${code}`);
@@ -802,7 +802,7 @@ const server = createServer(async (request, response) => {
         sms_code: channel === "sms" ? "sent" : "not_attempted",
         email_code: channel === "email" ? "sent" : "not_attempted",
       },
-      expires_in_seconds: 600,
+      expires_in_seconds: 300,
       resend_after_seconds: 30,
     });
     return;
@@ -927,7 +927,7 @@ const server = createServer(async (request, response) => {
       email: maskEmail(email),
       mobile: maskMobile(mobileNo),
       delivery: { sms: true, email: true, sms_code: "sent", email_code: "sent" },
-      expires_in_seconds: 600,
+      expires_in_seconds: 300,
       resend_after_seconds: 30,
     });
     return;
