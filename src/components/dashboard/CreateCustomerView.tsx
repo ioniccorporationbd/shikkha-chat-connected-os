@@ -50,7 +50,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
 
   const [schema, setSchema] = useState<CustomerSchema | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<{ message: string; code: string } | null>(null);
 
   const [values, setValues] = useState<CustomerFormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -79,7 +79,8 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
       setValues(buildInitialValues(data));
       setErrors({});
     } catch (error) {
-      setLoadError((error as Error)?.message || copy.loadFailed);
+      const failure = error as { message?: string; code?: string };
+      setLoadError({ message: failure?.message || copy.loadFailed, code: failure?.code || "error" });
     } finally {
       setLoading(false);
     }
@@ -190,20 +191,33 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   }
 
   if (loadError) {
+    const isAuth = loadError.code === "not_authenticated";
     return (
       <section className={CARD}>
         {heading}
         <div className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">
-          <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">{copy.loadFailed}</p>
-          <p className={`mt-1 ${HELPER}`}>{loadError}</p>
-          <button
-            type="button"
-            onClick={() => void loadSchema()}
-            className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
-          >
-            <FiRefreshCw size={15} />
-            {copy.retry}
-          </button>
+          <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">
+            {isAuth ? copy.sessionExpiredTitle : copy.loadFailed}
+          </p>
+          <p className={`mt-1 ${HELPER}`}>{loadError.message}</p>
+          {isAuth ? (
+            <a
+              href="/login"
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+            >
+              <FiArrowLeft size={15} />
+              {copy.signInAgain}
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void loadSchema()}
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+            >
+              <FiRefreshCw size={15} />
+              {copy.retry}
+            </button>
+          )}
         </div>
       </section>
     );

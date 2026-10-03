@@ -42,7 +42,7 @@ export default function RootLayout({
             lang="bn" -> "en"). The app has its own language switch. */}
         <meta name="google" content="notranslate" />
       </head>
-      <body className="min-h-full w-full overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
+      <body className="min-h-full w-full overflow-x-clip bg-[var(--background)] text-[var(--foreground)]">
         <QueryProvider>
           <LanguageProvider>
             {/* Hydrates the auth store so the sidebar and the dashboard agree. */}

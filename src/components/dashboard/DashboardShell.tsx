@@ -256,7 +256,7 @@ export default function DashboardShell({
       <div className="mx-auto flex w-full max-w-[1480px] flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-5 lg:py-6">
         {/* ---------------------------------------------------------- rail */}
         <aside
-          className={`hidden w-[252px] shrink-0 self-start flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:flex`}
+          className={`hidden w-[252px] shrink-0 self-start flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain`}
         >
           {renderLogo()}
 

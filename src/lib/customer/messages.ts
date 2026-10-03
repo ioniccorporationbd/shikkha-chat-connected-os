@@ -13,6 +13,9 @@ export interface CustomerCopy {
   reset: string;
   loading: string;
   loadFailed: string;
+  /** Lapsed ERP session — offer a sign-in instead of a blind retry. */
+  sessionExpiredTitle: string;
+  signInAgain: string;
   retry: string;
   empty: string;
   /** Per-field states. */
@@ -46,6 +49,8 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     reset: "রিসেট",
     loading: "কাস্টমার ফর্ম লোড হচ্ছে…",
     loadFailed: "ফর্ম লোড করা যায়নি।",
+    sessionExpiredTitle: "সেশনের মেয়াদ শেষ",
+    signInAgain: "আবার সাইন ইন করুন",
     retry: "আবার চেষ্টা করুন",
     empty: "এই ডকটাইপে কোনো ইনপুট ফিল্ড পাওয়া যায়নি।",
     requiredMark: "আবশ্যক",
@@ -85,6 +90,8 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     reset: "Reset",
     loading: "Loading the customer form…",
     loadFailed: "The form could not be loaded.",
+    sessionExpiredTitle: "Your session has expired",
+    signInAgain: "Sign in again",
     retry: "Try again",
     empty: "No input fields were found on this DocType.",
     requiredMark: "Required",
