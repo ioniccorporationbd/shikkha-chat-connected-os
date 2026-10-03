@@ -21,6 +21,7 @@ export type FrappeFailureCode =
   | "upstream_error"
   | "invalid_payload"
   | "not_authenticated"
+  | "not_permitted"
   | "rate_limited"
   | "validation_error";
 
@@ -221,6 +222,12 @@ function normalizeFailure(
       code: "not_authenticated",
       message,
     };
+  }
+
+  if (excType === "PermissionError") {
+    // The ERP refused for lack of permission: an expected, actionable outcome.
+    // Give it its own code so the UI reads as guidance, not a bug.
+    return { ok: false, status: 200, code: "not_permitted", message };
   }
 
   if (excType === "ValidationError" || status === 417 || status === 418) {

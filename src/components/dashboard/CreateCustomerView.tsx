@@ -192,14 +192,32 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
 
   if (loadError) {
     const isAuth = loadError.code === "not_authenticated";
+    const isPermission = loadError.code === "not_permitted";
     return (
       <section className={CARD}>
         {heading}
-        <div className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">
-          <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">
-            {isAuth ? copy.sessionExpiredTitle : copy.loadFailed}
+        <div
+          className={
+            isPermission
+              ? "mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] p-4"
+              : "mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4"
+          }
+        >
+          <p
+            className={
+              isPermission
+                ? "text-[13px] font-semibold text-[var(--color-primary)]"
+                : "text-[13px] font-semibold text-[var(--color-danger-strong)]"
+            }
+          >
+            {isAuth
+              ? copy.sessionExpiredTitle
+              : isPermission
+                ? copy.permissionTitle
+                : copy.loadFailed}
           </p>
           <p className={`mt-1 ${HELPER}`}>{loadError.message}</p>
+          {isPermission ? <p className={`mt-1 ${HELPER}`}>{copy.permissionHint}</p> : null}
           {isAuth ? (
             <a
               href="/login"
@@ -208,6 +226,15 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
               <FiArrowLeft size={15} />
               {copy.signInAgain}
             </a>
+          ) : isPermission ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+            >
+              <FiArrowLeft size={15} />
+              {copy.back}
+            </button>
           ) : (
             <button
               type="button"

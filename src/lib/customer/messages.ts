@@ -17,6 +17,9 @@ export interface CustomerCopy {
   sessionExpiredTitle: string;
   signInAgain: string;
   retry: string;
+  /** Permission refusal — a clean, actionable state, not an error card. */
+  permissionTitle: string;
+  permissionHint: string;
   empty: string;
   /** Per-field states. */
   requiredMark: string;
@@ -52,6 +55,9 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     sessionExpiredTitle: "সেশনের মেয়াদ শেষ",
     signInAgain: "আবার সাইন ইন করুন",
     retry: "আবার চেষ্টা করুন",
+    permissionTitle: "কাস্টমার তৈরির অনুমতি নেই",
+    permissionHint:
+      "আপনার অ্যাকাউন্টে Customer তৈরির অনুমতি দেওয়া নেই। একজন সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন অথবা আপনার রোল-এ Customer তৈরির অনুমতি যোগ করান।",
     empty: "এই ডকটাইপে কোনো ইনপুট ফিল্ড পাওয়া যায়নি।",
     requiredMark: "আবশ্যক",
     selectPlaceholder: "নির্বাচন করুন",
@@ -93,6 +99,9 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     sessionExpiredTitle: "Your session has expired",
     signInAgain: "Sign in again",
     retry: "Try again",
+    permissionTitle: "No permission to create customers",
+    permissionHint:
+      "Your account is missing the Customer: create permission. Ask a system administrator to grant it, or add it to your role.",
     empty: "No input fields were found on this DocType.",
     requiredMark: "Required",
     selectPlaceholder: "Select",
