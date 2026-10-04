@@ -636,6 +636,321 @@ function paymentSummary(rows, currency) {
   };
 }
 
+// --- customer service build / Sales Invoice (mirrors shikkha_os.api.v1.sales_invoice.*) --- //
+// The customer is resolved from the logged-in user (never the body), exactly
+// like the real endpoint; ownership is enforced by the `customer` filter on the
+// list and by an explicit customer check on details. Draft (docstatus 0) and
+// Submitted (docstatus 1) rows are returned; the seeded Cancelled row proves
+// exclusion.
+const salesInvoices = [
+  {
+    name: "ACC-SINV-2026-00012",
+    posting_date: "2026-09-16",
+    due_date: "2026-09-30",
+    status: "Paid",
+    docstatus: 1,
+    grand_total: 5000,
+    rounded_total: 5000,
+    net_total: 5000,
+    total: 5000,
+    outstanding_amount: 0,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0001",
+    customer_name: "Nusrat Jahan",
+    is_return: 0,
+    return_against: "",
+    po_no: "",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 5000,
+    base_net_total: 5000,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "Consulting service billed for September",
+    items: [
+      {
+        item_code: "SRV-001",
+        item_name: "Consulting Service",
+        description: "Monthly consulting service",
+        qty: 5,
+        uom: "Nos",
+        rate: 1000,
+        amount: 5000,
+      },
+    ],
+  },
+  {
+    name: "ACC-SINV-2026-00020",
+    posting_date: "2026-10-01",
+    due_date: "2026-10-15",
+    status: "Unpaid",
+    docstatus: 1,
+    grand_total: 1200,
+    rounded_total: 1200,
+    net_total: 1200,
+    total: 1200,
+    outstanding_amount: 1200,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0001",
+    customer_name: "Nusrat Jahan",
+    is_return: 0,
+    return_against: "",
+    po_no: "PO-2026-0042",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 1200,
+    base_net_total: 1200,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "",
+    items: [
+      {
+        item_code: "SUP-010",
+        item_name: "Support Package",
+        description: "Priority support",
+        qty: 1,
+        uom: "Nos",
+        rate: 1200,
+        amount: 1200,
+      },
+    ],
+  },
+  {
+    name: "ACC-SINV-2026-00021",
+    posting_date: "2026-08-20",
+    due_date: "2026-09-05",
+    status: "Overdue",
+    docstatus: 1,
+    grand_total: 800,
+    rounded_total: 800,
+    net_total: 800,
+    total: 800,
+    outstanding_amount: 800,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0001",
+    customer_name: "Nusrat Jahan",
+    is_return: 0,
+    return_against: "",
+    po_no: "",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 800,
+    base_net_total: 800,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "",
+    items: [
+      {
+        item_code: "SRV-002",
+        item_name: "Setup Fee",
+        description: "One-time setup",
+        qty: 1,
+        uom: "Nos",
+        rate: 800,
+        amount: 800,
+      },
+    ],
+  },
+  // Draft - shown to the customer (invoice not yet submitted).
+  {
+    name: "ACC-SINV-2026-00025",
+    posting_date: "2026-10-04",
+    due_date: "2026-10-18",
+    status: "Draft",
+    docstatus: 0,
+    grand_total: 2500,
+    rounded_total: 2500,
+    net_total: 2500,
+    total: 2500,
+    outstanding_amount: 2500,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0001",
+    customer_name: "Nusrat Jahan",
+    is_return: 0,
+    return_against: "",
+    po_no: "",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 2500,
+    base_net_total: 2500,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "",
+    items: [
+      {
+        item_code: "SRV-003",
+        item_name: "Development Sprint",
+        description: "Two-week sprint",
+        qty: 1,
+        uom: "Nos",
+        rate: 2500,
+        amount: 2500,
+      },
+    ],
+  },
+  // Cancelled - must NEVER appear in the history.
+  {
+    name: "ACC-SINV-2026-00026",
+    posting_date: "2026-10-04",
+    due_date: "2026-10-18",
+    status: "Cancelled",
+    docstatus: 2,
+    grand_total: 999,
+    rounded_total: 999,
+    net_total: 999,
+    total: 999,
+    outstanding_amount: 0,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0001",
+    customer_name: "Nusrat Jahan",
+    is_return: 0,
+    return_against: "",
+    po_no: "",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 999,
+    base_net_total: 999,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "",
+    items: [],
+  },
+  // Customer B (client2@example.com) - must never be visible to Customer A.
+  {
+    name: "ACC-SINV-2026-00030",
+    posting_date: "2026-10-02",
+    due_date: "2026-10-16",
+    status: "Unpaid",
+    docstatus: 1,
+    grand_total: 22000,
+    rounded_total: 22000,
+    net_total: 22000,
+    total: 22000,
+    outstanding_amount: 22000,
+    currency: "BDT",
+    company: "Magnetic Solution Limited",
+    customer: "CUST-0002",
+    customer_name: "Rahim Uddin",
+    is_return: 0,
+    return_against: "",
+    po_no: "",
+    project: "",
+    debit_to: "Debtors - MSL",
+    base_grand_total: 22000,
+    base_net_total: 22000,
+    discount_amount: 0,
+    total_taxes_and_charges: 0,
+    contact_person: "Rahim Uddin",
+    contact_email: "rahim@example.com",
+    territory: "Bangladesh",
+    tax_id: "",
+    remarks: "",
+    items: [],
+  },
+];
+
+function invoiceDisplayAmount(row) {
+  const grand = row.grand_total;
+  if (grand !== undefined && String(grand) !== "") return Number(grand || 0);
+  if (row.rounded_total !== undefined && String(row.rounded_total) !== "") {
+    return Number(row.rounded_total || 0);
+  }
+  return Number(row.total || 0);
+}
+
+function invoiceDisplayStatus(row) {
+  // Mirror the real endpoint: the document's own `status` field, verbatim.
+  const status = String(row.status || "").trim();
+  if (status) return status;
+  const docstatus = Number(row.docstatus || 0);
+  if (docstatus === 2) return "Cancelled";
+  if (docstatus === 1) return "Submitted";
+  return "Draft";
+}
+
+function invoiceRowPayload(row) {
+  return {
+    name: row.name,
+    posting_date: row.posting_date || "",
+    due_date: row.due_date || "",
+    status: row.status || "",
+    docstatus: Number(row.docstatus || 0),
+    grand_total: Number(row.grand_total || 0),
+    rounded_total: Number(row.rounded_total || 0),
+    net_total: Number(row.net_total || 0),
+    total: Number(row.total || 0),
+    outstanding_amount: Number(row.outstanding_amount || 0),
+    currency: row.currency || "",
+    company: row.company || "",
+    customer: row.customer || "",
+    customer_name: row.customer_name || "",
+    is_return: Number(row.is_return || 0),
+    return_against: row.return_against || "",
+    po_no: row.po_no || "",
+    project: row.project || "",
+    amount: invoiceDisplayAmount(row),
+    display_status: invoiceDisplayStatus(row),
+  };
+}
+
+function invoiceSummary(rows, currency) {
+  const month = new Date().toISOString().slice(0, 7);
+  let totalAmount = 0;
+  let totalOutstanding = 0;
+  let monthAmount = 0;
+  let monthCount = 0;
+  let latest = "";
+
+  for (const row of rows) {
+    const amount = Number(row.amount || 0);
+    totalAmount += amount;
+    totalOutstanding += Number(row.outstanding_amount || 0);
+    const posting = String(row.posting_date || "");
+    if (posting) {
+      if (posting > latest) latest = posting;
+      if (posting.slice(0, 7) === month) {
+        monthCount += 1;
+        monthAmount += amount;
+      }
+    }
+  }
+
+  return {
+    total: rows.length,
+    total_amount: totalAmount,
+    total_outstanding: totalOutstanding,
+    this_month_count: monthCount,
+    this_month_amount: monthAmount,
+    latest_invoice_date: latest,
+    currency,
+  };
+}
+
 // --- registration ---------------------------------------------------------- //
 // In-memory mirror of the shikkha_os registration flow so the sign-up path can
 // be exercised end to end. The generated OTP is printed to stdout (never
@@ -903,7 +1218,7 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.11",
+      version: "1.3.12",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
@@ -927,6 +1242,9 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.payment_entry.list_mine",
         "shikkha_os.api.v1.payment_entry.details",
         "shikkha_os.api.v1.payment_entry.report_error",
+        "shikkha_os.api.v1.sales_invoice.list_mine",
+        "shikkha_os.api.v1.sales_invoice.details",
+        "shikkha_os.api.v1.sales_invoice.report_error",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -2026,6 +2344,111 @@ const server = createServer(async (request, response) => {
     const body = await readBody(request);
     console.log(
       `[mock] payment_entry.report_error from ${email}: ${String(body.context || "")} - ${String(body.message || "")}`
+    );
+    ok(response, {
+      logged: true,
+      context: String(body.context || ""),
+      message: String(body.message || ""),
+    });
+    return;
+  }
+
+  // --- Customer Service Build / Sales Invoice (mirrors shikkha_os.api.v1.sales_invoice.*) ---
+  if (method === "shikkha_os.api.v1.sales_invoice.list_mine") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    const customer = linkedCustomers[email];
+    if (!customer) {
+      // Authenticated, but no Customer is linked to this account: a calm state.
+      ok(response, {
+        doctype: "Sales Invoice",
+        linked: false,
+        invoices: [],
+        summary: invoiceSummary([], ""),
+      });
+      return;
+    }
+
+    const mine = salesInvoices.filter(
+      (row) =>
+        row.customer === customer.name &&
+        // Draft (0) + Submitted (1); Cancelled (2) is never shown.
+        (Number(row.docstatus) === 0 || Number(row.docstatus) === 1)
+    );
+    const invoices = mine.map(invoiceRowPayload);
+    const currency = (invoices.find((p) => p.currency) || {}).currency || "BDT";
+
+    ok(response, {
+      doctype: "Sales Invoice",
+      linked: true,
+      customer,
+      invoices,
+      summary: invoiceSummary(invoices, currency),
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.sales_invoice.details") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    const customer = linkedCustomers[email];
+    if (!customer) {
+      failure(response, 403, "PermissionError", "You are not permitted to view this invoice.", "Sales Invoice");
+      return;
+    }
+
+    const name = (url.searchParams.get("name") ?? "").trim();
+    const row = salesInvoices.find((r) => r.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "This invoice could not be found.", "Sales Invoice");
+      return;
+    }
+    // Ownership: refuse to reveal another customer's invoice (never trust the name).
+    if (row.customer !== customer.name) {
+      failure(response, 403, "PermissionError", "You are not permitted to view this invoice.", "Sales Invoice");
+      return;
+    }
+    // Only non-cancelled invoices are part of a customer's invoice history.
+    if (Number(row.docstatus) === 2) {
+      failure(response, 404, "ValidationError", "This invoice has been cancelled.", "Sales Invoice");
+      return;
+    }
+
+    ok(response, {
+      ...invoiceRowPayload(row),
+      debit_to: row.debit_to || "",
+      base_grand_total: Number(row.base_grand_total || 0),
+      base_net_total: Number(row.base_net_total || 0),
+      discount_amount: Number(row.discount_amount || 0),
+      total_taxes_and_charges: Number(row.total_taxes_and_charges || 0),
+      contact_person: row.contact_person || "",
+      contact_email: row.contact_email || "",
+      territory: row.territory || "",
+      tax_id: row.tax_id || "",
+      remark: row.remarks || "",
+      items: row.items || [],
+      verified: true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.sales_invoice.report_error") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    // Mirrors shikkha_os.api.v1.sales_invoice.report_error: the portal records
+    // its own failures so they surface in the ERP Error Log.
+    const body = await readBody(request);
+    console.log(
+      `[mock] sales_invoice.report_error from ${email}: ${String(body.context || "")} - ${String(body.message || "")}`
     );
     ok(response, {
       logged: true,

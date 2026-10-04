@@ -53,6 +53,14 @@ export const EXPENSE_CLAIM_NEW_PATH = `${EXPENSE_CLAIM_PATH}/new`;
  */
 export const PAYMENT_HISTORY_PATH = `${CLIENT_DASHBOARD_PATH}/payment-entry`;
 
+/**
+ * Customer-facing sub-route that renders the account's own Service Build
+ * (Sales Invoice) history, on its own URL inside the client dashboard shell so
+ * opening it is a real navigation (the address bar changes, Back works) rather
+ * than an in-place panel swap.
+ */
+export const SERVICE_BUILD_PATH = `${CLIENT_DASHBOARD_PATH}/service-build`;
+
 /** Every route that renders the dashboard shell. */
 export const DASHBOARD_PATHS: readonly string[] = [STAFF_DASHBOARD_PATH, CLIENT_DASHBOARD_PATH];
 

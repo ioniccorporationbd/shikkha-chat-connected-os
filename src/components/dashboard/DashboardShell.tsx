@@ -25,6 +25,7 @@ import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
 import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
 import PanelCard from "@/components/dashboard/PanelCard";
 import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
+import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
 import UserAvatar from "@/components/dashboard/UserAvatar";
@@ -32,7 +33,7 @@ import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
-import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
@@ -108,10 +109,14 @@ export default function DashboardShell({
     !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
   // The client panel's own sub-route: the account's Payment Entry history.
   const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
+  // The client panel's own sub-route: the account's Service Build (Sales Invoice) history.
+  const onServiceBuildView = isClient && pathname.startsWith(SERVICE_BUILD_PATH);
 
   const viewTitle = onPaymentHistoryView
     ? copy.nav.paymentHistory
-    : onExpenseClaimNewView
+    : onServiceBuildView
+      ? copy.nav.serviceBuild
+      : onExpenseClaimNewView
       ? copy.nav.expenseClaim
       : onExpenseClaimView
         ? copy.nav.expenseClaim
@@ -172,6 +177,9 @@ export default function DashboardShell({
   // is no duplicate link on the desk.
   const isWebsiteUser = accountType.toLowerCase() === "website user";
   const showPaymentHistory = isClient && (isWebsiteUser || roles.includes("Customer"));
+  // The Service Build link is likewise a customer-panel feature: client scope,
+  // customer accounts only, shown directly below Payment History.
+  const showServiceBuild = isClient && (isWebsiteUser || roles.includes("Customer"));
   const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
   const visibleRoles = rolesOpen ? roles : roles.slice(0, MAX_ROLES);
 
@@ -191,7 +199,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView && !onCheckinView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView;
+      const active = !onCreateView && !onCheckinView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView;
 
       return (
         <button
@@ -299,6 +307,29 @@ export default function DashboardShell({
           <span className={navLabelClass(active)}>
             <PaymentIcon className="text-[16px]" />
             {copy.nav.paymentHistory}
+          </span>
+        </button>
+      );
+    }
+
+    if (showServiceBuild) {
+      const ServiceIcon = NAV_ICONS.servicebuild;
+      const active = onServiceBuildView;
+
+      items.push(
+        <button
+          key="service-build"
+          type="button"
+          onClick={() => {
+            router.push(SERVICE_BUILD_PATH);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <ServiceIcon className="text-[16px]" />
+            {copy.nav.serviceBuild}
           </span>
         </button>
       );
@@ -476,6 +507,8 @@ export default function DashboardShell({
           <main className="flex min-w-0 flex-col gap-4 pb-4">
             {onPaymentHistoryView ? (
               <PaymentEntryView onBack={() => router.push(basePath)} />
+            ) : onServiceBuildView ? (
+              <ServiceBuildView onBack={() => router.push(basePath)} />
             ) : onCreateView ? (
               <CreateCustomerView onBack={() => router.push(basePath)} />
             ) : onCheckinView ? (
