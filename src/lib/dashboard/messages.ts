@@ -9,6 +9,7 @@ export interface DashboardCopy {
     overview: string;
     customers: string;
     checkin: string;
+    expenseClaim: string;
     analytics: string;
     reports: string;
     users: string;
@@ -69,6 +70,8 @@ export interface DashboardCopy {
   reloadFailed: string;
   /** Check In / Out quick-access card on the overview. */
   checkinCardHint: string;
+  /** Expense Claim quick-access card on the overview. */
+  expenseClaimCardHint: string;
   openAction: string;
   /** Per-stat presentation, keyed by the API's `stat.key`; unknown keys fall
    *  back to the label/hint the backend sent. */
@@ -93,6 +96,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       overview: "ওভারভিউ",
       customers: "কাস্টমার তৈরি করুন",
       checkin: "চেক ইন / আউট",
+      expenseClaim: "এক্সপেন্স ক্লেম",
       analytics: "অ্যানালিটিক্স",
       reports: "রিপোর্ট",
       users: "ইউজার",
@@ -162,6 +166,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     reloadDone: "ড্যাশবোর্ডের তথ্য হালনাগাদ হয়েছে।",
     reloadFailed: "রিফ্রেশ করা যায়নি। আবার চেষ্টা করুন।",
     checkinCardHint: "চেক ইন / আউট করুন এবং আপনার দৈনিক উপস্থিতি রেকর্ড করুন।",
+    expenseClaimCardHint: "আপনার খরচের দাবি তৈরি করুন এবং বর্তমান অবস্থা দেখুন।",
     openAction: "খুলুন",
     stats: {
       roles: { label: "রোল", hint: "আপনার অ্যাকাউন্টে বরাদ্দ করা রোল" },
@@ -209,6 +214,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       overview: "Overview",
       customers: "Create Customer",
       checkin: "Check In / Out",
+      expenseClaim: "Expense Claim",
       analytics: "Analytics",
       reports: "Reports",
       users: "Users",
@@ -278,6 +284,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     reloadDone: "Dashboard data refreshed.",
     reloadFailed: "Could not refresh. Please try again.",
     checkinCardHint: "Check in or out and record your daily attendance.",
+    expenseClaimCardHint: "Create your expense claims and track their current state.",
     openAction: "Open",
     stats: {
       roles: { label: "Roles", hint: "Roles assigned to your account" },

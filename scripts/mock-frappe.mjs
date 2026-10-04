@@ -219,6 +219,165 @@ function nowStamp() {
   return new Date().toISOString().slice(0, 19).replace("T", " ");
 }
 
+function todayStamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function truthy(value) {
+  return value === true || value === 1 || ["1", "true", "yes", "on", "y"].includes(String(value).toLowerCase());
+}
+
+// --- Employee expense claim (mirrors shikkha_os.api.v1.expense_claim.*) ---- //
+// The employee is resolved from the logged-in user (never the body), exactly
+// like the real endpoint; ownership is enforced by the `employee` filter on the
+// list and by an explicit owner check on details.
+const expenseClaims = [];
+let expenseClaimCounter = 1;
+
+function displayStatus(row) {
+  const docstatus = Number(row.docstatus || 0);
+  const approval = String(row.approval_status || "").toLowerCase();
+  const status = String(row.status || "").toLowerCase();
+  const paid = truthy(row.is_paid);
+  if (docstatus === 0 || status === "draft") return "draft";
+  if (approval === "rejected" || status === "rejected") return "rejected";
+  if (paid || status === "paid") return "paid";
+  if (approval === "approved" || status === "approved") return "approved";
+  return "submitted";
+}
+
+function expenseRowPayload(row) {
+  return {
+    name: row.name,
+    employee: row.employee,
+    employee_name: row.employee_name,
+    company: row.company,
+    department: row.department,
+    cost_center: row.cost_center,
+    currency: row.currency || "",
+    posting_date: row.posting_date,
+    expense_approver: row.expense_approver || "",
+    status: row.status || "",
+    approval_status: row.approval_status || "",
+    docstatus: Number(row.docstatus || 0),
+    is_paid: truthy(row.is_paid),
+    total_claimed_amount: Number(row.total_claimed_amount || 0),
+    total_sanctioned_amount: Number(row.total_sanctioned_amount || 0),
+    grand_total: Number(row.grand_total || 0),
+    total_amount_reimbursed: Number(row.total_amount_reimbursed || 0),
+    remark: row.remark || "",
+    display_status: displayStatus(row),
+  };
+}
+
+function expenseSummary(rows, currency) {
+  let draft = 0;
+  let submitted = 0;
+  let approved = 0;
+  let rejected = 0;
+  let paid = 0;
+  let claimed = 0;
+  let sanctioned = 0;
+  let reimbursed = 0;
+
+  for (const row of rows) {
+    const key = displayStatus(row);
+    if (key === "draft") draft += 1;
+    else if (key === "rejected") rejected += 1;
+    else {
+      submitted += 1;
+      if (key === "approved") approved += 1;
+      if (key === "paid") paid += 1;
+    }
+    claimed += Number(row.total_claimed_amount || 0);
+    sanctioned += Number(row.total_sanctioned_amount || 0);
+    reimbursed += Number(row.total_amount_reimbursed || 0);
+  }
+
+  return {
+    total: rows.length,
+    draft,
+    pending: submitted,
+    approved,
+    rejected,
+    paid,
+    total_claimed_amount: claimed,
+    total_sanctioned_amount: sanctioned,
+    total_amount_reimbursed: reimbursed,
+    currency,
+  };
+}
+
+// A representative Expense Claim schema (mirrors frappe.get_meta output).
+const EXPENSE_PARENT_SECTIONS = [
+  {
+    key: "Claim Details",
+    label: "Claim Details",
+    fields: [
+      { fieldname: "posting_date", label: "Posting Date", fieldtype: "Date", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "cost_center", label: "Cost Center", fieldtype: "Link", options: [], link_doctype: "Cost Center", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "remark", label: "Remark", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+    ],
+  },
+];
+
+const EXPENSE_CHILD_FIELDS = [
+  { fieldname: "expense_date", label: "Expense Date", fieldtype: "Date", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "expense_type", label: "Expense Type", fieldtype: "Link", options: [], link_doctype: "Expense Claim Type", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "description", label: "Description", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "amount", label: "Amount", fieldtype: "Currency", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "sanctioned_amount", label: "Sanctioned Amount", fieldtype: "Currency", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "cost_center", label: "Cost Center", fieldtype: "Link", options: [], link_doctype: "Cost Center", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+];
+
+const EXPENSE_LINK_OPTIONS = {
+  "Expense Claim Type": ["Travel", "Food", "Medical", "Telephone", "Others"],
+  "Cost Center": ["Main - MSL", "Sales - MSL"],
+  Employee: ["HR-EMP-00001", "HR-EMP-00002"],
+  Company: ["Magnetic Solution Limited"],
+  Currency: ["BDT", "USD", "EUR"],
+};
+
+function expenseAuto(user, employee) {
+  return {
+    employee: employee.name,
+    employee_name: employee.employee_name,
+    company: "Magnetic Solution Limited",
+    department: employee.name === "HR-EMP-00002" ? "Sales" : "Engineering",
+    cost_center: "Main - MSL",
+    currency: "BDT",
+    expense_approver: user,
+  };
+}
+
+// Seed one existing draft claim for tamim (HR-EMP-00001) so the list has data.
+expenseClaims.push({
+  name: "HR-EXP-2026-00001",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-10-04",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Draft",
+  status: "Draft",
+  docstatus: 0,
+  total_claimed_amount: 500,
+  total_sanctioned_amount: 500,
+  grand_total: 500,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "",
+  expenses: [
+    { expense_date: "2026-10-04", expense_type: "Travel", description: "Local travel", amount: 500, sanctioned_amount: 500, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-10-04 10:00:00",
+  modified: "2026-10-04 10:00:00",
+});
+
 // --- registration ---------------------------------------------------------- //
 // In-memory mirror of the shikkha_os registration flow so the sign-up path can
 // be exercised end to end. The generated OTP is printed to stdout (never
@@ -502,6 +661,11 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.customer.create",
         "shikkha_os.api.v1.checkin.status",
         "shikkha_os.api.v1.checkin.punch",
+        "shikkha_os.api.v1.expense_claim.form_schema",
+        "shikkha_os.api.v1.expense_claim.link_options",
+        "shikkha_os.api.v1.expense_claim.list_mine",
+        "shikkha_os.api.v1.expense_claim.details",
+        "shikkha_os.api.v1.expense_claim.create",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -1309,6 +1473,207 @@ const server = createServer(async (request, response) => {
     console.log(`[mock-frappe] CUSTOMER CREATED ${docName} (${name}) by ${email}`);
 
     ok(response, record);
+    return;
+  }
+
+  // --- Employee expense claim (mirrors shikkha_os.api.v1.expense_claim.*) ---
+  if (method === "shikkha_os.api.v1.expense_claim.form_schema") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to create Expense Claims.", "Expense Claim");
+      return;
+    }
+    const employee = employeeFor(email);
+    if (!employee) {
+      failure(response, 403, "PermissionError", "No Employee record is linked to your account. Please contact an HR administrator.", "Expense Claim");
+      return;
+    }
+    ok(response, {
+      doctype: "Expense Claim",
+      title: "Expense Claim",
+      sections: EXPENSE_PARENT_SECTIONS,
+      child: { doctype: "Expense Claim Detail", fields: EXPENSE_CHILD_FIELDS },
+      auto: expenseAuto(email, employee),
+      meta: { title_field: "name", search_fields: ["employee"] },
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.expense_claim.link_options") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to create Expense Claims.", "Expense Claim");
+      return;
+    }
+    const target = (url.searchParams.get("doctype") ?? "").trim();
+    const txt = (url.searchParams.get("txt") ?? "").trim().toLowerCase();
+
+    if (!Object.prototype.hasOwnProperty.call(EXPENSE_LINK_OPTIONS, target)) {
+      failure(response, 400, "ValidationError", "Unsupported link DocType.", "Expense Claim");
+      return;
+    }
+
+    const options = EXPENSE_LINK_OPTIONS[target]
+      .filter((value) => !txt || value.toLowerCase().includes(txt))
+      .map((value) => ({ value, label: value }));
+
+    ok(response, { doctype: target, options });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.expense_claim.list_mine") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to view Expense Claims.", "Expense Claim");
+      return;
+    }
+    const employee = employeeFor(email);
+    if (!employee) {
+      ok(response, {
+        doctype: "Expense Claim",
+        linked: false,
+        claims: [],
+        summary: expenseSummary([], ""),
+      });
+      return;
+    }
+
+    const mine = expenseClaims.filter((row) => row.employee === employee.name);
+    const claims = mine.map(expenseRowPayload);
+    const currency = (claims.find((c) => c.currency) || {}).currency || "BDT";
+
+    ok(response, {
+      doctype: "Expense Claim",
+      linked: true,
+      employee,
+      claims,
+      summary: expenseSummary(mine, currency),
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.expense_claim.details") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to view this Expense Claim.", "Expense Claim");
+      return;
+    }
+    const employee = employeeFor(email);
+    if (!employee) {
+      failure(response, 403, "PermissionError", "No Employee record is linked to your account. Please contact an HR administrator.", "Expense Claim");
+      return;
+    }
+
+    const name = (url.searchParams.get("name") ?? "").trim();
+    const row = expenseClaims.find((r) => r.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "This Expense Claim could not be found.", "Expense Claim");
+      return;
+    }
+    // Ownership: refuse to reveal another employee's claim (never trust the name).
+    if (row.employee !== employee.name) {
+      failure(response, 403, "PermissionError", "You are not permitted to view this Expense Claim.", "Expense Claim");
+      return;
+    }
+
+    ok(response, { ...expenseRowPayload(row), expenses: row.expenses, verified: true });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.expense_claim.create") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account || account.kind !== "staff") {
+      failure(response, 403, "PermissionError", "You do not have permission to create Expense Claims.", "Expense Claim");
+      return;
+    }
+    const employee = employeeFor(email);
+    if (!employee) {
+      failure(response, 403, "PermissionError", "No Employee record is linked to your account. Please contact an HR administrator.", "Expense Claim");
+      return;
+    }
+
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : {};
+    const rows = Array.isArray(data.expenses) ? data.expenses : [];
+
+    if (rows.length === 0) {
+      failure(response, 417, "ValidationError", "Add at least one expense row.", "Expense Claim");
+      return;
+    }
+    const hasValid = rows.some((r) => String(r.expense_type ?? "").trim() && Number(r.amount) > 0);
+    if (!hasValid) {
+      failure(response, 417, "ValidationError", "Please fill the required details (Expense Type and Amount).", "Expense Claim");
+      return;
+    }
+
+    expenseClaimCounter += 1;
+    const name = `HR-EXP-2026-${String(expenseClaimCounter).padStart(5, "0")}`;
+    const total = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const postingDate = String(data.posting_date || todayStamp());
+
+    const expenses = rows.map((r) => ({
+      expense_date: String(r.expense_date || postingDate),
+      expense_type: String(r.expense_type || ""),
+      description: String(r.description || ""),
+      amount: Number(r.amount) || 0,
+      sanctioned_amount: Number(r.sanctioned_amount) || Number(r.amount) || 0,
+      cost_center: String(r.cost_center || data.cost_center || ""),
+    }));
+
+    const record = {
+      name,
+      employee: employee.name,
+      employee_name: employee.employee_name,
+      company: "Magnetic Solution Limited",
+      department: employee.name === "HR-EMP-00002" ? "Sales" : "Engineering",
+      cost_center: String(data.cost_center || "Main - MSL"),
+      currency: "BDT",
+      posting_date: postingDate,
+      expense_approver: email,
+      approval_status: "Draft",
+      status: "Draft",
+      docstatus: 0,
+      total_claimed_amount: total,
+      total_sanctioned_amount: total,
+      grand_total: total,
+      total_amount_reimbursed: 0,
+      is_paid: 0,
+      remark: String(data.remark || ""),
+      expenses,
+      owner: email,
+      creation: nowStamp(),
+      modified: nowStamp(),
+    };
+    expenseClaims.push(record);
+
+    console.log(`[mock-frappe] EXPENSE CLAIM CREATED ${name} (${employee.name}) by ${email}`);
+
+    ok(response, {
+      name,
+      employee: employee.name,
+      employee_name: employee.employee_name,
+      company: record.company,
+      currency: record.currency,
+      posting_date: postingDate,
+      total_claimed_amount: total,
+      status: "Draft",
+      approval_status: "Draft",
+      docstatus: 0,
+      is_paid: false,
+      owner: email,
+      creation: record.creation,
+      verified: true,
+    });
     return;
   }
 
