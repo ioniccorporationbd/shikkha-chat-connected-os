@@ -571,9 +571,12 @@ div {
 
 @media (min-width: 1536px) {
   .connected-scroll-grid {
+    /* Was a fixed 600px, which compressed the middle hub to ~596px once the
+       340px left rail appears at 1536. A capped minmax keeps the middle pane
+       comfortable while letting the card column breathe on wider screens. */
     grid-template-columns:
       minmax(0, 1fr)
-      600px;
+      minmax(540px, 35vw);
   }
 }
 
@@ -898,15 +901,33 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
-:is(.product-pill-text, .home-floating-title, .section-description, .quote-text, .brand-logo-text, .video-banner-description-text) {
+:is(.section-description, .quote-text, .brand-logo-text, .video-banner-description-text) {
   font-size: 16px !important;
-  line-height: 1.68 !important;
+  line-height: 1.72 !important;
 }
 
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
-:is(.section-main-title, .stat-value-text, .video-banner-title-text) {
+:is(.stat-value-text, .video-banner-title-text) {
   font-size: 18px !important;
   line-height: 1.32 !important;
+}
+
+/* Product eyebrow label — a compact, high-contrast kicker above the headline.
+   Was 16px, which made the kicker compete with body copy; 13px reads as a label. */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
+.product-pill-text {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0.08em !important;
+  font-weight: 700 !important;
+}
+
+/* The headline is the visual anchor of each right-side card — promote it to 22px
+   so the card hierarchy is eyebrow (13) < body (16) < headline (22). */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
+.section-main-title {
+  font-size: 22px !important;
+  line-height: 1.28 !important;
 }
 
 @media (max-width: 767px) {

@@ -86,7 +86,7 @@ export default function SectionPanel({
       viewport={{ once: true, amount: 0.12 }}
       transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex min-h-[calc(100vh-112px)] flex-col justify-center pb-10 pt-9">
+      <div className="flex min-h-[calc(100vh-112px)] w-full flex-col justify-start pb-10 pt-3">
         <motion.div
           className="mb-5 flex items-center gap-3"
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
@@ -103,7 +103,7 @@ export default function SectionPanel({
             ✦
           </motion.span>
 
-          <span className="product-pill-text inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">
+          <span className="product-pill-text inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] px-3.5 py-1.5 font-bold uppercase text-[var(--color-primary)]">
             {pill}
           </span>
         </motion.div>
