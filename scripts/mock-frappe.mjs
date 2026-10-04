@@ -315,7 +315,6 @@ const EXPENSE_PARENT_SECTIONS = [
     label: "Claim Details",
     fields: [
       { fieldname: "posting_date", label: "Posting Date", fieldtype: "Date", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-      { fieldname: "cost_center", label: "Cost Center", fieldtype: "Link", options: [], link_doctype: "Cost Center", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
       { fieldname: "remark", label: "Remark", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
     ],
   },
@@ -324,14 +323,12 @@ const EXPENSE_PARENT_SECTIONS = [
 const EXPENSE_CHILD_FIELDS = [
   { fieldname: "expense_date", label: "Expense Date", fieldtype: "Date", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
   { fieldname: "expense_type", label: "Expense Type", fieldtype: "Link", options: [], link_doctype: "Expense Claim Type", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-  { fieldname: "description", label: "Description", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
   { fieldname: "amount", label: "Amount", fieldtype: "Currency", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-  { fieldname: "sanctioned_amount", label: "Sanctioned Amount", fieldtype: "Currency", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
-  { fieldname: "cost_center", label: "Cost Center", fieldtype: "Link", options: [], link_doctype: "Cost Center", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+  { fieldname: "description", label: "Description", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
 ];
 
 const EXPENSE_LINK_OPTIONS = {
-  "Expense Claim Type": ["Travel", "Food", "Medical", "Telephone", "Others"],
+  "Expense Claim Type": ["Food", "Travel", "Mobile Bill", "Accommodation", "Conveyance"],
   "Cost Center": ["Main - MSL", "Sales - MSL"],
   Employee: ["HR-EMP-00001", "HR-EMP-00002"],
   Company: ["Magnetic Solution Limited"],

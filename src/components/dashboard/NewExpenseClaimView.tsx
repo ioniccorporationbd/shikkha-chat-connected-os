@@ -704,6 +704,7 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<ExpenseClaimLinkOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showList, setShowList] = useState(false);
   const loadedRef = useRef(false);
 
@@ -713,13 +714,16 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
       try {
         const payload = await fetchExpenseClaimLinkOptions(field.link_doctype, txt, language);
         setOptions(payload.options);
+        setLoadFailed(false);
       } catch {
         setOptions([]);
+        setLoadFailed(true);
+        toast.error(copy.linkLoadFailed, copy.errorTitle);
       } finally {
         setLoading(false);
       }
     },
-    [field.link_doctype, language]
+    [field.link_doctype, language, copy]
   );
 
   const openList = useCallback(() => {
@@ -779,7 +783,11 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
           {loading ? (
             <li className={`px-3 py-2 ${HELPER}`}>{copy.linkLoading}</li>
           ) : filtered.length === 0 ? (
-            <li className={`px-3 py-2 ${HELPER}`}>{copy.linkNoOptions}</li>
+            <li className={`px-3 py-2 ${HELPER}`}>
+              {!query.trim() && !loadFailed && field.link_doctype === "Expense Claim Type"
+                ? copy.linkEmptyHint
+                : copy.linkNoOptions}
+            </li>
           ) : (
             filtered.map((option) => (
               <li key={option.value}>
