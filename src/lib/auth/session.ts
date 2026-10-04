@@ -61,6 +61,16 @@ export const PAYMENT_HISTORY_PATH = `${CLIENT_DASHBOARD_PATH}/payment-entry`;
  */
 export const SERVICE_BUILD_PATH = `${CLIENT_DASHBOARD_PATH}/service-build`;
 
+/**
+ * Public, login-free support centre. Unlike the dashboard routes these live at
+ * the site root (not under a dashboard shell) and are reachable by guests,
+ * customers, employees and system users alike — `proxy.ts` deliberately does
+ * not match them, so they are never gated.
+ */
+export const HELP_DESK_PATH = "/help-desk";
+export const HELP_DESK_NEW_PATH = `${HELP_DESK_PATH}/new`;
+export const HELP_DESK_TICKETS_PATH = `${HELP_DESK_PATH}/tickets`;
+
 /** Every route that renders the dashboard shell. */
 export const DASHBOARD_PATHS: readonly string[] = [STAFF_DASHBOARD_PATH, CLIENT_DASHBOARD_PATH];
 

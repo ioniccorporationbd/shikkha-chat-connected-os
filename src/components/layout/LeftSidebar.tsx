@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { FiAward, FiBriefcase, FiChevronDown, FiGrid, FiHome } from "react-icons/fi";
+import { FiArrowRight, FiAward, FiBriefcase, FiChevronDown, FiGrid, FiHeadphones, FiHome } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -955,6 +955,23 @@ export default function LeftSidebar() {
             </div>
           </div>
           <LanguageSwitch />
+
+          {/* Public support centre entry — visible to guests and signed-in users
+              alike since /help-desk is not session-gated. */}
+          <Link
+            href="/help-desk"
+            className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-4 py-3 shadow-[0_14px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-secondary)]"
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 flex-none place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
+                <FiHeadphones size={15} />
+              </span>
+              <span className="text-[15px] font-bold text-[var(--color-primary)]">
+                {currentLanguage === "en" ? "Help Desk" : "হেল্প ডেস্ক"}
+              </span>
+            </span>
+            <FiArrowRight className="text-[var(--color-primary)]" />
+          </Link>
 
           <div className="mt-5 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:mt-6 sm:p-4">
             <div className="rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
