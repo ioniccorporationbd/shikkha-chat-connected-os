@@ -70,19 +70,35 @@ const sidebarWidthClass =
 
 const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
 
-/* Strict text sizing */
-/* Old 14px text updated to 16px */
-/* Old 12px text updated to 13px */
-const sidebarTitleTextClass = "text-[16px] font-bold tracking-[-0.03em]";
+/* Strict text sizing, rebalanced for a clearer hierarchy: card titles and nav
+   group labels share one calm size, nested links sit a step below, and the
+   uppercase eyebrow label is small and light so it reads as a quiet heading
+   rather than body copy. */
+const sidebarTitleTextClass = "text-[15px] font-semibold tracking-[-0.02em]";
 
 const sidebarSubtitleTextClass =
-  "text-[13px] font-bold uppercase tracking-[0.12em]";
+  "text-[11px] font-semibold uppercase tracking-[0.14em]";
 
 const sidebarDropdownTitleTextClass =
-  "text-[16px]  font-bold tracking-[-0.02em]";
+  "text-[15px] font-semibold tracking-[-0.02em]";
 
 const sidebarDropdownLinkTextClass =
-  "text-[13px] font-bold tracking-[-0.015em]";
+  "text-[13px] font-medium tracking-[-0.01em]";
+
+/* -------------------------------------------------------------------------
+   Premium surface system
+   One muted border + soft shadow family for every card and pill in the rail,
+   so the sidebar reads as a single balanced surface instead of a stack of
+   harsh full-strength outlines. Everything stays inside the existing brand
+   tokens (primary #032521 / secondary #a2c4c0), only softened with color-mix,
+   so no new palette is introduced.
+------------------------------------------------------------------------- */
+const cardBorderClass =
+  "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]";
+const cardShadowClass =
+  "shadow-[0_18px_44px_-32px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
+const softHoverClass =
+  "hover:border-[color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))]";
 
 const sidebarText = {
   bn: {
@@ -92,6 +108,7 @@ const sidebarText = {
     currentlyViewing: "বর্তমানে দেখছেন",
     theK12Os: "কে–টুয়েলভ অপারেটিং সিস্টেম",
     talkToExpert: "বিশেষজ্ঞের সাথে কথা বলুন",
+    helpDesk: "হেল্প ডেস্ক",
     overview: "সারসংক্ষেপ",
     menu: "মেনু",
     closeMenu: "মেনু বন্ধ করুন",
@@ -144,6 +161,7 @@ const sidebarText = {
     currentlyViewing: "Currently viewing",
     theK12Os: "The K-12 Operating System",
     talkToExpert: "Talk to an Expert",
+    helpDesk: "Help Desk",
     overview: "Overview",
     menu: "Menu",
     closeMenu: "Close menu",
@@ -577,31 +595,31 @@ function ActiveStatusCard({
   const text = sidebarText[language];
 
   return (
-    <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-md sm:mt-4 sm:p-4">
+    <div
+      className={`mt-3 overflow-hidden rounded-2xl border bg-[var(--color-white)] p-3 backdrop-blur-md sm:mt-4 sm:p-4 ${cardBorderClass} ${cardShadowClass}`}
+    >
       <div className="flex items-center gap-2">
         <span
-          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
+          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_color-mix(in_srgb,var(--color-primary)_7%,transparent)]"
           style={{ background: accentColor }}
         />
 
-        <p className={`${sidebarSubtitleTextClass} text-[var(--color-primary)]`}>
+        <p className={`${sidebarSubtitleTextClass} text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]`}>
           {text.currentlyViewing}
         </p>
       </div>
 
       <h3
-        className={`${sidebarTitleTextClass} mt-2 leading-[1.18] text-[var(--color-primary)]`}
+        className={`${sidebarTitleTextClass} mt-2 leading-[1.2] text-[var(--color-primary)]`}
       >
         {activeTitle}
       </h3>
 
-      <p
-        className={`${sidebarSubtitleTextClass} mt-1 leading-4 text-[var(--color-primary)]`}
-      >
+      <p className="mt-1 text-[12px] font-medium leading-4 text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
         {groupTitle}
       </p>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-secondary)]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -640,41 +658,40 @@ function SidebarChildLink({
       }}
       className={[
         [
-          "group relative flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 transition duration-300",
+          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300",
           sidebarDropdownLinkTextClass,
         ].join(" "),
-        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
         active
-          ? "border-[var(--color-primary)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
-          : "",
+          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+          : "border-transparent " + softHoverClass,
       ].join(" ")}
       style={{
         background: active
-          ? `color-mix(in srgb, ${color} 13%, transparent)`
+          ? `color-mix(in srgb, ${color} 12%, transparent)`
           : undefined,
         color: colorPrimary,
       }}
     >
       {active ? (
         <span
-          className="absolute -left-4 top-2 h-6 w-1 rounded-r-full"
+          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
           style={{ background: color }}
         />
       ) : null}
 
       <span
         className={[
-          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-[10px] font-bold transition duration-300",
+          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-[10px] font-semibold transition duration-300",
           active
-            ? "border-transparent text-[var(--color-white)] shadow-[0_8px_18px_-10px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-            : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
+            ? "border-transparent text-[var(--color-white)]"
+            : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
         ].join(" ")}
         style={active ? { background: color, borderColor: color, color: colorWhite } : undefined}
       >
         {index}
       </span>
 
-      <span className="text-[13px] font-bold leading-[1.2] tracking-[-0.015em]">
+      <span className="text-[13px] font-medium leading-[1.2] tracking-[-0.01em]">
         {child.title}
       </span>
     </Link>
@@ -688,10 +705,12 @@ function LanguageSwitch() {
   const text = sidebarText[currentLanguage];
 
   return (
-    <div className="mt-3 rounded-[22px] border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] backdrop-blur-xl sm:mt-4 sm:rounded-[24px] sm:p-3.5">
+    <div
+      className={`mt-4 rounded-[22px] border bg-[var(--color-white)] p-3 backdrop-blur-xl sm:rounded-[24px] sm:p-3.5 ${cardBorderClass} ${cardShadowClass}`}
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <p className={`${sidebarSubtitleTextClass} text-[var(--color-primary)]`}>
+          <p className={`${sidebarSubtitleTextClass} text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]`}>
             {text.languageMode}
           </p>
 
@@ -702,7 +721,7 @@ function LanguageSwitch() {
           </h3>
         </div>
 
-        <span className="rounded-full border border-[var(--color-primary)] bg-[var(--color-secondary)] px-3 py-1 text-[13px] font-bold leading-[1.2] tracking-[-0.015em] text-[var(--color-primary)]">
+        <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_40%,var(--color-white))] px-3 py-1 text-[12px] font-semibold leading-[1.2] tracking-[-0.01em] text-[var(--color-primary)]">
           {isBangla ? text.bnShort : text.enShort}
         </span>
       </div>
@@ -710,7 +729,7 @@ function LanguageSwitch() {
       <button
         type="button"
         onClick={() => setLanguage(isBangla ? "en" : "bn")}
-        className="group relative h-11 w-full overflow-hidden rounded-full border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_6%,transparent)] transition duration-300 hover:bg-[var(--color-secondary)] sm:h-12"
+        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1 transition duration-300 hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] sm:h-12"
         aria-label={text.toggleLanguage}
       >
         <span
@@ -721,13 +740,13 @@ function LanguageSwitch() {
           aria-hidden="true"
         />
 
-        <span className="relative z-10 grid h-full grid-cols-2 gap-[2px] text-[16px] font-bold leading-[1.2] tracking-[-0.015em]">
+        <span className="relative z-10 grid h-full grid-cols-2 gap-[2px] text-[15px] font-semibold leading-[1.2] tracking-[-0.01em]">
           <span
             className={[
               "grid place-items-center rounded-full transition duration-300",
               isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[var(--color-primary)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]",
             ].join(" ")}
           >
             {text.bangla}
@@ -738,7 +757,7 @@ function LanguageSwitch() {
               "grid place-items-center rounded-full transition duration-300",
               !isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[var(--color-primary)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]",
             ].join(" ")}
           >
             {text.english}
@@ -770,49 +789,47 @@ function SidebarLink({
       onClick={onClick}
       className={[
         [
-          "group relative block rounded-xl border border-transparent px-3 py-2.5 transition duration-300",
+          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300",
           sidebarTitleTextClass,
         ].join(" "),
-        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
         active
-          ? "border-[var(--color-primary)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
-          : "",
+          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+          : "border-transparent " + softHoverClass,
       ].join(" ")}
       style={{
         color: colorPrimary,
         background: active
-          ? `color-mix(in srgb, ${color} 13%, transparent)`
+          ? `color-mix(in srgb, ${color} 12%, transparent)`
           : undefined,
       }}
     >
       {active ? (
         <span
-          className="absolute -left-5 top-2 h-7 w-1 rounded-r-full"
+          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
           style={{ background: color }}
         />
       ) : null}
 
-      <span className="flex items-center gap-2.5">
-        {icon ? (
-          (() => {
-            const LinkIcon = icon;
-            return (
-              <span
-                className={[
-                  "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
-                  active
-                    ? "border-transparent text-[var(--color-white)]"
-                    : "border-transparent bg-[var(--color-primary)] text-[var(--color-white)]",
-                ].join(" ")}
-                style={active ? { background: color } : undefined}
-              >
-                <LinkIcon size={15} />
-              </span>
-            );
-          })()
-        ) : null}
-        <span className="text-[16px] font-bold leading-[1.18]">{title}</span>
-      </span>
+      {icon ? (
+        (() => {
+          const LinkIcon = icon;
+          return (
+            <span
+              className={[
+                "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
+                active
+                  ? "border-transparent text-[var(--color-white)]"
+                  : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
+              ].join(" ")}
+              style={active ? { background: color } : undefined}
+            >
+              <LinkIcon size={15} />
+            </span>
+          );
+        })()
+      ) : null}
+
+      <span className="text-[15px] font-semibold leading-[1.2]">{title}</span>
     </Link>
   );
 }
@@ -886,7 +903,7 @@ export default function LeftSidebar() {
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="sidebar-open-button fixed left-3 top-3 z-[80] grid h-10 w-10 place-items-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] sm:left-4 sm:top-4 sm:h-12 sm:w-12 sm:rounded-2xl"
+        className="sidebar-open-button fixed left-3 top-3 z-[80] grid h-10 w-10 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_32%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] sm:left-4 sm:top-4 sm:h-12 sm:w-12 sm:rounded-2xl"
         aria-label={text.menu}
       >
         <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
@@ -918,17 +935,17 @@ export default function LeftSidebar() {
         className={[
           [
             "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen max-w-[calc(100vw-16px)] flex-col overflow-hidden",
-            "border-r border-[var(--color-primary)] bg-[var(--color-white)]",
-            "shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]",
+            "border-r border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)]",
+            "shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
             "transition-transform duration-500 will-change-transform",
             sidebarWidthClass,
           ].join(" "),
           drawerOpen ? "is-open" : "",
         ].join(" ")}
       >
-        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary)] opacity-70 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-secondary)] opacity-80 blur-3xl" />
-        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[var(--color-primary)]" />
+        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary)] opacity-50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-secondary)] opacity-60 blur-3xl" />
+        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[color-mix(in_srgb,var(--color-primary)_7%,transparent)]" />
 
         <div
           className={[
@@ -939,16 +956,16 @@ export default function LeftSidebar() {
           <button
             type="button"
             onClick={() => setDrawerOpen(false)}
-            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
+            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
             aria-label={text.closeMenu}
           >
             ×
           </button>
 
-          <div className="flex flex-col gap-3 pr-9 2xl:pr-0">
+          <div className="flex flex-col gap-4 pr-9 2xl:pr-0">
             <Logo language={currentLanguage} />
 
-            {/* Registration + Login, directly beneath the logo (item 6). */}
+            {/* Registration + Login, directly beneath the logo. */}
             <div className="flex flex-wrap items-center gap-2">
               <SidebarRegisterButton />
               <SidebarAuthButton />
@@ -956,25 +973,26 @@ export default function LeftSidebar() {
           </div>
           <LanguageSwitch />
 
-          {/* Public support centre entry — visible to guests and signed-in users
-              alike since /help-desk is not session-gated. */}
+          {/* Public support centre entry — a real navigation to /help-desk,
+              visible to guests and signed-in users alike since the route is not
+              session-gated. */}
           <Link
             href="/help-desk"
-            className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-4 py-3 shadow-[0_14px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-secondary)]"
+            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border bg-[var(--color-white)] px-4 py-3 transition duration-300 hover:-translate-y-0.5 ${cardBorderClass} ${cardShadowClass} hover:border-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]`}
           >
             <span className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
+              <span className="grid h-8 w-8 flex-none place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] text-[var(--color-primary)]">
                 <FiHeadphones size={15} />
               </span>
-              <span className="text-[15px] font-bold text-[var(--color-primary)]">
-                {currentLanguage === "en" ? "Help Desk" : "হেল্প ডেস্ক"}
+              <span className="text-[14px] font-semibold text-[var(--color-primary)]">
+                {text.helpDesk}
               </span>
             </span>
-            <FiArrowRight className="text-[var(--color-primary)]" />
+            <FiArrowRight className="text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" />
           </Link>
 
-          <div className="mt-5 rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:mt-6 sm:p-4">
-            <div className="rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
+          <div className={`mt-5 rounded-3xl border bg-[var(--color-white)] p-3 sm:p-4 ${cardBorderClass} ${cardShadowClass}`}>
+            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3">
               <p className={`${sidebarTitleTextClass} text-[var(--color-primary)]`}>
                 {text.theK12Os}
               </p>
@@ -989,7 +1007,7 @@ export default function LeftSidebar() {
             />
           </div>
 
-          <nav className="mt-5 space-y-1.5 text-[13px]  sm:mt-6">
+          <nav className="mt-5 space-y-1.5 sm:mt-6">
             {currentMenu.map((item) => {
               const itemId = getIdFromHref(item.href);
 
@@ -1022,24 +1040,23 @@ export default function LeftSidebar() {
                       }
                       className={[
                         [
-                          "group relative flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-3 text-left transition duration-300 ",
+                          "group relative flex w-full items-center justify-between overflow-hidden rounded-xl border px-3 py-3 text-left transition duration-300",
                           sidebarDropdownTitleTextClass,
                         ].join(" "),
-                        "hover:translate-x-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
                         activeGroup
-                          ? "border-[var(--color-primary)]  shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
-                          : "",
+                          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+                          : "border-transparent " + softHoverClass,
                       ].join(" ")}
                       style={{
                         color: readableColor,
                         background: activeGroup
-                          ? `color-mix(in srgb, ${color} 13%, transparent)`
+                          ? `color-mix(in srgb, ${color} 12%, transparent)`
                           : undefined,
                       }}
                     >
                       {activeGroup ? (
                         <span
-                          className="absolute -left-5 top-2 h-7 w-1 rounded-r-full"
+                          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
                           style={{ background: color }}
                         />
                       ) : null}
@@ -1050,7 +1067,7 @@ export default function LeftSidebar() {
                             "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
                             activeGroup
                               ? "border-transparent text-[var(--color-white)]"
-                              : "border-transparent bg-[var(--color-primary)] text-[var(--color-white)]",
+                              : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
                           ].join(" ")}
                           style={activeGroup ? { background: color } : undefined}
                         >
@@ -1059,14 +1076,14 @@ export default function LeftSidebar() {
                             return <GroupIcon size={15} />;
                           })()}
                         </span>
-                        <span className="text-[17px] font-bold leading-[1.18]">
+                        <span className="text-[15px] font-semibold leading-[1.2]">
                           {item.title}
                         </span>
                       </span>
 
                       <span
                         className={[
-                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] text-[var(--color-primary)] transition-transform duration-300",
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] text-[var(--color-primary)] transition-transform duration-300",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
                         aria-hidden="true"
@@ -1084,7 +1101,7 @@ export default function LeftSidebar() {
                       ].join(" ")}
                     >
                       <div className="overflow-hidden">
-                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[var(--color-primary)] border-l-[3px] border-l-[var(--color-primary)] bg-[var(--color-white)] py-1.5 pl-4 pr-1 shadow-[inset_8px_0_18px_color-mix(in_srgb,var(--color-primary)_5%,transparent)]">
+                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] border-l-[3px] border-l-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] py-1.5 pl-4 pr-1">
                           {item.href === "#home-connections-panel" ? (
                             <SidebarChildLink
                               child={{
@@ -1143,10 +1160,10 @@ export default function LeftSidebar() {
             })}
           </nav>
 
-          <div className="mt-auto border-t border-[var(--color-primary)] bg-[var(--color-white)] pt-5">
+          <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             <Link
               href="#connect"
-              className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[16px] font-black text-[var(--color-white)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_22%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] sm:h-12"
+              className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary)] text-[15px] font-semibold text-[var(--color-white)] shadow-[0_18px_40px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[color-mix(in_srgb,var(--color-primary)_86%,var(--color-secondary))] sm:h-12"
             >
               {text.talkToExpert}
             </Link>

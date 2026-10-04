@@ -33,7 +33,7 @@ import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
-import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, HELP_DESK_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
@@ -330,6 +330,42 @@ export default function DashboardShell({
           <span className={navLabelClass(active)}>
             <ServiceIcon className="text-[16px]" />
             {copy.nav.serviceBuild}
+          </span>
+        </button>
+      );
+    }
+
+    // --- Support -----------------------------------------------------------
+    // The public help desk. It is advertised on BOTH panels and for every
+    // signed-in role (system user, employee, customer) because /help-desk is a
+    // public, session-free route — hiding it per role would be wrong. It is a
+    // real navigation (the address bar changes and Back works), never an
+    // in-place panel, and it is deliberately never "active" because the rail is
+    // no longer on screen once the ticket centre opens.
+    items.push(
+      <div
+        key="help-desk-divider"
+        aria-hidden
+        className="my-1.5 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+      />
+    );
+
+    {
+      const HelpDeskIcon = NAV_ICONS.helpdesk;
+
+      items.push(
+        <button
+          key="help-desk"
+          type="button"
+          onClick={() => {
+            router.push(HELP_DESK_PATH);
+            setNavOpen(false);
+          }}
+          className={navButtonClass(false)}
+        >
+          <span className={navLabelClass(false)}>
+            <HelpDeskIcon className="text-[16px]" />
+            {copy.nav.helpDesk}
           </span>
         </button>
       );

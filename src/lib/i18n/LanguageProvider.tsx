@@ -119,6 +119,7 @@ const translations: Record<string, string> = {
   "My Connected System": "আমার সংযুক্ত সিস্টেম",
 
   "Talk to an Expert": "বিশেষজ্ঞের সাথে কথা বলুন",
+  "Help Desk": "হেল্প ডেস্ক",
   "Saved": "সংরক্ষিত",
   "All Products": "সব পণ্য",
   "No saved products yet": "এখনও কোনো পণ্য সংরক্ষিত নেই",

@@ -14,6 +14,8 @@ export interface DashboardCopy {
     paymentHistory: string;
     /** Customer-facing Service Build (Sales Invoice) link (client scope only). */
     serviceBuild: string;
+    /** Public support-centre link. Shown on BOTH panels for every role. */
+    helpDesk: string;
     analytics: string;
     reports: string;
     users: string;
@@ -103,6 +105,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       expenseClaim: "এক্সপেন্স ক্লেম",
       paymentHistory: "পেমেন্ট ইতিহাস",
       serviceBuild: "সার্ভিস বিল্ড",
+      helpDesk: "হেল্প ডেস্ক",
       analytics: "অ্যানালিটিক্স",
       reports: "রিপোর্ট",
       users: "ইউজার",
@@ -223,6 +226,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       expenseClaim: "Expense Claim",
       paymentHistory: "Payment History",
       serviceBuild: "Service Build",
+      helpDesk: "Help Desk",
       analytics: "Analytics",
       reports: "Reports",
       users: "Users",
