@@ -537,12 +537,13 @@ function paymentDisplayCurrency(row) {
 }
 
 function paymentDisplayStatus(row) {
+  // Mirror the real endpoint: the document's own `status` field, verbatim.
+  const status = String(row.status || "").trim();
+  if (status) return status;
   const docstatus = Number(row.docstatus || 0);
-  const status = String(row.status || "").trim().toLowerCase();
-  if (docstatus === 0 || status === "draft") return "draft";
-  if (docstatus === 2 || status === "cancelled") return "cancelled";
-  if (status === "reconciled") return "reconciled";
-  return "submitted";
+  if (docstatus === 2) return "Cancelled";
+  if (docstatus === 1) return "Submitted";
+  return "Draft";
 }
 
 function paymentRowPayload(row) {

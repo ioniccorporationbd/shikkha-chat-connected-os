@@ -57,13 +57,14 @@ function StatusBadge({
       "border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] text-[var(--color-danger-strong)]",
   };
 
-  const key = (["submitted", "reconciled", "received", "paid", "draft", "cancelled"] as const).includes(
-    status as PaymentEntryStatusKey
-  )
-    ? (status as PaymentEntryStatusKey)
-    : "submitted";
-
-  const label = copy.statuses[key] ?? String(status);
+  // The label comes straight from the document's own `status` field (e.g.
+  // "Draft", "Submitted", "Reconciled"): a known state gets the localised
+  // label + colour, anything else is shown exactly as the ERP returned it.
+  const raw = String(status || "").trim();
+  const lower = raw.toLowerCase() as PaymentEntryStatusKey;
+  const known = (Object.keys(map) as PaymentEntryStatusKey[]).includes(lower);
+  const key: PaymentEntryStatusKey = known ? lower : "submitted";
+  const label = known ? copy.statuses[key] ?? raw : raw || "—";
 
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 ${map[key]}`}>
@@ -403,8 +404,6 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
                             copy.colType,
                             copy.colAmount,
                             copy.colMode,
-                            copy.colReference,
-                            copy.colReferenceDate,
                             copy.colStatus,
                             copy.colAction,
                           ].map((heading) => (
@@ -432,12 +431,6 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
                               {formatAmount(payment.amount, payment.currency || currency, language)}
                             </td>
                             <td className="px-4 py-3 text-[13px]">{payment.mode_of_payment || "—"}</td>
-                            <td className="px-4 py-3 text-[13px]">{payment.reference_no || "—"}</td>
-                            <td className="px-4 py-3 text-[13px]">
-                              {payment.reference_date
-                                ? formatDate(payment.reference_date, language)
-                                : "—"}
-                            </td>
                             <td className="px-4 py-3">
                               <StatusBadge status={payment.display_status} copy={copy} />
                             </td>
@@ -538,10 +531,7 @@ function PaymentCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-          {payment.reference_no ? `${copy.colReference}: ${payment.reference_no}` : ""}
-        </span>
+      <div className="flex items-center justify-end gap-3">
         <button
           type="button"
           onClick={onOpen}
