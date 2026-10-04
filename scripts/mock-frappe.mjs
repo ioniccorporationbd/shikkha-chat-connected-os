@@ -160,6 +160,25 @@ const DEMO_USERS = {
       dashboard_route: "/clientDashboard",
     },
   },
+  // A second customer (Customer B) for the ownership tests: B must never see A's
+  // payments, and a direct details call for A's payment must be refused.
+  "client2@example.com": {
+    password: PASSWORD,
+    kind: "client",
+    profile: {
+      authenticated: true,
+      name: "client2@example.com",
+      full_name: "Rahim Uddin",
+      email: "client2@example.com",
+      user_image: "",
+      time_zone: "Asia/Dhaka",
+      language: "bn",
+      user_type: "Website User",
+      roles: ["Customer"],
+      is_admin: false,
+      dashboard_route: "/clientDashboard",
+    },
+  },
 };
 
 function redirectFor(account) {
@@ -374,6 +393,208 @@ expenseClaims.push({
   creation: "2026-10-04 10:00:00",
   modified: "2026-10-04 10:00:00",
 });
+
+// --- customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) --- //
+// The customer is resolved from the logged-in user (never the body), exactly
+// like the real endpoint; ownership is enforced by the `party` filter on the
+// list and by an explicit party check on details. Only submitted (docstatus 1)
+// rows are ever returned - the seeded Draft and Cancelled rows prove exclusion.
+const linkedCustomers = {
+  "client@example.com": { name: "CUST-0001", customer_name: "Nusrat Jahan" },
+  "client2@example.com": { name: "CUST-0002", customer_name: "Rahim Uddin" },
+};
+
+const paymentEntries = [
+  {
+    name: "ACC-PAY-2026-00045",
+    posting_date: "2026-10-04",
+    payment_type: "Receive",
+    party_type: "Customer",
+    party: "CUST-0001",
+    party_name: "Nusrat Jahan",
+    paid_amount: 5000,
+    received_amount: 5000,
+    paid_from_account_currency: "BDT",
+    paid_to_account_currency: "BDT",
+    mode_of_payment: "Bank",
+    reference_no: "TXN12345",
+    reference_date: "2026-10-03",
+    status: "Submitted",
+    docstatus: 1,
+    company: "Magnetic Solution Limited",
+    remarks: "Advance received against order",
+    references: [
+      {
+        reference_doctype: "Sales Invoice",
+        reference_name: "SINV-2026-00012",
+        due_date: "2026-10-20",
+        total_amount: 5000,
+        outstanding_amount: 0,
+        allocated_amount: 5000,
+      },
+    ],
+  },
+  {
+    name: "ACC-PAY-2026-00031",
+    posting_date: "2026-09-15",
+    payment_type: "Receive",
+    party_type: "Customer",
+    party: "CUST-0001",
+    party_name: "Nusrat Jahan",
+    paid_amount: 2500,
+    received_amount: 2500,
+    paid_from_account_currency: "BDT",
+    paid_to_account_currency: "BDT",
+    mode_of_payment: "Cash",
+    reference_no: "",
+    reference_date: "",
+    status: "Reconciled",
+    docstatus: 1,
+    company: "Magnetic Solution Limited",
+    remarks: "",
+    references: [],
+  },
+  // Draft - must NEVER appear in the history.
+  {
+    name: "ACC-PAY-2026-00050",
+    posting_date: "2026-10-04",
+    payment_type: "Receive",
+    party_type: "Customer",
+    party: "CUST-0001",
+    party_name: "Nusrat Jahan",
+    paid_amount: 9999,
+    received_amount: 9999,
+    paid_from_account_currency: "BDT",
+    paid_to_account_currency: "BDT",
+    mode_of_payment: "Cash",
+    reference_no: "",
+    reference_date: "",
+    status: "Draft",
+    docstatus: 0,
+    company: "Magnetic Solution Limited",
+    remarks: "",
+    references: [],
+  },
+  // Cancelled - must NEVER appear in the history.
+  {
+    name: "ACC-PAY-2026-00051",
+    posting_date: "2026-10-04",
+    payment_type: "Receive",
+    party_type: "Customer",
+    party: "CUST-0001",
+    party_name: "Nusrat Jahan",
+    paid_amount: 7777,
+    received_amount: 7777,
+    paid_from_account_currency: "BDT",
+    paid_to_account_currency: "BDT",
+    mode_of_payment: "Cash",
+    reference_no: "",
+    reference_date: "",
+    status: "Cancelled",
+    docstatus: 2,
+    company: "Magnetic Solution Limited",
+    remarks: "",
+    references: [],
+  },
+  // Customer B (client2@example.com) - must never be visible to Customer A.
+  {
+    name: "ACC-PAY-2026-00060",
+    posting_date: "2026-10-02",
+    payment_type: "Receive",
+    party_type: "Customer",
+    party: "CUST-0002",
+    party_name: "Rahim Uddin",
+    paid_amount: 12000,
+    received_amount: 12000,
+    paid_from_account_currency: "BDT",
+    paid_to_account_currency: "BDT",
+    mode_of_payment: "Bank",
+    reference_no: "TXN99999",
+    reference_date: "2026-10-01",
+    status: "Submitted",
+    docstatus: 1,
+    company: "Magnetic Solution Limited",
+    remarks: "",
+    references: [],
+  },
+];
+
+function paymentDisplayAmount(row) {
+  const paymentType = String(row.payment_type || "").trim().toLowerCase();
+  const paid = Number(row.paid_amount || 0);
+  const received = Number(row.received_amount || 0);
+  if (paymentType === "pay") return received || paid;
+  return paid || received;
+}
+
+function paymentDisplayCurrency(row) {
+  const paymentType = String(row.payment_type || "").trim().toLowerCase();
+  if (paymentType === "pay") {
+    return row.paid_to_account_currency || row.paid_from_account_currency || "";
+  }
+  return row.paid_from_account_currency || row.paid_to_account_currency || "";
+}
+
+function paymentDisplayStatus(row) {
+  const docstatus = Number(row.docstatus || 0);
+  const status = String(row.status || "").trim().toLowerCase();
+  if (docstatus === 0 || status === "draft") return "draft";
+  if (docstatus === 2 || status === "cancelled") return "cancelled";
+  if (status === "reconciled") return "reconciled";
+  return "submitted";
+}
+
+function paymentRowPayload(row) {
+  return {
+    name: row.name,
+    posting_date: row.posting_date || "",
+    payment_type: row.payment_type || "",
+    party_type: row.party_type || "",
+    party: row.party || "",
+    party_name: row.party_name || "",
+    paid_amount: Number(row.paid_amount || 0),
+    received_amount: Number(row.received_amount || 0),
+    mode_of_payment: row.mode_of_payment || "",
+    reference_no: row.reference_no || "",
+    reference_date: row.reference_date || "",
+    status: row.status || "",
+    docstatus: Number(row.docstatus || 0),
+    company: row.company || "",
+    amount: paymentDisplayAmount(row),
+    currency: paymentDisplayCurrency(row),
+    display_status: paymentDisplayStatus(row),
+  };
+}
+
+function paymentSummary(rows, currency) {
+  const month = new Date().toISOString().slice(0, 7);
+  let totalAmount = 0;
+  let monthAmount = 0;
+  let monthCount = 0;
+  let latest = "";
+
+  for (const row of rows) {
+    const amount = Number(row.amount || 0);
+    totalAmount += amount;
+    const posting = String(row.posting_date || "");
+    if (posting) {
+      if (posting > latest) latest = posting;
+      if (posting.slice(0, 7) === month) {
+        monthCount += 1;
+        monthAmount += amount;
+      }
+    }
+  }
+
+  return {
+    total: rows.length,
+    total_amount: totalAmount,
+    this_month_count: monthCount,
+    this_month_amount: monthAmount,
+    latest_payment_date: latest,
+    currency,
+  };
+}
 
 // --- registration ---------------------------------------------------------- //
 // In-memory mirror of the shikkha_os registration flow so the sign-up path can
@@ -663,6 +884,8 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.expense_claim.list_mine",
         "shikkha_os.api.v1.expense_claim.details",
         "shikkha_os.api.v1.expense_claim.create",
+        "shikkha_os.api.v1.payment_entry.list_mine",
+        "shikkha_os.api.v1.payment_entry.details",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -1669,6 +1892,82 @@ const server = createServer(async (request, response) => {
       is_paid: false,
       owner: email,
       creation: record.creation,
+      verified: true,
+    });
+    return;
+  }
+
+  // --- Customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) ---
+  if (method === "shikkha_os.api.v1.payment_entry.list_mine") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    const customer = linkedCustomers[email];
+    if (!customer) {
+      // Authenticated, but no Customer is linked to this account: a calm state.
+      ok(response, {
+        doctype: "Payment Entry",
+        linked: false,
+        payments: [],
+        summary: paymentSummary([], ""),
+      });
+      return;
+    }
+
+    const mine = paymentEntries.filter(
+      (row) =>
+        row.party_type === "Customer" &&
+        row.party === customer.name &&
+        Number(row.docstatus) === 1
+    );
+    const payments = mine.map(paymentRowPayload);
+    const currency = (payments.find((p) => p.currency) || {}).currency || "BDT";
+
+    ok(response, {
+      doctype: "Payment Entry",
+      linked: true,
+      customer,
+      payments,
+      summary: paymentSummary(payments, currency),
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.payment_entry.details") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    const customer = linkedCustomers[email];
+    if (!customer) {
+      failure(response, 403, "PermissionError", "You are not permitted to view this payment.", "Payment Entry");
+      return;
+    }
+
+    const name = (url.searchParams.get("name") ?? "").trim();
+    const row = paymentEntries.find((r) => r.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "This payment could not be found.", "Payment Entry");
+      return;
+    }
+    // Ownership: refuse to reveal another customer's payment (never trust the name).
+    if (row.party_type !== "Customer" || row.party !== customer.name) {
+      failure(response, 403, "PermissionError", "You are not permitted to view this payment.", "Payment Entry");
+      return;
+    }
+    // Only submitted entries are part of a customer's payment history.
+    if (Number(row.docstatus) !== 1) {
+      failure(response, 404, "ValidationError", "Only submitted payments can be viewed.", "Payment Entry");
+      return;
+    }
+
+    ok(response, {
+      ...paymentRowPayload(row),
+      remark: row.remarks || "",
+      references: row.references || [],
       verified: true,
     });
     return;

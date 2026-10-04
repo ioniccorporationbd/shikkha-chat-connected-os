@@ -10,6 +10,8 @@ export interface DashboardCopy {
     customers: string;
     checkin: string;
     expenseClaim: string;
+    /** Customer-facing Payment History link (client scope only). */
+    paymentHistory: string;
     analytics: string;
     reports: string;
     users: string;
@@ -97,6 +99,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       customers: "কাস্টমার তৈরি করুন",
       checkin: "চেক ইন / আউট",
       expenseClaim: "এক্সপেন্স ক্লেম",
+      paymentHistory: "পেমেন্ট ইতিহাস",
       analytics: "অ্যানালিটিক্স",
       reports: "রিপোর্ট",
       users: "ইউজার",
@@ -215,6 +218,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       customers: "Create Customer",
       checkin: "Check In / Out",
       expenseClaim: "Expense Claim",
+      paymentHistory: "Payment History",
       analytics: "Analytics",
       reports: "Reports",
       users: "Users",

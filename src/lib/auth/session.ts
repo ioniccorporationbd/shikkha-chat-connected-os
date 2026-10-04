@@ -45,6 +45,14 @@ export const EXPENSE_CLAIM_PATH = `${STAFF_DASHBOARD_PATH}/expense-claim`;
 /** The New Expense Claim form, a child route of the list. */
 export const EXPENSE_CLAIM_NEW_PATH = `${EXPENSE_CLAIM_PATH}/new`;
 
+/**
+ * Customer-facing sub-route that renders the account's own Payment Entry
+ * history, on its own URL inside the client dashboard shell so opening it is a
+ * real navigation (the address bar changes, Back works) rather than an in-place
+ * panel swap.
+ */
+export const PAYMENT_HISTORY_PATH = `${CLIENT_DASHBOARD_PATH}/payment-entry`;
+
 /** Every route that renders the dashboard shell. */
 export const DASHBOARD_PATHS: readonly string[] = [STAFF_DASHBOARD_PATH, CLIENT_DASHBOARD_PATH];
 
