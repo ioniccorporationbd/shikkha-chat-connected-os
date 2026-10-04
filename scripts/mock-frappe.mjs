@@ -903,7 +903,7 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.10",
+      version: "1.3.11",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
