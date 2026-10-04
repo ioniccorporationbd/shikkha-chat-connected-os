@@ -40,6 +40,14 @@ const HELPER = "text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--colo
 const TEXTAREA_TYPES = new Set(["Small Text", "Text", "Long Text", "Text Editor"]);
 const NUMBER_TYPES = new Set(["Int", "Float", "Currency", "Percent"]);
 
+/**
+ * Fields the backend resolves for every claim. `Exchange Rate` /
+ * `Conversion Rate` are mandatory on ERPNext's Expense Claim, but a portal claim
+ * is always created in the company's own currency, so the server fills the rate.
+ * The portal must never render or send these - removed from the frontend.
+ */
+const SERVER_RESOLVED_FIELDS = new Set(["exchange_rate", "conversion_rate", "currency", "base_currency"]);
+
 function borderClass(invalid: boolean): string {
   return invalid
     ? "border-[var(--color-danger)]"
@@ -235,6 +243,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
           expenses: rows.map((row) => {
             const clean: ExpenseRowValue = {};
             schema.child.fields.forEach((field) => {
+              if (SERVER_RESOLVED_FIELDS.has(field.fieldname)) return;
               const value = row[field.fieldname];
               if (value !== undefined && String(value).trim() !== "") clean[field.fieldname] = String(value);
             });
