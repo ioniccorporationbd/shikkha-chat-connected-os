@@ -2,6 +2,7 @@ import { callFrappe } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 import type { PaymentEntryDetails } from "@/lib/payment-entry/types";
+import { reportPaymentError } from "@/lib/payment-entry/report";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,6 +34,10 @@ export async function GET(
   );
 
   if (!result.ok) {
+    console.error(
+      `[payment-entry] details failed: status=${result.status} code=${result.code} name=${name}`
+    );
+    await reportPaymentError(sid, result.message, `details:${name}`, result.code);
     const response = fromFrappeFailure(result);
     return result.status === 401 ? clearSessionCookie(response) : response;
   }

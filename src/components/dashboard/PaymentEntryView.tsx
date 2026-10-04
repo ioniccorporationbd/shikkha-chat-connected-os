@@ -82,8 +82,9 @@ function paymentTypeLabel(row: PaymentEntryRow, copy: PaymentEntryCopy): string 
  *
  * Every figure comes from the ERP, scoped to the logged-in customer: the list,
  * the summary and the details are all filtered server-side (`party_type =
- * "Customer"`, `party = current customer`, `docstatus = 1`), so the browser can
- * never see another customer's payments — or a Draft / Cancelled entry.
+ * "Customer"`, `party = current customer`), so the browser can never see another
+ * customer's payments. Draft and Submitted receipts are shown; Cancelled entries
+ * are never returned.
  */
 export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
   const { language } = useLanguage();
@@ -110,6 +111,11 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
       setExpired(false);
     } catch (error) {
       const err = error as ApiError;
+      // Requirement: a portal failure must be visible in the browser console.
+      console.error("[payment-entry] list load failed", {
+        code: err?.code ?? "unknown",
+        message: err?.message ?? String(error),
+      });
       if (err?.code === "not_authenticated") {
         setExpired(true);
       } else if (err?.code === "not_permitted") {
@@ -154,7 +160,13 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
         const payload = await fetchPaymentDetails(name, language);
         setDetail(payload);
       } catch (error) {
-        setDetailError((error as ApiError)?.message || copy.loadFailed);
+        const err = error as ApiError;
+        console.error("[payment-entry] details load failed", {
+          name,
+          code: err?.code ?? "unknown",
+          message: err?.message ?? String(error),
+        });
+        setDetailError(err?.message || copy.loadFailed);
       } finally {
         setDetailLoading(false);
       }

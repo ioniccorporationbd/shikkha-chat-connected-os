@@ -2,6 +2,7 @@ import { callFrappe } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 import type { PaymentEntryListPayload } from "@/lib/payment-entry/types";
+import { reportPaymentError } from "@/lib/payment-entry/report";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,12 @@ export async function GET(request: Request) {
   const result = await callFrappe<PaymentEntryListPayload>(method, { sid });
 
   if (!result.ok) {
+    // A method-not-found after a partial deploy / an upstream error must be
+    // visible: server log now, ERP Error Log via the report_error endpoint.
+    console.error(
+      `[payment-entry] list_mine failed: status=${result.status} code=${result.code}`
+    );
+    await reportPaymentError(sid, result.message, "list_mine", result.code);
     const response = fromFrappeFailure(result);
     return result.status === 401 ? clearSessionCookie(response) : response;
   }

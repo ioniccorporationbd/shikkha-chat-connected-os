@@ -397,8 +397,9 @@ expenseClaims.push({
 // --- customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) --- //
 // The customer is resolved from the logged-in user (never the body), exactly
 // like the real endpoint; ownership is enforced by the `party` filter on the
-// list and by an explicit party check on details. Only submitted (docstatus 1)
-// rows are ever returned - the seeded Draft and Cancelled rows prove exclusion.
+// list and by an explicit party check on details. Draft (docstatus 0) and
+// Submitted (docstatus 1) rows are returned; the seeded Cancelled row proves
+// exclusion.
 const linkedCustomers = {
   "client@example.com": { name: "CUST-0001", customer_name: "Nusrat Jahan" },
   "client2@example.com": { name: "CUST-0002", customer_name: "Rahim Uddin" },
@@ -454,7 +455,7 @@ const paymentEntries = [
     remarks: "",
     references: [],
   },
-  // Draft - must NEVER appear in the history.
+  // Draft - shown to the customer (receipt not yet submitted).
   {
     name: "ACC-PAY-2026-00050",
     posting_date: "2026-10-04",
@@ -863,7 +864,7 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.3",
+      version: "1.3.9",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",
@@ -886,6 +887,7 @@ const server = createServer(async (request, response) => {
         "shikkha_os.api.v1.expense_claim.create",
         "shikkha_os.api.v1.payment_entry.list_mine",
         "shikkha_os.api.v1.payment_entry.details",
+        "shikkha_os.api.v1.payment_entry.report_error",
         "shikkha_os.api.v1.registration.send_otp",
         "shikkha_os.api.v1.registration.verify_otp",
         "shikkha_os.api.v1.registration.availability",
@@ -1920,7 +1922,8 @@ const server = createServer(async (request, response) => {
       (row) =>
         row.party_type === "Customer" &&
         row.party === customer.name &&
-        Number(row.docstatus) === 1
+        // Draft (0) + Submitted (1); Cancelled (2) is never shown.
+        (Number(row.docstatus) === 0 || Number(row.docstatus) === 1)
     );
     const payments = mine.map(paymentRowPayload);
     const currency = (payments.find((p) => p.currency) || {}).currency || "BDT";
@@ -1958,9 +1961,9 @@ const server = createServer(async (request, response) => {
       failure(response, 403, "PermissionError", "You are not permitted to view this payment.", "Payment Entry");
       return;
     }
-    // Only submitted entries are part of a customer's payment history.
-    if (Number(row.docstatus) !== 1) {
-      failure(response, 404, "ValidationError", "Only submitted payments can be viewed.", "Payment Entry");
+    // Only non-cancelled entries are part of a customer's payment history.
+    if (Number(row.docstatus) === 2) {
+      failure(response, 404, "ValidationError", "This payment has been cancelled.", "Payment Entry");
       return;
     }
 
@@ -1969,6 +1972,26 @@ const server = createServer(async (request, response) => {
       remark: row.remarks || "",
       references: row.references || [],
       verified: true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.payment_entry.report_error") {
+    const email = userFor(request);
+    if (!email) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+    // Mirrors shikkha_os.api.v1.payment_entry.report_error: the portal records
+    // its own failures so they surface in the ERP Error Log.
+    const body = await readBody(request);
+    console.log(
+      `[mock] payment_entry.report_error from ${email}: ${String(body.context || "")} - ${String(body.message || "")}`
+    );
+    ok(response, {
+      logged: true,
+      context: String(body.context || ""),
+      message: String(body.message || ""),
     });
     return;
   }
