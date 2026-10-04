@@ -153,6 +153,9 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
 
   const openDetails = useCallback(
     async (name: string) => {
+      // Never open a details call for a blank name - it would 404 and get
+      // logged. The list never renders nameless rows (see `payments` below).
+      if (!name) return;
       setDetailName(name);
       setDetail(null);
       setDetailError("");
@@ -190,7 +193,10 @@ export default function PaymentEntryView({ onBack }: PaymentEntryViewProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [detailName, closeDetails]);
 
-  const payments = data?.payments ?? [];
+  // Defensive: a Payment Entry is always named, but never render a row without a
+  // name - it would hand React a duplicate `null` key and fire a details call for
+  // null. The backend now always requests `name` (see payment_entry.py).
+  const payments = (data?.payments ?? []).filter((payment) => Boolean(payment?.name));
   const summary = data?.summary;
   const currency = summary?.currency || payments[0]?.currency || "BDT";
 
