@@ -408,6 +408,12 @@ const linkedCustomers = {
 const paymentEntries = [
   {
     name: "ACC-PAY-2026-00045",
+    paid_from: "Debtors - MSL",
+    paid_to: "Bank - MSL",
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    total_allocated_amount: 5000,
+    unallocated_amount: 0,
     posting_date: "2026-10-04",
     payment_type: "Receive",
     party_type: "Customer",
@@ -437,6 +443,12 @@ const paymentEntries = [
   },
   {
     name: "ACC-PAY-2026-00031",
+    paid_from: "Debtors - MSL",
+    paid_to: "Cash - MSL",
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    total_allocated_amount: 2500,
+    unallocated_amount: 0,
     posting_date: "2026-09-15",
     payment_type: "Receive",
     party_type: "Customer",
@@ -458,6 +470,12 @@ const paymentEntries = [
   // Draft - shown to the customer (receipt not yet submitted).
   {
     name: "ACC-PAY-2026-00050",
+    paid_from: "Debtors - MSL",
+    paid_to: "Cash - MSL",
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    total_allocated_amount: 0,
+    unallocated_amount: 9999,
     posting_date: "2026-10-04",
     payment_type: "Receive",
     party_type: "Customer",
@@ -479,6 +497,12 @@ const paymentEntries = [
   // Cancelled - must NEVER appear in the history.
   {
     name: "ACC-PAY-2026-00051",
+    paid_from: "Debtors - MSL",
+    paid_to: "Cash - MSL",
+    contact_person: "Nusrat Jahan",
+    contact_email: "nusrat@example.com",
+    total_allocated_amount: 0,
+    unallocated_amount: 7777,
     posting_date: "2026-10-04",
     payment_type: "Receive",
     party_type: "Customer",
@@ -500,6 +524,12 @@ const paymentEntries = [
   // Customer B (client2@example.com) - must never be visible to Customer A.
   {
     name: "ACC-PAY-2026-00060",
+    paid_from: "Debtors - MSL",
+    paid_to: "Bank - MSL",
+    contact_person: "Rahim Uddin",
+    contact_email: "rahim@example.com",
+    total_allocated_amount: 12000,
+    unallocated_amount: 0,
     posting_date: "2026-10-02",
     payment_type: "Receive",
     party_type: "Customer",
@@ -565,6 +595,14 @@ function paymentRowPayload(row) {
     amount: paymentDisplayAmount(row),
     currency: paymentDisplayCurrency(row),
     display_status: paymentDisplayStatus(row),
+    paid_from: row.paid_from || "",
+    paid_to: row.paid_to || "",
+    paid_from_account_currency: row.paid_from_account_currency || "",
+    paid_to_account_currency: row.paid_to_account_currency || "",
+    contact_person: row.contact_person || "",
+    contact_email: row.contact_email || "",
+    total_allocated_amount: Number(row.total_allocated_amount || 0),
+    unallocated_amount: Number(row.unallocated_amount || 0),
   };
 }
 
@@ -865,7 +903,7 @@ const server = createServer(async (request, response) => {
   if (method === "shikkha_os.api.v1.health.ping") {
     ok(response, {
       app: "shikkha_os",
-      version: "1.3.9",
+      version: "1.3.10",
       endpoints: [
         "shikkha_os.api.v1.auth.login",
         "shikkha_os.api.v1.auth.logout",

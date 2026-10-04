@@ -58,6 +58,14 @@ export interface PaymentEntryCopy {
   dReferenceDate: string;
   dCompany: string;
   dRemark: string;
+  dPaidFrom: string;
+  dPaidTo: string;
+  dPaidAmount: string;
+  dReceivedAmount: string;
+  dAllocated: string;
+  dUnallocated: string;
+  dContactPerson: string;
+  dContactEmail: string;
 
   referencesHeading: string;
   referencesEmpty: string;
@@ -130,6 +138,14 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dReferenceDate: "রেফারেন্স তারিখ",
     dCompany: "প্রতিষ্ঠান",
     dRemark: "মন্তব্য",
+    dPaidFrom: "যেখান থেকে",
+    dPaidTo: "যেখানে জমা",
+    dPaidAmount: "পরিশোধিত পরিমাণ",
+    dReceivedAmount: "গৃহীত পরিমাণ",
+    dAllocated: "বরাদ্দকৃত",
+    dUnallocated: "অবরাদ্দ",
+    dContactPerson: "যোগাযোগ ব্যক্তি",
+    dContactEmail: "যোগাযোগ ইমেইল",
 
     referencesHeading: "রেফারেন্স সারি",
     referencesEmpty: "কোনো রেফারেন্স সংযুক্ত নেই।",
@@ -209,6 +225,14 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dReferenceDate: "Reference Date",
     dCompany: "Company",
     dRemark: "Remarks",
+    dPaidFrom: "Paid From",
+    dPaidTo: "Paid To",
+    dPaidAmount: "Paid Amount",
+    dReceivedAmount: "Received Amount",
+    dAllocated: "Allocated",
+    dUnallocated: "Unallocated",
+    dContactPerson: "Contact Person",
+    dContactEmail: "Contact Email",
 
     referencesHeading: "Reference rows",
     referencesEmpty: "No reference rows linked.",

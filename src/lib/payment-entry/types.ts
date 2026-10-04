@@ -47,6 +47,16 @@ export interface PaymentEntryDetails extends PaymentEntryRow {
   references: PaymentEntryReference[];
   /** Backend proof that the record really exists in the Payment Entry table. */
   verified: boolean;
+  /** Extra real Payment Entry fields shown in the details popup. Optional so the
+   *  shape stays correct on sites where a field does not exist. */
+  paid_from?: string;
+  paid_to?: string;
+  paid_from_account_currency?: string;
+  paid_to_account_currency?: string;
+  contact_person?: string;
+  contact_email?: string;
+  total_allocated_amount?: number;
+  unallocated_amount?: number;
 }
 
 export interface PaymentEntrySummary {

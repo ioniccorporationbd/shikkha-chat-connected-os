@@ -587,6 +587,41 @@ function DetailsDialog({
       ]
     : [];
 
+  // Extra fields taken from the document itself (paid/received, accounts,
+  // allocation, contact). Only shown when the ERP actually returned a value.
+  const extraRows: { label: string; value: string }[] = detail
+    ? (
+        [
+          {
+            label: copy.dPaidAmount,
+            value: Number(detail.paid_amount) ? formatAmount(Number(detail.paid_amount), code, language) : "",
+          },
+          {
+            label: copy.dReceivedAmount,
+            value: Number(detail.received_amount) ? formatAmount(Number(detail.received_amount), code, language) : "",
+          },
+          { label: copy.dPaidFrom, value: detail.paid_from || "" },
+          { label: copy.dPaidTo, value: detail.paid_to || "" },
+          {
+            label: copy.dAllocated,
+            value: Number(detail.total_allocated_amount)
+              ? formatAmount(Number(detail.total_allocated_amount), code, language)
+              : "",
+          },
+          {
+            label: copy.dUnallocated,
+            value: Number(detail.unallocated_amount)
+              ? formatAmount(Number(detail.unallocated_amount), code, language)
+              : "",
+          },
+          { label: copy.dContactPerson, value: detail.contact_person || "" },
+          { label: copy.dContactEmail, value: detail.contact_email || "" },
+        ] as { label: string; value: string }[]
+      ).filter((row) => row.value)
+    : [];
+
+  const allRows = [...rows, ...extraRows];
+
   const references: PaymentEntryReference[] = detail?.references ?? [];
 
   return (
@@ -647,7 +682,7 @@ function DetailsDialog({
               </div>
 
               <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {rows.map((row) => (
+                {allRows.map((row) => (
                   <div key={row.label} className="min-w-0">
                     <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                       {row.label}
