@@ -211,6 +211,22 @@ export interface HelpDeskCopy {
   categories: Record<TicketCategoryId, string>;
   priorities: Record<TicketPriority, string>;
   statuses: Record<TicketStatus, string>;
+
+  // Dashboard (smart overview) — shown inside the dashboard shell
+  overviewTitle: string;
+  overviewSubtitle: string;
+  summaryHeading: string;
+  summaryTotal: string;
+  quickActions: string;
+  quickOpenTickets: string;
+  quickResolvedTickets: string;
+  quickSearchTickets: string;
+  recentActivity: string;
+  recentEmpty: string;
+  newReplyBadge: string;
+  unresolvedHeading: string;
+  unresolvedEmpty: string;
+  breadcrumbDashboard: string;
 }
 
 /** Minimum meaningful description length. */
@@ -420,6 +436,21 @@ const bn: HelpDeskCopy = {
     resolved: "সমাধান হয়েছে",
     closed: "বন্ধ",
   },
+
+  overviewTitle: "সাপোর্ট ড্যাশবোর্ড",
+  overviewSubtitle: "আপনার টিকিটের সারসংক্ষেপ, দ্রুত অ্যাকশন ও সাম্প্রতিক কার্যক্রম এক জায়গায়।",
+  summaryHeading: "টিকিট সারসংক্ষেপ",
+  summaryTotal: "মোট টিকিট",
+  quickActions: "দ্রুত অ্যাকশন",
+  quickOpenTickets: "খোলা টিকিট",
+  quickResolvedTickets: "সমাধান হওয়া টিকিট",
+  quickSearchTickets: "টিকিট খুঁজুন",
+  recentActivity: "সাম্প্রতিক কার্যক্রম",
+  recentEmpty: "এখনো কোনো সাম্প্রতিক কার্যক্রম নেই।",
+  newReplyBadge: "নতুন উত্তর",
+  unresolvedHeading: "অসমাধিত টিকিট",
+  unresolvedEmpty: "সব টিকিট সমাধান হয়েছে।",
+  breadcrumbDashboard: "ড্যাশবোর্ড",
 };
 
 const en: HelpDeskCopy = {
@@ -626,6 +657,21 @@ const en: HelpDeskCopy = {
     resolved: "Resolved",
     closed: "Closed",
   },
+
+  overviewTitle: "Support dashboard",
+  overviewSubtitle: "Your ticket summary, quick actions and recent activity — all in one place.",
+  summaryHeading: "Ticket summary",
+  summaryTotal: "Total tickets",
+  quickActions: "Quick actions",
+  quickOpenTickets: "Open tickets",
+  quickResolvedTickets: "Resolved tickets",
+  quickSearchTickets: "Search tickets",
+  recentActivity: "Recent activity",
+  recentEmpty: "No recent activity yet.",
+  newReplyBadge: "New reply",
+  unresolvedHeading: "Unresolved tickets",
+  unresolvedEmpty: "All tickets are resolved.",
+  breadcrumbDashboard: "Dashboard",
 };
 
 export const helpDeskCopy: Record<"bn" | "en", HelpDeskCopy> = { bn, en };

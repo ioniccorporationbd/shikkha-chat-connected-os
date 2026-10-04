@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { FiAlertTriangle, FiSearch } from "react-icons/fi";
 
-import { HELP_DESK_PATH, HELP_DESK_TICKETS_PATH } from "@/lib/auth/session";
 import { HD_CARD } from "@/lib/help-desk/config";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
+import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 /** Shimmering placeholder rows for the ticket list / recent-tickets preview. */
 export function TicketListSkeleton({ rows = 3 }: { rows?: number }) {
@@ -45,10 +45,13 @@ export function TicketDetailsSkeleton() {
 export function HelpDeskErrorState({
   copy,
   onRetry,
+  basePath,
 }: {
   copy: HelpDeskCopy;
   onRetry?: () => void;
+  basePath?: string;
 }) {
+  const links = helpDeskLinks(basePath);
   return (
     <div className={`${HD_CARD} flex flex-col items-center gap-3 p-8 text-center`} role="alert">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-danger)_14%,var(--color-white))]">
@@ -69,7 +72,7 @@ export function HelpDeskErrorState({
           </button>
         ) : null}
         <Link
-          href={HELP_DESK_PATH}
+          href={links.root}
           className="inline-flex items-center justify-center rounded-2xl border border-[var(--color-primary)] px-5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
         >
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.navHelpDesk}</span>
@@ -80,7 +83,8 @@ export function HelpDeskErrorState({
 }
 
 /** "Ticket not found" state for an unknown / mistyped id. */
-export function HelpDeskNotFound({ copy }: { copy: HelpDeskCopy }) {
+export function HelpDeskNotFound({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string }) {
+  const links = helpDeskLinks(basePath);
   return (
     <div className={`${HD_CARD} flex flex-col items-center gap-3 p-8 text-center`}>
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_40%,var(--color-white))]">
@@ -91,7 +95,7 @@ export function HelpDeskNotFound({ copy }: { copy: HelpDeskCopy }) {
         {copy.notFoundHint}
       </p>
       <Link
-        href={HELP_DESK_TICKETS_PATH}
+        href={links.tickets}
         className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
       >
         <span className="text-sm font-semibold text-[var(--color-white)]">{copy.backToList}</span>

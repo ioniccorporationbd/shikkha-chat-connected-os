@@ -16,10 +16,11 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-import { HELP_DESK_TICKETS_PATH } from "@/lib/auth/session";
 import { HD_CARD, HD_GHOST_BTN, HD_INPUT, TICKET_STATUSES } from "@/lib/help-desk/config";
 import { formatDateTime, formatFileSize } from "@/lib/help-desk/format";
+import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
+import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { addUserReply, getTicket, reopenTicket, sendSupportReply } from "@/lib/help-desk/service";
 import type { Ticket, TicketStatus } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
@@ -39,10 +40,14 @@ export default function TicketDetails({
   ticketId,
   copy,
   language,
+  basePath,
+  markSeen,
 }: {
   ticketId: string;
   copy: HelpDeskCopy;
   language: string;
+  basePath?: string;
+  markSeen?: boolean;
 }) {
   const [state, setState] = useState<LoadState>("loading");
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -67,10 +72,11 @@ export default function TicketDetails({
       }
       setTicket(found);
       setState("ready");
+      if (markSeen) markTicketSeen(found);
     } catch {
       setState("error");
     }
-  }, [ticketId]);
+  }, [ticketId, markSeen]);
 
   useEffect(() => {
     let active = true;
@@ -157,7 +163,7 @@ export default function TicketDetails({
   if (state === "loading") {
     return (
       <div className="space-y-4">
-        <BackLink copy={copy} />
+        <BackLink copy={copy} basePath={basePath} />
         <TicketDetailsSkeleton />
       </div>
     );
@@ -166,7 +172,7 @@ export default function TicketDetails({
   if (state === "notfound") {
     return (
       <div className="space-y-4">
-        <BackLink copy={copy} />
+        <BackLink copy={copy} basePath={basePath} />
         <HelpDeskNotFound copy={copy} />
       </div>
     );
@@ -175,7 +181,7 @@ export default function TicketDetails({
   if (state === "error" || !ticket) {
     return (
       <div className="space-y-4">
-        <BackLink copy={copy} />
+        <BackLink copy={copy} basePath={basePath} />
         <HelpDeskErrorState copy={copy} onRetry={retry} />
       </div>
     );
@@ -185,7 +191,7 @@ export default function TicketDetails({
 
   return (
     <div className="space-y-4">
-      <BackLink copy={copy} />
+      <BackLink copy={copy} basePath={basePath} />
 
       {/* Header card */}
       <div className={`${HD_CARD} p-5 sm:p-6`}>
@@ -445,10 +451,11 @@ export default function TicketDetails({
   );
 }
 
-function BackLink({ copy }: { copy: HelpDeskCopy }) {
+function BackLink({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string }) {
+  const links = helpDeskLinks(basePath);
   return (
     <Link
-      href={HELP_DESK_TICKETS_PATH}
+      href={links.tickets}
       className="inline-flex items-center gap-2 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
     >
       <FiArrowLeft className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />

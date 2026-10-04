@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { FiCheckCircle, FiPlus, FiShield } from "react-icons/fi";
 
-import { HELP_DESK_TICKETS_PATH } from "@/lib/auth/session";
 import { HD_CARD } from "@/lib/help-desk/config";
 import { formatDateTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
+import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
 
 import TicketPriorityBadge from "./TicketPriorityBadge";
@@ -17,13 +17,16 @@ export default function TicketSuccessCard({
   ticket,
   copy,
   language,
+  basePath,
   onAnother,
 }: {
   ticket: Ticket;
   copy: HelpDeskCopy;
   language: string;
+  basePath?: string;
   onAnother: () => void;
 }) {
+  const links = helpDeskLinks(basePath);
   return (
     <section className={`${HD_CARD} overflow-hidden`} role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-6 py-8 text-center">
@@ -78,7 +81,7 @@ export default function TicketSuccessCard({
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.successAnother}</span>
         </button>
         <Link
-          href={`${HELP_DESK_TICKETS_PATH}/${ticket.id}`}
+          href={links.ticket(ticket.id)}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
         >
           <span className="text-sm font-semibold text-[var(--color-white)]">{copy.successView}</span>

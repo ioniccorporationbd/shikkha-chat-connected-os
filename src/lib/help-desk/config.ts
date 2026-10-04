@@ -98,7 +98,7 @@ export function isActiveStatus(status: TicketStatus): boolean {
 
 /** Shared card surface used across every Help Desk screen. */
 export const HD_CARD =
-  "rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";
+  "rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 /** Shared primary pill button (text utilities live on an inner span). */
 export const HD_PRIMARY_BTN =
@@ -110,4 +110,4 @@ export const HD_GHOST_BTN =
 
 /** Shared text input / textarea / select surface. */
 export const HD_INPUT =
-  "w-full rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-4 py-3 text-[15px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-secondary)_70%,var(--color-white))]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-4 py-3 text-[15px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-secondary)_70%,var(--color-white))]";

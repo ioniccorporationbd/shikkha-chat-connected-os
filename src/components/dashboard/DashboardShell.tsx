@@ -20,6 +20,7 @@ import ActivityList from "@/components/dashboard/ActivityList";
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
 import CheckInOutView from "@/components/dashboard/CheckInOutView";
 import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
+import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
 import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
@@ -33,11 +34,13 @@ import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
-import { CLIENT_DASHBOARD_PATH, HELP_DESK_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
+import { helpDeskCopyFor } from "@/lib/help-desk/messages";
+import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
@@ -111,8 +114,28 @@ export default function DashboardShell({
   const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
   // The client panel's own sub-route: the account's Service Build (Sales Invoice) history.
   const onServiceBuildView = isClient && pathname.startsWith(SERVICE_BUILD_PATH);
+  // The help desk is a dashboard-internal module on BOTH panels — the same
+  // shared component, mounted under each panel's own help-desk route.
+  const helpDeskPath = `${basePath}/${HELP_DESK_SEGMENT}`;
+  const onHelpDeskView = pathname.startsWith(helpDeskPath);
+  const helpDeskSuffix = onHelpDeskView ? pathname.slice(helpDeskPath.length) : "";
+  const onHelpDeskNew = helpDeskSuffix === "/new";
+  const onHelpDeskTickets = helpDeskSuffix === "/tickets";
+  const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/");
+  const helpDeskTicketId = onHelpDeskDetail
+    ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length))
+    : undefined;
+  const helpDeskView: HelpDeskView = onHelpDeskNew
+    ? "new"
+    : onHelpDeskDetail
+      ? "detail"
+      : onHelpDeskTickets
+        ? "tickets"
+        : "overview";
 
-  const viewTitle = onPaymentHistoryView
+  const viewTitle = onHelpDeskView
+    ? copy.nav.helpDesk
+    : onPaymentHistoryView
     ? copy.nav.paymentHistory
     : onServiceBuildView
       ? copy.nav.serviceBuild
@@ -187,6 +210,14 @@ export default function DashboardShell({
     .filter((row) => !SKIP_PROFILE_ROWS.has(row.label))
     .slice(0, 4);
 
+  // Prefill the New Ticket form from the signed-in profile (name/email/mobile).
+  const helpDeskContact = {
+    name: displayName || undefined,
+    email: user?.email || undefined,
+    mobile:
+      (data?.profile ?? []).find((row) => /mobile|phone|মোবাইল/i.test(row.label))?.value || undefined,
+  };
+
   const navButtonClass = (active: boolean) =>
     active
       ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
@@ -199,7 +230,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView && !onCheckinView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView;
+      const active = !onCreateView && !onCheckinView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
 
       return (
         <button
@@ -336,12 +367,10 @@ export default function DashboardShell({
     }
 
     // --- Support -----------------------------------------------------------
-    // The public help desk. It is advertised on BOTH panels and for every
-    // signed-in role (system user, employee, customer) because /help-desk is a
-    // public, session-free route — hiding it per role would be wrong. It is a
-    // real navigation (the address bar changes and Back works), never an
-    // in-place panel, and it is deliberately never "active" because the rail is
-    // no longer on screen once the ticket centre opens.
+    // The Help Desk is a dashboard-internal module on BOTH panels and for every
+    // signed-in role (system user, employee, customer). It is real navigation —
+    // the address bar changes and Back works — and it is "active" whenever a
+    // help-desk screen is open, because those screens render inside this shell.
     items.push(
       <div
         key="help-desk-divider"
@@ -352,18 +381,20 @@ export default function DashboardShell({
 
     {
       const HelpDeskIcon = NAV_ICONS.helpdesk;
+      const active = onHelpDeskView;
 
       items.push(
         <button
           key="help-desk"
           type="button"
           onClick={() => {
-            router.push(HELP_DESK_PATH);
+            router.push(helpDeskPath);
             setNavOpen(false);
           }}
-          className={navButtonClass(false)}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
         >
-          <span className={navLabelClass(false)}>
+          <span className={navLabelClass(active)}>
             <HelpDeskIcon className="text-[16px]" />
             {copy.nav.helpDesk}
           </span>
@@ -541,7 +572,16 @@ export default function DashboardShell({
           </header>
 
           <main className="flex min-w-0 flex-col gap-4 pb-4">
-            {onPaymentHistoryView ? (
+            {onHelpDeskView ? (
+              <HelpDeskDashboard
+                view={helpDeskView}
+                basePath={helpDeskPath}
+                ticketId={helpDeskTicketId}
+                copy={helpDeskCopyFor(language)}
+                language={language}
+                contact={helpDeskContact}
+              />
+            ) : onPaymentHistoryView ? (
               <PaymentEntryView onBack={() => router.push(basePath)} />
             ) : onServiceBuildView ? (
               <ServiceBuildView onBack={() => router.push(basePath)} />

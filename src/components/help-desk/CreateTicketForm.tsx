@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { FiAlertCircle, FiFileText, FiInfo, FiSend, FiUpload, FiX } from "react-icons/fi";
 
 import { useAuthStore } from "@/lib/auth/store";
-import { HELP_DESK_PATH } from "@/lib/auth/session";
 import {
   DEFAULT_CATEGORY,
   DEFAULT_PRIORITY,
@@ -19,6 +18,7 @@ import {
 import { formatFileSize } from "@/lib/help-desk/format";
 import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
 import { uid } from "@/lib/help-desk/mock-store";
+import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { createTicket, ownerKeyForContact } from "@/lib/help-desk/service";
 import type {
   PreferredContact,
@@ -40,11 +40,16 @@ type FieldErrors = Partial<Record<"name" | "email" | "subject" | "description", 
 export default function CreateTicketForm({
   copy,
   language,
+  basePath,
+  initialContact,
 }: {
   copy: HelpDeskCopy;
   language: string;
+  basePath?: string;
+  initialContact?: { name?: string; email?: string; mobile?: string };
 }) {
   const router = useRouter();
+  const links = helpDeskLinks(basePath);
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
 
@@ -70,13 +75,13 @@ export default function CreateTicketForm({
   // the effect body (house pattern — see PaymentEntryView).
   useEffect(() => {
     if (prefilled.current) return;
-    if (status !== "authenticated" || !user) return;
     prefilled.current = true;
     queueMicrotask(() => {
-      setName((current) => current || user.full_name || user.name || "");
-      setEmail((current) => current || user.email || "");
+      setName((current) => current || initialContact?.name || user?.full_name || user?.name || "");
+      setEmail((current) => current || initialContact?.email || user?.email || "");
+      setMobile((current) => current || initialContact?.mobile || "");
     });
-  }, [status, user]);
+  }, [status, user, initialContact]);
 
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -166,7 +171,7 @@ export default function CreateTicketForm({
   };
 
   if (created) {
-    return <TicketSuccessCard ticket={created} copy={copy} language={language} onAnother={resetForm} />;
+    return <TicketSuccessCard ticket={created} copy={copy} language={language} basePath={basePath} onAnother={resetForm} />;
   }
 
   const descriptionLeft = Math.max(0, MIN_DESCRIPTION_LENGTH - description.trim().length);
@@ -431,7 +436,7 @@ export default function CreateTicketForm({
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
         <button
           type="button"
-          onClick={() => router.push(HELP_DESK_PATH)}
+          onClick={() => router.push(links.root)}
           className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
         >
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
