@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   FiActivity,
   FiArrowLeft,
@@ -30,6 +30,47 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transpar
 const CARD_SHADOW =
   "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
+/** The chip colours for each known, backend-derived status key. */
+const STATUS_BADGE_CLS: Record<ExpenseClaimStatusKey, string> = {
+  draft: "border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[var(--color-primary)]",
+  submitted:
+    "border border-[color-mix(in_srgb,#b45309_28%,transparent)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-white))] text-[#92400e]",
+  approved:
+    "border border-[color-mix(in_srgb,var(--color-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-white))] text-[var(--color-success)]",
+  rejected:
+    "border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] text-[var(--color-danger-strong)]",
+  paid: "border border-[color-mix(in_srgb,var(--color-success)_40%,transparent)] bg-[var(--color-success)] text-[var(--color-white)]",
+  cancelled:
+    "border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]",
+};
+
+/** Neutral chip used when a key is unknown. */
+const STATUS_BADGE_UNKNOWN_CLS =
+  "border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]";
+
+/**
+ * The human label for a status key. Known ERPNext states get a translation;
+ * anything else falls back to the document's own status text (never invented).
+ */
+function statusLabel(status: string, raw: string, copy: ExpenseClaimCopy): string {
+  switch (status) {
+    case "draft":
+      return copy.statusDraft;
+    case "submitted":
+      return copy.statusSubmitted;
+    case "approved":
+      return copy.statusApproved;
+    case "rejected":
+      return copy.statusRejected;
+    case "paid":
+      return copy.statusPaid;
+    case "cancelled":
+      return copy.statusCancelled;
+    default:
+      return raw && raw.trim() ? raw : copy.statusSubmitted;
+  }
+}
+
 interface ExpenseClaimViewProps {
   onBack?: () => void;
   /** Navigate to the New Expense Claim form (`/userDashboard/expense-claim/new`). */
@@ -37,35 +78,23 @@ interface ExpenseClaimViewProps {
 }
 
 /** A status chip derived from the real ERPNext claim fields. */
-function StatusBadge({ status, copy }: { status: ExpenseClaimStatusKey; copy: ExpenseClaimCopy }) {
-  const map: Record<ExpenseClaimStatusKey, { label: string; cls: string }> = {
-    draft: {
-      label: copy.statusDraft,
-      cls: "border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[var(--color-primary)]",
-    },
-    submitted: {
-      label: copy.statusSubmitted,
-      cls: "border border-[color-mix(in_srgb,#b45309_28%,transparent)] bg-[color-mix(in_srgb,#f59e0b_14%,var(--color-white))] text-[#92400e]",
-    },
-    approved: {
-      label: copy.statusApproved,
-      cls: "border border-[color-mix(in_srgb,var(--color-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-white))] text-[var(--color-success)]",
-    },
-    rejected: {
-      label: copy.statusRejected,
-      cls: "border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] text-[var(--color-danger-strong)]",
-    },
-    paid: {
-      label: copy.statusPaid,
-      cls: "border border-[color-mix(in_srgb,var(--color-success)_40%,transparent)] bg-[var(--color-success)] text-[var(--color-white)]",
-    },
-  };
-
-  const meta = map[status] ?? map.draft;
+function StatusBadge({
+  status,
+  raw,
+  copy,
+}: {
+  /** Backend-derived key (draft/submitted/approved/rejected/paid/cancelled). */
+  status: string;
+  /** The document's own status text — shown verbatim when the key is unknown. */
+  raw?: string;
+  copy: ExpenseClaimCopy;
+}) {
+  const known = status in STATUS_BADGE_CLS;
+  const cls = known ? STATUS_BADGE_CLS[status as ExpenseClaimStatusKey] : STATUS_BADGE_UNKNOWN_CLS;
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 ${meta.cls}`}>
-      <span className="text-[11px] font-semibold">{meta.label}</span>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 ${cls}`}>
+      <span className="text-[11px] font-semibold">{statusLabel(status, raw ?? "", copy)}</span>
     </span>
   );
 }
@@ -115,6 +144,8 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const [detail, setDetail] = useState<ExpenseClaimDetails | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  /** The claim currently being fetched/shown — blocks duplicate fetches. */
+  const detailInFlightRef = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -161,6 +192,11 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
 
   const openDetails = useCallback(
     async (name: string) => {
+      // Defensive: never open a nameless row. A repeat click on the same claim
+      // (while it is in flight or already shown) is also dropped.
+      if (!name) return;
+      if (detailInFlightRef.current === name) return;
+      detailInFlightRef.current = name;
       setDetailName(name);
       setDetail(null);
       setDetailError("");
@@ -169,15 +205,18 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         const payload = await fetchExpenseClaimDetails(name, language);
         setDetail(payload);
       } catch (error) {
-        setDetailError((error as ApiError)?.message || copy.loadFailed);
+        detailInFlightRef.current = null;
+        setDetailError((error as ApiError)?.message || copy.detailsFailed);
+        toast.error(copy.detailsFailed);
       } finally {
         setDetailLoading(false);
       }
     },
-    [language, copy.loadFailed]
+    [language, copy.detailsFailed]
   );
 
   const closeDetails = useCallback(() => {
+    detailInFlightRef.current = null;
     setDetailName(null);
     setDetail(null);
     setDetailError("");
@@ -192,7 +231,9 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
     return () => window.removeEventListener("keydown", onKey);
   }, [detailName, closeDetails]);
 
-  const claims = data?.claims ?? [];
+  // Guard: never render a row without a real document name (a nameless row would
+  // show no id and raise React null/duplicate key warnings).
+  const claims = (data?.claims ?? []).filter((claim) => Boolean(claim?.name));
   const summary = data?.summary;
   const currency = summary?.currency || claims[0]?.currency || "BDT";
 
@@ -438,6 +479,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                       <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
                         <tr>
                           {[
+                            copy.colSl,
                             copy.colId,
                             copy.colDate,
                             copy.colClaimed,
@@ -456,11 +498,14 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         </tr>
                       </thead>
                       <tbody>
-                        {claims.map((claim) => (
+                        {claims.map((claim, index) => (
                           <tr
                             key={claim.name}
                             className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
                           >
+                            <td className="px-4 py-3 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                              {index + 1}
+                            </td>
                             <td className="px-4 py-3 text-[13px] font-semibold">{claim.name}</td>
                             <td className="px-4 py-3 text-[13px]">
                               {formatDate(claim.posting_date, language)}
@@ -472,7 +517,11 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                               {formatAmount(claim.total_sanctioned_amount, claim.currency || currency, language)}
                             </td>
                             <td className="px-4 py-3">
-                              <StatusBadge status={claim.display_status} copy={copy} />
+                              <StatusBadge
+                                status={claim.display_status}
+                                raw={claim.status || claim.approval_status}
+                                copy={copy}
+                              />
                             </td>
                             <td className="px-4 py-3">
                               <PaidBadge paid={claim.is_paid} copy={copy} />
@@ -497,10 +546,11 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
 
                   {/* mobile cards */}
                   <div className="flex flex-col gap-3 md:hidden">
-                    {claims.map((claim) => (
+                    {claims.map((claim, index) => (
                       <ClaimCard
                         key={claim.name}
                         claim={claim}
+                        serial={index + 1}
                         copy={copy}
                         language={language}
                         currency={currency}
@@ -530,15 +580,18 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   );
 }
 
-/** A compact, mobile-first claim card. */
+/** A compact, mobile-first claim card (SL + claim id, date, amount, status). */
 function ClaimCard({
   claim,
+  serial,
   copy,
   language,
   currency,
   onOpen,
 }: {
   claim: ExpenseClaimRow;
+  /** Display-only serial number within the current (sorted) list. */
+  serial: number;
   copy: ExpenseClaimCopy;
   language: string;
   currency: string;
@@ -548,13 +601,22 @@ function ClaimCard({
   return (
     <div className="flex flex-col gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold">{claim.name}</p>
-          <p className="mt-0.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {formatDate(claim.posting_date, language)}
-          </p>
+        <div className="flex min-w-0 items-start gap-2">
+          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+            <span className="text-[11px] font-semibold text-[var(--color-primary)]">{serial}</span>
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] font-semibold">{claim.name}</p>
+            <p className="mt-0.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {formatDate(claim.posting_date, language)}
+            </p>
+          </div>
         </div>
-        <StatusBadge status={claim.display_status} copy={copy} />
+        <StatusBadge
+          status={claim.display_status}
+          raw={claim.status || claim.approval_status}
+          copy={copy}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -613,19 +675,31 @@ function DetailsDialog({
 }) {
   const code = detail?.currency || "BDT";
 
-  const rows: { label: string; value: string }[] = detail
-    ? [
-        { label: copy.dEmployee, value: detail.employee_name || detail.employee || "" },
-        { label: copy.dPostingDate, value: formatDate(detail.posting_date, language) },
-        { label: copy.dCompany, value: detail.company || "" },
-        { label: copy.dDepartment, value: detail.department || "" },
-        { label: copy.dCostCenter, value: detail.cost_center || "" },
-        { label: copy.dCurrency, value: detail.currency || "" },
-        { label: copy.dApprover, value: detail.expense_approver || "" },
-        { label: copy.dClaimed, value: formatAmount(detail.total_claimed_amount, code, language) },
-        { label: copy.dSanctioned, value: formatAmount(detail.total_sanctioned_amount, code, language) },
-      ]
-    : [];
+  // Only meaningful, non-empty values are listed — a blank field never becomes a
+  // dead "—" row.
+  const rows: { label: string; value: string }[] = [];
+  if (detail) {
+    const push = (label: string, value: unknown) => {
+      const text = value == null ? "" : String(value).trim();
+      if (text) rows.push({ label, value: text });
+    };
+    push(copy.dEmployee, detail.employee_name || detail.employee);
+    push(copy.dEmployeeId, detail.employee);
+    push(copy.dPostingDate, formatDate(detail.posting_date, language));
+    push(copy.dCompany, detail.company);
+    push(copy.dDepartment, detail.department);
+    push(copy.dCostCenter, detail.cost_center);
+    push(copy.dCurrency, detail.currency);
+    push(copy.dStatus, statusLabel(detail.display_status, detail.status || detail.approval_status, copy));
+    push(copy.dApproval, detail.approval_status);
+    push(copy.dClaimed, formatAmount(detail.total_claimed_amount, code, language));
+    push(copy.dSanctioned, formatAmount(detail.total_sanctioned_amount, code, language));
+    push(copy.dGrandTotal, formatAmount(detail.grand_total || 0, code, language));
+    if (Number(detail.total_amount_reimbursed) > 0) {
+      push(copy.dReimbursed, formatAmount(detail.total_amount_reimbursed, code, language));
+    }
+    push(copy.dApprover, detail.expense_approver);
+  }
 
   return (
     <div className="fixed inset-0 z-[130]" data-no-translate="true">
@@ -660,22 +734,37 @@ function DetailsDialog({
 
         <div className="mt-4">
           {loading ? (
-            <p className="py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-              {copy.detailsLoading}
-            </p>
+            <div className="flex flex-col gap-3 py-1">
+              <div className="flex flex-wrap gap-2">
+                <div className="h-6 w-24 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]" />
+                <div className="h-6 w-16 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]" />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {[0, 1, 2, 3, 4, 5].map((index) => (
+                  <div
+                    key={index}
+                    className="h-11 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                  />
+                ))}
+              </div>
+              <p className="text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                {copy.detailsLoading}
+              </p>
+            </div>
           ) : error ? (
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">
               <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">
-                {copy.loadFailed}
-              </p>
-              <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                {error}
+                {copy.detailsFailed}
               </p>
             </div>
           ) : detail ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={detail.display_status} copy={copy} />
+                <StatusBadge
+                  status={detail.display_status}
+                  raw={detail.status || detail.approval_status}
+                  copy={copy}
+                />
                 <PaidBadge paid={detail.is_paid} copy={copy} />
                 {detail.verified ? (
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-success)]">
@@ -691,9 +780,7 @@ function DetailsDialog({
                     <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                       {row.label}
                     </dt>
-                    <dd className="mt-0.5 break-words text-[13px] font-medium">
-                      {row.value || "—"}
-                    </dd>
+                    <dd className="mt-0.5 break-words text-[13px] font-medium">{row.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -714,41 +801,86 @@ function DetailsDialog({
                     {copy.emptyHint}
                   </p>
                 ) : (
-                  <div className="mt-2 overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
-                    <table className="w-full border-collapse text-left">
-                      <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
-                        <tr>
-                          {[copy.dExpenseDate, copy.dExpenseType, copy.dDescription, copy.dAmount].map(
-                            (heading) => (
+                  <>
+                    {/* desktop: table */}
+                    <div className="mt-2 hidden overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] md:block">
+                      <table className="w-full border-collapse text-left">
+                        <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+                          <tr>
+                            {[
+                              copy.dExpenseDate,
+                              copy.dExpenseType,
+                              copy.dDescription,
+                              copy.dAmount,
+                              copy.dSanctioned,
+                            ].map((heading) => (
                               <th
                                 key={heading}
                                 className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
                               >
                                 {heading}
                               </th>
-                            )
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detail.expenses.map((row, index) => (
-                          <tr
-                            key={index}
-                            className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
-                          >
-                            <td className="px-3 py-2 text-[12px]">
-                              {formatDate(String(row.expense_date ?? ""), language)}
-                            </td>
-                            <td className="px-3 py-2 text-[12px]">{row.expense_type ?? ""}</td>
-                            <td className="px-3 py-2 text-[12px]">{row.description ?? ""}</td>
-                            <td className="px-3 py-2 text-[12px] font-medium">
-                              {formatAmount(Number(row.amount ?? 0), code, language)}
-                            </td>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {detail.expenses.map((row, index) => (
+                            <tr
+                              key={index}
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+                            >
+                              <td className="px-3 py-2 text-[12px]">
+                                {formatDate(String(row.expense_date ?? ""), language)}
+                              </td>
+                              <td className="px-3 py-2 text-[12px]">{row.expense_type ?? ""}</td>
+                              <td className="px-3 py-2 text-[12px]">{row.description ?? ""}</td>
+                              <td className="px-3 py-2 text-[12px] font-medium">
+                                {formatAmount(Number(row.amount ?? 0), code, language)}
+                              </td>
+                              <td className="px-3 py-2 text-[12px]">
+                                {Number(row.sanctioned_amount ?? 0) > 0
+                                  ? formatAmount(Number(row.sanctioned_amount ?? 0), code, language)
+                                  : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* mobile: stacked cards */}
+                    <div className="mt-2 flex flex-col gap-2 md:hidden">
+                      {detail.expenses.map((row, index) => {
+                        const sanctioned = Number(row.sanctioned_amount ?? 0);
+                        return (
+                          <div
+                            key={index}
+                            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-3"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-[12px] font-semibold">
+                                {row.expense_type || "—"}
+                              </span>
+                              <span className="text-[12px] font-semibold">
+                                {formatAmount(Number(row.amount ?? 0), code, language)}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                              {formatDate(String(row.expense_date ?? ""), language)}
+                            </p>
+                            {row.description ? (
+                              <p className="mt-1 text-[12px]">{row.description}</p>
+                            ) : null}
+                            {sanctioned > 0 ? (
+                              <p className="mt-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                                {copy.dSanctioned}: {formatAmount(sanctioned, code, language)}
+                              </p>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             </div>

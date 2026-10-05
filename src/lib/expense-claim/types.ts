@@ -51,7 +51,8 @@ export type ExpenseClaimStatusKey =
   | "submitted"
   | "approved"
   | "rejected"
-  | "paid";
+  | "paid"
+  | "cancelled";
 
 export interface ExpenseClaimRow {
   name: string;
@@ -82,6 +83,8 @@ export interface ExpenseClaimSummary {
   approved: number;
   rejected: number;
   paid: number;
+  /** Cancelled claims (docstatus 2 / status "Cancelled"). */
+  cancelled?: number;
   total_claimed_amount: number;
   total_sanctioned_amount: number;
   total_amount_reimbursed: number;

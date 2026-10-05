@@ -41,6 +41,8 @@ export interface ExpenseClaimCopy {
   colStatus: string;
   colPaid: string;
   colAction: string;
+  /** Display-only serial number (1, 2, 3…) column. */
+  colSl: string;
   viewDetails: string;
   emptyTitle: string;
   emptyHint: string;
@@ -52,14 +54,18 @@ export interface ExpenseClaimCopy {
   statusApproved: string;
   statusRejected: string;
   statusPaid: string;
+  statusCancelled: string;
   paidLabel: string;
   unpaidLabel: string;
 
   /* details drawer */
   detailsHeading: string;
   detailsLoading: string;
+  /** Details fetch failed (inline + toast). */
+  detailsFailed: string;
   close: string;
   dEmployee: string;
+  dEmployeeId: string;
   dPostingDate: string;
   dCompany: string;
   dDepartment: string;
@@ -70,6 +76,8 @@ export interface ExpenseClaimCopy {
   dApproval: string;
   dClaimed: string;
   dSanctioned: string;
+  dGrandTotal: string;
+  dReimbursed: string;
   dPaid: string;
   dRemark: string;
   dExpenses: string;
@@ -144,10 +152,11 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     newClaim: "নতুন এক্সপেন্স ক্লেম",
     newClaimHint: "একটি নতুন খরচের দাবি তৈরি করুন।",
     openAction: "খুলুন",
-    colId: "Expense Claim ID",
-    colDate: "তারিখ",
-    colClaimed: "দাবিকৃত",
-    colSanctioned: "অনুমোদিত",
+    colSl: "ক্রমিক",
+    colId: "এক্সপেন্স ক্লেম আইডি",
+    colDate: "পোস্টিং তারিখ",
+    colClaimed: "দাবি করা পরিমাণ",
+    colSanctioned: "অনুমোদিত পরিমাণ",
     colStatus: "স্ট্যাটাস",
     colPaid: "পেমেন্ট",
     colAction: "অ্যাকশন",
@@ -156,16 +165,19 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     emptyHint: "আপনার প্রথম খরচের দাবি তৈরি করে শুরু করুন।",
     emptyCta: "নতুন Expense Claim তৈরি করুন",
     statusDraft: "ড্রাফট",
-    statusSubmitted: "জমা দেওয়া",
+    statusSubmitted: "সাবমিটেড",
     statusApproved: "অনুমোদিত",
-    statusRejected: "বাতিল",
+    statusRejected: "প্রত্যাখ্যাত",
     statusPaid: "পরিশোধিত",
+    statusCancelled: "বাতিল",
     paidLabel: "পরিশোধিত",
     unpaidLabel: "অপরিশোধিত",
     detailsHeading: "ক্লেমের বিস্তারিত",
     detailsLoading: "বিস্তারিত লোড হচ্ছে…",
+    detailsFailed: "এক্সপেন্স ক্লেমের বিস্তারিত তথ্য লোড করা যাচ্ছে না।",
     close: "বন্ধ করুন",
     dEmployee: "কর্মী",
+    dEmployeeId: "কর্মী আইডি",
     dPostingDate: "পোস্টিং তারিখ",
     dCompany: "প্রতিষ্ঠান",
     dDepartment: "বিভাগ",
@@ -176,6 +188,8 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     dApproval: "অনুমোদন অবস্থা",
     dClaimed: "মোট দাবি",
     dSanctioned: "মোট অনুমোদিত",
+    dGrandTotal: "সর্বমোট",
+    dReimbursed: "পরিশোধিত পরিমাণ",
     dPaid: "পেমেন্ট অবস্থা",
     dRemark: "মন্তব্য",
     dExpenses: "খরচের সারি",
@@ -245,10 +259,11 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     newClaim: "New Expense Claim",
     newClaimHint: "Create a new expense claim.",
     openAction: "Open",
+    colSl: "SL",
     colId: "Expense Claim ID",
     colDate: "Posting Date",
-    colClaimed: "Claimed",
-    colSanctioned: "Sanctioned",
+    colClaimed: "Claimed Amount",
+    colSanctioned: "Sanctioned Amount",
     colStatus: "Status",
     colPaid: "Paid",
     colAction: "Action",
@@ -261,12 +276,15 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     statusApproved: "Approved",
     statusRejected: "Rejected",
     statusPaid: "Paid",
+    statusCancelled: "Cancelled",
     paidLabel: "Paid",
     unpaidLabel: "Unpaid",
     detailsHeading: "Claim details",
     detailsLoading: "Loading details…",
+    detailsFailed: "The expense claim details could not be loaded.",
     close: "Close",
     dEmployee: "Employee",
+    dEmployeeId: "Employee ID",
     dPostingDate: "Posting Date",
     dCompany: "Company",
     dDepartment: "Department",
@@ -277,6 +295,8 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     dApproval: "Approval Status",
     dClaimed: "Claimed Amount",
     dSanctioned: "Sanctioned Amount",
+    dGrandTotal: "Grand Total",
+    dReimbursed: "Reimbursed Amount",
     dPaid: "Paid Status",
     dRemark: "Remark",
     dExpenses: "Expense rows",

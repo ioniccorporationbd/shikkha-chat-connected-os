@@ -265,6 +265,7 @@ function displayStatus(row) {
   const status = String(row.status || "").toLowerCase();
   const paid = truthy(row.is_paid);
   if (docstatus === 0 || status === "draft") return "draft";
+  if (docstatus === 2 || status === "cancelled") return "cancelled";
   if (approval === "rejected" || status === "rejected") return "rejected";
   if (paid || status === "paid") return "paid";
   if (approval === "approved" || status === "approved") return "approved";
@@ -300,6 +301,7 @@ function expenseSummary(rows, currency) {
   let submitted = 0;
   let approved = 0;
   let rejected = 0;
+  let cancelled = 0;
   let paid = 0;
   let claimed = 0;
   let sanctioned = 0;
@@ -308,6 +310,7 @@ function expenseSummary(rows, currency) {
   for (const row of rows) {
     const key = displayStatus(row);
     if (key === "draft") draft += 1;
+    else if (key === "cancelled") cancelled += 1;
     else if (key === "rejected") rejected += 1;
     else {
       submitted += 1;
@@ -326,6 +329,7 @@ function expenseSummary(rows, currency) {
     approved,
     rejected,
     paid,
+    cancelled,
     total_claimed_amount: claimed,
     total_sanctioned_amount: sanctioned,
     total_amount_reimbursed: reimbursed,
@@ -372,7 +376,10 @@ function expenseAuto(user, employee) {
   };
 }
 
-// Seed one existing draft claim for tamim (HR-EMP-00001) so the list has data.
+// Seed a representative set of claims for tamim (HR-EMP-00001) covering every
+// derived state (draft / submitted / approved / paid / rejected / cancelled) so
+// the list, its serial numbers, the dynamic status chips and the details view
+// all have real, populated data to exercise.
 expenseClaims.push({
   name: "HR-EXP-2026-00001",
   employee: "HR-EMP-00001",
@@ -387,18 +394,162 @@ expenseClaims.push({
   status: "Draft",
   docstatus: 0,
   total_claimed_amount: 500,
-  total_sanctioned_amount: 500,
+  total_sanctioned_amount: 0,
   grand_total: 500,
   total_amount_reimbursed: 0,
   is_paid: 0,
-  remark: "",
+  remark: "Advance for client visit",
   expenses: [
-    { expense_date: "2026-10-04", expense_type: "Travel", description: "Local travel", amount: 500, sanctioned_amount: 500, cost_center: "Main - MSL" },
+    { expense_date: "2026-10-04", expense_type: "Travel", description: "Local travel", amount: 500, sanctioned_amount: 0, cost_center: "Main - MSL" },
   ],
   owner: "tamim@ioniccorporation.com",
   creation: "2026-10-04 10:00:00",
   modified: "2026-10-04 10:00:00",
 });
+
+// Submitted — awaiting approval.
+expenseClaims.push({
+  name: "HR-EXP-2026-00002",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-10-03",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Draft",
+  status: "Submitted",
+  docstatus: 1,
+  total_claimed_amount: 1200,
+  total_sanctioned_amount: 0,
+  grand_total: 1200,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "",
+  expenses: [
+    { expense_date: "2026-10-03", expense_type: "Travel", description: "Dhaka to Chattogram", amount: 900, sanctioned_amount: 0, cost_center: "Main - MSL" },
+    { expense_date: "2026-10-03", expense_type: "Food", description: "Team lunch", amount: 300, sanctioned_amount: 0, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-10-03 09:15:00",
+  modified: "2026-10-03 09:15:00",
+});
+
+// Approved — sanctioned, not yet paid.
+expenseClaims.push({
+  name: "HR-EXP-2026-00003",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-10-02",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Approved",
+  status: "Submitted",
+  docstatus: 1,
+  total_claimed_amount: 2100,
+  total_sanctioned_amount: 2100,
+  grand_total: 2100,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Approved by manager",
+  expenses: [
+    { expense_date: "2026-10-02", expense_type: "Accommodation", description: "Hotel stay", amount: 2100, sanctioned_amount: 2100, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-10-02 11:20:00",
+  modified: "2026-10-02 11:45:00",
+});
+
+// Paid — reimbursed.
+expenseClaims.push({
+  name: "HR-EXP-2026-00004",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-10-01",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Approved",
+  status: "Paid",
+  docstatus: 1,
+  total_claimed_amount: 800,
+  total_sanctioned_amount: 800,
+  grand_total: 800,
+  total_amount_reimbursed: 800,
+  is_paid: 1,
+  remark: "",
+  expenses: [
+    { expense_date: "2026-10-01", expense_type: "Mobile Bill", description: "October bill", amount: 800, sanctioned_amount: 800, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-10-01 08:00:00",
+  modified: "2026-10-01 12:00:00",
+});
+
+// Rejected.
+expenseClaims.push({
+  name: "HR-EXP-2026-00005",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-09-30",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Rejected",
+  status: "Rejected",
+  docstatus: 1,
+  total_claimed_amount: 300,
+  total_sanctioned_amount: 0,
+  grand_total: 300,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Receipt missing",
+  expenses: [
+    { expense_date: "2026-09-30", expense_type: "Conveyance", description: "CNG fare", amount: 300, sanctioned_amount: 0, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-09-30 17:30:00",
+  modified: "2026-09-30 18:00:00",
+});
+
+// Cancelled (docstatus 2) — must render the muted "Cancelled" chip.
+expenseClaims.push({
+  name: "HR-EXP-2026-00006",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Engineering",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-09-29",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Rejected",
+  status: "Cancelled",
+  docstatus: 2,
+  total_claimed_amount: 450,
+  total_sanctioned_amount: 0,
+  grand_total: 450,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Withdrawn by employee",
+  expenses: [
+    { expense_date: "2026-09-29", expense_type: "Food", description: "Client dinner", amount: 450, sanctioned_amount: 0, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-09-29 20:00:00",
+  modified: "2026-09-29 20:30:00",
+});
+
+// Keep created claim ids past the seeded range (next create -> HR-EXP-2026-00007).
+expenseClaimCounter = 6;
 
 // --- customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) --- //
 // The customer is resolved from the logged-in user (never the body), exactly
@@ -2230,7 +2381,14 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    const mine = expenseClaims.filter((row) => row.employee === employee.name);
+    const mine = expenseClaims
+      .filter((row) => row.employee === employee.name)
+      .sort((a, b) => {
+        // Mirror the backend: newest posting_date first, then newest creation.
+        const byDate = String(b.posting_date).localeCompare(String(a.posting_date));
+        if (byDate !== 0) return byDate;
+        return String(b.creation).localeCompare(String(a.creation));
+      });
     const claims = mine.map(expenseRowPayload);
     const currency = (claims.find((c) => c.currency) || {}).currency || "BDT";
 
