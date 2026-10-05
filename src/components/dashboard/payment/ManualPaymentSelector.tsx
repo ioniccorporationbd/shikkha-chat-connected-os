@@ -24,6 +24,7 @@ export default function ManualPaymentSelector({ copy, onSelect }: ManualPaymentS
   }[] = [
     { key: "bkash", name: copy.methodBkash, desc: copy.methodBkashDesc, icon: <FiSmartphone size={18} /> },
     { key: "rocket", name: copy.methodRocket, desc: copy.methodRocketDesc, icon: <FiSmartphone size={18} /> },
+    { key: "nagad", name: copy.methodNagad, desc: copy.methodNagadDesc, icon: <FiSmartphone size={18} /> },
     { key: "bank", name: copy.methodBank, desc: copy.methodBankDesc, icon: <FiCreditCard size={18} /> },
   ];
 

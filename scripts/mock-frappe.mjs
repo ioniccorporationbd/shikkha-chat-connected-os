@@ -643,19 +643,11 @@ const manualBanks = [
   { name: "Sonali Bank", bank_name: "Sonali Bank", account_name: "Shikkha Chat Limited", account_number: "PLACEHOLDER-2001-00000000", branch: "Head Office Branch", routing_number: "200000000", instructions: "", is_placeholder: true },
 ];
 
-const manualRequests = [];
-let manualSeq = 0;
-
-function manualSummary(rows) {
-  return {
-    total: rows.length,
-    total_amount: rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
-    draft: rows.filter((r) => r.status === "Draft").length,
-    verified: rows.filter((r) => r.status === "Verified").length,
-    rejected: rows.filter((r) => r.status === "Rejected").length,
-    currency: "BDT",
-  };
-}
+// Manual payments are written straight into the Payment Entry list (there is no
+// separate "Manual Payment Request" DocType any more); a customer's own entries
+// are read back through shikkha_os.api.v1.payment_entry.list_mine.
+let manualPaymentSeq = 0;
+const manualModeByMethod = { bkash: "bKash", rocket: "Rocket", nagad: "Nagad", bank: "Bank" };
 
 const paymentEntries = [
   {
@@ -2744,7 +2736,7 @@ const server = createServer(async (request, response) => {
     }
     const customer = linkedCustomers[email];
     if (!customer) {
-      failure(response, 403, "PermissionError", "No Customer record is linked to your account.", "Manual Payment");
+      failure(response, 403, "PermissionError", "No Customer record is linked to your account.", "Payment");
       return;
     }
 
@@ -2753,58 +2745,53 @@ const server = createServer(async (request, response) => {
     const t = (bn, en) => (lang === "en" ? en : bn);
 
     const rawMethod = String(body.payment_method || "").toLowerCase();
-    const canon = rawMethod === "bkash" ? "bKash" : rawMethod === "rocket" ? "Rocket" : rawMethod === "bank" ? "Bank" : "";
+    const canon =
+      rawMethod === "bkash" ? "bKash"
+      : rawMethod === "rocket" ? "Rocket"
+      : rawMethod === "nagad" ? "Nagad"
+      : rawMethod === "bank" ? "Bank"
+      : "";
     if (!canon) {
-      failure(response, 417, "ValidationError", t("পেমেন্টের মাধ্যমে বেছে নিন।", "Choose a payment method (bKash, Rocket or Bank)."), "Manual Payment");
+      failure(response, 417, "ValidationError", t("পেমেন্টের মাধ্যমে বেছে নিন (bKash, Rocket, Nagad বা ব্যাংক)।", "Choose a payment method (bKash, Rocket, Nagad or Bank)."), "Payment");
       return;
     }
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      failure(response, 417, "ValidationError", t("সঠিক পরিমাণ লিখুন (০-এর বেশি)।", "Enter a valid amount (greater than 0)."), "Manual Payment");
+      failure(response, 417, "ValidationError", t("সঠিক পরিমাণ লিখুন (০-এর বেশি)।", "Enter a valid amount (greater than 0)."), "Payment");
       return;
     }
-    // A receipt image is required for Bank transfers only; bKash / Rocket no longer
-    // submit any proof (mirrors shikkha_os.api.v1.manual_payment.create).
+    // A receipt image is required for Bank transfers only; wallet transfers
+    // (bKash / Rocket / Nagad) carry no proof (mirrors the real endpoint).
     if (canon === "Bank" && !String(body.proof_file_data || "").trim()) {
-      failure(response, 417, "ValidationError", t("পেমেন্টের রিসিট যোগ করুন।", "Attach the payment receipt image."), "Manual Payment");
+      failure(response, 417, "ValidationError", t("পেমেন্টের রিসিটের ছবি যোগ করুন।", "Attach the payment receipt image."), "Payment");
       return;
     }
 
     let reference = "";
-    let wallet = {};
+    const remarksBits = [canon];
     if (canon === "Bank") {
       const bank = String(body.bank || "").trim();
       if (!bank || !manualBanks.some((b) => b.name === bank)) {
-        failure(response, 417, "ValidationError", t("একটি সাপোর্টেড ব্যাংক বেছে নিন।", "Select a supported bank."), "Manual Payment");
+        failure(response, 417, "ValidationError", t("একটি সাপোর্টেড ব্যাংক বেছে নিন।", "Select a supported bank."), "Payment");
         return;
       }
       reference = String(body.transfer_reference || "").trim();
       if (reference.length < 3) {
-        failure(response, 417, "ValidationError", t("ট্রান্সফার রেফারেন্স লিখুন।", "Enter the transfer reference."), "Manual Payment");
+        failure(response, 417, "ValidationError", t("ট্রান্সফার রেফারেন্স লিখুন।", "Enter the transfer reference."), "Payment");
         return;
       }
-      wallet = {
-        bank,
-        sender_account_name: String(body.sender_account_name || ""),
-        sender_account_number: String(body.sender_account_number || ""),
-        transfer_reference: reference,
-      };
+      remarksBits.push(`Bank: ${bank}`, `Ref: ${reference}`);
     } else {
       reference = String(body.transaction_id || "").trim();
       if (reference.length < 4) {
-        failure(response, 417, "ValidationError", t("ট্রানজেকশন আইডি লিখুন।", "Enter the transaction ID."), "Manual Payment");
+        failure(response, 417, "ValidationError", t("ট্রানজেকশন আইডি লিখুন।", "Enter the transaction ID."), "Payment");
         return;
       }
-      wallet = { transaction_id: reference, sender_mobile: String(body.sender_mobile || "") };
+      remarksBits.push(`Sender: ${String(body.sender_mobile || "")}`, `TxID: ${reference}`);
     }
 
-    const dup = manualRequests.find(
-      (r) =>
-        r.customer === customer.name &&
-        r.payment_method === canon &&
-        r.status !== "Rejected" &&
-        r.status !== "Cancelled" &&
-        (canon === "Bank" ? r.transfer_reference : r.transaction_id) === reference
+    const dup = paymentEntries.find(
+      (r) => r.party === customer.name && r.reference_no === reference && Number(r.docstatus) !== 2
     );
     if (dup) {
       failure(
@@ -2812,101 +2799,59 @@ const server = createServer(async (request, response) => {
         417,
         "DuplicateEntryError",
         t(
-          `এই ট্রানজেকশন/রেফারেন্স দিয়ে ইতিমধ্যে একটি পেমেন্ট রিকোয়েস্ট (${dup.name}) জমা আছে।`,
-          `A payment request (${dup.name}) for this transaction/reference already exists. Please wait, or contact support.`
+          `এই ট্রানজেকশন/রেফারেন্স দিয়ে ইতিমধ্যে একটি পেমেন্ট (${dup.name}) রেকর্ড করা আছে।`,
+          `A payment (${dup.name}) for this transaction/reference already exists. Please wait, or contact support.`
         ),
-        "Manual Payment"
+        "Payment"
       );
       return;
     }
 
-    manualSeq += 1;
-    const name = `MPR-2026-${String(manualSeq).padStart(5, "0")}`;
+    manualPaymentSeq += 1;
+    const name = `ACC-PAY-2026-${String(manualPaymentSeq).padStart(5, "0")}`;
     const creation = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const note = String(body.note || "").trim();
     const row = {
       name,
-      customer: customer.name,
-      customer_name: customer.customer_name,
-      payment_method: canon,
-      amount,
-      currency: "BDT",
-      payment_date: String(body.payment_date || ""),
-      sender_mobile: wallet.sender_mobile || "",
-      transaction_id: wallet.transaction_id || "",
-      bank: wallet.bank || "",
-      sender_account_name: wallet.sender_account_name || "",
-      sender_account_number: wallet.sender_account_number || "",
-      transfer_reference: wallet.transfer_reference || "",
-      proof_attachment: canon === "Bank" ? "/private/files/payment-proof.png" : "",
-      note: String(body.note || ""),
+      paid_from: "Debtors - MSL",
+      paid_to: canon === "Bank" ? "Bank - MSL" : "Cash - MSL",
+      contact_person: customer.customer_name,
+      contact_email: email,
+      total_allocated_amount: 0,
+      unallocated_amount: amount,
+      posting_date: String(body.payment_date || ""),
+      payment_type: "Receive",
+      party_type: "Customer",
+      party: customer.name,
+      party_name: customer.customer_name,
+      paid_amount: amount,
+      received_amount: amount,
+      paid_from_account_currency: "BDT",
+      paid_to_account_currency: "BDT",
+      mode_of_payment: manualModeByMethod[rawMethod] || canon,
+      reference_no: reference,
+      reference_date: String(body.payment_date || ""),
       status: "Draft",
-      verified_by: "",
-      verified_on: "",
-      payment_entry: "",
-      rejection_reason: "",
+      docstatus: 0,
+      company: "Magnetic Solution Limited",
+      remarks: [remarksBits.join(" · "), note].filter(Boolean).join(" · "),
+      references: [],
       creation,
-      modified: creation,
-      submitted_at: creation,
     };
-    manualRequests.push(row);
+    paymentEntries.unshift(row);
 
     ok(response, {
       name,
       request_id: name,
-      status: row.status,
-      payment_method: canon,
+      payment_entry: name,
+      status: "Draft",
+      payment_method: rawMethod,
+      mode_of_payment: row.mode_of_payment,
       amount,
       currency: "BDT",
-      payment_date: row.payment_date,
+      payment_date: row.posting_date,
       submitted_at: creation,
     });
-    return;
-  }
-
-  if (method === "shikkha_os.api.v1.manual_payment.list_mine") {
-    const email = userFor(request);
-    if (!email) {
-      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
-      return;
-    }
-    const customer = linkedCustomers[email];
-    if (!customer) {
-      ok(response, { linked: false, requests: [], summary: manualSummary([]) });
-      return;
-    }
-    const mine = manualRequests.filter((r) => r.customer === customer.name).slice().reverse();
-    ok(response, {
-      linked: true,
-      customer: { name: customer.name, customer_name: customer.customer_name },
-      requests: mine,
-      summary: manualSummary(mine),
-    });
-    return;
-  }
-
-  if (method === "shikkha_os.api.v1.manual_payment.details") {
-    const email = userFor(request);
-    if (!email) {
-      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
-      return;
-    }
-    const customer = linkedCustomers[email];
-    if (!customer) {
-      failure(response, 403, "PermissionError", "This payment request is not yours.", "Manual Payment");
-      return;
-    }
-    const name = (url.searchParams.get("name") ?? "").trim();
-    const row = manualRequests.find((r) => r.name === name);
-    if (!row) {
-      failure(response, 404, "DoesNotExistError", "That payment request was not found.", "Manual Payment");
-      return;
-    }
-    // Ownership: never trust the name from the URL.
-    if (row.customer !== customer.name) {
-      failure(response, 403, "PermissionError", "This payment request is not yours.", "Manual Payment");
-      return;
-    }
-    ok(response, row);
     return;
   }
 

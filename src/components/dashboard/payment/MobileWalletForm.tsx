@@ -15,7 +15,7 @@ import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentFi
 import { amountInput, digitsOnly, todayISO } from "./form-utils";
 
 export interface MobileWalletFormProps {
-  method: "bkash" | "rocket";
+  method: "bkash" | "rocket" | "nagad";
   copy: ManualPaymentCopy;
   language: string;
   submitting: boolean;

@@ -1,14 +1,14 @@
 /**
- * Shared shapes for the customer "Make Payment" (manual proof submission) flow.
+ * Shared shapes for the customer "Make Payment" flow.
  *
  * These mirror the backend contract (`shikkha_os.api.v1.manual_payment`): the
- * portal posts a proof to the ERP, which writes a real **Manual Payment
- * Request** row (status "Draft") — it never creates/submits an
- * ERPNext Payment Entry from an unverified screenshot.
+ * portal posts a manual payment to the ERP, which writes a real ERPNext
+ * **Payment Entry** (status "Draft") with the matching Mode of Payment — there
+ * is no separate "Manual Payment Request" DocType any more.
  */
 
 /** The tender a manual payment is sent with (portal-side key). */
-export type ManualPaymentMethod = "bkash" | "rocket" | "bank";
+export type ManualPaymentMethod = "bkash" | "rocket" | "nagad" | "bank";
 
 /** The top-level choice on the first step of the Make Payment modal. */
 export type PaymentChannel = "online" | "manual";
@@ -19,6 +19,7 @@ export type MakePaymentStep =
   | "manual"
   | "bkash"
   | "rocket"
+  | "nagad"
   | "bank"
   | "success";
 
@@ -43,50 +44,11 @@ export interface SupportedBank {
 /** Server status text -> a stable key the UI can switch on. */
 export type ManualPaymentStatusKey =
   | "draft"
-  | "pending"
-  | "verified"
-  | "rejected"
-  | "cancelled";
-
-/** A stored Manual Payment Request as returned by the ERP. */
-export interface ManualPaymentRecord {
-  /** The real ERP document name (e.g. "MPR-2026-00001"). */
-  name: string;
-  payment_method: string;
-  amount: number;
-  currency: string;
-  payment_date: string;
-  sender_mobile?: string;
-  transaction_id?: string;
-  bank?: string;
-  sender_account_name?: string;
-  sender_account_number?: string;
-  transfer_reference?: string;
-  proof_attachment?: string;
-  note?: string;
-  /** Raw server status text (e.g. "Draft"). */
-  status: string;
-  submitted_at: string;
-  verified_on?: string;
-  rejection_reason?: string;
-  payment_entry?: string;
-}
-
-export interface ManualPaymentSummary {
-  total: number;
-  total_amount: number;
-  draft: number;
-  verified: number;
-  rejected: number;
-  currency: string;
-}
-
-export interface ManualPaymentListPayload {
-  linked: boolean;
-  customer?: { name: string; customer_name: string };
-  requests: ManualPaymentRecord[];
-  summary: ManualPaymentSummary;
-}
+  | "submitted"
+  | "paid"
+  | "reconciled"
+  | "cancelled"
+  | "other";
 
 /** What a form produces and the service posts to the backend. */
 export interface ManualPaymentSubmitInput {
@@ -94,7 +56,7 @@ export interface ManualPaymentSubmitInput {
   amount: number;
   payment_date: string;
   note?: string;
-  // bKash / Rocket
+  // bKash / Rocket / Nagad
   sender_mobile?: string;
   transaction_id?: string;
   // Bank
@@ -103,7 +65,7 @@ export interface ManualPaymentSubmitInput {
   sender_account_number?: string;
   transfer_reference?: string;
   // Proof (base64 `data:` URL + original file name) — required for a Bank
-  // transfer only; omitted entirely for bKash / Rocket (no screenshot).
+  // transfer only; omitted entirely for wallet transfers (no screenshot).
   proof_file_data?: string;
   proof_file_name?: string;
   language: string;
@@ -111,10 +73,13 @@ export interface ManualPaymentSubmitInput {
 
 /** The backend acknowledgement the success screen renders. */
 export interface ManualPaymentResult {
+  /// The real ERP document name (e.g. "ACC-PAY-2026-00001").
   name: string;
   request_id: string;
+  payment_entry?: string;
   status: string;
   payment_method: string;
+  mode_of_payment?: string;
   amount: number;
   currency: string;
   payment_date: string;

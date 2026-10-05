@@ -14,7 +14,6 @@ import {
   FiRotateCcw,
   FiRotateCw,
   FiUserCheck,
-  FiClock,
   FiPlusCircle,
 } from "react-icons/fi";
 
@@ -40,19 +39,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import MakePaymentModal from "@/components/dashboard/payment/MakePaymentModal";
 import { fetchPaymentDetails, fetchPayments } from "@/lib/payment-entry/api";
 import { formatAmount, formatDate } from "@/lib/payment-entry/format";
-import {
-  manualPaymentCopyFor,
-  type ManualPaymentCopy,
-} from "@/lib/payment-entry/manual-payment/messages";
-import {
-  fetchManualRequests,
-  methodKey,
-  statusKey,
-} from "@/lib/payment-entry/manual-payment/service";
-import type {
-  ManualPaymentRecord,
-  ManualPaymentStatusKey,
-} from "@/lib/payment-entry/manual-payment/types";
+import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/messages";
 import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
 import { paymentEntrySnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
@@ -113,14 +100,9 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   const [rowsPerPage, setRowsPerPage] = useState<number>(ROWS_PER_PAGE_OPTIONS[0]);
   const [page, setPage] = useState(1);
 
-  // ---- Make Payment (manual proof submission) ----
+  // ---- Make Payment (manual payment -> Draft Payment Entry) ----
   const [makePaymentOpen, setMakePaymentOpen] = useState(false);
   const mpCopy = manualPaymentCopyFor(language);
-  // The customer's own Manual Payment Requests — real ERP documents
-  // (status "Draft" until an admin verifies).
-  const [manualRequests, setManualRequests] = useState<ManualPaymentRecord[]>([]);
-  const [manualLoading, setManualLoading] = useState(true);
-  const [manualError, setManualError] = useState(false);
 
   const load = useCallback(async (): Promise<{ data: PaymentEntryListPayload | null; error?: unknown }> => {
     try {
@@ -159,29 +141,6 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
       active = false;
     };
   }, [load]);
-
-  const loadManual = useCallback(async () => {
-    setManualLoading(true);
-    setManualError(false);
-    try {
-      const payload = await fetchManualRequests(language);
-      setManualRequests(payload.requests || []);
-    } catch {
-      setManualError(true);
-    } finally {
-      setManualLoading(false);
-    }
-  }, [language]);
-
-  useEffect(() => {
-    let active = true;
-    queueMicrotask(() => {
-      if (active) void loadManual();
-    });
-    return () => {
-      active = false;
-    };
-  }, [loadManual]);
 
   // Smart Reload — the exact Overview behaviour, shared via runSmartReload:
   // snapshot → refetch → unchanged = light refresh / changed = one hard reload.
@@ -402,16 +361,6 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
           </button>
         </div>
       </header>
-
-      <ManualRequestsSection
-        requests={manualRequests}
-        loading={manualLoading}
-        error={manualError}
-        copy={mpCopy}
-        language={language}
-        currency={currency}
-        onRetry={() => void loadManual()}
-      />
 
       <div className="flex flex-col gap-5">
         {expired ? (
@@ -715,7 +664,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
         <MakePaymentModal
           language={language}
           currency={currency}
-          onSubmitted={() => void loadManual()}
+          onSubmitted={() => void load()}
           onClose={() => setMakePaymentOpen(false)}
         />
       ) : null}
@@ -1038,144 +987,5 @@ function StatusBadge({ status, copy }: { status?: string; copy: PaymentEntryCopy
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusTone(key) }} />
       <span className="text-[11.5px] font-semibold">{label}</span>
     </span>
-  );
-}
-
-/** Localised label for a manual-payment method. */
-function manualMethodLabel(server: string | undefined, copy: ManualPaymentCopy): string {
-  const key = methodKey(server);
-  if (key === "rocket") return copy.methodRocket;
-  if (key === "bank") return copy.methodBank;
-  return copy.methodBkash;
-}
-
-/** Tone for a manual-request status pill. */
-function manualStatusTone(key: ManualPaymentStatusKey): string {
-  if (key === "verified") return "var(--color-success)";
-  if (key === "rejected") return "var(--color-danger-strong)";
-  if (key === "cancelled") return "color-mix(in srgb, var(--color-primary) 45%, var(--color-white))";
-  if (key === "draft") return "color-mix(in srgb, var(--color-primary) 45%, var(--color-white))";
-  return "var(--color-warning)";
-}
-
-/**
- * The customer's own **Manual Payment Requests** — real ERP documents, kept in a
- * section clearly separate from the submitted Payment Entry list below so an
- * unverified proof is never shown as a completed payment. Shows the real request
- * id (e.g. MPR-2026-00001), method, amount, date, transaction/reference and
- * status.
- */
-function ManualRequestsSection({
-  requests,
-  loading,
-  error,
-  copy,
-  language,
-  currency,
-  onRetry,
-}: {
-  requests: ManualPaymentRecord[];
-  loading: boolean;
-  error: boolean;
-  copy: ManualPaymentCopy;
-  language: string;
-  currency: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[var(--color-primary)]">
-          <FiClock size={16} />
-        </span>
-        <h2 className="text-[14px] font-semibold">{copy.historyHeading}</h2>
-      </div>
-      <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-        {copy.historyHint}
-      </p>
-
-      {loading ? (
-        <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-          {copy.historyLoading}
-        </p>
-      ) : error ? (
-        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] px-3.5 py-2.5">
-          <span className="text-[12px] text-[var(--color-danger-strong)]">{copy.historyError}</span>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1"
-          >
-            <span className="text-[11px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
-          </button>
-        </div>
-      ) : requests.length === 0 ? (
-        <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-          {copy.historyEmpty}
-        </p>
-      ) : (
-        <div className="mt-3 overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
-          <table className="w-full border-collapse text-left">
-            <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
-              <tr>
-                {[
-                  copy.histColId,
-                  copy.histColMethod,
-                  copy.histColAmount,
-                  copy.histColDate,
-                  copy.histColRef,
-                  copy.histColStatus,
-                  copy.histColSubmitted,
-                ].map((heading) => (
-                  <th
-                    key={heading}
-                    className="whitespace-nowrap px-3.5 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-                  >
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {requests.map((request) => {
-                const key = statusKey(request.status);
-                return (
-                  <tr
-                    key={request.name}
-                    className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
-                  >
-                    <td className="px-3.5 py-2.5 text-[12.5px] font-semibold">{request.name}</td>
-                    <td className="px-3.5 py-2.5 text-[12.5px]">
-                      {manualMethodLabel(request.payment_method, copy)}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-[12.5px] font-medium">
-                      {formatAmount(request.amount, request.currency || currency, language)}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-[12.5px]">{formatDate(request.payment_date, language)}</td>
-                    <td className="px-3.5 py-2.5 text-[12.5px]">
-                      {request.transaction_id || request.transfer_reference || "—"}
-                    </td>
-                    <td className="px-3.5 py-2.5">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2 py-0.5">
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: manualStatusTone(key) }} />
-                        <span className="text-[11px] font-semibold">{copy.statuses[key]}</span>
-                      </span>
-                      {key === "rejected" && request.rejection_reason ? (
-                        <span className="mt-1 block text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                          {copy.rejectionReason}: {request.rejection_reason}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="px-3.5 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                      {formatDate(request.submitted_at, language)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
   );
 }

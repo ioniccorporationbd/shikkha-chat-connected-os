@@ -19,6 +19,7 @@ import { toast } from "@/lib/ui/toast";
 import BankPaymentForm from "./BankPaymentForm";
 import BkashPaymentForm from "./BkashPaymentForm";
 import ManualPaymentSelector from "./ManualPaymentSelector";
+import NagadPaymentForm from "./NagadPaymentForm";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import { PAY_FOCUS } from "./PaymentField";
 import RocketPaymentForm from "./RocketPaymentForm";
@@ -35,10 +36,10 @@ interface MakePaymentModalProps {
  * The "Make Payment" modal — a small step machine:
  *   method → (online info | manual) → bKash/Rocket/Bank form → success
  *
- * On submit it posts the proof to the ERP (a real Manual Payment Request row,
- * status "Draft") and shows the **server-issued** request id
- * (e.g. MPR-2026-00001). It never creates/ submits an ERPNext Payment Entry
- * from an unverified screenshot.
+ * On submit it posts the manual payment to the ERP (a real ERPNext Payment
+ * Entry, status "Draft", with the matching Mode of Payment) and shows the
+ * **server-issued** document id (e.g. ACC-PAY-2026-00001). There is no separate
+ * "Manual Payment Request" DocType any more.
  */
 export default function MakePaymentModal({
   language,
@@ -57,6 +58,7 @@ export default function MakePaymentModal({
   const methodLabel = (method: ManualPaymentMethod | undefined): string => {
     if (method === "bkash") return copy.methodBkash;
     if (method === "rocket") return copy.methodRocket;
+    if (method === "nagad") return copy.methodNagad;
     if (method === "bank") return copy.methodBank;
     return "";
   };
@@ -99,12 +101,12 @@ export default function MakePaymentModal({
       setStep("method");
       return;
     }
-    if (step === "bkash" || step === "rocket" || step === "bank") {
+    if (step === "bkash" || step === "rocket" || step === "nagad" || step === "bank") {
       setStep("manual");
     }
   };
 
-  const showBack = showOnlineInfo || step === "manual" || step === "bkash" || step === "rocket" || step === "bank";
+  const showBack = showOnlineInfo || step === "manual" || step === "bkash" || step === "rocket" || step === "nagad" || step === "bank";
 
   const BackButton = (
     <button
@@ -175,6 +177,18 @@ export default function MakePaymentModal({
           <>
             <StepHeading title={copy.formTitleRocket} />
             <RocketPaymentForm
+              copy={copy}
+              language={language}
+              submitting={submitting}
+              onSubmit={handleSubmit}
+            />
+          </>
+        ) : null}
+
+        {step === "nagad" ? (
+          <>
+            <StepHeading title={copy.formTitleNagad} />
+            <NagadPaymentForm
               copy={copy}
               language={language}
               submitting={submitting}

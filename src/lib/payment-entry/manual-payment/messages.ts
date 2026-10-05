@@ -25,14 +25,17 @@ export interface ManualPaymentCopy {
   stepManualSubtitle: string;
   methodBkash: string;
   methodRocket: string;
+  methodNagad: string;
   methodBank: string;
   methodBkashDesc: string;
   methodRocketDesc: string;
+  methodNagadDesc: string;
   methodBankDesc: string;
 
   // ---- shared payment form ----
   formTitleBkash: string;
   formTitleRocket: string;
+  formTitleNagad: string;
   formTitleBank: string;
   amountLabel: string;
   amountPlaceholder: string;
@@ -108,22 +111,7 @@ export interface ManualPaymentCopy {
   successAmount: string;
   successStatus: string;
   successClose: string;
-
-  // ---- manual request history (server-backed) ----
-  historyHeading: string;
-  historyHint: string;
-  historyEmpty: string;
-  historyLoading: string;
-  historyError: string;
-  histColId: string;
-  histColMethod: string;
-  histColAmount: string;
-  histColDate: string;
-  histColRef: string;
-  histColStatus: string;
-  histColSubmitted: string;
   statuses: Record<ManualPaymentStatusKey, string>;
-  rejectionReason: string;
 
   // ---- failure ----
   submitFailed: string;
@@ -132,7 +120,7 @@ export interface ManualPaymentCopy {
 export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
   bn: {
     makePayment: "পেমেন্ট করুন",
-    makePaymentSubtitle: "পেমেন্টের তথ্য জমা দিন, যাচাইয়ের পর আপডেট পাবেন।",
+    makePaymentSubtitle: "পেমেন্টের তথ্য দিন — আপনার Payment Entry তৈরি হয়ে পেমেন্ট হিস্টোরিতে দেখা যাবে।",
     close: "বন্ধ করুন",
     back: "পূর্ববর্তী",
 
@@ -143,21 +131,24 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     onlineBadge: "শিগগিরই",
     onlineInfoTitle: "অনলাইন পেমেন্ট শিগগিরই চালু হবে।",
     onlineInfoBody:
-      "এই মুহূর্তে অনলাইন গেটওয়ে এখনো চালু হয়নি। অনুগ্রহ করে ম্যানুয়াল পেমেন্ট ব্যবহার করে আপনার পেমেন্টের প্রমাণ জমা দিন।",
+      "এই মুহূর্তে অনলাইন গেটওয়ে এখনো চালু হয়নি। অনুগ্রহ করে ম্যানুয়াল পেমেন্ট ব্যবহার করে আপনার পেমেন্টের তথ্য দিন।",
     manualTitle: "ম্যানুয়াল পেমেন্ট",
-    manualDesc: "bKash, Rocket বা ব্যাংক ট্রান্সফার করে প্রমাণ জমা দিন।",
+    manualDesc: "bKash, Rocket, Nagad বা ব্যাংক ট্রান্সফার করে পেমেন্ট রেকর্ড করুন।",
 
     stepManualTitle: "ম্যানুয়াল পেমেন্টের মাধ্যম বাছুন",
     stepManualSubtitle: "যে মাধ্যমে টাকা পাঠিয়েছেন সেটি বেছে নিন।",
     methodBkash: "bKash",
     methodRocket: "Rocket",
+    methodNagad: "Nagad",
     methodBank: "ব্যাংক",
-    methodBkashDesc: "bKash দিয়ে পাঠানো পেমেন্টের প্রমাণ দিন।",
-    methodRocketDesc: "Rocket দিয়ে পাঠানো পেমেন্টের প্রমাণ দিন।",
+    methodBkashDesc: "bKash দিয়ে পাঠানো পেমেন্টের তথ্য দিন।",
+    methodRocketDesc: "Rocket দিয়ে পাঠানো পেমেন্টের তথ্য দিন।",
+    methodNagadDesc: "Nagad দিয়ে পাঠানো পেমেন্টের তথ্য দিন।",
     methodBankDesc: "ব্যাংক ট্রান্সফারের রিসিট ও তথ্য দিন।",
 
     formTitleBkash: "bKash পেমেন্ট",
     formTitleRocket: "Rocket পেমেন্ট",
+    formTitleNagad: "Nagad পেমেন্ট",
     formTitleBank: "ব্যাংক পেমেন্ট",
     amountLabel: "পরিমাণ",
     amountPlaceholder: "যেমন ৫০০",
@@ -223,40 +214,27 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "প্রেরকের অ্যাকাউন্টের নাম লিখুন।",
     errSummary: "কিছু তথ্য সঠিকভাবে পূরণ করুন।",
 
-    successTitle: "পেমেন্ট তথ্য সফলভাবে জমা হয়েছে।",
-    successBody: "সার্ভারে সংরক্ষিত হয়েছে। যাচাইয়ের পর আপডেট জানানো হবে।",
-    successRef: "রিকোয়েস্ট আইডি",
+    successTitle: "পেমেন্ট সফলভাবে রেকর্ড হয়েছে।",
+    successBody: "আপনার Payment Entry তৈরি হয়েছে এবং এখন পেমেন্ট হিস্টোরিতে দেখা যাচ্ছে।",
+    successRef: "পেমেন্ট আইডি",
     successMethod: "মাধ্যম",
     successAmount: "পরিমাণ",
     successStatus: "স্ট্যাটাস",
     successClose: "ঠিক আছে",
-
-    historyHeading: "ম্যানুয়াল পেমেন্ট রিকোয়েস্ট",
-    historyHint: "আপনার জমা দেওয়া পেমেন্ট রিকোয়েস্ট — অ্যাডমিন যাচাই করলে স্ট্যাটাস আপডেট হবে।",
-    historyEmpty: "এখনো কোনো ম্যানুয়াল পেমেন্ট রিকোয়েস্ট জমা দেওয়া হয়নি।",
-    historyLoading: "রিকোয়েস্ট লোড হচ্ছে…",
-    historyError: "পেমেন্ট রিকোয়েস্ট লোড করা যায়নি।",
-    histColId: "রিকোয়েস্ট আইডি",
-    histColMethod: "মাধ্যম",
-    histColAmount: "পরিমাণ",
-    histColDate: "পেমেন্টের তারিখ",
-    histColRef: "ট্রানজেকশন / রেফারেন্স",
-    histColStatus: "স্ট্যাটাস",
-    histColSubmitted: "জমা দেওয়ার সময়",
     statuses: {
       draft: "ড্রাফ্ট",
-      pending: "যাচাইয়ের অপেক্ষায়",
-      verified: "যাচাইকৃত",
-      rejected: "বাতিল করা হয়েছে",
+      submitted: "সাবমিটেড",
+      paid: "পরিশোধিত",
+      reconciled: "রেকনসাইল্ড",
       cancelled: "বাতিল",
+      other: "অন্যান্য",
     },
-    rejectionReason: "কারণ",
 
-    submitFailed: "পেমেন্ট রিকোয়েস্ট জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
+    submitFailed: "পেমেন্ট জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
   },
   en: {
     makePayment: "Make Payment",
-    makePaymentSubtitle: "Submit your payment details; you'll be updated after verification.",
+    makePaymentSubtitle: "Enter your payment details — a Payment Entry is created and appears in your history.",
     close: "Close",
     back: "Back",
 
@@ -267,21 +245,24 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     onlineBadge: "Coming soon",
     onlineInfoTitle: "Online payment is coming soon.",
     onlineInfoBody:
-      "The online gateway isn't live yet. Please use Manual Pay to submit your payment proof in the meantime.",
+      "The online gateway isn't live yet. Please use Manual Pay to record your payment in the meantime.",
     manualTitle: "Manual Pay",
-    manualDesc: "Send via bKash, Rocket or a bank transfer and submit the proof.",
+    manualDesc: "Record a payment sent via bKash, Rocket, Nagad or a bank transfer.",
 
     stepManualTitle: "Choose a manual method",
     stepManualSubtitle: "Pick the method you used to send the money.",
     methodBkash: "bKash",
     methodRocket: "Rocket",
+    methodNagad: "Nagad",
     methodBank: "Bank",
-    methodBkashDesc: "Submit proof of a payment sent with bKash.",
-    methodRocketDesc: "Submit proof of a payment sent with Rocket.",
-    methodBankDesc: "Submit the receipt and details of a bank transfer.",
+    methodBkashDesc: "Record a payment sent with bKash.",
+    methodRocketDesc: "Record a payment sent with Rocket.",
+    methodNagadDesc: "Record a payment sent with Nagad.",
+    methodBankDesc: "Record the receipt and details of a bank transfer.",
 
     formTitleBkash: "bKash payment",
     formTitleRocket: "Rocket payment",
+    formTitleNagad: "Nagad payment",
     formTitleBank: "Bank payment",
     amountLabel: "Amount",
     amountPlaceholder: "e.g. 500",
@@ -347,36 +328,23 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "Enter the sender account name.",
     errSummary: "Please correct the highlighted fields.",
 
-    successTitle: "Payment information submitted successfully.",
-    successBody: "It has been saved on the server. You'll be updated once it is verified.",
-    successRef: "Request ID",
+    successTitle: "Your payment has been recorded.",
+    successBody: "A Payment Entry was created and now appears in your payment history.",
+    successRef: "Payment ID",
     successMethod: "Method",
     successAmount: "Amount",
     successStatus: "Status",
     successClose: "Done",
-
-    historyHeading: "Manual Payment Requests",
-    historyHint: "Your submitted payment requests — the status updates once an admin verifies them.",
-    historyEmpty: "No manual payment request has been submitted yet.",
-    historyLoading: "Loading requests…",
-    historyError: "The payment requests could not be loaded.",
-    histColId: "Request ID",
-    histColMethod: "Method",
-    histColAmount: "Amount",
-    histColDate: "Payment date",
-    histColRef: "Transaction / Reference",
-    histColStatus: "Status",
-    histColSubmitted: "Submitted at",
     statuses: {
       draft: "Draft",
-      pending: "Pending verification",
-      verified: "Verified",
-      rejected: "Rejected",
+      submitted: "Submitted",
+      paid: "Paid",
+      reconciled: "Reconciled",
       cancelled: "Cancelled",
+      other: "Other",
     },
-    rejectionReason: "Reason",
 
-    submitFailed: "The payment request could not be submitted. Please try again.",
+    submitFailed: "The payment could not be submitted. Please try again.",
   },
 };
 
