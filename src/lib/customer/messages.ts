@@ -3,6 +3,8 @@
 export interface CustomerCopy {
   heading: string;
   hint: string;
+  /** Header quick-info chips (tiny, informational). */
+  quickInfo: string[];
   back: string;
   /** Live "Created: <name>" confirmation. */
   createdLabel: string;
@@ -35,20 +37,46 @@ export interface CustomerCopy {
   linkNoOptions: string;
   yes: string;
   no: string;
+  /** Small BD-friendly phone hint. */
+  mobileHelper: string;
+  /** aria-label for the icon-only clear button on link fields. */
+  clearSelection: string;
   /** Toast copy. */
   successTitle: string;
   successBody: (name: string) => string;
   errorTitle: string;
   validationTitle: string;
+  /** Special toast title when the ERP rejects a duplicate name. */
+  duplicateTitle: string;
   missingRequired: (label: string) => string;
+  /** Restored-an-unfinished-draft info toast. */
+  draftRestored: string;
+  /** Unsaved-changes guard (in-view back + tab close). */
+  unsavedTitle: string;
+  unsavedBody: string;
+  unsavedLeave: string;
+  unsavedStay: string;
+  /** Reset confirmation. */
+  resetConfirmTitle: string;
+  resetConfirmBody: string;
+  resetConfirmYes: string;
+  resetConfirmNo: string;
+  /** Success-card chrome. */
+  createdTitle: string;
+  idLabel: string;
+  typeLabel: string;
+  contactLabel: string;
   /** Known section labels, keyed by the ERP's English label. */
   sectionLabels: Record<string, string>;
+  /** One-line helper per section, keyed by the ERP's English label. */
+  sectionHelp: Record<string, string>;
 }
 
 export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
   bn: {
     heading: "কাস্টমার তৈরি করুন",
-    hint: "ERPNext-এ নতুন কাস্টমার তৈরি করুন।",
+    hint: "ERPNext-এ নতুন কাস্টমার তৈরি করুন এবং প্রয়োজনীয় তথ্য সংরক্ষণ করুন।",
+    quickInfo: ["ERPNext Customer ডকটাইপে সংরক্ষিত", "তৈরি হলে সাথে সাথে যাচাই করা হয়"],
     back: "ড্যাশবোর্ডে ফিরুন",
     createdLabel: "তৈরি হয়েছে",
     createdName: (name) => `কাস্টমার আইডি: ${name}`,
@@ -76,11 +104,28 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     linkNoOptions: "কোনো অপশন নেই",
     yes: "হ্যাঁ",
     no: "না",
+    mobileHelper: "উদাহরণ: 01XXXXXXXXX",
+    clearSelection: "নির্বাচন মুছুন",
     successTitle: "কাস্টমার তৈরি হয়েছে",
     successBody: (name) => `কাস্টমার সফলভাবে তৈরি হয়েছে — আইডি ${name}।`,
     errorTitle: "কাস্টমার তৈরি ব্যর্থ",
     validationTitle: "তথ্য অসম্পূর্ণ",
+    duplicateTitle: "ডুপ্লিকেট কাস্টমার",
     missingRequired: (label) => `"${label}" আবশ্যক।`,
+    draftRestored: "আপনার অসম্পূর্ণ খসড়াটি ফিরিয়ে আনা হয়েছে।",
+    unsavedTitle: "অসম্পূর্ণ তথ্য আছে",
+    unsavedBody:
+      "আপনি কিছু তথ্য লিখেছেন কিন্তু এখনো সংরক্ষণ করেননি। পেজ ছাড়লে এই তথ্য হারিয়ে যাবে।",
+    unsavedLeave: "তবুও ছাড়ুন",
+    unsavedStay: "এখানে থাকুন",
+    resetConfirmTitle: "ফর্ম রিসেট করবেন?",
+    resetConfirmBody: "আপনি যা লিখেছেন সব মুছে যাবে। এটি ফেরানো যাবে না।",
+    resetConfirmYes: "হ্যা, রিসেট করুন",
+    resetConfirmNo: "বাতিল",
+    createdTitle: "কাস্টমার সফলভাবে তৈরি হয়েছে",
+    idLabel: "কাস্টমার আইডি",
+    typeLabel: "ধরন",
+    contactLabel: "যোগাযোগ",
     sectionLabels: {
       "Customer Information": "কাস্টমার তথ্য",
       "Basic Information": "মৌলিক তথ্য",
@@ -95,10 +140,21 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
       "Sales Team": "সেলস টিম",
       "Loyalty Program": "লয়্যালটি প্রোগ্রাম",
     },
+    sectionHelp: {
+      "Customer Information": "কাস্টমারের মূল পরিচয় ও শ্রেণীবিভাগ দিন।",
+      "Basic Information": "কাস্টমারের মূল পরিচয় ও শ্রেণীবিভাগ দিন।",
+      "Customer Details": "কাস্টমারের মূল পরিচয় ও শ্রেণীবিভাগ দিন।",
+      "Contact Information": "ইনভয়েস ও নোটিশ পাঠানোর জন্য যোগাযোগের মাধ্যম দিন।",
+      "Address Information": "বিলিং ও ডেলিভারি ঠিকানা দিন।",
+      "Business & Tax": "কর পরিচিতি ও আর্থিক ডিফল্ট (প্রয়োজন হলে)।",
+      "Tax / Identification": "কর পরিচিতি ও আর্থিক ডিফল্ট (প্রয়োজন হলে)।",
+      "Additional Information": "এই সাইটে বাধ্যতামূলক করা বাকি ফিল্ডগুলো।",
+    },
   },
   en: {
     heading: "Create Customer",
-    hint: "Create a new Customer in ERPNext.",
+    hint: "Create a new Customer in ERPNext and save the details it needs.",
+    quickInfo: ["Stored in the ERPNext Customer DocType", "Verified against the database on creation"],
     back: "Back to dashboard",
     createdLabel: "Created",
     createdName: (name) => `Customer ID: ${name}`,
@@ -126,15 +182,59 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     linkNoOptions: "No options",
     yes: "Yes",
     no: "No",
+    mobileHelper: "e.g. 01XXXXXXXXX",
+    clearSelection: "Clear selection",
     successTitle: "Customer created",
     successBody: (name) => `The customer was created successfully — ID ${name}.`,
     errorTitle: "Could not create the customer",
     validationTitle: "Incomplete details",
+    duplicateTitle: "Duplicate customer",
     missingRequired: (label) => `"${label}" is required.`,
+    draftRestored: "Your unfinished draft was restored.",
+    unsavedTitle: "You have unsaved details",
+    unsavedBody:
+      "You have entered details that have not been saved yet. Leaving this page will discard them.",
+    unsavedLeave: "Leave anyway",
+    unsavedStay: "Keep editing",
+    resetConfirmTitle: "Reset the form?",
+    resetConfirmBody: "Everything you entered will be cleared. This cannot be undone.",
+    resetConfirmYes: "Yes, reset",
+    resetConfirmNo: "Cancel",
+    createdTitle: "Customer created successfully",
+    idLabel: "Customer ID",
+    typeLabel: "Type",
+    contactLabel: "Contact",
     sectionLabels: {},
+    sectionHelp: {
+      "Customer Information": "Core identity and classification for this customer.",
+      "Basic Information": "Core identity and classification for this customer.",
+      "Customer Details": "Core identity and classification for this customer.",
+      "Contact Information": "How to reach this customer for invoices and notices.",
+      "Address Information": "Billing and shipping addresses.",
+      "Business & Tax": "Tax identifier and financial defaults (optional).",
+      "Tax / Identification": "Tax identifier and financial defaults (optional).",
+      "Additional Information": "Remaining mandatory fields defined on this site.",
+    },
   },
 };
 
 export function customerCopyFor(language: string): CustomerCopy {
   return customerCopy[language === "en" ? "en" : "bn"];
+}
+
+/**
+ * Human-friendly duplicate detection. The ERP already localises the message
+ * ("এই নামে একটি কাস্টমার ইতিমধ্যে আছে।" / "A customer with this name already
+ * exists.") but the toast title should be specific rather than the generic
+ * "could not create" heading, so we sniff both languages.
+ */
+export function isDuplicateError(message: string): boolean {
+  const m = (message || "").toLowerCase();
+  return (
+    m.includes("already exists") ||
+    m.includes("duplicate") ||
+    m.includes("ইতিমধ্যেই আছে") ||
+    m.includes("ইতিমধ্যে আছে") ||
+    m.includes("আগেই আছে")
+  );
 }
