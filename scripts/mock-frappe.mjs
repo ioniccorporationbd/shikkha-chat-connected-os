@@ -27,6 +27,8 @@ import { createServer } from "node:http";
 const PORT = Number(process.env.MOCK_FRAPPE_PORT ?? 8787);
 
 const PASSWORD = "demo1234";
+// Test aid: monotonic counter used by MOCK_PAYMENT_JITTER (see list_mine).
+let paymentListSeq = 0;
 
 /** A real (tiny) PNG so the account menu has a picture to load. */
 const AVATAR_PATH = "/files/tamim-hasan.png";
@@ -553,6 +555,74 @@ const paymentEntries = [
     references: [],
   },
 ];
+
+// ---- Extra seeded receipts (Customer A) ------------------------------------
+// A larger, varied history so the portal's status / amount / posting-date
+// filters, the rows-per-page selector and the summary / chart can be exercised
+// realistically. Deterministic values only (no randomness), so the Smart Reload
+// fingerprint stays stable across requests.
+{
+  const extraSeeds = [
+    ["2026-10-05", 500, "Submitted", "Bank", 1],
+    ["2026-10-03", 750, "Reconciled", "Cash", 1],
+    ["2026-10-01", 1200, "Submitted", "bKash", 1],
+    ["2026-09-28", 300, "Reconciled", "Cash", 1],
+    ["2026-09-25", 2200, "Submitted", "Bank", 1],
+    ["2026-09-20", 450, "Reconciled", "Nagad", 1],
+    ["2026-09-18", 1000, "Reconciled", "Bank", 1],
+    ["2026-09-12", 600, "Submitted", "Cash", 1],
+    ["2026-09-09", 3200, "Reconciled", "Bank", 1],
+    ["2026-09-05", 800, "Submitted", "bKash", 1],
+    ["2026-08-30", 500, "Reconciled", "Cash", 1],
+    ["2026-08-24", 1750, "Submitted", "Bank", 1],
+    ["2026-08-19", 950, "Reconciled", "Nagad", 1],
+    ["2026-08-15", 400, "Draft", "Cash", 0],
+    ["2026-08-10", 2600, "Submitted", "Bank", 1],
+    ["2026-08-04", 550, "Reconciled", "bKash", 1],
+    ["2026-07-29", 1350, "Reconciled", "Bank", 1],
+    ["2026-07-22", 720, "Submitted", "Cash", 1],
+    ["2026-07-17", 500, "Reconciled", "Nagad", 1],
+    ["2026-07-11", 4100, "Submitted", "Bank", 1],
+    ["2026-07-06", 640, "Draft", "Cash", 0],
+    ["2026-06-30", 880, "Reconciled", "bKash", 1],
+    ["2026-06-24", 1500, "Reconciled", "Bank", 1],
+    ["2026-06-18", 500, "Submitted", "Cash", 1],
+    ["2026-06-11", 2000, "Reconciled", "Nagad", 1],
+    ["2026-06-05", 350, "Reconciled", "Cash", 1],
+    ["2026-05-29", 1750, "Submitted", "Bank", 1],
+    ["2026-05-21", 900, "Draft", "bKash", 0],
+  ];
+  for (let i = 0; i < extraSeeds.length; i += 1) {
+    const [postingDate, amount, status, mode, docstatus] = extraSeeds[i];
+    const bankLike = mode === "Bank";
+    paymentEntries.push({
+      name: `ACC-PAY-2026-${String(101 + i).padStart(5, "0")}`,
+      paid_from: "Debtors - MSL",
+      paid_to: bankLike ? "Bank - MSL" : "Cash - MSL",
+      contact_person: "Nusrat Jahan",
+      contact_email: "nusrat@example.com",
+      total_allocated_amount: docstatus === 1 ? amount : 0,
+      unallocated_amount: docstatus === 1 ? 0 : amount,
+      posting_date: postingDate,
+      payment_type: "Receive",
+      party_type: "Customer",
+      party: "CUST-0001",
+      party_name: "Nusrat Jahan",
+      paid_amount: amount,
+      received_amount: amount,
+      paid_from_account_currency: "BDT",
+      paid_to_account_currency: "BDT",
+      mode_of_payment: mode,
+      reference_no: "",
+      reference_date: "",
+      status,
+      docstatus,
+      company: "Magnetic Solution Limited",
+      remarks: "",
+      references: [],
+    });
+  }
+}
 
 function paymentDisplayAmount(row) {
   const paymentType = String(row.payment_type || "").trim().toLowerCase();
@@ -2312,6 +2382,15 @@ const server = createServer(async (request, response) => {
         (Number(row.docstatus) === 0 || Number(row.docstatus) === 1)
     );
     const payments = mine.map(paymentRowPayload);
+    if (process.env.MOCK_PAYMENT_JITTER) {
+      // Test aid: make the payload differ on every request so the Smart Reload
+      // button can be exercised end-to-end (unchanged vs changed) without
+      // restarting the mock or losing the in-memory session.
+      paymentListSeq += 1;
+      if (payments.length > 0) {
+        payments[0].amount = Number(payments[0].amount || 0) + paymentListSeq;
+      }
+    }
     const currency = (payments.find((p) => p.currency) || {}).currency || "BDT";
 
     ok(response, {

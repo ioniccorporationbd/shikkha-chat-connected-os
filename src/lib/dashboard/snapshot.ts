@@ -1,4 +1,5 @@
 import type { DashboardPayload } from "@/lib/auth/types";
+import type { PaymentEntryListPayload } from "@/lib/payment-entry/types";
 
 /**
  * A stable, order-independent fingerprint of the dashboard payload, used by the
@@ -36,4 +37,44 @@ export function dashboardSnapshot(payload?: DashboardPayload | null): string {
   };
 
   return JSON.stringify(stable);
+}
+
+/**
+ * A stable fingerprint of the Payment History payload for the Smart Reload
+ * button — mirrors `dashboardSnapshot`. Rows are sorted by `name` so a mere
+ * order reshuffle is not treated as a change, and only the fields the list and
+ * summary actually render are included.
+ */
+export function paymentEntrySnapshot(payload?: PaymentEntryListPayload | null): string {
+  if (!payload) return "";
+
+  const rows = [...(payload.payments ?? [])]
+    .filter((row) => Boolean(row?.name))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+    .map((row) => [
+      row.name,
+      row.posting_date,
+      row.payment_type,
+      row.amount,
+      row.currency,
+      row.mode_of_payment,
+      row.display_status,
+    ]);
+
+  const summary = payload.summary;
+
+  return JSON.stringify({
+    linked: payload.linked,
+    rows,
+    summary: summary
+      ? [
+          summary.total,
+          summary.total_amount,
+          summary.this_month_count,
+          summary.this_month_amount,
+          summary.latest_payment_date,
+          summary.currency,
+        ]
+      : null,
+  });
 }

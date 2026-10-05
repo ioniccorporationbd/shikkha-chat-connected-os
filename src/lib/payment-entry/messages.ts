@@ -76,6 +76,53 @@ export interface PaymentEntryCopy {
   rOutstanding: string;
   rAllocated: string;
 
+  // ---- Filtering, summary/chart & pagination (Payment History page) ----
+  colSl: string;
+  filterHeading: string;
+  filterHint: string;
+  filterStatusLabel: string;
+  filterStatusAll: string;
+  filterAmountLabel: string;
+  filterAmountAny: string;
+  filterAmountExact: string;
+  filterAmountRange: string;
+  filterAmountExactPlaceholder: string;
+  filterMinPlaceholder: string;
+  filterMaxPlaceholder: string;
+  filterFromLabel: string;
+  filterToLabel: string;
+  filterApply: string;
+  filterClear: string;
+  filterInvalidAmount: string;
+  filterInvalidAmountRange: string;
+  filterInvalidDateRange: string;
+
+  chartHeading: string;
+  chartHint: string;
+  chartEmpty: string;
+  chartTotal: string;
+  chartShowing: string;
+  chartFilteredAmount: string;
+  chartAvg: string;
+  chartStatusBreakdown: string;
+
+  rowsPerPageShow: string;
+  rowsPerPageSuffix: string;
+  pagePrev: string;
+  pageNext: string;
+  pageLabel: string;
+  pageOf: string;
+  paginationRangeLabel: string;
+  ofLabel: string;
+
+  noMatchTitle: string;
+  noMatchHint: string;
+  clearFilters: string;
+
+  reloadNoChanges: string;
+  reloadChanged: string;
+  reloadFailed: string;
+
   /** Status chip labels, keyed by the server-derived `display_status`. */
   statuses: Record<PaymentEntryStatusKey, string>;
   /** Payment type labels (Receive / Pay / Internal Transfer). */
@@ -155,6 +202,52 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     rTotal: "মোট",
     rOutstanding: "বাকি",
     rAllocated: "বরাদ্দ",
+
+    colSl: "ক্রম",
+    filterHeading: "ফিল্টার",
+    filterHint: "আপনার পেমেন্ট সহজে খুঁজে বের করুন।",
+    filterStatusLabel: "স্ট্যাটাস",
+    filterStatusAll: "সব",
+    filterAmountLabel: "পরিমাণ",
+    filterAmountAny: "যেকোনো",
+    filterAmountExact: "সঠিক পরিমাণ",
+    filterAmountRange: "পরিসীমা",
+    filterAmountExactPlaceholder: "যেমন ৫০০",
+    filterMinPlaceholder: "সর্বনিম্ন",
+    filterMaxPlaceholder: "সর্বোচ্চ",
+    filterFromLabel: "শুরুর তারিখ",
+    filterToLabel: "শেষ তারিখ",
+    filterApply: "ফিল্টার প্রয়োগ করুন",
+    filterClear: "রিসেট করুন",
+    filterInvalidAmount: "সঠিক একটি সংখ্যা লিখুন।",
+    filterInvalidAmountRange: "সর্বনিম্ন পরিমাণ সর্বোচ্চ পরিমাণের চেয়ে বেশি হতে পারে না।",
+    filterInvalidDateRange: "শুরুর তারিখ শেষ তারিখের চেয়ে পরে হতে পারে না।",
+
+    chartHeading: "পেমেন্ট সারসংক্ষেপ",
+    chartHint: "ফিল্টার অনুযায়ী চলমান",
+    chartEmpty: "এই ফিল্টারে কোনো পেমেন্ট নেই।",
+    chartTotal: "মোট পেমেন্ট রেকর্ড",
+    chartShowing: "দেখানো হচ্ছে",
+    chartFilteredAmount: "ফিল্টার করা পরিমাণ",
+    chartAvg: "গড় পেমেন্ট",
+    chartStatusBreakdown: "স্ট্যাটাস অনুযায়ী বিভাজন",
+
+    rowsPerPageShow: "দেখান",
+    rowsPerPageSuffix: "টি পেমেন্ট",
+    pagePrev: "আগের",
+    pageNext: "পরের",
+    pageLabel: "পৃষ্ঠা",
+    pageOf: "/",
+    paginationRangeLabel: "দেখানো হচ্ছে",
+    ofLabel: "মোট",
+
+    noMatchTitle: "এই ফিল্টারে কোনো পেমেন্ট মেলেনি।",
+    noMatchHint: "ফিল্টার পরিবর্তন করুন বা রিসেট করে আবার দেখুন।",
+    clearFilters: "ফিল্টার মুছুন",
+
+    reloadNoChanges: "কোনো নতুন পরিবর্তন নেই। তথ্য হালনাগাদ করা হয়েছে।",
+    reloadChanged: "নতুন পরিবর্তন পাওয়া গেছে। পেজ পুনরায় লোড হচ্ছে।",
+    reloadFailed: "রিফ্রেশ করা যায়নি। আবার চেষ্টা করুন।",
 
     statuses: {
       submitted: "সাবমিটেড",
@@ -242,6 +335,52 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     rTotal: "Total",
     rOutstanding: "Outstanding",
     rAllocated: "Allocated",
+
+    colSl: "SL",
+    filterHeading: "Filters",
+    filterHint: "Narrow down your payments.",
+    filterStatusLabel: "Status",
+    filterStatusAll: "All",
+    filterAmountLabel: "Amount",
+    filterAmountAny: "Any",
+    filterAmountExact: "Exact amount",
+    filterAmountRange: "Range",
+    filterAmountExactPlaceholder: "e.g. 500",
+    filterMinPlaceholder: "Min",
+    filterMaxPlaceholder: "Max",
+    filterFromLabel: "From date",
+    filterToLabel: "To date",
+    filterApply: "Apply filter",
+    filterClear: "Reset",
+    filterInvalidAmount: "Enter a valid number.",
+    filterInvalidAmountRange: "Min amount cannot be greater than max amount.",
+    filterInvalidDateRange: "The from date cannot be after the to date.",
+
+    chartHeading: "Payment summary",
+    chartHint: "Live with your filters",
+    chartEmpty: "No payments match this filter.",
+    chartTotal: "Total payment records",
+    chartShowing: "Showing",
+    chartFilteredAmount: "Filtered amount",
+    chartAvg: "Average payment",
+    chartStatusBreakdown: "Status breakdown",
+
+    rowsPerPageShow: "Show",
+    rowsPerPageSuffix: "payments",
+    pagePrev: "Prev",
+    pageNext: "Next",
+    pageLabel: "Page",
+    pageOf: "of",
+    paginationRangeLabel: "Showing",
+    ofLabel: "of",
+
+    noMatchTitle: "No payments match these filters.",
+    noMatchHint: "Adjust or reset the filters and try again.",
+    clearFilters: "Clear filters",
+
+    reloadNoChanges: "No new changes. Data refreshed.",
+    reloadChanged: "New changes found. Reloading the page.",
+    reloadFailed: "Could not refresh. Please try again.",
 
     statuses: {
       submitted: "Submitted",

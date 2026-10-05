@@ -41,12 +41,12 @@ import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
 import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
+import { runSmartReload } from "@/lib/dashboard/smart-reload";
 import { formatBdMobile } from "@/lib/format/mobile";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { toast } from "@/lib/ui/toast";
 
 interface DashboardShellProps {
   initialData?: DashboardPayload;
@@ -171,32 +171,23 @@ export default function DashboardShell({
   }, [resetSession, router]);
 
   const handleReload = useCallback(async () => {
-    // Smart reload: remember the visible state, refetch, then compare. Nothing
+    // Smart reload (shared helper): snapshot → refetch → compare. Nothing
     // changed → a lightweight query refresh is enough; something changed → a
     // full browser reload so every panel resyncs. Runs once per click, so a
     // reload can never loop.
-    const before = dashboardSnapshot(data);
-
-    try {
-      const result = await refetch();
-
-      if (result.error) {
-        toast.error(copy.reloadFailed);
-        return;
-      }
-
-      const after = dashboardSnapshot(result.data);
-
-      if (before && after && before !== after) {
-        toast.info(copy.reloadChanged);
-        window.location.reload();
-        return;
-      }
-
-      toast.success(copy.reloadNoChanges);
-    } catch {
-      toast.error(copy.reloadFailed);
-    }
+    await runSmartReload({
+      before: data,
+      refetch: async () => {
+        const result = await refetch();
+        return { data: result.data, error: result.error };
+      },
+      snapshot: dashboardSnapshot,
+      copy: {
+        unchanged: copy.reloadNoChanges,
+        changed: copy.reloadChanged,
+        failed: copy.reloadFailed,
+      },
+    });
   }, [refetch, copy, data]);
 
   const displayName = user?.full_name || user?.name || "";
