@@ -61,6 +61,7 @@ export interface HelpDeskCopy {
   fieldDescription: string;
   fieldRelatedRoute: string;
   fieldPreferredContact: string;
+  fieldDepartment: string;
   phName: string;
   phEmail: string;
   phMobile: string;
@@ -136,6 +137,7 @@ export interface HelpDeskCopy {
   detailsAgent: string;
   detailsUnassigned: string;
   detailsRelatedRoute: string;
+  detailsDepartment: string;
 
   // Conversation
   you: string;
@@ -227,6 +229,10 @@ export interface HelpDeskCopy {
   unresolvedHeading: string;
   unresolvedEmpty: string;
   breadcrumbDashboard: string;
+
+  // Demo data affordances (mock phase only)
+  demoBadge: string;
+  demoFill: string;
 }
 
 /** Minimum meaningful description length. */
@@ -277,6 +283,7 @@ const bn: HelpDeskCopy = {
   fieldDescription: "সমস্যার বিবরণ",
   fieldRelatedRoute: "যে পেজে সমস্যা হয়েছে",
   fieldPreferredContact: "যোগাযোগের পছন্দের মাধ্যম",
+  fieldDepartment: "বিভাগ (ঐচ্ছিক)",
   phName: "যেমন: আপনার পূর্ণ নাম",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",
@@ -348,6 +355,7 @@ const bn: HelpDeskCopy = {
   detailsAgent: "দায়িত্বপ্রাপ্ত এজেন্ট",
   detailsUnassigned: "এখনো বরাদ্দ হয়নি",
   detailsRelatedRoute: "সমস্যার পেজ",
+  detailsDepartment: "বিভাগ",
 
   you: "আপনি",
   support: "কাস্টমার কেয়ার",
@@ -451,6 +459,8 @@ const bn: HelpDeskCopy = {
   unresolvedHeading: "অসমাধিত টিকিট",
   unresolvedEmpty: "সব টিকিট সমাধান হয়েছে।",
   breadcrumbDashboard: "ড্যাশবোর্ড",
+  demoBadge: "ডেমো ডেটা",
+  demoFill: "ডেমো ডেটা দিন",
 };
 
 const en: HelpDeskCopy = {
@@ -498,6 +508,7 @@ const en: HelpDeskCopy = {
   fieldDescription: "Problem description",
   fieldRelatedRoute: "Page where it happened",
   fieldPreferredContact: "Preferred contact method",
+  fieldDepartment: "Department (optional)",
   phName: "e.g. your full name",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",
@@ -569,6 +580,7 @@ const en: HelpDeskCopy = {
   detailsAgent: "Assigned agent",
   detailsUnassigned: "Not assigned yet",
   detailsRelatedRoute: "Page",
+  detailsDepartment: "Department",
 
   you: "You",
   support: "Customer Care",
@@ -672,6 +684,8 @@ const en: HelpDeskCopy = {
   unresolvedHeading: "Unresolved tickets",
   unresolvedEmpty: "All tickets are resolved.",
   breadcrumbDashboard: "Dashboard",
+  demoBadge: "Demo data",
+  demoFill: "Fill demo data",
 };
 
 export const helpDeskCopy: Record<"bn" | "en", HelpDeskCopy> = { bn, en };

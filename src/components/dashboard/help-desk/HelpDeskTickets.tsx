@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiLifeBuoy } from "react-icons/fi";
 
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
 import TicketEmptyState from "@/components/help-desk/TicketEmptyState";
@@ -118,7 +119,10 @@ export default function HelpDeskTickets({
       <HelpDeskBreadcrumb copy={copy} basePath={basePath} crumbs={[{ label: copy.listTitle }]} />
 
       <div>
-        <h1 className="text-[19px] font-semibold text-[var(--color-primary)] sm:text-[21px]">{copy.listTitle}</h1>
+        <h1 className="inline-flex items-center gap-2 text-[19px] font-semibold text-[var(--color-primary)] sm:text-[21px]">
+          <FiLifeBuoy className="h-5 w-5" aria-hidden />
+          {copy.listTitle}
+        </h1>
         <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
           {copy.listSubtitle}
         </p>

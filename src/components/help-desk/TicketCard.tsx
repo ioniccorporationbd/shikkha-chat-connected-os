@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiArrowRight, FiClock } from "react-icons/fi";
+import { FiArrowRight, FiCalendar } from "react-icons/fi";
 
 import { formatDateTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
@@ -52,7 +52,7 @@ export default function TicketCard({
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--color-primary)_65%,var(--color-white))]">
-          <FiClock className="h-3.5 w-3.5" aria-hidden />
+          <FiCalendar className="h-3.5 w-3.5" aria-hidden />
           {formatDateTime(ticket.updatedAt, language)}
         </span>
         <Link

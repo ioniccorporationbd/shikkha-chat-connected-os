@@ -5,11 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   FiActivity,
   FiArrowLeft,
+  FiBriefcase,
   FiCheckCircle,
   FiClock,
   FiFileText,
   FiHeadphones,
   FiInfo,
+  FiMessageSquare,
   FiPaperclip,
   FiRotateCcw,
   FiSend,
@@ -255,7 +257,10 @@ export default function TicketDetails({
 
           {/* Conversation */}
           <section className={`${HD_CARD} p-5 sm:p-6`}>
-            <h2 className="mb-4 text-base font-bold text-[var(--color-primary)]">{copy.detailsConversation}</h2>
+            <h2 className="mb-4 inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
+              <FiMessageSquare className="h-4 w-4" aria-hidden />
+              {copy.detailsConversation}
+            </h2>
             <TicketConversation messages={ticket.messages} copy={copy} language={language} />
 
             {/* Reply */}
@@ -347,6 +352,13 @@ export default function TicketDetails({
                 label={copy.detailsAgent}
                 value={ticket.assignedAgent || copy.detailsUnassigned}
               />
+              {ticket.department ? (
+                <InfoRow
+                  icon={<FiBriefcase className="h-4 w-4" aria-hidden />}
+                  label={copy.detailsDepartment}
+                  value={ticket.department}
+                />
+              ) : null}
               {ticket.relatedRoute ? (
                 <InfoRow
                   icon={<FiActivity className="h-4 w-4" aria-hidden />}

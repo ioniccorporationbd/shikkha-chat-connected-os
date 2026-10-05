@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FiAlertCircle, FiFileText, FiInfo, FiSend, FiUpload, FiX } from "react-icons/fi";
+import { FiAlertCircle, FiFileText, FiInfo, FiSend, FiUpload, FiX, FiZap } from "react-icons/fi";
 
 import { useAuthStore } from "@/lib/auth/store";
 import {
@@ -28,6 +28,8 @@ import type {
   TicketPriority,
 } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
+
+import { DEMO_FORM_SAMPLES, HELPDESK_DEPARTMENTS, isHelpDeskDemoEnabled, type HelpDeskDepartment } from "@/lib/help-desk/demo";
 
 import TicketSuccessCard from "./TicketSuccessCard";
 
@@ -62,6 +64,7 @@ export default function CreateTicketForm({
   const [description, setDescription] = useState("");
   const [relatedRoute, setRelatedRoute] = useState("");
   const [preferredContact, setPreferredContact] = useState<PreferredContact>("email");
+  const [department, setDepartment] = useState<HelpDeskDepartment | "">("");
   const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -107,6 +110,19 @@ export default function CreateTicketForm({
     });
   };
 
+  // Dev/test aid: fill the form with a ready-made sample. Never auto-submits and
+  // never runs on open — only on an explicit click, and only while demo is on.
+  const fillDemo = () => {
+    const sample = DEMO_FORM_SAMPLES[Math.floor(Math.random() * DEMO_FORM_SAMPLES.length)];
+    setSubject(sample.subject);
+    setCategory(sample.category);
+    setPriority(sample.priority);
+    setDepartment(sample.department);
+    setDescription(sample.description);
+    setRelatedRoute(sample.relatedRoute);
+    setErrors({});
+  };
+
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
     if (!name.trim()) next.name = copy.errRequired;
@@ -143,6 +159,7 @@ export default function CreateTicketForm({
           description,
           contact: { name, email, mobile, preferredContact },
           relatedRoute,
+          department: department || undefined,
           attachments,
         },
         ownerKey,
@@ -167,6 +184,7 @@ export default function CreateTicketForm({
     setCategory(DEFAULT_CATEGORY);
     setPriority(DEFAULT_PRIORITY);
     setPreferredContact("email");
+    setDepartment("");
     // Keep name/email (identity), keep mobile.
   };
 
@@ -178,6 +196,22 @@ export default function CreateTicketForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      {isHelpDeskDemoEnabled() ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 py-3">
+          <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
+            {copy.demoBadge}
+          </span>
+          <button
+            type="button"
+            onClick={fillDemo}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-primary)] px-3 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          >
+            <FiZap className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
+            <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.demoFill}</span>
+          </button>
+        </div>
+      ) : null}
+
       {/* Basic information */}
       <fieldset className={`${HD_CARD} p-5 sm:p-6`}>
         <legend className="px-1 text-base font-bold text-[var(--color-primary)]">{copy.sectionBasic}</legend>
@@ -313,7 +347,25 @@ export default function CreateTicketForm({
       <fieldset className={`${HD_CARD} p-5 sm:p-6`}>
         <legend className="px-1 text-base font-bold text-[var(--color-primary)]">{copy.sectionOptional}</legend>
 
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3">
+          <Field label={copy.fieldDepartment} error={undefined} htmlFor="hd-department">
+            <select
+              id="hd-department"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value as HelpDeskDepartment | "")}
+              className={HD_INPUT}
+            >
+              <option value="">—</option>
+              {HELPDESK_DEPARTMENTS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label={copy.fieldRelatedRoute} error={undefined} htmlFor="hd-route">
             <input
               id="hd-route"

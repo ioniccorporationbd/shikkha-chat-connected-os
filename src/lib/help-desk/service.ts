@@ -100,6 +100,7 @@ export async function createTicket(
       preferredContact: input.contact.preferredContact,
     },
     relatedRoute: input.relatedRoute?.trim() || undefined,
+    department: input.department?.trim() || undefined,
     attachments: (input.attachments ?? []).map((a) => ({ ...a })),
     messages: [openingMessage],
     createdAt: now,

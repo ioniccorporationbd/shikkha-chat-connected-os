@@ -6,19 +6,26 @@ import {
   FiActivity,
   FiArrowLeft,
   FiCheckCircle,
-  FiChevronLeft,
   FiChevronRight,
   FiDollarSign,
   FiFileText,
-  FiFilter,
   FiHash,
   FiLayers,
   FiLink,
   FiRotateCcw,
   FiRotateCw,
-  FiSliders,
   FiUserCheck,
 } from "react-icons/fi";
+
+import ListFilterBar from "@/components/dashboard/ListFilterBar";
+import ListPagination from "@/components/dashboard/ListPagination";
+import {
+  EMPTY_AMOUNT,
+  EMPTY_APPLIED,
+  ROWS_PER_PAGE_OPTIONS,
+  type AmountFilter,
+  type AppliedFilters,
+} from "@/lib/dashboard/list-controls";
 
 import DetailSheet, {
   type DetailRow,
@@ -39,26 +46,6 @@ import type {
   SalesInvoiceRow,
   SalesInvoiceStatusKey,
 } from "@/lib/service-build/types";
-
-const ROWS_PER_PAGE_OPTIONS = [20, 100, 500] as const;
-
-type AmountMode = "any" | "exact" | "range";
-
-interface AmountFilter {
-  mode: AmountMode;
-  exact: string;
-  min: string;
-  max: string;
-}
-
-interface AppliedFilters {
-  amount: AmountFilter;
-  fromDate: string;
-  toDate: string;
-}
-
-const EMPTY_AMOUNT: AmountFilter = { mode: "any", exact: "", min: "", max: "" };
-const EMPTY_APPLIED: AppliedFilters = { amount: EMPTY_AMOUNT, fromDate: "", toDate: "" };
 
 /** A stable colour per status key, reused by the chart bar and its legend. */
 function statusTone(key: string): string {
@@ -342,11 +329,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
 
   const currency = data?.summary?.currency || invoices[0]?.currency || "BDT";
 
-  const inputClass =
-    "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-2.5 text-[13px] outline-none transition focus:border-[var(--color-primary)]";
-  const labelClass =
-    "text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]";
-
   return (
     <section className="flex flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -499,143 +481,25 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                 </div>
               </div>
 
-              {/* ---- Filter bar ---- */}
-              <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[var(--color-primary)]">
-                    <FiSliders size={16} />
-                  </span>
-                  <h2 className="text-[14px] font-semibold">{copy.filterHeading}</h2>
-                  <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                    {copy.filterHint}
-                  </span>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <label className="flex flex-col gap-1.5">
-                    <span className={labelClass}>{copy.filterStatusLabel}</span>
-                    <select
-                      value={statusFilter}
-                      onChange={(event) => {
-                        setStatusFilter(event.target.value);
-                        setPage(1);
-                      }}
-                      className={inputClass}
-                    >
-                      <option value="all">{copy.filterStatusAll}</option>
-                      {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className={labelClass}>{copy.filterAmountLabel}</span>
-                    <select
-                      value={amountDraft.mode}
-                      onChange={(event) => onAmountChange("mode", event.target.value)}
-                      className={inputClass}
-                    >
-                      <option value="any">{copy.filterAmountAny}</option>
-                      <option value="exact">{copy.filterAmountExact}</option>
-                      <option value="range">{copy.filterAmountRange}</option>
-                    </select>
-                  </label>
-
-                  {amountDraft.mode === "exact" ? (
-                    <label className="flex flex-col gap-1.5">
-                      <span className={labelClass}>{copy.filterAmountExact}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        inputMode="decimal"
-                        value={amountDraft.exact}
-                        onChange={(event) => onAmountChange("exact", event.target.value)}
-                        placeholder={copy.filterAmountExactPlaceholder}
-                        className={inputClass}
-                      />
-                    </label>
-                  ) : null}
-
-                  {amountDraft.mode === "range" ? (
-                    <>
-                      <label className="flex flex-col gap-1.5">
-                        <span className={labelClass}>{copy.filterMinPlaceholder}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          inputMode="decimal"
-                          value={amountDraft.min}
-                          onChange={(event) => onAmountChange("min", event.target.value)}
-                          placeholder={copy.filterMinPlaceholder}
-                          className={inputClass}
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1.5">
-                        <span className={labelClass}>{copy.filterMaxPlaceholder}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          inputMode="decimal"
-                          value={amountDraft.max}
-                          onChange={(event) => onAmountChange("max", event.target.value)}
-                          placeholder={copy.filterMaxPlaceholder}
-                          className={inputClass}
-                        />
-                      </label>
-                    </>
-                  ) : null}
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className={labelClass}>{copy.filterFromLabel}</span>
-                    <input
-                      type="date"
-                      value={fromDraft}
-                      onChange={(event) => setFromDraft(event.target.value)}
-                      className={inputClass}
-                    />
-                  </label>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className={labelClass}>{copy.filterToLabel}</span>
-                    <input
-                      type="date"
-                      value={toDraft}
-                      onChange={(event) => setToDraft(event.target.value)}
-                      className={inputClass}
-                    />
-                  </label>
-                </div>
-
-                {filterError ? (
-                  <p className="mt-3 text-[12px] font-medium text-[var(--color-danger-strong)]">{filterError}</p>
-                ) : null}
-
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={applyFilters}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
-                  >
-                    <span className="text-[var(--color-white)]">
-                      <FiFilter size={15} />
-                    </span>
-                    <span className="text-[12.5px] font-semibold text-[var(--color-white)]">{copy.filterApply}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
-                  >
-                    <span className="text-[var(--color-primary)]">
-                      <FiRotateCcw size={15} />
-                    </span>
-                    <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.filterClear}</span>
-                  </button>
-                </div>
-              </div>
+              {/* ---- Filter toolbar (ERPNext-style, shared) ---- */}
+              <ListFilterBar
+                copy={copy}
+                statusValue={statusFilter}
+                statusOptions={statusOptions}
+                onStatusChange={(value) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
+                amount={amountDraft}
+                onAmountChange={onAmountChange}
+                fromDate={fromDraft}
+                toDate={toDraft}
+                onFromDateChange={setFromDraft}
+                onToDateChange={setToDraft}
+                onApply={applyFilters}
+                onReset={resetFilters}
+                error={filterError}
+              />
 
               {/* ---- List ---- */}
               <div className="flex flex-col gap-3">
@@ -758,61 +622,22 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                       ))}
                     </div>
 
-                    {/* rows-per-page + pagination */}
-                    <div className="flex flex-col gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <label className="inline-flex items-center gap-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                        <span>{copy.rowsPerPageShow}</span>
-                        <select
-                          value={rowsPerPage}
-                          onChange={(event) => {
-                            setRowsPerPage(Number(event.target.value));
-                            setPage(1);
-                          }}
-                          className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 text-[12.5px] font-semibold outline-none focus:border-[var(--color-primary)]"
-                        >
-                          {ROWS_PER_PAGE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        <span>{copy.rowsPerPageSuffix}</span>
-                      </label>
+                    {/* pagination (ERPNext-style, shared) */}
+                    <ListPagination
+                      copy={copy}
+                      rowsPerPage={rowsPerPage}
+                      onRowsPerPageChange={(value) => {
+                        setRowsPerPage(value);
+                        setPage(1);
+                      }}
+                      page={currentPage}
+                      pageCount={totalPages}
+                      onPageChange={setPage}
+                      rangeStart={pageStart + 1}
+                      rangeEnd={pageStart + pageRows.length}
+                      total={filtered.length}
+                    />
 
-                      <div className="flex items-center justify-between gap-3 sm:justify-end">
-                        <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                          {copy.paginationRangeLabel} {pageStart + 1}–{pageStart + pageRows.length} {copy.ofLabel}{" "}
-                          {filtered.length}
-                        </span>
-                        <div className="inline-flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                            disabled={currentPage <= 1}
-                            aria-label={copy.pagePrev}
-                            className="grid h-8 w-8 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] transition hover:border-[var(--color-primary)] disabled:opacity-40"
-                          >
-                            <span className="text-[var(--color-primary)]">
-                              <FiChevronLeft size={15} />
-                            </span>
-                          </button>
-                          <span className="px-1 text-[12.5px] font-semibold tabular-nums">
-                            {copy.pageLabel} {currentPage} {copy.pageOf} {totalPages}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage >= totalPages}
-                            aria-label={copy.pageNext}
-                            className="grid h-8 w-8 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] transition hover:border-[var(--color-primary)] disabled:opacity-40"
-                          >
-                            <span className="text-[var(--color-primary)]">
-                              <FiChevronRight size={15} />
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </>
                 )}
               </div>

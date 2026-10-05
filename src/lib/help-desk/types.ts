@@ -102,6 +102,8 @@ export interface Ticket {
   resolvedAt?: string;
   resolutionSummary?: string;
   assignedAgent?: string;
+  /** Optional owning department (demo/mock phase; a later backend may supply it). */
+  department?: string;
   /**
    * Mock-phase owner identity (normalised email or profile name) used to filter
    * a signed-in user's own tickets. This is a CONVENIENCE FILTER ONLY — real
@@ -118,6 +120,8 @@ export interface CreateTicketInput {
   description: string;
   contact: TicketContact;
   relatedRoute?: string;
+  /** Optional department the ticket is routed to (demo/mock phase). */
+  department?: string;
   attachments?: TicketAttachment[];
 }
 

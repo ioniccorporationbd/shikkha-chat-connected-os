@@ -10,7 +10,7 @@ import {
   FiHeadphones,
   FiInbox,
   FiList,
-  FiPlus,
+  FiPlusCircle,
   FiRefreshCw,
   FiSearch,
 } from "react-icons/fi";
@@ -18,6 +18,7 @@ import {
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
+import { isHelpDeskDemoEnabled } from "@/lib/help-desk/demo";
 import { formatDateTime } from "@/lib/help-desk/format";
 import {
   isUnresolved,
@@ -93,9 +94,9 @@ export default function HelpDeskOverview({
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
   ];
 
-  const quickActions: { key: string; label: string; href: string; icon: typeof FiPlus }[] = [
-    { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlus },
-    { key: "open", label: copy.quickOpenTickets, href: `${links.tickets}?status=open`, icon: FiList },
+  const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = [
+    { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
+    { key: "open", label: copy.quickOpenTickets, href: `${links.tickets}?status=open`, icon: FiInbox },
     { key: "resolved", label: copy.quickResolvedTickets, href: `${links.tickets}?status=resolved`, icon: FiCheckCircle },
     { key: "search", label: copy.quickSearchTickets, href: `${links.tickets}?focus=search`, icon: FiSearch },
   ];
@@ -116,6 +117,11 @@ export default function HelpDeskOverview({
               <p className="mt-0.5 max-w-2xl text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                 {copy.overviewSubtitle}
               </p>
+              {isHelpDeskDemoEnabled() ? (
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
+                  {copy.demoBadge}
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -124,7 +130,7 @@ export default function HelpDeskOverview({
               href={links.newTicket}
               className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
             >
-              <FiPlus size={15} className="text-[var(--color-white)]" aria-hidden />
+              <FiPlusCircle size={15} className="text-[var(--color-white)]" aria-hidden />
               <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.navNewTicket}</span>
             </Link>
             <Link
