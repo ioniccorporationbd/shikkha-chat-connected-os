@@ -54,6 +54,7 @@ export interface CheckinCopy {
   /** History section. */
   historyHeading: string;
   historyHint: (days: number) => string;
+  historyRangeHint: (from: string, to: string) => string;
   historyLoading: string;
   historyEmpty: string;
   expandDay: string;
@@ -67,6 +68,17 @@ export interface CheckinCopy {
   noLocation: string;
   /** "2 In · 2 Out". */
   multiSummary: (ins: number, outs: number) => string;
+  /** Date-range filter. */
+  filterHeading: string;
+  fromLabel: string;
+  toLabel: string;
+  applyFilter: string;
+  resetFilter: string;
+  filterInvalidRange: string;
+  filterInvalidDate: string;
+  filterRangeTooLarge: string;
+  filterApplied: string;
+  filterDefault: string;
 }
 
 export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
@@ -121,6 +133,7 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     todaySummaryHeading: "আজকের হিসাব",
     historyHeading: "সাম্প্রতিক উপস্থিতি",
     historyHint: (days) => `আজসহ সর্বশেষ ${days} দিনের চেক ইন / আউট`,
+    historyRangeHint: (from, to) => `${from} থেকে ${to} পর্যন্ত`,
     historyLoading: "ইতিহাস লোড হচ্ছে…",
     historyEmpty: "এই সময়ে কোনো রেকর্ড নেই।",
     expandDay: "বিস্তারিত",
@@ -133,6 +146,16 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     noPunchesToday: "আজ এখনো কোনো পাঞ্চ নেই।",
     noLocation: "লোকেশন নেই",
     multiSummary: (ins, outs) => `${ins} ইন · ${outs} আউট`,
+    filterHeading: "তারিখ অনুযায়ী ফিল্টার",
+    fromLabel: "শুরুর তারিখ",
+    toLabel: "শেষ তারিখ",
+    applyFilter: "ফিল্টার প্রয়োগ করুন",
+    resetFilter: "রিসেট",
+    filterInvalidRange: "শুরুর তারিখ শেষ তারিখের পরে হতে পারে না।",
+    filterInvalidDate: "সঠিক তারিখ দিন।",
+    filterRangeTooLarge: "সর্বোচ্চ ৩১ দিনের রেঞ্জ নির্বাচন করা যাবে।",
+    filterApplied: "ফিল্টার প্রয়োগ করা হয়েছে।",
+    filterDefault: "ডিফল্ট: শেষ ১০ দিন",
   },
   en: {
     heading: "Check In / Out",
@@ -185,6 +208,7 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     todaySummaryHeading: "Today",
     historyHeading: "Recent attendance",
     historyHint: (days) => `Your check in / check out over the last ${days} days (including today)`,
+    historyRangeHint: (from, to) => `${from} — ${to}`,
     historyLoading: "Loading history…",
     historyEmpty: "No records in this period.",
     expandDay: "View details",
@@ -197,6 +221,16 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     noPunchesToday: "No punches yet today.",
     noLocation: "No location",
     multiSummary: (ins, outs) => `${ins} Check In · ${outs} Check Out`,
+    filterHeading: "Filter by date",
+    fromLabel: "From date",
+    toLabel: "To date",
+    applyFilter: "Apply filter",
+    resetFilter: "Reset",
+    filterInvalidRange: "The start date cannot be after the end date.",
+    filterInvalidDate: "Please provide valid dates.",
+    filterRangeTooLarge: "The date range can be at most 31 days.",
+    filterApplied: "Filter applied.",
+    filterDefault: "Default: last 10 days",
   },
 };
 
@@ -206,3 +240,5 @@ export function checkinCopyFor(language: string): CheckinCopy {
 
 /** Minutes+hours since start of day, for the "today" summary helper. */
 export const CHECKIN_HISTORY_DAYS = 10;
+/** Largest explicit From/To range the backend accepts (days). */
+export const CHECKIN_MAX_RANGE_DAYS = 31;

@@ -75,5 +75,12 @@ export default function CustomerRoutes({ path, onExit }: CustomerRoutesProps) {
 
   if (count === 0) return <CreateCustomerView onBack={onExit} />;
 
-  return <CustomerManagementView onBack={onExit} onNew={goNew} onEdit={goEdit} />;
+  return (
+    <CustomerManagementView
+      onBack={onExit}
+      onNew={goNew}
+      onEdit={goEdit}
+      onEmptied={() => setCount(0)}
+    />
+  );
 }

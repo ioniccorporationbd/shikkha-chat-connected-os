@@ -21,6 +21,7 @@ export interface CustomerManagementCopy {
   /** Placeholder for an empty cell. */
   notSet: string;
   /** Column headers. */
+  colSl: string;
   colId: string;
   colName: string;
   colType: string;
@@ -65,6 +66,7 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     permissionHint:
       "আপনার অ্যাকাউন্টে Customer ব্যবস্থাপনার অনুমতি নেই। একজন সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন।",
     notSet: "—",
+    colSl: "ক্রমিক",
     colId: "কাস্টমার আইডি",
     colName: "নাম",
     colType: "ধরন",
@@ -106,6 +108,7 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     permissionHint:
       "Your account is missing the Customer management permission. Ask a system administrator to grant it.",
     notSet: "—",
+    colSl: "SL",
     colId: "Customer ID",
     colName: "Name",
     colType: "Type",

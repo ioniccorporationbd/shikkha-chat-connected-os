@@ -19,8 +19,14 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const language = params.get("language") || "bn";
   const days = params.get("days") || "10";
+  const fromDate = (params.get("from_date") || "").trim();
+  const toDate = (params.get("to_date") || "").trim();
 
+  // Forward the explicit range when present; the backend validates it (and never
+  // trusts a client-supplied employee — the employee is resolved server-side).
   const forwarded = new URLSearchParams({ language, days });
+  if (fromDate) forwarded.set("from_date", fromDate);
+  if (toDate) forwarded.set("to_date", toDate);
   const method = `shikkha_os.api.v1.checkin.history?${forwarded.toString()}`;
 
   const result = await callFrappe<CheckinHistoryPayload>(method, { sid });

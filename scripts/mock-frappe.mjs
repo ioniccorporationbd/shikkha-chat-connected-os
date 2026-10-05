@@ -149,6 +149,28 @@ const DEMO_USERS = {
       dashboard_route: "/userDashboard",
     },
   },
+  // A SECOND Customer-capable System User, to prove *ownership* (not just role):
+  // they may manage customers, yet must never read or delete another owner's.
+  "manager@ioniccorporation.com": {
+    password: PASSWORD,
+    kind: "staff",
+    can_create_customer: true,
+    profile: {
+      authenticated: true,
+      name: "manager@ioniccorporation.com",
+      full_name: "Ops Manager",
+      email: "manager@ioniccorporation.com",
+      user_image: "",
+      time_zone: "Asia/Dhaka",
+      language: "bn",
+      user_type: "System User",
+      roles: ["System Manager", "Desk User"],
+      is_admin: false,
+      designation: "Operations Manager",
+      department: "Operations",
+      dashboard_route: "/userDashboard",
+    },
+  },
   "client@example.com": {
     password: PASSWORD,
     kind: "client",
@@ -217,6 +239,51 @@ const DEMO_EMPLOYEES = {
 
 const checkinRecords = [];
 let checkinCounter = 0;
+
+// Dev-only seed: a few days of punches for the demo employees so the history
+// timeline (multiple punches/day, the rolling 10-day default window and the
+// From/To date filter) can be exercised without punching live. In-memory only.
+(function seedCheckins() {
+  const seed = [
+    ["HR-EMP-00001", "Tamim Hasan Tast", 0, "IN", "09:02:11"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 0, "OUT", "13:10:40"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 0, "IN", "14:03:05"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 0, "OUT", "18:14:27"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 1, "IN", "09:11:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 1, "OUT", "18:02:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 3, "IN", "09:20:05"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 3, "OUT", "17:55:10"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 6, "IN", "09:05:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 6, "OUT", "18:10:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 9, "IN", "10:00:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 9, "OUT", "17:30:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 12, "IN", "09:00:00"],
+    ["HR-EMP-00001", "Tamim Hasan Tast", 12, "OUT", "18:00:00"],
+    ["HR-EMP-00002", "Sales Executive", 0, "IN", "08:30:00"],
+    ["HR-EMP-00002", "Sales Executive", 0, "OUT", "17:00:00"],
+  ];
+  const now = new Date();
+  for (const [employee, employee_name, daysAgo, log_type, clockTime] of seed) {
+    const d = new Date(now.getTime());
+    d.setDate(d.getDate() - daysAgo);
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    checkinCounter += 1;
+    checkinRecords.push({
+      name: `EMP-CKIN-SEED-${String(checkinCounter).padStart(4, "0")}`,
+      employee,
+      employee_name,
+      log_type,
+      time: `${ymd} ${clockTime}`,
+      device_id: "seed-demo",
+      latitude: 23.8103,
+      longitude: 90.4125,
+      geolocation: "23.8103, 90.4125",
+      creation: `${ymd} ${clockTime}`,
+    });
+  }
+  // Oldest-first so latestCheckin()/lastCheckinOfType() (last array element) are right.
+  checkinRecords.sort((a, b) => String(a.time).localeCompare(String(b.time)));
+})();
 
 function employeeFor(email) {
   const employee = DEMO_EMPLOYEES[email];
@@ -2862,15 +2929,21 @@ const server = createServer(async (request, response) => {
     }
     const employee = employeeFor(email);
     const days = clampDays(url.searchParams.get("days"));
+    const fromParam = (url.searchParams.get("from_date") || "").trim();
+    const toParam = (url.searchParams.get("to_date") || "").trim();
+    const range = resolveRange(fromParam, toParam, days, response);
+    if (!range) return; // invalid range -> already answered
     if (!employee) {
       ok(response, {
         doctype: "Employee Checkin",
         linked: false,
         employee: null,
-        window_days: days,
+        filtered: range.filtered,
+        window_days: range.windowDays,
+        max_range_days: 31,
         days: [],
-        from_date: null,
-        to_date: null,
+        from_date: range.from,
+        to_date: range.to,
         server_time: nowStamp(),
       });
       return;
@@ -2879,10 +2952,14 @@ const server = createServer(async (request, response) => {
       doctype: "Employee Checkin",
       linked: true,
       employee,
-      window_days: days,
-      days: recentCheckinDays(employee.name, days),
-      from_date: dayISO(offsetFromToday(days - 1)),
-      to_date: dayISO(new Date()),
+      filtered: range.filtered,
+      window_days: range.windowDays,
+      max_range_days: 31,
+      days: range.filtered
+        ? checkinDaysBetween(employee.name, range.from, range.to)
+        : recentCheckinDays(employee.name, range.windowDays),
+      from_date: range.from,
+      to_date: range.to,
       server_time: nowStamp(),
     });
     return;
@@ -2937,30 +3014,80 @@ const server = createServer(async (request, response) => {
     return date;
   }
 
-  function dayISO(date) {
-    return date.toISOString().slice(0, 10);
+  // Local (not UTC) calendar date, so the window matches the seeded timestamps.
+  function localISO(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
+  }
+
+  function dayPayloadFor(employee, date) {
+    const punches = checkinRecords
+      .filter((row) => row.employee === employee && String(row.time).slice(0, 10) === date)
+      .map((row) => ({ log_type: String(row.log_type || "").toUpperCase(), time: row.time }));
+    const ins = punches.filter((p) => p.log_type === "IN");
+    const outs = punches.filter((p) => p.log_type === "OUT");
+    return {
+      date,
+      punches,
+      first_in: ins.length ? ins[0].time : null,
+      last_out: outs.length ? outs[outs.length - 1].time : null,
+      in_count: ins.length,
+      out_count: outs.length,
+      total: punches.length,
+    };
   }
 
   function recentCheckinDays(employee, days) {
     const out = [];
     for (let offset = 0; offset < days; offset += 1) {
-      const date = dayISO(offsetFromToday(offset));
-      const punches = checkinRecords
-        .filter((row) => row.employee === employee && String(row.time).slice(0, 10) === date)
-        .map((row) => ({ log_type: String(row.log_type || "").toUpperCase(), time: row.time }));
-      const ins = punches.filter((p) => p.log_type === "IN");
-      const outs = punches.filter((p) => p.log_type === "OUT");
-      out.push({
-        date,
-        punches,
-        first_in: ins.length ? ins[0].time : null,
-        last_out: outs.length ? outs[outs.length - 1].time : null,
-        in_count: ins.length,
-        out_count: outs.length,
-        total: punches.length,
-      });
+      out.push(dayPayloadFor(employee, localISO(offsetFromToday(offset))));
     }
     return out; // newest day first
+  }
+
+  function checkinDaysBetween(employee, fromISO, toISO) {
+    const out = [];
+    const start = new Date(`${fromISO}T00:00:00Z`);
+    const end = new Date(`${toISO}T00:00:00Z`);
+    const span = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+    for (let i = 0; i < span; i += 1) {
+      out.push(dayPayloadFor(employee, localISO(new Date(end.getTime() - i * 86400000))));
+    }
+    return out; // newest day first
+  }
+
+  // Resolve the requested window. Mirrors the backend: an explicit From/To pair
+  // is validated (malformed / inverted / oversized are refused); otherwise the
+  // rolling `days` window is used. Returns null after answering a bad request.
+  function resolveRange(fromParam, toParam, days, response) {
+    const hasFrom = Boolean(fromParam);
+    const hasTo = Boolean(toParam);
+    if (hasFrom || hasTo) {
+      const valid = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime());
+      if (!hasFrom || !hasTo || !valid(fromParam) || !valid(toParam)) {
+        failure(response, 417, "ValidationError", "Both dates are required, and the start date cannot be after the end date.", "Check In / Out");
+        return null;
+      }
+      const start = new Date(`${fromParam}T00:00:00Z`);
+      const end = new Date(`${toParam}T00:00:00Z`);
+      if (start > end) {
+        failure(response, 417, "ValidationError", "Both dates are required, and the start date cannot be after the end date.", "Check In / Out");
+        return null;
+      }
+      const span = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+      if (span > 31) {
+        failure(response, 417, "ValidationError", "The date range can be at most 31 days.", "Check In / Out");
+        return null;
+      }
+      return { filtered: true, windowDays: span, from: fromParam, to: toParam };
+    }
+    return {
+      filtered: false,
+      windowDays: days,
+      from: localISO(offsetFromToday(days - 1)),
+      to: localISO(new Date()),
+    };
   }
 
   failure(response, 417, "ValidationError", `Failed to get method for command ${method}`, "Method Not Found");

@@ -76,9 +76,11 @@ interface CustomerManagementViewProps {
   onBack: () => void;
   onNew: () => void;
   onEdit: (name: string) => void;
+  /** Called when the last owned customer is deleted, so the host can switch to the create form. */
+  onEmptied?: () => void;
 }
 
-export default function CustomerManagementView({ onBack, onNew, onEdit }: CustomerManagementViewProps) {
+export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptied }: CustomerManagementViewProps) {
   const { language } = useLanguage();
   const copy = useMemo(() => customerManagementCopyFor(language), [language]);
 
@@ -96,11 +98,14 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
       else setLoading(true);
       try {
         const data = await fetchCustomerList(language);
-        setRows(data.customers ?? []);
+        const list = data.customers ?? [];
+        setRows(list);
         setLoadError(null);
+        return list;
       } catch (error) {
         const failure = error as { code?: string; message?: string };
         setLoadError({ code: failure?.code || "error", message: failure?.message || copy.loadFailed });
+        return [];
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -119,7 +124,9 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
   }, [loadList]);
 
   const filtered = useMemo(() => {
-    const list = rows ?? [];
+    // A row with no real document id can never be rendered: no nameless row, no
+    // duplicate/blank React key (the id is what the backend guarantees).
+    const list = (rows ?? []).filter((row) => Boolean(row?.name && String(row.name).trim()));
     const needle = query.trim().toLowerCase();
     if (!needle) return list;
     return list.filter((row) =>
@@ -129,7 +136,10 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
     );
   }, [rows, query]);
 
-  const total = rows?.length ?? 0;
+  const total = useMemo(
+    () => (rows ?? []).filter((row) => Boolean(row?.name && String(row.name).trim())).length,
+    [rows]
+  );
   const cell = (value: string | undefined) => (value && String(value).trim() !== "" ? value : copy.notSet);
 
   const confirmDelete = useCallback(async () => {
@@ -139,7 +149,9 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
       await deleteCustomer(deleteTarget.name, language);
       toast.success(copy.deleteSuccess);
       setDeleteTarget(null);
-      await loadList("refresh");
+      const remaining = await loadList("refresh");
+      // The very last customer is gone -> hand back to the create form.
+      if (onEmptied && remaining.length === 0) onEmptied();
     } catch (error) {
       const failure = error as { code?: string; status?: number; message?: string };
       const message = failure?.message || copy.deleteFailed;
@@ -148,7 +160,7 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
     } finally {
       setDeleting(false);
     }
-  }, [deleteTarget, deleting, language, copy, loadList]);
+  }, [deleteTarget, deleting, language, copy, loadList, onEmptied]);
 
   const isAuth = loadError?.code === "not_authenticated";
   const isPermission = loadError ? isPermissionRefusal(loadError.code, loadError.message) : false;
@@ -321,13 +333,13 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
-                  {[copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colCreated, copy.colActions].map(
+                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colCreated, copy.colActions].map(
                     (label, index) => (
                       <th
                         key={label}
                         scope="col"
                         className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${
-                          index === 8 ? "text-right" : ""
+                          index === 9 ? "text-right" : index === 0 ? "w-[60px]" : ""
                         }`}
                       >
                         {label}
@@ -337,12 +349,19 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row) => (
+                {filtered.map((row, index) => (
                   <tr
                     key={row.name}
                     className="border-b border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] last:border-0 hover:bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))]"
                   >
-                    <td className="px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">{row.name}</td>
+                    <td className="px-4 py-3 text-[12.5px] font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1 text-[12px] font-bold tabular-nums text-[var(--color-primary)]">
+                        {row.name}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-[13px] font-medium text-[var(--color-primary)]">
                       {cell(row.customer_name)}
                     </td>
@@ -392,14 +411,19 @@ export default function CustomerManagementView({ onBack, onNew, onEdit }: Custom
 
           {/* mobile cards */}
           <div className="flex flex-col gap-3 lg:hidden">
-            {filtered.map((row) => (
+            {filtered.map((row, index) => (
               <section key={row.name} className={CARD}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                      {copy.colId}
-                    </p>
-                    <p className="text-[13px] font-semibold text-[var(--color-primary)]">{row.name}</p>
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[11px] font-bold tabular-nums text-[var(--color-primary)]">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {copy.colId}
+                      </p>
+                      <p className="text-[13px] font-bold tabular-nums text-[var(--color-primary)]">{row.name}</p>
+                    </div>
                   </div>
                   <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)]">
                     {cell(row.customer_type)}

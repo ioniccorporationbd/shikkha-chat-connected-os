@@ -76,5 +76,9 @@ export interface CheckinHistoryPayload {
   days: CheckinDay[];
   from_date: string | null;
   to_date: string | null;
+  /** True when an explicit From/To range was applied (not the rolling default). */
+  filtered?: boolean;
+  /** Largest explicit range the backend accepts (days). */
+  max_range_days?: number;
   server_time: string;
 }

@@ -16,9 +16,14 @@ import {
   FiUserCheck,
 } from "react-icons/fi";
 
-import { initialsOf } from "@/components/dashboard/UserAvatar";
+import UserAvatar from "@/components/dashboard/UserAvatar";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
-import { CHECKIN_HISTORY_DAYS, checkinCopyFor } from "@/lib/checkin/messages";
+import { useSessionQuery } from "@/lib/auth/queries";
+import {
+  CHECKIN_HISTORY_DAYS,
+  CHECKIN_MAX_RANGE_DAYS,
+  checkinCopyFor,
+} from "@/lib/checkin/messages";
 import type {
   CheckinDay,
   CheckinHistoryPayload,
@@ -33,6 +38,9 @@ import { toast } from "@/lib/ui/toast";
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW =
   "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
+
+const INPUT =
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
 
 type LocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 
@@ -63,7 +71,7 @@ function formatDate(value: string | null | undefined, locale: string): string {
   }
 }
 
-/** Time only — "09:05 AM" (hour + minute, no seconds). */
+/** Time only — "09:05 AM" (hour + minute, no seconds) for history rows. */
 function formatTime(value: string | null | undefined, locale: string): string {
   const parsed = parseStamp(value);
   if (!parsed) return "";
@@ -71,6 +79,21 @@ function formatTime(value: string | null | undefined, locale: string): string {
     return parsed.toLocaleTimeString(locale === "en" ? "en-US" : "bn-BD", {
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "";
+  }
+}
+
+/** Time with seconds — "03:31:42 PM" — used only by the live hero clock. */
+function formatClock(value: number, locale: string): string {
+  const date = new Date(value);
+  try {
+    return date.toLocaleTimeString(locale === "en" ? "en-US" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hour12: true,
     });
   } catch {
@@ -119,6 +142,8 @@ function InfoTile({
 export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
   const { language } = useLanguage();
   const copy = checkinCopyFor(language);
+  const { data: session } = useSessionQuery();
+  const sessionUser = session?.user ?? null;
 
   const [status, setStatus] = useState<CheckinStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,6 +156,13 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
   const [history, setHistory] = useState<CheckinHistoryPayload | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
+
+  // Date-range filter (From / To). `applied` is null while the default rolling
+  // window (last CHECKIN_HISTORY_DAYS calendar days) is in effect.
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [filterError, setFilterError] = useState("");
+  const [applied, setApplied] = useState<{ from: string; to: string } | null>(null);
 
   const [clock, setClock] = useState(() => Date.now());
 
@@ -164,19 +196,25 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     }
   }, [language, copy.loadFailed]);
 
-  const loadHistory = useCallback(async () => {
-    setHistoryLoading(true);
-    try {
-      const data = await getJson<CheckinHistoryPayload>(
-        `/api/checkin/history?days=${CHECKIN_HISTORY_DAYS}&language=${encodeURIComponent(language)}`
-      );
-      setHistory(data);
-    } catch {
-      setHistory(null);
-    } finally {
-      setHistoryLoading(false);
-    }
-  }, [language]);
+  const loadHistory = useCallback(
+    async (range: { from: string; to: string } | null = null) => {
+      setHistoryLoading(true);
+      try {
+        const scope = range
+          ? `from_date=${encodeURIComponent(range.from)}&to_date=${encodeURIComponent(range.to)}`
+          : `days=${CHECKIN_HISTORY_DAYS}`;
+        const data = await getJson<CheckinHistoryPayload>(
+          `/api/checkin/history?${scope}&language=${encodeURIComponent(language)}`
+        );
+        setHistory(data);
+      } catch {
+        setHistory(null);
+      } finally {
+        setHistoryLoading(false);
+      }
+    },
+    [language]
+  );
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
@@ -215,9 +253,11 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     };
   }, [loadStatus, loadHistory, requestLocation]);
 
-  // A gentle live clock (updated every 30s) for the "current time" hero tile.
+  // A live clock with seconds, refreshed every second. The clock is only ever
+  // painted inside the (client-fetched) status branch, so the server never
+  // renders a timestamp — there is no SSR/client hydration mismatch.
   useEffect(() => {
-    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    const timer = window.setInterval(() => setClock(Date.now()), 1_000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -244,13 +284,13 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      await Promise.all([loadStatus(), loadHistory()]);
+      await Promise.all([loadStatus(), loadHistory(applied)]);
       requestLocation();
       toast.success(copy.refreshed);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshing, loadStatus, loadHistory, requestLocation, copy.refreshed]);
+  }, [refreshing, loadStatus, loadHistory, requestLocation, copy.refreshed, applied]);
 
   const handlePunch = useCallback(async () => {
     if (!status || punching) return;
@@ -291,19 +331,56 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
       });
 
       toast.success(logType === "IN" ? copy.successIn : copy.successOut);
-      await Promise.all([loadStatus(), loadHistory()]);
+      await Promise.all([loadStatus(), loadHistory(applied)]);
     } catch (error) {
       const err = error as ApiError;
       const message = err?.message || copy.requestError;
       toast.error(message);
       // The ERP refused because our view was stale (already in / out): refresh.
       if (/already/i.test(message) || err?.code === "validation_error") {
-        await Promise.all([loadStatus(), loadHistory()]);
+        await Promise.all([loadStatus(), loadHistory(applied)]);
       }
     } finally {
       setPunching(false);
     }
-  }, [status, punching, point, locationState, locate, deviceId, language, copy, loadStatus, loadHistory]);
+  }, [status, punching, point, locationState, locate, deviceId, language, copy, loadStatus, loadHistory, applied]);
+
+  /** Validate the From/To pair client-side, then load that explicit range. */
+  const applyFilter = useCallback(() => {
+    const from = fromDate.trim();
+    const to = toDate.trim();
+    if (!from || !to || !/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      setFilterError(copy.filterInvalidDate);
+      return;
+    }
+    const start = new Date(`${from}T00:00:00`);
+    const end = new Date(`${to}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      setFilterError(copy.filterInvalidDate);
+      return;
+    }
+    if (start > end) {
+      setFilterError(copy.filterInvalidRange);
+      return;
+    }
+    const span = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    if (span > CHECKIN_MAX_RANGE_DAYS) {
+      setFilterError(copy.filterRangeTooLarge);
+      return;
+    }
+    setFilterError("");
+    setApplied({ from, to });
+    void loadHistory({ from, to });
+  }, [fromDate, toDate, copy, loadHistory]);
+
+  /** Back to the default rolling window (last CHECKIN_HISTORY_DAYS days). */
+  const resetFilter = useCallback(() => {
+    setFromDate("");
+    setToDate("");
+    setFilterError("");
+    setApplied(null);
+    void loadHistory(null);
+  }, [loadHistory]);
 
   const locationText = useMemo(() => {
     if (point) return copy.locationReady;
@@ -334,17 +411,12 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     }
   })();
 
-  const nowTimeText = (() => {
-    try {
-      return clockDate.toLocaleTimeString(language === "en" ? "en-US" : "bn-BD", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch {
-      return "";
-    }
-  })();
+  const nowTimeText = formatClock(clock, language);
+
+  const historyScopeText =
+    history?.filtered && history.from_date && history.to_date
+      ? copy.historyRangeHint(formatDate(history.from_date, language), formatDate(history.to_date, language))
+      : copy.historyHint(history?.window_days ?? CHECKIN_HISTORY_DAYS);
 
   return (
     <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
@@ -453,9 +525,12 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
             {/* ------------------------------------------- hero / status */}
             <div className="flex flex-col gap-4 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] p-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 items-center gap-4">
-                <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-3xl bg-[var(--color-primary)] text-[20px] font-semibold text-[var(--color-white)]">
-                  <span data-no-translate="true">{initialsOf(employeeName || "?")}</span>
-                </span>
+                <UserAvatar
+                  user={sessionUser ?? (employeeName ? { full_name: employeeName, name: employeeName } : null)}
+                  size={56}
+                  rounded="rounded-3xl"
+                  className="shrink-0"
+                />
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                     {copy.employeeHeading}
@@ -617,12 +692,74 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
               </button>
             </div>
 
+            {/* --------------------------------------------- date filter */}
+            <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]">
+                  <FiCalendar size={15} />
+                </span>
+                <p className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.filterHeading}</p>
+                <span className="ml-auto text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                  {copy.filterDefault}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end">
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                    {copy.fromLabel}
+                  </span>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(event) => setFromDate(event.target.value)}
+                    className={INPUT}
+                  />
+                </label>
+                <label className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                    {copy.toLabel}
+                  </span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(event) => setToDate(event.target.value)}
+                    className={INPUT}
+                  />
+                </label>
+                <div className="flex gap-2 sm:pb-[1px]">
+                  <button
+                    type="button"
+                    onClick={applyFilter}
+                    disabled={historyLoading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:flex-none"
+                  >
+                    <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.applyFilter}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetFilter}
+                    disabled={historyLoading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                  >
+                    <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.resetFilter}</span>
+                  </button>
+                </div>
+              </div>
+
+              {filterError ? (
+                <p className="mt-2 text-[11.5px] font-medium text-[var(--color-danger-strong)]" role="alert">
+                  {filterError}
+                </p>
+              ) : null}
+            </div>
+
             {/* --------------------------------------------------- history */}
             <div className="mt-1 flex flex-col gap-3">
               <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
                 <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">{copy.historyHeading}</h2>
                 <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                  {copy.historyHint(history?.window_days ?? CHECKIN_HISTORY_DAYS)}
+                  {historyScopeText}
                 </p>
               </div>
 
