@@ -3,10 +3,11 @@
 import DynamicError from "@/components/errors/DynamicError";
 
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <DynamicError kind="server" onRetry={reset} />;
+  return <DynamicError status={500} onRetry={reset} requestId={error?.digest} />;
 }

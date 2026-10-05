@@ -10,7 +10,6 @@ import {
   FiEye,
   FiEyeOff,
   FiHome,
-  FiKey,
   FiLock,
   FiMail,
   FiShield,
@@ -18,6 +17,8 @@ import {
 } from "react-icons/fi";
 
 import AuthBrand from "@/components/auth/AuthBrand";
+import AuthCard from "@/components/auth/AuthCard";
+import OtpInput from "@/components/auth/OtpInput";
 import { ApiError, postJson } from "@/lib/api/http";
 import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
 import { registerCopyFor } from "@/lib/auth/register-messages";
@@ -363,13 +364,10 @@ export default function LoginForm() {
   ).replace("{target}", forgotTarget);
 
   return (
-    <section
-      data-no-translate="true"
-      className="relative z-10 w-full max-w-[460px] rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] p-6 shadow-[0_36px_80px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-8"
-    >
+    <AuthCard>
       <AuthBrand subtitle={copy.panelSubtitle} />
 
-      <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
+      <h1 className="mt-6 text-center text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
         {title}
       </h1>
 
@@ -377,7 +375,7 @@ export default function LoginForm() {
           email/mobile -> OTP. The success screen has no step. */}
       {showDots ? (
         <>
-          <p className="mt-2 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+          <p className="mt-2 text-center text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
             {copy.stepLabel.replace("{n}", String(stepIndex + 1))}
           </p>
           <div className="mt-2 flex gap-1.5" aria-hidden>
@@ -397,7 +395,7 @@ export default function LoginForm() {
       ) : null}
 
       {hint ? (
-        <p className="mt-3 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+        <p className="mt-3 text-center text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
           {hint}
         </p>
       ) : null}
@@ -482,26 +480,18 @@ export default function LoginForm() {
             {loginOtpHint}
           </p>
 
-          <label className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.otpLabel}
             </span>
-            <span className={FIELD_WRAPPER_CLASS}>
-              <FiKey aria-hidden className={ICON_CLASS} />
-              <input
-                type="text"
-                name="otp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                required
-                value={otp}
-                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder={copy.otpPlaceholder}
-                className={`${FIELD_CLASS} tracking-[0.4em]`}
-              />
-            </span>
-          </label>
+            <OtpInput
+              value={otp}
+              onChange={setOtp}
+              disabled={busy}
+              loading={busy}
+              ariaLabelPrefix={copy.otpLabel}
+            />
+          </div>
 
           <div className="flex items-center justify-between text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
             <span>{ttl > 0 ? copy.otpTtl.replace("{time}", formatClock(ttl)) : ""}</span>
@@ -585,26 +575,18 @@ export default function LoginForm() {
             {forgotOtpHint}
           </p>
 
-          <label className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.otpLabel}
             </span>
-            <span className={FIELD_WRAPPER_CLASS}>
-              <FiKey aria-hidden className={ICON_CLASS} />
-              <input
-                type="text"
-                name="otp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                required
-                value={forgotOtp}
-                onChange={(event) => setForgotOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder={copy.otpPlaceholder}
-                className={`${FIELD_CLASS} tracking-[0.4em]`}
-              />
-            </span>
-          </label>
+            <OtpInput
+              value={forgotOtp}
+              onChange={setForgotOtp}
+              disabled={busy}
+              loading={busy}
+              ariaLabelPrefix={copy.otpLabel}
+            />
+          </div>
 
           <div className="flex items-center justify-between text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
             <span>{forgotTtl > 0 ? copy.otpTtl.replace("{time}", formatClock(forgotTtl)) : ""}</span>
@@ -682,6 +664,6 @@ export default function LoginForm() {
           {copy.backHome}
         </span>
       </Link>
-    </section>
+    </AuthCard>
   );
 }

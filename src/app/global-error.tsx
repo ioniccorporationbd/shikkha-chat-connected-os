@@ -8,6 +8,7 @@ import DynamicError from "@/components/errors/DynamicError";
  * back to the default language safely.
  */
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -16,7 +17,7 @@ export default function GlobalError({
   return (
     <html lang="bn" data-lang="bn" translate="no" className="h-full">
       <body className="min-h-full bg-[var(--color-white)]">
-        <DynamicError kind="server" onRetry={reset} />
+        <DynamicError status={500} onRetry={reset} requestId={error?.digest} />
       </body>
     </html>
   );

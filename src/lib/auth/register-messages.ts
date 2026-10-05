@@ -64,8 +64,8 @@ export interface RegisterCopy {
 export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
   bn: {
     button: "রেজিস্ট্রেশন",
-    panelTitle: "নতুন অ্যাকাউন্ট খুলুন",
-    panelSubtitle: "নাম, ইমেইল ও মোবাইল নম্বর দিয়ে নিজেই অ্যাকাউন্ট তৈরি করুন।",
+    panelTitle: "নতুন অ্যাকাউন্ট তৈরি করুন",
+    panelSubtitle: "আপনার তথ্য দিয়ে কয়েকটি সহজ ধাপে রেজিস্ট্রেশন সম্পন্ন করুন।",
     stepLabel: "ধাপ {n}/২",
     nameLabel: "পূর্ণ নাম",
     namePlaceholder: "আপনার নাম",
@@ -81,7 +81,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     sendingOtp: "পাঠানো হচ্ছে…",
     verify: "যাচাই করে অ্যাকাউন্ট খুলুন",
     verifying: "যাচাই করা হচ্ছে…",
-    otpTitle: "OTP যাচাই করুন",
+    otpTitle: "ভেরিফিকেশন কোড দিন",
     otpHint: "আমরা {target} ঠিকানায় একটি ৬ ডিজিটের কোড পাঠিয়েছি।",
     otpTtl: "কোডটি আর {time} সক্রিয় থাকবে।",
     otpLabel: "OTP কোড",
@@ -115,7 +115,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
   en: {
     button: "Register",
     panelTitle: "Create a new account",
-    panelSubtitle: "Sign yourself up with your name, email and mobile number.",
+    panelSubtitle: "Complete registration in a few simple steps with your details.",
     stepLabel: "Step {n}/2",
     nameLabel: "Full name",
     namePlaceholder: "Your name",
@@ -131,7 +131,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     sendingOtp: "Sending…",
     verify: "Verify & create account",
     verifying: "Verifying…",
-    otpTitle: "Verify your OTP",
+    otpTitle: "Enter verification code",
     otpHint: "We sent a 6-digit code to {target}.",
     otpTtl: "The code stays valid for another {time}.",
     otpLabel: "OTP code",

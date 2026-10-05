@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   FiArrowLeft,
   FiCheck,
   FiEye,
   FiEyeOff,
   FiHome,
-  FiKey,
   FiLock,
   FiMail,
   FiPhone,
@@ -18,6 +17,8 @@ import {
 } from "react-icons/fi";
 
 import AuthBrand from "@/components/auth/AuthBrand";
+import AuthCard from "@/components/auth/AuthCard";
+import OtpInput from "@/components/auth/OtpInput";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
 import {
   registerCopyFor,
@@ -88,7 +89,6 @@ export default function RegisterForm() {
 
   const [busy, setBusy] = useState(false);
 
-  const otpInputRef = useRef<HTMLInputElement | null>(null);
 
   // Already signed in: no reason to stay on the sign-up form.
   useEffect(() => {
@@ -199,9 +199,6 @@ export default function RegisterForm() {
       toast.success(copy.otpSentNotice);
       if (payload?.delivery?.sms === false) toast.warning(copy.smsNotSent);
       if (payload?.delivery?.email === false) toast.warning(copy.emailNotSent);
-
-      // Focus the code field once the OTP screen paints.
-      window.setTimeout(() => otpInputRef.current?.focus(), 50);
     } catch (thrown) {
       handleApiError(thrown);
     }
@@ -232,16 +229,13 @@ export default function RegisterForm() {
   }
 
   return (
-    <section
-      data-no-translate="true"
-      className="relative z-10 w-full max-w-[460px] rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] p-6 shadow-[0_36px_80px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-8"
-    >
+    <AuthCard>
       <AuthBrand subtitle={copy.panelSubtitle} />
 
-      <h1 className="mt-6 text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
+      <h1 className="mt-6 text-center text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
         {step === "details" ? copy.panelTitle : copy.otpTitle}
       </h1>
-      <p className="mt-1 text-[12px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+      <p className="mt-1 text-center text-[12px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
         {registerStepLabel(language, step === "details" ? 1 : 2)}
       </p>
 
@@ -365,27 +359,18 @@ export default function RegisterForm() {
             {copy.otpHint.replace("{target}", otpTarget)}
           </p>
 
-          <label className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <span className="text-[13px] font-medium text-[var(--color-primary)]">
               {copy.otpLabel}
             </span>
-            <span className={FIELD_WRAPPER_CLASS}>
-              <FiKey aria-hidden className={ICON_CLASS} />
-              <input
-                ref={otpInputRef}
-                type="text"
-                name="otp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                required
-                value={otp}
-                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder={copy.otpPlaceholder}
-                className={`${FIELD_CLASS} tracking-[0.4em]`}
-              />
-            </span>
-          </label>
+            <OtpInput
+              value={otp}
+              onChange={setOtp}
+              disabled={busy}
+              loading={busy}
+              ariaLabelPrefix={copy.otpLabel}
+            />
+          </div>
 
           <div className="flex items-center justify-between text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
             <span>{ttl > 0 ? copy.otpTtl.replace("{time}", formatClock(ttl)) : ""}</span>
@@ -431,6 +416,6 @@ export default function RegisterForm() {
           {copy.backHome}
         </span>
       </Link>
-    </section>
+    </AuthCard>
   );
 }
