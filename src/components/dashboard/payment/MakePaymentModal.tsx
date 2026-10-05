@@ -10,8 +10,8 @@ import { submitManualPayment } from "@/lib/payment-entry/manual-payment/service"
 import type {
   MakePaymentStep,
   ManualPaymentMethod,
-  ManualPaymentRequest,
   ManualPaymentResult,
+  ManualPaymentSubmitInput,
   PaymentChannel,
 } from "@/lib/payment-entry/manual-payment/types";
 import { toast } from "@/lib/ui/toast";
@@ -26,7 +26,8 @@ import RocketPaymentForm from "./RocketPaymentForm";
 interface MakePaymentModalProps {
   language: string;
   currency: string;
-  customerName: string;
+  /** Called after the backend confirms the request (so the page can refresh). */
+  onSubmitted?: () => void;
   onClose: () => void;
 }
 
@@ -34,14 +35,15 @@ interface MakePaymentModalProps {
  * The "Make Payment" modal — a small step machine:
  *   method → (online info | manual) → bKash/Rocket/Bank form → success
  *
- * Mounted only while open (the parent renders it conditionally), so every open
- * starts clean at the first step with no leftover form state. Submission goes
- * through the isolated manual-payment service — no ERP write happens here.
+ * On submit it posts the proof to the ERP (a real Manual Payment Request row,
+ * status "Pending Verification") and shows the **server-issued** request id
+ * (e.g. MPR-2026-00001). It never creates/ submits an ERPNext Payment Entry
+ * from an unverified screenshot.
  */
 export default function MakePaymentModal({
   language,
   currency,
-  customerName,
+  onSubmitted,
   onClose,
 }: MakePaymentModalProps) {
   const copy = manualPaymentCopyFor(language);
@@ -50,7 +52,7 @@ export default function MakePaymentModal({
   const [showOnlineInfo, setShowOnlineInfo] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ManualPaymentResult | null>(null);
-  const [submitted, setSubmitted] = useState<ManualPaymentRequest | null>(null);
+  const [submitted, setSubmitted] = useState<ManualPaymentSubmitInput | null>(null);
 
   const methodLabel = (method: ManualPaymentMethod | undefined): string => {
     if (method === "bkash") return copy.methodBkash;
@@ -69,16 +71,20 @@ export default function MakePaymentModal({
 
   const handleMethod = (method: ManualPaymentMethod) => setStep(method);
 
-  const handleSubmit = async (request: ManualPaymentRequest) => {
+  const handleSubmit = async (input: ManualPaymentSubmitInput) => {
     setSubmitting(true);
     try {
-      const acknowledgement = await submitManualPayment(request);
+      const acknowledgement = await submitManualPayment(input);
       setResult(acknowledgement);
-      setSubmitted(request);
+      setSubmitted(input);
       setStep("success");
       toast.success(copy.successTitle, copy.makePayment);
-    } catch {
-      toast.error(copy.submitFailed, copy.makePayment);
+      onSubmitted?.();
+    } catch (error) {
+      // The ERP's own message (duplicate transaction, invalid bank, file too
+      // large, …) is surfaced as-is; fall back to a generic line.
+      const message = error instanceof Error && error.message ? error.message : copy.submitFailed;
+      toast.error(message, copy.makePayment);
     } finally {
       setSubmitting(false);
     }
@@ -158,8 +164,7 @@ export default function MakePaymentModal({
             <StepHeading title={copy.formTitleBkash} />
             <BkashPaymentForm
               copy={copy}
-              currency={currency}
-              customerName={customerName}
+              language={language}
               submitting={submitting}
               onSubmit={handleSubmit}
             />
@@ -171,8 +176,7 @@ export default function MakePaymentModal({
             <StepHeading title={copy.formTitleRocket} />
             <RocketPaymentForm
               copy={copy}
-              currency={currency}
-              customerName={customerName}
+              language={language}
               submitting={submitting}
               onSubmit={handleSubmit}
             />
@@ -184,8 +188,7 @@ export default function MakePaymentModal({
             <StepHeading title={copy.formTitleBank} />
             <BankPaymentForm
               copy={copy}
-              currency={currency}
-              customerName={customerName}
+              language={language}
               submitting={submitting}
               onSubmit={handleSubmit}
             />
@@ -208,14 +211,14 @@ export default function MakePaymentModal({
 
             <div className="flex flex-col gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] p-4">
               <SummaryLine label={copy.successRef} value={result.request_id} />
-              <SummaryLine label={copy.successMethod} value={methodLabel(submitted?.method)} />
+              <SummaryLine label={copy.successMethod} value={methodLabel(submitted?.payment_method)} />
               <SummaryLine
                 label={copy.successAmount}
-                value={formatAmount(submitted?.amount ?? 0, currency, language)}
+                value={formatAmount(submitted?.amount ?? 0, result.currency || currency, language)}
               />
               <span className="inline-flex items-center gap-1.5 pt-1 text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
                 <FiClock size={13} />
-                {copy.pendingLocal}
+                {copy.statuses.pending}
               </span>
             </div>
 

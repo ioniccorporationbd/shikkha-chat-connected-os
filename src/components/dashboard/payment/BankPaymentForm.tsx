@@ -1,23 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { FiCheck, FiCopy, FiSend } from "react-icons/fi";
+import { useEffect, useMemo, useState } from "react";
+import { FiCheck, FiCopy, FiRefreshCw, FiSend } from "react-icons/fi";
 
-import { findBank, SUPPORTED_BANKS } from "@/lib/payment-entry/manual-payment/config";
+import { fetchSupportedBanks } from "@/lib/payment-entry/manual-payment/service";
 import type { ManualPaymentCopy } from "@/lib/payment-entry/manual-payment/messages";
-import type { ManualPaymentRequest, SupportedBank } from "@/lib/payment-entry/manual-payment/types";
+import type {
+  ManualPaymentSubmitInput,
+  SupportedBank,
+} from "@/lib/payment-entry/manual-payment/types";
 import { toast } from "@/lib/ui/toast";
 
 import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentField";
-import PaymentProofUpload from "./PaymentProofUpload";
+import PaymentProofUpload, { type ProofSelection } from "./PaymentProofUpload";
 import { amountInput, todayISO } from "./form-utils";
 
 interface BankPaymentFormProps {
   copy: ManualPaymentCopy;
-  currency: string;
-  customerName: string;
+  language: string;
   submitting: boolean;
-  onSubmit: (request: ManualPaymentRequest) => void;
+  onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
 /** One copyable value row in the receive-details card. */
@@ -69,12 +71,10 @@ function BankReceiveCard({ bank, copy }: { bank: SupportedBank; copy: ManualPaym
       </p>
 
       <div className="flex flex-col gap-2.5">
-        <CopyRow label={copy.bankAccountName} value={bank.account_name} copy={copy} />
-        <CopyRow label={copy.bankAccountNumber} value={bank.account_number} copy={copy} />
-        <CopyRow label={copy.bankBranch} value={bank.branch} copy={copy} />
-        {bank.routing_number ? (
-          <CopyRow label={copy.bankRouting} value={bank.routing_number} copy={copy} />
-        ) : null}
+        {bank.account_name ? <CopyRow label={copy.bankAccountName} value={bank.account_name} copy={copy} /> : null}
+        {bank.account_number ? <CopyRow label={copy.bankAccountNumber} value={bank.account_number} copy={copy} /> : null}
+        {bank.branch ? <CopyRow label={copy.bankBranch} value={bank.branch} copy={copy} /> : null}
+        {bank.routing_number ? <CopyRow label={copy.bankRouting} value={bank.routing_number} copy={copy} /> : null}
       </div>
 
       {bank.instructions ? (
@@ -93,32 +93,61 @@ function BankReceiveCard({ bank, copy }: { bank: SupportedBank; copy: ManualPaym
 }
 
 /**
- * The Bank manual-payment form: pick a supported bank, see its receive details
- * (with copy buttons), then submit the transfer proof.
+ * The Bank manual-payment form: pick a supported bank (loaded from the ERP),
+ * see its receive details (with copy buttons), then submit the transfer proof.
  */
 export default function BankPaymentForm({
   copy,
-  currency,
-  customerName,
+  language,
   submitting,
   onSubmit,
 }: BankPaymentFormProps) {
   const today = todayISO();
-  const [bankId, setBankId] = useState("");
+  const [banks, setBanks] = useState<SupportedBank[]>([]);
+  const [banksLoading, setBanksLoading] = useState(true);
+  const [banksFailed, setBanksFailed] = useState(false);
+
+  const [bankName, setBankName] = useState("");
   const [amount, setAmount] = useState("");
   const [senderName, setSenderName] = useState("");
   const [senderAccount, setSenderAccount] = useState("");
   const [reference, setReference] = useState("");
   const [date, setDate] = useState(today);
   const [note, setNote] = useState("");
-  const [proof, setProof] = useState<File | null>(null);
+  const [proof, setProof] = useState<ProofSelection | null>(null);
   const [touched, setTouched] = useState(false);
 
-  const bank = findBank(bankId);
+  const loadBanks = useMemo(
+    () => async () => {
+      setBanksLoading(true);
+      setBanksFailed(false);
+      try {
+        const payload = await fetchSupportedBanks();
+        setBanks(payload.banks || []);
+      } catch {
+        setBanksFailed(true);
+      } finally {
+        setBanksLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadBanks();
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadBanks]);
+
+  const bank = banks.find((option) => option.name === bankName) || null;
 
   const validate = (): Record<string, string> => {
     const errors: Record<string, string> = {};
-    if (!bankId) errors.bank = copy.errBank;
+    if (!bankName) errors.bank = copy.errBank;
     const value = Number(amount);
     if (!amount.trim() || !Number.isFinite(value) || value <= 0) errors.amount = copy.errAmount;
     if (!senderName.trim()) errors.senderName = copy.errSenderName;
@@ -138,20 +167,19 @@ export default function BankPaymentForm({
       toast.warning(copy.errSummary);
       return;
     }
+    if (!proof) return;
     onSubmit({
-      customer_name: customerName,
-      method: "bank",
+      payment_method: "bank",
       amount: Number(amount),
-      currency,
-      bank_id: bank?.id,
-      bank_name: bank?.bank_name,
+      payment_date: date,
+      bank: bankName,
       sender_account_name: senderName.trim(),
       sender_account_number: senderAccount.trim() || undefined,
-      bank_reference: reference.trim(),
-      payment_date: date,
-      proof_image: proof ? { name: proof.name, size: proof.size, type: proof.type } : null,
+      transfer_reference: reference.trim(),
       note: note.trim() || undefined,
-      status: "pending_verification",
+      proof_file_data: proof.preview,
+      proof_file_name: proof.file.name,
+      language,
     });
   };
 
@@ -160,18 +188,45 @@ export default function BankPaymentForm({
       <PaymentField id="bank-select" label={copy.bankSelectLabel} required error={errors.bank}>
         <select
           id="bank-select"
-          value={bankId}
-          onChange={(event) => setBankId(event.target.value)}
+          value={bankName}
+          onChange={(event) => setBankName(event.target.value)}
+          disabled={banksLoading || banks.length === 0}
           className={`${PAY_FIELD_CLASS} ${payBorder(Boolean(errors.bank))}`}
         >
           <option value="">{copy.bankSelectPlaceholder}</option>
-          {SUPPORTED_BANKS.map((option) => (
-            <option key={option.id} value={option.id}>
+          {banks.map((option) => (
+            <option key={option.name} value={option.name}>
               {option.bank_name}
             </option>
           ))}
         </select>
       </PaymentField>
+
+      {banksLoading ? (
+        <div className="flex items-center gap-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          <FiRefreshCw size={13} className="animate-spin" />
+          <span>{copy.bankLoading}</span>
+        </div>
+      ) : null}
+
+      {!banksLoading && banksFailed ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] px-3 py-2">
+          <span className="text-[11.5px] text-[var(--color-danger-strong)]">{copy.bankLoadFailed}</span>
+          <button
+            type="button"
+            onClick={() => void loadBanks()}
+            className={`rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2 py-0.5 ${PAY_FOCUS}`}
+          >
+            <span className="text-[11px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
+          </button>
+        </div>
+      ) : null}
+
+      {!banksLoading && !banksFailed && banks.length === 0 ? (
+        <p className="rounded-xl border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-white))] px-3 py-2 text-[11.5px] leading-relaxed text-[var(--color-primary)]">
+          {copy.bankEmpty}
+        </p>
+      ) : null}
 
       {bank ? <BankReceiveCard bank={bank} copy={copy} /> : null}
 

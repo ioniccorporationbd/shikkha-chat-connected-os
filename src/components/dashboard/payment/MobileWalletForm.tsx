@@ -8,32 +8,34 @@ import {
   normalizeMobile,
 } from "@/lib/payment-entry/manual-payment/config";
 import type { ManualPaymentCopy } from "@/lib/payment-entry/manual-payment/messages";
-import type { ManualPaymentRequest } from "@/lib/payment-entry/manual-payment/types";
+import type { ManualPaymentSubmitInput } from "@/lib/payment-entry/manual-payment/types";
 import { toast } from "@/lib/ui/toast";
 
 import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentField";
-import PaymentProofUpload from "./PaymentProofUpload";
+import PaymentProofUpload, { type ProofSelection } from "./PaymentProofUpload";
 import { amountInput, digitsOnly, todayISO } from "./form-utils";
 
 export interface MobileWalletFormProps {
   method: "bkash" | "rocket";
   copy: ManualPaymentCopy;
-  currency: string;
-  customerName: string;
+  language: string;
   submitting: boolean;
-  onSubmit: (request: ManualPaymentRequest) => void;
+  onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
 /**
  * The bKash / Rocket manual-payment form — one implementation for the shared
  * "mobile wallet" family. Fields: amount, sender mobile, transaction ID,
  * payment date, proof image, optional note.
+ *
+ * On submit it produces the real backend payload (the proof travels as a
+ * base64 `data:` URL); validation here is convenience only — the ERP validates
+ * again.
  */
 export default function MobileWalletForm({
   method,
   copy,
-  currency,
-  customerName,
+  language,
   submitting,
   onSubmit,
 }: MobileWalletFormProps) {
@@ -43,7 +45,7 @@ export default function MobileWalletForm({
   const [trx, setTrx] = useState("");
   const [date, setDate] = useState(today);
   const [note, setNote] = useState("");
-  const [proof, setProof] = useState<File | null>(null);
+  const [proof, setProof] = useState<ProofSelection | null>(null);
   const [touched, setTouched] = useState(false);
 
   const idPrefix = method;
@@ -69,17 +71,17 @@ export default function MobileWalletForm({
       toast.warning(copy.errSummary);
       return;
     }
+    if (!proof) return;
     onSubmit({
-      customer_name: customerName,
-      method,
+      payment_method: method,
       amount: Number(amount),
-      currency,
-      transaction_id: trx.trim(),
-      sender_mobile: normalizeMobile(mobile),
       payment_date: date,
-      proof_image: proof ? { name: proof.name, size: proof.size, type: proof.type } : null,
+      sender_mobile: normalizeMobile(mobile),
+      transaction_id: trx.trim(),
       note: note.trim() || undefined,
-      status: "pending_verification",
+      proof_file_data: proof.preview,
+      proof_file_name: proof.file.name,
+      language,
     });
   };
 

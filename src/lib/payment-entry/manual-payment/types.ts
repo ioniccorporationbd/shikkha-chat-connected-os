@@ -1,12 +1,13 @@
 /**
  * Shared shapes for the customer "Make Payment" (manual proof submission) flow.
  *
- * This is the request/response contract between the UI and the (future) backend
- * Manual Payment Request endpoint. Keeping it here — separate from the existing
- * Payment Entry list/detail types — means the list flow never has to change.
+ * These mirror the backend contract (`shikkha_os.api.v1.manual_payment`): the
+ * portal posts a proof to the ERP, which writes a real **Manual Payment
+ * Request** row (status "Pending Verification") — it never creates/submits an
+ * ERPNext Payment Entry from an unverified screenshot.
  */
 
-/** The tender a manual payment is sent with. */
+/** The tender a manual payment is sent with (portal-side key). */
 export type ManualPaymentMethod = "bkash" | "rocket" | "bank";
 
 /** The top-level choice on the first step of the Make Payment modal. */
@@ -23,8 +24,8 @@ export type MakePaymentStep =
 
 /** One supported bank account the customer can transfer money to. */
 export interface SupportedBank {
-  /** Stable local key (used by the selector + request payload). */
-  id: string;
+  /** DocType name of the Supported Payment Bank row (= its bank name). */
+  name: string;
   bank_name: string;
   account_name: string;
   account_number: string;
@@ -32,56 +33,88 @@ export interface SupportedBank {
   routing_number?: string;
   instructions?: string;
   /**
-   * True while this record still holds placeholder / demo values. The UI shows a
+   * True while this row still holds placeholder / demo values. The UI shows a
    * clear "demo data" note for any bank flagged here so nobody mistakes it for a
-   * real production account. Clear it once the values come from site-config / a
-   * DocType.
+   * real production account.
    */
   is_placeholder?: boolean;
 }
 
-/** A tiny, serialisable description of the uploaded proof (never the file). */
-export interface PaymentProofMeta {
+/** Server status text -> a stable key the UI can switch on. */
+export type ManualPaymentStatusKey =
+  | "pending"
+  | "verified"
+  | "rejected"
+  | "cancelled";
+
+/** A stored Manual Payment Request as returned by the ERP. */
+export interface ManualPaymentRecord {
+  /** The real ERP document name (e.g. "MPR-2026-00001"). */
   name: string;
-  size: number;
-  type: string;
-}
-
-/** The lifecycle of a manual payment request. */
-export type ManualPaymentStatus = "pending_verification";
-
-/** A manual payment the customer is asking to be verified. */
-export interface ManualPaymentRequest {
-  customer_name: string;
-  method: ManualPaymentMethod;
+  payment_method: string;
   amount: number;
   currency: string;
-  /** bKash / Rocket. */
-  transaction_id?: string;
-  /** bKash / Rocket — the wallet the money was sent from. */
+  payment_date: string;
   sender_mobile?: string;
-  /** Bank only. */
-  bank_id?: string;
-  bank_name?: string;
+  transaction_id?: string;
+  bank?: string;
   sender_account_name?: string;
   sender_account_number?: string;
-  bank_reference?: string;
-  /** ISO date (YYYY-MM-DD) the customer made the transfer. */
-  payment_date: string;
-  proof_image?: PaymentProofMeta | null;
+  transfer_reference?: string;
+  proof_attachment?: string;
   note?: string;
-  status: ManualPaymentStatus;
-}
-
-/** A stored request, as the UI ledger shows it. */
-export interface ManualPaymentRecord extends ManualPaymentRequest {
-  request_id: string;
+  /** Raw server status text (e.g. "Pending Verification"). */
+  status: string;
   submitted_at: string;
+  verified_on?: string;
+  rejection_reason?: string;
+  payment_entry?: string;
 }
 
-/** What the service resolves with on a successful (local) submission. */
+export interface ManualPaymentSummary {
+  total: number;
+  total_amount: number;
+  pending: number;
+  verified: number;
+  rejected: number;
+  currency: string;
+}
+
+export interface ManualPaymentListPayload {
+  linked: boolean;
+  customer?: { name: string; customer_name: string };
+  requests: ManualPaymentRecord[];
+  summary: ManualPaymentSummary;
+}
+
+/** What a form produces and the service posts to the backend. */
+export interface ManualPaymentSubmitInput {
+  payment_method: ManualPaymentMethod;
+  amount: number;
+  payment_date: string;
+  note?: string;
+  // bKash / Rocket
+  sender_mobile?: string;
+  transaction_id?: string;
+  // Bank
+  bank?: string;
+  sender_account_name?: string;
+  sender_account_number?: string;
+  transfer_reference?: string;
+  // Proof (base64 `data:` URL + original file name)
+  proof_file_data: string;
+  proof_file_name: string;
+  language: string;
+}
+
+/** The backend acknowledgement the success screen renders. */
 export interface ManualPaymentResult {
+  name: string;
   request_id: string;
-  status: ManualPaymentStatus;
+  status: string;
+  payment_method: string;
+  amount: number;
+  currency: string;
+  payment_date: string;
   submitted_at: string;
 }

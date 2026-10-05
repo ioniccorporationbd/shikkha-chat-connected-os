@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FiActivity,
   FiArrowLeft,
@@ -44,11 +44,14 @@ import {
   type ManualPaymentCopy,
 } from "@/lib/payment-entry/manual-payment/messages";
 import {
-  listManualPaymentRequests,
-  manualPaymentServerSnapshot,
-  subscribeManualPaymentRequests,
+  fetchManualRequests,
+  methodKey,
+  statusKey,
 } from "@/lib/payment-entry/manual-payment/service";
-import type { ManualPaymentRecord } from "@/lib/payment-entry/manual-payment/types";
+import type {
+  ManualPaymentRecord,
+  ManualPaymentStatusKey,
+} from "@/lib/payment-entry/manual-payment/types";
 import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
 import { paymentEntrySnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
@@ -111,13 +114,11 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   // ---- Make Payment (manual proof submission) ----
   const [makePaymentOpen, setMakePaymentOpen] = useState(false);
   const mpCopy = manualPaymentCopyFor(language);
-  // The local, frontend-only ledger of submitted manual requests. Server
-  // snapshot is a stable empty array so SSR + first client render agree.
-  const manualRequests = useSyncExternalStore(
-    subscribeManualPaymentRequests,
-    listManualPaymentRequests,
-    manualPaymentServerSnapshot,
-  );
+  // The customer's own Manual Payment Requests — real ERP documents
+  // (status "Pending Verification" until an admin verifies).
+  const [manualRequests, setManualRequests] = useState<ManualPaymentRecord[]>([]);
+  const [manualLoading, setManualLoading] = useState(true);
+  const [manualError, setManualError] = useState(false);
 
   const load = useCallback(async (): Promise<{ data: PaymentEntryListPayload | null; error?: unknown }> => {
     try {
@@ -156,6 +157,29 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
       active = false;
     };
   }, [load]);
+
+  const loadManual = useCallback(async () => {
+    setManualLoading(true);
+    setManualError(false);
+    try {
+      const payload = await fetchManualRequests(language);
+      setManualRequests(payload.requests || []);
+    } catch {
+      setManualError(true);
+    } finally {
+      setManualLoading(false);
+    }
+  }, [language]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadManual();
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadManual]);
 
   // Smart Reload — the exact Overview behaviour, shared via runSmartReload:
   // snapshot → refetch → unchanged = light refresh / changed = one hard reload.
@@ -363,14 +387,15 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
         </div>
       </header>
 
-      {manualRequests.length > 0 ? (
-        <PendingSubmissions
-          requests={manualRequests}
-          copy={mpCopy}
-          language={language}
-          currency={currency}
-        />
-      ) : null}
+      <ManualRequestsSection
+        requests={manualRequests}
+        loading={manualLoading}
+        error={manualError}
+        copy={mpCopy}
+        language={language}
+        currency={currency}
+        onRetry={() => void loadManual()}
+      />
 
       <div className="flex flex-col gap-5">
         {expired ? (
@@ -672,7 +697,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
         <MakePaymentModal
           language={language}
           currency={currency}
-          customerName={data?.customer?.customer_name || data?.customer?.name || ""}
+          onSubmitted={() => void loadManual()}
           onClose={() => setMakePaymentOpen(false)}
         />
       ) : null}
@@ -999,28 +1024,44 @@ function StatusBadge({ status, copy }: { status?: string; copy: PaymentEntryCopy
 }
 
 /** Localised label for a manual-payment method. */
-function manualMethodLabel(method: string, copy: ManualPaymentCopy): string {
-  if (method === "bkash") return copy.methodBkash;
-  if (method === "rocket") return copy.methodRocket;
-  if (method === "bank") return copy.methodBank;
-  return method;
+function manualMethodLabel(server: string | undefined, copy: ManualPaymentCopy): string {
+  const key = methodKey(server);
+  if (key === "rocket") return copy.methodRocket;
+  if (key === "bank") return copy.methodBank;
+  return copy.methodBkash;
+}
+
+/** Tone for a manual-request status pill. */
+function manualStatusTone(key: ManualPaymentStatusKey): string {
+  if (key === "verified") return "var(--color-success)";
+  if (key === "rejected") return "var(--color-danger-strong)";
+  if (key === "cancelled") return "color-mix(in srgb, var(--color-primary) 45%, var(--color-white))";
+  return "var(--color-warning)";
 }
 
 /**
- * The local ledger of manual payment requests submitted this session, shown as
- * "Pending verification". It is clearly labelled as local (no ERP document
- * exists yet) and never mixes with the real Payment Entry list below.
+ * The customer's own **Manual Payment Requests** — real ERP documents, kept in a
+ * section clearly separate from the submitted Payment Entry list below so an
+ * unverified proof is never shown as a completed payment. Shows the real request
+ * id (e.g. MPR-2026-00001), method, amount, date, transaction/reference and
+ * status.
  */
-function PendingSubmissions({
+function ManualRequestsSection({
   requests,
+  loading,
+  error,
   copy,
   language,
   currency,
+  onRetry,
 }: {
   requests: ManualPaymentRecord[];
+  loading: boolean;
+  error: boolean;
   copy: ManualPaymentCopy;
   language: string;
   currency: string;
+  onRetry: () => void;
 }) {
   return (
     <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
@@ -1028,48 +1069,94 @@ function PendingSubmissions({
         <span className="text-[var(--color-primary)]">
           <FiClock size={16} />
         </span>
-        <h2 className="text-[14px] font-semibold">{copy.pendingHeading}</h2>
-        <span className="ml-auto rounded-full bg-[color-mix(in_srgb,var(--color-warning)_16%,var(--color-white))] px-2.5 py-1 text-[10.5px] font-semibold text-[var(--color-warning)]">
-          {copy.pendingLocal}
-        </span>
+        <h2 className="text-[14px] font-semibold">{copy.historyHeading}</h2>
       </div>
       <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-        {copy.pendingHint}
+        {copy.historyHint}
       </p>
 
-      <ul className="mt-3 flex flex-col gap-2">
-        {requests.map((request) => (
-          <li
-            key={request.request_id}
-            className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5"
+      {loading ? (
+        <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          {copy.historyLoading}
+        </p>
+      ) : error ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] px-3.5 py-2.5">
+          <span className="text-[12px] text-[var(--color-danger-strong)]">{copy.historyError}</span>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1"
           >
-            <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
-              {manualMethodLabel(request.method, copy)}
-            </span>
-            <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
-              {formatAmount(request.amount, request.currency || currency, language)}
-            </span>
-            {request.transaction_id || request.bank_reference ? (
-              <span className="inline-flex items-center gap-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                <FiHash size={12} />
-                {request.transaction_id || request.bank_reference}
-              </span>
-            ) : null}
-            {request.proof_image ? (
-              <span className="inline-flex items-center gap-1 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                <FiFileText size={12} />
-                {copy.pendingProof}
-              </span>
-            ) : null}
-            <span className="ml-auto inline-flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
-              <span className="text-[11px] font-semibold text-[var(--color-warning)]">
-                {copy.statusPending}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+            <span className="text-[11px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
+          </button>
+        </div>
+      ) : requests.length === 0 ? (
+        <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          {copy.historyEmpty}
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
+          <table className="w-full border-collapse text-left">
+            <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+              <tr>
+                {[
+                  copy.histColId,
+                  copy.histColMethod,
+                  copy.histColAmount,
+                  copy.histColDate,
+                  copy.histColRef,
+                  copy.histColStatus,
+                  copy.histColSubmitted,
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="whitespace-nowrap px-3.5 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((request) => {
+                const key = statusKey(request.status);
+                return (
+                  <tr
+                    key={request.name}
+                    className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+                  >
+                    <td className="px-3.5 py-2.5 text-[12.5px] font-semibold">{request.name}</td>
+                    <td className="px-3.5 py-2.5 text-[12.5px]">
+                      {manualMethodLabel(request.payment_method, copy)}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[12.5px] font-medium">
+                      {formatAmount(request.amount, request.currency || currency, language)}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[12.5px]">{formatDate(request.payment_date, language)}</td>
+                    <td className="px-3.5 py-2.5 text-[12.5px]">
+                      {request.transaction_id || request.transfer_reference || "—"}
+                    </td>
+                    <td className="px-3.5 py-2.5">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2 py-0.5">
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: manualStatusTone(key) }} />
+                        <span className="text-[11px] font-semibold">{copy.statuses[key]}</span>
+                      </span>
+                      {key === "rejected" && request.rejection_reason ? (
+                        <span className="mt-1 block text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                          {copy.rejectionReason}: {request.rejection_reason}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {formatDate(request.submitted_at, language)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

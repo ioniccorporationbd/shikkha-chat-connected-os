@@ -1,5 +1,7 @@
 /** Bilingual copy for the customer "Make Payment" (manual) flow. */
 
+import type { ManualPaymentStatusKey } from "./types";
+
 export interface ManualPaymentCopy {
   // ---- modal shell ----
   makePayment: string;
@@ -55,6 +57,10 @@ export interface ManualPaymentCopy {
   bankSelectLabel: string;
   bankSelectPlaceholder: string;
   bankNoMatch: string;
+  bankLoading: string;
+  bankEmpty: string;
+  bankLoadFailed: string;
+  retry: string;
   bankReceiveTitle: string;
   bankAccountName: string;
   bankAccountNumber: string;
@@ -102,12 +108,21 @@ export interface ManualPaymentCopy {
   successAmount: string;
   successClose: string;
 
-  // ---- pending (local) submissions ----
-  pendingHeading: string;
-  pendingHint: string;
-  pendingLocal: string;
-  pendingProof: string;
-  statusPending: string;
+  // ---- manual request history (server-backed) ----
+  historyHeading: string;
+  historyHint: string;
+  historyEmpty: string;
+  historyLoading: string;
+  historyError: string;
+  histColId: string;
+  histColMethod: string;
+  histColAmount: string;
+  histColDate: string;
+  histColRef: string;
+  histColStatus: string;
+  histColSubmitted: string;
+  statuses: Record<ManualPaymentStatusKey, string>;
+  rejectionReason: string;
 
   // ---- failure ----
   submitFailed: string;
@@ -165,6 +180,10 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     bankSelectLabel: "ব্যাংক বাছুন",
     bankSelectPlaceholder: "একটি ব্যাংক নির্বাচন করুন",
     bankNoMatch: "এই নামে কোনো ব্যাংক পাওয়া যায়নি।",
+    bankLoading: "ব্যাংকের তালিকা লোড হচ্ছে…",
+    bankEmpty: "এই মুহূর্তে কোনো সাপোর্টেড ব্যাংক কনফিগার করা নেই।",
+    bankLoadFailed: "ব্যাংকের তালিকা লোড করা যায়নি। আবার চেষ্টা করুন।",
+    retry: "আবার চেষ্টা করুন",
     bankReceiveTitle: "যে অ্যাকাউন্টে পাঠাবেন",
     bankAccountName: "অ্যাকাউন্টের নাম",
     bankAccountNumber: "অ্যাকাউন্ট নম্বর",
@@ -174,7 +193,7 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     bankCopy: "কপি",
     bankCopied: "কপি হয়েছে",
     bankDemoNote:
-      "এই ব্যাংক তথ্যগুলো ডেমো/প্লেসহোল্ডার — প্রকৃত অ্যাকাউন্ট নয়। সার্ভার কনফিগ থেকে লোড হওয়ার আগ পর্যন্ত ব্যবহার করা যাবে না।",
+      "এই ব্যাংক তথ্যগুলো ডেমো/প্লেসহোল্ডার — প্রকৃত অ্যাকাউন্ট নয়। প্রকৃত অ্যাকাউন্টে টাকা পাঠানোর আগে নিশ্চিত হয়ে নিন।",
     senderAccountNameLabel: "প্রেরকের অ্যাকাউন্টের নাম",
     senderAccountNamePlaceholder: "যে অ্যাকাউন্ট থেকে পাঠিয়েছেন",
     senderAccountNumberLabel: "প্রেরকের অ্যাকাউন্ট নম্বর",
@@ -203,20 +222,34 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "প্রেরকের অ্যাকাউন্টের নাম লিখুন।",
     errSummary: "কিছু তথ্য সঠিকভাবে পূরণ করুন।",
 
-    successTitle: "পেমেন্ট তথ্য জমা হয়েছে।",
-    successBody: "যাচাইয়ের পর আপডেট জানানো হবে।",
-    successRef: "রেফারেন্স আইডি",
+    successTitle: "পেমেন্ট রিকোয়েস্ট জমা হয়েছে।",
+    successBody: "সার্ভারে সংরক্ষিত হয়েছে। যাচাইয়ের পর আপডেট জানানো হবে।",
+    successRef: "রিকোয়েস্ট আইডি",
     successMethod: "মাধ্যম",
     successAmount: "পরিমাণ",
     successClose: "ঠিক আছে",
 
-    pendingHeading: "যাচাইয়ের অপেক্ষায়",
-    pendingHint: "আপনার জমা দেওয়া পেমেন্ট রিকোয়েস্ট — অ্যাডমিন যাচাই করলে আপডেট হবে।",
-    pendingLocal: "স্থানীয়ভাবে সংরক্ষিত (সার্ভার যাচাই বাকি)",
-    pendingProof: "প্রমাণ সংযুক্ত",
-    statusPending: "যাচাইয়ের অপেক্ষায়",
+    historyHeading: "ম্যানুয়াল পেমেন্ট রিকোয়েস্ট",
+    historyHint: "আপনার জমা দেওয়া পেমেন্ট রিকোয়েস্ট — অ্যাডমিন যাচাই করলে স্ট্যাটাস আপডেট হবে।",
+    historyEmpty: "এখনো কোনো ম্যানুয়াল পেমেন্ট রিকোয়েস্ট জমা দেওয়া হয়নি।",
+    historyLoading: "রিকোয়েস্ট লোড হচ্ছে…",
+    historyError: "পেমেন্ট রিকোয়েস্ট লোড করা যায়নি।",
+    histColId: "রিকোয়েস্ট আইডি",
+    histColMethod: "মাধ্যম",
+    histColAmount: "পরিমাণ",
+    histColDate: "পেমেন্টের তারিখ",
+    histColRef: "ট্রানজেকশন / রেফারেন্স",
+    histColStatus: "স্ট্যাটাস",
+    histColSubmitted: "জমা দেওয়ার সময়",
+    statuses: {
+      pending: "যাচাইয়ের অপেক্ষায়",
+      verified: "যাচাইকৃত",
+      rejected: "বাতিল করা হয়েছে",
+      cancelled: "বাতিল",
+    },
+    rejectionReason: "কারণ",
 
-    submitFailed: "পেমেন্ট জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
+    submitFailed: "পেমেন্ট রিকোয়েস্ট জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
   },
   en: {
     makePayment: "Make Payment",
@@ -269,6 +302,10 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     bankSelectLabel: "Select a bank",
     bankSelectPlaceholder: "Choose a supported bank",
     bankNoMatch: "No bank matches that name.",
+    bankLoading: "Loading the bank list…",
+    bankEmpty: "No supported bank is configured right now.",
+    bankLoadFailed: "The bank list could not be loaded. Please try again.",
+    retry: "Try again",
     bankReceiveTitle: "Send to this account",
     bankAccountName: "Account name",
     bankAccountNumber: "Account number",
@@ -278,7 +315,7 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     bankCopy: "Copy",
     bankCopied: "Copied",
     bankDemoNote:
-      "These bank details are demo/placeholder — not a real account. They can't be used until loaded from server config.",
+      "These bank details are demo/placeholder — not a real account. Confirm before sending money to a real account.",
     senderAccountNameLabel: "Sender account name",
     senderAccountNamePlaceholder: "The account you sent from",
     senderAccountNumberLabel: "Sender account number",
@@ -307,20 +344,34 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "Enter the sender account name.",
     errSummary: "Please correct the highlighted fields.",
 
-    successTitle: "Payment details submitted.",
-    successBody: "You'll be updated once it is verified.",
-    successRef: "Reference ID",
+    successTitle: "Payment request submitted.",
+    successBody: "It has been saved on the server. You'll be updated once it is verified.",
+    successRef: "Request ID",
     successMethod: "Method",
     successAmount: "Amount",
     successClose: "Done",
 
-    pendingHeading: "Pending verification",
-    pendingHint: "Your submitted payment requests — updated once verified by an admin.",
-    pendingLocal: "Saved locally (server verification pending)",
-    pendingProof: "Proof attached",
-    statusPending: "Pending verification",
+    historyHeading: "Manual Payment Requests",
+    historyHint: "Your submitted payment requests — the status updates once an admin verifies them.",
+    historyEmpty: "No manual payment request has been submitted yet.",
+    historyLoading: "Loading requests…",
+    historyError: "The payment requests could not be loaded.",
+    histColId: "Request ID",
+    histColMethod: "Method",
+    histColAmount: "Amount",
+    histColDate: "Payment date",
+    histColRef: "Transaction / Reference",
+    histColStatus: "Status",
+    histColSubmitted: "Submitted at",
+    statuses: {
+      pending: "Pending verification",
+      verified: "Verified",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+    },
+    rejectionReason: "Reason",
 
-    submitFailed: "The payment could not be submitted. Please try again.",
+    submitFailed: "The payment request could not be submitted. Please try again.",
   },
 };
 

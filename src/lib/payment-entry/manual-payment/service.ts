@@ -1,92 +1,45 @@
 /**
- * Manual-payment submission service — the isolated data layer for the Make
- * Payment flow.
+ * Manual-payment data layer — the seam between the Make Payment UI and the
+ * backend.
  *
- * ⚠️ FRONTEND-ONLY (mock) FOR THIS PHASE. There is **no** backend submit
- * endpoint yet, and per the task we must **not** create a real ERPNext Payment
- * Entry from an unverified screenshot. So this module:
- *   • normalises + keeps the request in a module-level ledger (session-scoped),
- *   • resolves with a "pending_verification" acknowledgement,
- *   • never writes to the ERP and never fabricates a fake gateway/API call.
- *
- * When the backend lands (a Manual Payment Request DocType + endpoint), replace
- * the body of `submitManualPayment` with a single proxy call, e.g.
- *     return postJson<ManualPaymentResult>("/api/payment-entry/manual", request);
- * and everything above this file keeps working unchanged. The proof image File
- * is intentionally NOT uploaded yet (there is nowhere to put it) — only its
- * metadata (name/size/type) travels in the request, and the UI says so.
+ * Not a mock: every call goes to the ERP through the same-origin proxy
+ * (`/api/payment-entry/manual*`), which writes/reads a real **Manual Payment
+ * Request** document. The flow never creates an ERPNext Payment Entry from an
+ * unverified screenshot — a proof becomes a request with status
+ * "Pending Verification", and the ERP returns its real document id
+ * (e.g. "MPR-2026-00001").
  */
 
+import { submitManualPaymentRequest } from "./api";
 import type {
-  ManualPaymentRecord,
-  ManualPaymentRequest,
+  ManualPaymentMethod,
+  ManualPaymentStatusKey,
+  ManualPaymentSubmitInput,
   ManualPaymentResult,
 } from "./types";
 
-/** A stable empty array for `useSyncExternalStore`'s server snapshot. */
-const EMPTY: ManualPaymentRecord[] = [];
+export { fetchManualRequests, fetchSupportedBanks, fetchManualRequest } from "./api";
 
-let snapshot: ManualPaymentRecord[] = EMPTY;
-const listeners = new Set<() => void>();
-
-/** Current ledger (newest first). Referentially stable between mutations. */
-export function listManualPaymentRequests(): ManualPaymentRecord[] {
-  return snapshot;
-}
-
-/** Server snapshot — always empty, so SSR and first client render agree. */
-export function manualPaymentServerSnapshot(): ManualPaymentRecord[] {
-  return EMPTY;
-}
-
-/** Subscribe to ledger changes (for `useSyncExternalStore`). */
-export function subscribeManualPaymentRequests(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-function emit(): void {
-  for (const listener of listeners) listener();
-}
-
-let sequence = 0;
-
-/**
- * Submit a manual payment for verification (frontend-only — see module header).
- * Returns the acknowledgement the success screen renders.
- */
-export async function submitManualPayment(
-  request: ManualPaymentRequest
+/** Submit a manual payment proof for verification (real backend write). */
+export function submitManualPayment(
+  input: ManualPaymentSubmitInput
 ): Promise<ManualPaymentResult> {
-  // Simulated latency so the UI's submitting state is honest and visible. This
-  // is a local ledger write, NOT a network/ERP call.
-  await new Promise((resolve) => setTimeout(resolve, 600));
-
-  sequence += 1;
-  const submittedAt = new Date().toISOString();
-  const requestId = `MPR-${Date.now().toString().slice(-8)}-${sequence}`;
-
-  const record: ManualPaymentRecord = {
-    ...request,
-    request_id: requestId,
-    submitted_at: submittedAt,
-    status: "pending_verification",
-  };
-
-  snapshot = [record, ...snapshot];
-  emit();
-
-  return {
-    request_id: requestId,
-    status: "pending_verification",
-    submitted_at: submittedAt,
-  };
+  return submitManualPaymentRequest(input);
 }
 
-/** Clear the local ledger (used on sign-out / tests). */
-export function clearManualPaymentRequests(): void {
-  snapshot = EMPTY;
-  emit();
+/** Map the ERP's method text (bKash / Rocket / Bank) to the portal key. */
+export function methodKey(server: string | undefined): ManualPaymentMethod {
+  const value = (server || "").trim().toLowerCase();
+  if (value === "rocket") return "rocket";
+  if (value === "bank") return "bank";
+  return "bkash";
+}
+
+/** Map the ERP's status text to a stable key the UI switches on. */
+export function statusKey(server: string | undefined): ManualPaymentStatusKey {
+  const value = (server || "").trim().toLowerCase();
+  if (value.startsWith("verified")) return "verified";
+  if (value.startsWith("rejected")) return "rejected";
+  if (value.startsWith("cancel")) return "cancelled";
+  return "pending";
 }

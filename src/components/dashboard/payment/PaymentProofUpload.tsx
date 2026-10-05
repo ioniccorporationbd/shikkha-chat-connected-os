@@ -13,12 +13,19 @@ import type { ManualPaymentCopy } from "@/lib/payment-entry/manual-payment/messa
 
 import { PAY_FOCUS, PAY_LABEL_CLASS, payBorder } from "./PaymentField";
 
+/** The staged proof file + its `data:` URL (used for the preview and, on
+ *  submit, as the bytes the ERP stores privately). */
+export interface ProofSelection {
+  file: File;
+  preview: string;
+}
+
 interface PaymentProofUploadProps {
   copy: ManualPaymentCopy;
   inputId: string;
   /** True when the parent's submit has run and no file is attached. */
   invalid?: boolean;
-  onChange: (file: File | null) => void;
+  onChange: (selection: ProofSelection | null) => void;
 }
 
 /**
@@ -58,7 +65,7 @@ export default function PaymentProofUpload({
     reader.onload = () => {
       const preview = String(reader.result || "");
       setStaged({ file, preview });
-      onChange(file);
+      onChange({ file, preview });
     };
     reader.onerror = () => setError(copy.uploadErrType);
     reader.readAsDataURL(file);
