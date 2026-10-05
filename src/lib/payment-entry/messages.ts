@@ -137,8 +137,8 @@ export interface PaymentEntryCopy {
 
 export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
   bn: {
-    heading: "পেমেন্ট ইতিহাস",
-    subtitle: "আপনার জমা হওয়া পেমেন্টগুলোর তথ্য দেখুন।",
+    heading: "পেমেন্ট এন্ট্রি",
+    subtitle: "আপনার পেমেন্টগুলো দেখুন এবং নতুন পেমেন্ট জমা দিন।",
     loading: "পেমেন্ট তথ্য লোড হচ্ছে…",
     loadFailed: "পেমেন্ট তথ্য লোড করা যাচ্ছে না।",
     retry: "আবার চেষ্টা করুন",
@@ -274,8 +274,8 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     },
   },
   en: {
-    heading: "Payment History",
-    subtitle: "View the payments recorded against your account.",
+    heading: "Payment Entry",
+    subtitle: "View your payments and submit a new payment.",
     loading: "Loading your payments…",
     loadFailed: "The payment information could not be loaded.",
     retry: "Try again",

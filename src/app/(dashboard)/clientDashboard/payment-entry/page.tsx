@@ -16,8 +16,8 @@ import type { DashboardPayload } from "@/lib/auth/types";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Payment History · Shikkha Chat",
-  description: "View the payments recorded against your account.",
+  title: "Payment Entry · Shikkha Chat",
+  description: "View your payments and submit a new payment.",
 };
 
 /**

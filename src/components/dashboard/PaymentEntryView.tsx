@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   FiActivity,
   FiArrowLeft,
@@ -14,6 +14,8 @@ import {
   FiRotateCcw,
   FiRotateCw,
   FiUserCheck,
+  FiClock,
+  FiPlusCircle,
 } from "react-icons/fi";
 
 import ListFilterBar from "@/components/dashboard/ListFilterBar";
@@ -34,8 +36,19 @@ import DetailSheet, {
 } from "@/components/dashboard/DetailSheet";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import MakePaymentModal from "@/components/dashboard/payment/MakePaymentModal";
 import { fetchPaymentDetails, fetchPayments } from "@/lib/payment-entry/api";
 import { formatAmount, formatDate } from "@/lib/payment-entry/format";
+import {
+  manualPaymentCopyFor,
+  type ManualPaymentCopy,
+} from "@/lib/payment-entry/manual-payment/messages";
+import {
+  listManualPaymentRequests,
+  manualPaymentServerSnapshot,
+  subscribeManualPaymentRequests,
+} from "@/lib/payment-entry/manual-payment/service";
+import type { ManualPaymentRecord } from "@/lib/payment-entry/manual-payment/types";
 import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
 import { paymentEntrySnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
@@ -94,6 +107,17 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
 
   const [rowsPerPage, setRowsPerPage] = useState<number>(ROWS_PER_PAGE_OPTIONS[0]);
   const [page, setPage] = useState(1);
+
+  // ---- Make Payment (manual proof submission) ----
+  const [makePaymentOpen, setMakePaymentOpen] = useState(false);
+  const mpCopy = manualPaymentCopyFor(language);
+  // The local, frontend-only ledger of submitted manual requests. Server
+  // snapshot is a stable empty array so SSR + first client render agree.
+  const manualRequests = useSyncExternalStore(
+    subscribeManualPaymentRequests,
+    listManualPaymentRequests,
+    manualPaymentServerSnapshot,
+  );
 
   const load = useCallback(async (): Promise<{ data: PaymentEntryListPayload | null; error?: unknown }> => {
     try {
@@ -314,17 +338,39 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => (onBack ? onBack() : router.push(CLIENT_DASHBOARD_PATH))}
-          className="hidden items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-primary)] sm:inline-flex"
-        >
-          <span className="text-[var(--color-primary)]">
-            <FiArrowLeft size={15} />
-          </span>
-          <span className="text-[12.5px] font-semibold">{copy.back}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMakePaymentOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-primary)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]"
+          >
+            <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
+              <FiPlusCircle size={15} />
+              {mpCopy.makePayment}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => (onBack ? onBack() : router.push(CLIENT_DASHBOARD_PATH))}
+            className="hidden items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-primary)] sm:inline-flex"
+          >
+            <span className="text-[var(--color-primary)]">
+              <FiArrowLeft size={15} />
+            </span>
+            <span className="text-[12.5px] font-semibold">{copy.back}</span>
+          </button>
+        </div>
       </header>
+
+      {manualRequests.length > 0 ? (
+        <PendingSubmissions
+          requests={manualRequests}
+          copy={mpCopy}
+          language={language}
+          currency={currency}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-5">
         {expired ? (
@@ -619,6 +665,15 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
           copy={copy}
           language={language}
           onClose={closeDetails}
+        />
+      ) : null}
+
+      {makePaymentOpen ? (
+        <MakePaymentModal
+          language={language}
+          currency={currency}
+          customerName={data?.customer?.customer_name || data?.customer?.name || ""}
+          onClose={() => setMakePaymentOpen(false)}
         />
       ) : null}
     </section>
@@ -940,5 +995,81 @@ function StatusBadge({ status, copy }: { status?: string; copy: PaymentEntryCopy
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusTone(key) }} />
       <span className="text-[11.5px] font-semibold">{label}</span>
     </span>
+  );
+}
+
+/** Localised label for a manual-payment method. */
+function manualMethodLabel(method: string, copy: ManualPaymentCopy): string {
+  if (method === "bkash") return copy.methodBkash;
+  if (method === "rocket") return copy.methodRocket;
+  if (method === "bank") return copy.methodBank;
+  return method;
+}
+
+/**
+ * The local ledger of manual payment requests submitted this session, shown as
+ * "Pending verification". It is clearly labelled as local (no ERP document
+ * exists yet) and never mixes with the real Payment Entry list below.
+ */
+function PendingSubmissions({
+  requests,
+  copy,
+  language,
+  currency,
+}: {
+  requests: ManualPaymentRecord[];
+  copy: ManualPaymentCopy;
+  language: string;
+  currency: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[var(--color-primary)]">
+          <FiClock size={16} />
+        </span>
+        <h2 className="text-[14px] font-semibold">{copy.pendingHeading}</h2>
+        <span className="ml-auto rounded-full bg-[color-mix(in_srgb,var(--color-warning)_16%,var(--color-white))] px-2.5 py-1 text-[10.5px] font-semibold text-[var(--color-warning)]">
+          {copy.pendingLocal}
+        </span>
+      </div>
+      <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+        {copy.pendingHint}
+      </p>
+
+      <ul className="mt-3 flex flex-col gap-2">
+        {requests.map((request) => (
+          <li
+            key={request.request_id}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5"
+          >
+            <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+              {manualMethodLabel(request.method, copy)}
+            </span>
+            <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+              {formatAmount(request.amount, request.currency || currency, language)}
+            </span>
+            {request.transaction_id || request.bank_reference ? (
+              <span className="inline-flex items-center gap-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                <FiHash size={12} />
+                {request.transaction_id || request.bank_reference}
+              </span>
+            ) : null}
+            {request.proof_image ? (
+              <span className="inline-flex items-center gap-1 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                <FiFileText size={12} />
+                {copy.pendingProof}
+              </span>
+            ) : null}
+            <span className="ml-auto inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
+              <span className="text-[11px] font-semibold text-[var(--color-warning)]">
+                {copy.statusPending}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
