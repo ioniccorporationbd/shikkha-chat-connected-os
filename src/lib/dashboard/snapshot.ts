@@ -1,5 +1,6 @@
 import type { DashboardPayload } from "@/lib/auth/types";
 import type { PaymentEntryListPayload } from "@/lib/payment-entry/types";
+import type { SalesInvoiceListPayload } from "@/lib/service-build/types";
 
 /**
  * A stable, order-independent fingerprint of the dashboard payload, used by the
@@ -73,6 +74,46 @@ export function paymentEntrySnapshot(payload?: PaymentEntryListPayload | null): 
           summary.this_month_count,
           summary.this_month_amount,
           summary.latest_payment_date,
+          summary.currency,
+        ]
+      : null,
+  });
+}
+
+/**
+ * A stable fingerprint of the Service Build (Sales Invoice) payload for the
+ * Smart Reload button — the same shape/behaviour as `paymentEntrySnapshot`.
+ * Rows are sorted by `name` so an order reshuffle is not a "change".
+ */
+export function salesInvoiceSnapshot(payload?: SalesInvoiceListPayload | null): string {
+  if (!payload) return "";
+
+  const rows = [...(payload.invoices ?? [])]
+    .filter((row) => Boolean(row?.name))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+    .map((row) => [
+      row.name,
+      row.posting_date,
+      row.due_date,
+      row.amount,
+      row.outstanding_amount,
+      row.currency,
+      row.display_status,
+    ]);
+
+  const summary = payload.summary;
+
+  return JSON.stringify({
+    linked: payload.linked,
+    rows,
+    summary: summary
+      ? [
+          summary.total,
+          summary.total_amount,
+          summary.total_outstanding,
+          summary.this_month_count,
+          summary.this_month_amount,
+          summary.latest_invoice_date,
           summary.currency,
         ]
       : null,

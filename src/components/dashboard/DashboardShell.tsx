@@ -23,6 +23,7 @@ import CheckInOutView from "@/components/dashboard/CheckInOutView";
 import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
 import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
+import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
 import LoginHistoryCard from "@/components/dashboard/LoginHistoryCard";
 import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
@@ -94,6 +95,7 @@ export default function DashboardShell({
   const storeUser = useAuthStore((state) => state.user);
 
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -169,6 +171,15 @@ export default function DashboardShell({
     router.replace(LOGIN_PATH);
     router.refresh();
   }, [resetSession, router]);
+
+  // Every Logout button opens the confirmation dialog first; only "Yes" runs the
+  // real sign-out flow above (existing auth/session logic, unchanged). This is
+  // the single confirmation modal shared by the sidebar rail and the dropdown.
+  const requestSignOut = useCallback(() => setSignOutOpen(true), []);
+  const confirmSignOut = useCallback(async () => {
+    setSignOutOpen(false);
+    await handleSignOut();
+  }, [handleSignOut]);
 
   const handleReload = useCallback(async () => {
     // Smart reload (shared helper): snapshot → refetch → compare. Nothing
@@ -477,11 +488,11 @@ export default function DashboardShell({
     <div className="mt-5 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
       <button
         type="button"
-        onClick={handleSignOut}
+        onClick={requestSignOut}
         disabled={signingOut}
-        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_8%,var(--color-white))] px-3 py-2.5 text-left transition hover:border-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_14%,var(--color-white))] disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-danger)] px-3.5 py-2.5 transition hover:bg-[var(--color-danger-strong)] disabled:opacity-60"
       >
-        <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-[var(--color-danger-strong)]">
+        <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
           <FiLogOut size={16} />
           {signingOut ? copy.signingOut : copy.signOut}
         </span>
@@ -596,8 +607,9 @@ export default function DashboardShell({
                   profile={data?.profile}
                   signingOut={signingOut}
                   refreshing={isFetching}
-                  onSignOut={handleSignOut}
+                  onSignOut={requestSignOut}
                   onEditProfile={() => setEditOpen(true)}
+                  onChangePassword={() => setPasswordOpen(true)}
                   onReload={handleReload}
                 />
               ) : null}
@@ -662,30 +674,35 @@ export default function DashboardShell({
                   </button>
 
                   <div className="min-w-0">
-                    <h1 className="truncate text-[21px] font-semibold leading-tight sm:text-[24px]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                      {copy.greeting}
+                    </p>
+                    <h1 className="mt-0.5 truncate text-[23px] font-bold leading-tight tracking-[-0.01em] sm:text-[27px]">
                       {displayName || copy.greetingFallback}
                     </h1>
 
-                    {mobileNumber ? (
-                      <p className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                        <FiSmartphone size={13} />
-                        <span className="tabular-nums">{mobileNumber}</span>
-                      </p>
-                    ) : null}
-
-                    {user?.name ? (
-                      <p className="mt-0.5 truncate text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-                        <span className="font-medium">@{user.name}</span>
-                      </p>
-                    ) : null}
-
-                    {accountLabel ? (
-                      <span className="mt-2 inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-0.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-primary)]">
-                          {accountLabel}
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 sm:justify-start">
+                      {mobileNumber ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                          <FiSmartphone size={12} />
+                          <span className="tabular-nums">{mobileNumber}</span>
                         </span>
-                      </span>
-                    ) : null}
+                      ) : null}
+
+                      {user?.name ? (
+                        <span className="inline-flex max-w-[220px] items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                          <span className="truncate font-medium">@{user.name}</span>
+                        </span>
+                      ) : null}
+
+                      {accountLabel ? (
+                        <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1">
+                          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                            {accountLabel}
+                          </span>
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 
@@ -923,6 +940,19 @@ export default function DashboardShell({
         fallbackEmail={user?.email}
       />
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+      <LogoutConfirmModal
+        open={signOutOpen}
+        onClose={() => setSignOutOpen(false)}
+        onConfirm={confirmSignOut}
+        signingOut={signingOut}
+        copy={{
+          title: copy.logoutConfirmTitle,
+          message: copy.logoutConfirmMessage,
+          yes: copy.logoutConfirmYes,
+          no: copy.logoutConfirmNo,
+          signing: copy.logoutConfirmSigning,
+        }}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiCreditCard,
+  FiDollarSign,
   FiFilter,
   FiFileText,
   FiHash,
@@ -16,10 +17,14 @@ import {
   FiRotateCw,
   FiSliders,
   FiUserCheck,
-  FiX,
 } from "react-icons/fi";
 
 import { useRouter } from "next/navigation";
+
+import DetailSheet, {
+  type DetailRow,
+  type DetailSection,
+} from "@/components/dashboard/DetailSheet";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { fetchPaymentDetails, fetchPayments } from "@/lib/payment-entry/api";
@@ -878,7 +883,11 @@ function PaymentCard({
   );
 }
 
-/** The payment details drawer (own payment only — enforced server-side). */
+/**
+ * The payment details popup, built from the shared `DetailSheet` so it matches
+ * the Service Build popup's visual family. Only real fields the ERP returned are
+ * shown — nothing is fabricated; empty rows are dropped.
+ */
 function DetailsDialog({
   name,
   detail,
@@ -896,195 +905,174 @@ function DetailsDialog({
   language: string;
   onClose: () => void;
 }) {
-  const code = detail?.currency || "BDT";
-
-  const rows: { label: string; value: string }[] = detail
-    ? [
-        { label: copy.dParty, value: detail.party_name || detail.party || "" },
-        { label: copy.dPostingDate, value: formatDate(detail.posting_date, language) },
-        {
-          label: copy.dPaymentType,
-          value: copy.paymentTypes[String(detail.payment_type || "").trim()] || detail.payment_type || "",
-        },
-        { label: copy.dAmount, value: formatAmount(detail.amount, code, language) },
-        { label: copy.dCurrency, value: detail.currency || "" },
-        { label: copy.dMode, value: detail.mode_of_payment || "" },
-        { label: copy.dReferenceNo, value: detail.reference_no || "" },
-        {
-          label: copy.dReferenceDate,
-          value: detail.reference_date ? formatDate(detail.reference_date, language) : "",
-        },
-        { label: copy.dCompany, value: detail.company || "" },
-      ]
-    : [];
-
-  // Extra fields taken from the document itself (paid/received, accounts,
-  // allocation, contact). Only shown when the ERP actually returned a value.
-  const extraRows: { label: string; value: string }[] = detail
-    ? (
-        [
-          {
-            label: copy.dPaidAmount,
-            value: Number(detail.paid_amount) ? formatAmount(Number(detail.paid_amount), code, language) : "",
-          },
-          {
-            label: copy.dReceivedAmount,
-            value: Number(detail.received_amount) ? formatAmount(Number(detail.received_amount), code, language) : "",
-          },
-          { label: copy.dPaidFrom, value: detail.paid_from || "" },
-          { label: copy.dPaidTo, value: detail.paid_to || "" },
-          {
-            label: copy.dAllocated,
-            value: Number(detail.total_allocated_amount)
-              ? formatAmount(Number(detail.total_allocated_amount), code, language)
-              : "",
-          },
-          {
-            label: copy.dUnallocated,
-            value: Number(detail.unallocated_amount)
-              ? formatAmount(Number(detail.unallocated_amount), code, language)
-              : "",
-          },
-          { label: copy.dContactPerson, value: detail.contact_person || "" },
-          { label: copy.dContactEmail, value: detail.contact_email || "" },
-        ] as { label: string; value: string }[]
-      ).filter((row) => row.value)
-    : [];
-
-  const allRows = [...rows, ...extraRows];
-
   const references: PaymentEntryReference[] = detail?.references ?? [];
 
   return (
-    <div className="fixed inset-0 z-[130]" data-no-translate="true">
-      <div
-        aria-hidden
-        onClick={onClose}
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-5 shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86vh] sm:w-[620px] sm:max-w-[92vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:border"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-              {copy.detailsHeading}
-            </p>
-            <h2 className="mt-1 truncate text-[16px] font-semibold">{name}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={copy.close}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
-          >
-            <span className="text-[var(--color-primary)]">
-              <FiX size={16} />
-            </span>
-          </button>
-        </div>
+    <DetailSheet
+      open
+      onClose={onClose}
+      closeLabel={copy.close}
+      eyebrow={copy.detailsHeading}
+      title={name}
+      subtitle={detail ? detail.party_name || detail.party || "" : undefined}
+      icon={<FiCreditCard size={20} />}
+      loading={loading}
+      loadingText={copy.detailsLoading}
+      error={error}
+      errorTitle={copy.loadFailed}
+      badges={
+        detail ? (
+          <>
+            <StatusBadge status={detail.display_status} copy={copy} />
+            {detail.verified ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-success)]">
+                <FiCheckCircle size={13} />
+                {copy.verified}
+              </span>
+            ) : null}
+          </>
+        ) : null
+      }
+      sections={detail ? paymentDetailSections(detail, copy, language) : []}
+    >
+      {detail ? paymentReferences(detail, references, copy, language) : null}
+    </DetailSheet>
+  );
+}
 
-        <div className="mt-4">
-          {loading ? (
-            <p className="py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-              {copy.detailsLoading}
-            </p>
-          ) : error ? (
-            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">
-              <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">{copy.loadFailed}</p>
-              <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">{error}</p>
-            </div>
-          ) : detail ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={detail.display_status} copy={copy} />
-                {detail.verified ? (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-success)]">
-                    <FiCheckCircle size={13} />
-                    {copy.colId}
-                  </span>
-                ) : null}
-              </div>
+/** The grouped, logical sections of the payment details popup. */
+function paymentDetailSections(
+  detail: PaymentEntryDetails,
+  copy: PaymentEntryCopy,
+  language: string,
+): DetailSection[] {
+  const code = detail.currency || "BDT";
+  const num = (value: unknown) => Number(value ?? 0);
+  const fmt = (value: unknown) => formatAmount(num(value), code, language);
 
-              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {allRows.map((row) => (
-                  <div key={row.label} className="min-w-0">
-                    <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                      {row.label}
-                    </dt>
-                    <dd className="mt-0.5 break-words text-[13px] font-medium">{row.value || "—"}</dd>
-                  </div>
-                ))}
-              </dl>
+  const infoRows: DetailRow[] = (
+    [
+      { label: copy.dParty, value: detail.party_name || detail.party || "" },
+      { label: copy.dPostingDate, value: formatDate(detail.posting_date, language) },
+      {
+        label: copy.dPaymentType,
+        value: copy.paymentTypes[String(detail.payment_type || "").trim()] || detail.payment_type || "",
+      },
+      { label: copy.dMode, value: detail.mode_of_payment || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
 
-              {detail.remark ? (
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                    {copy.dRemark}
-                  </p>
-                  <p className="mt-0.5 text-[13px]">{detail.remark}</p>
-                </div>
-              ) : null}
+  const amountRows: DetailRow[] = (
+    [
+      { label: copy.dAmount, value: fmt(detail.amount), emphasis: true },
+      { label: copy.dPaidAmount, value: num(detail.paid_amount) ? fmt(detail.paid_amount) : "" },
+      { label: copy.dReceivedAmount, value: num(detail.received_amount) ? fmt(detail.received_amount) : "" },
+      {
+        label: copy.dAllocated,
+        value: num(detail.total_allocated_amount) ? fmt(detail.total_allocated_amount) : "",
+      },
+      {
+        label: copy.dUnallocated,
+        value: Number(detail.unallocated_amount) ? fmt(detail.unallocated_amount) : "",
+      },
+      { label: copy.dCurrency, value: detail.currency || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
 
-              <div>
-                <p className="text-[12px] font-semibold">{copy.referencesHeading}</p>
-                {references.length === 0 ? (
-                  <p className="mt-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                    {copy.referencesEmpty}
-                  </p>
-                ) : (
-                  <div className="mt-2 overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
-                    <table className="w-full border-collapse text-left">
-                      <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
-                        <tr>
-                          {[
-                            copy.rDocType,
-                            copy.rReference,
-                            copy.rDue,
-                            copy.rTotal,
-                            copy.rOutstanding,
-                            copy.rAllocated,
-                          ].map((heading) => (
-                            <th
-                              key={heading}
-                              className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-                            >
-                              {heading}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {references.map((row, index) => (
-                          <tr key={index} className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
-                            <td className="px-3 py-2 text-[12px]">{row.reference_doctype || "—"}</td>
-                            <td className="px-3 py-2 text-[12px]">{row.reference_name || "—"}</td>
-                            <td className="px-3 py-2 text-[12px]">
-                              {row.due_date ? formatDate(String(row.due_date), language) : "—"}
-                            </td>
-                            <td className="px-3 py-2 text-[12px]">
-                              {formatAmount(Number(row.total_amount ?? 0), code, language)}
-                            </td>
-                            <td className="px-3 py-2 text-[12px]">
-                              {formatAmount(Number(row.outstanding_amount ?? 0), code, language)}
-                            </td>
-                            <td className="px-3 py-2 text-[12px] font-medium">
-                              {formatAmount(Number(row.allocated_amount ?? 0), code, language)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : null}
-        </div>
+  const referenceRows: DetailRow[] = (
+    [
+      { label: copy.dReferenceNo, value: detail.reference_no || "" },
+      {
+        label: copy.dReferenceDate,
+        value: detail.reference_date ? formatDate(detail.reference_date, language) : "",
+      },
+      { label: copy.dPaidFrom, value: detail.paid_from || "" },
+      { label: copy.dPaidTo, value: detail.paid_to || "" },
+      { label: copy.dCompany, value: detail.company || "" },
+      { label: copy.dContactPerson, value: detail.contact_person || "" },
+      { label: copy.dContactEmail, value: detail.contact_email || "" },
+      { label: copy.dRemark, value: detail.remark || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
+
+  const sections: DetailSection[] = [
+    { key: "info", title: copy.dSecInfo, icon: <FiCreditCard size={15} />, rows: infoRows },
+    { key: "amount", title: copy.dSecAmount, icon: <FiDollarSign size={15} />, rows: amountRows },
+    { key: "reference", title: copy.dSecReference, icon: <FiHash size={15} />, rows: referenceRows },
+  ];
+
+  return sections.filter((section) => section.rows.length > 0);
+}
+
+/** The allocated reference rows (or an empty note) under the sections. */
+function paymentReferences(
+  detail: PaymentEntryDetails,
+  references: PaymentEntryReference[],
+  copy: PaymentEntryCopy,
+  language: string,
+) {
+  const code = detail.currency || "BDT";
+
+  return (
+    <section className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_7%,var(--color-white))] p-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[var(--color-primary)]">
+          <FiHash size={15} />
+        </span>
+        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+          {copy.referencesHeading}
+        </h3>
       </div>
-    </div>
+      {references.length === 0 ? (
+        <p className="mt-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          {copy.referencesEmpty}
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)]">
+          <table className="w-full border-collapse text-left">
+            <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+              <tr>
+                {[
+                  copy.rDocType,
+                  copy.rReference,
+                  copy.rDue,
+                  copy.rTotal,
+                  copy.rOutstanding,
+                  copy.rAllocated,
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {references.map((row, index) => (
+                <tr key={index} className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
+                  <td className="px-3 py-2 text-[12px]">{row.reference_doctype || "—"}</td>
+                  <td className="px-3 py-2 text-[12px]">{row.reference_name || "—"}</td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {row.due_date ? formatDate(String(row.due_date), language) : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {formatAmount(Number(row.total_amount ?? 0), code, language)}
+                  </td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {formatAmount(Number(row.outstanding_amount ?? 0), code, language)}
+                  </td>
+                  <td className="px-3 py-2 text-[12px] font-medium">
+                    {formatAmount(Number(row.allocated_amount ?? 0), code, language)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }
 

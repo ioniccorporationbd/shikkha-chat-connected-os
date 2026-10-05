@@ -6,6 +6,7 @@ import {
   FiChevronDown,
   FiEdit2,
   FiHome,
+  FiLock,
   FiLogOut,
   FiRefreshCw,
 } from "react-icons/fi";
@@ -28,6 +29,7 @@ type UserMenuProps = {
   refreshing?: boolean;
   onSignOut: () => void;
   onEditProfile: () => void;
+  onChangePassword: () => void;
   onReload: () => void;
 };
 
@@ -59,6 +61,7 @@ export default function UserMenu({
   refreshing = false,
   onSignOut,
   onEditProfile,
+  onChangePassword,
   onReload,
 }: UserMenuProps) {
   const { language } = useLanguage();
@@ -124,7 +127,12 @@ export default function UserMenu({
         aria-label={`${copy.open}: ${displayName}`}
         className="flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-2 py-1.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))]"
       >
-        <UserAvatar user={user} size={28} rounded="rounded-xl" />
+        <UserAvatar
+          user={user}
+          size={28}
+          rounded="rounded-full"
+          className="ring-2 ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
+        />
         <span className="hidden max-w-[150px] truncate text-[13px] font-semibold text-[var(--color-primary)] sm:block">
           {displayName}
         </span>
@@ -146,7 +154,13 @@ export default function UserMenu({
         >
           {/* identity header — brand gradient like the SSPL account summary */}
           <div className="flex items-center gap-3 bg-[linear-gradient(135deg,var(--color-primary)_0%,color-mix(in_srgb,var(--color-primary)_80%,var(--color-secondary))_100%)] px-4 py-4">
-            <UserAvatar user={user} size={46} rounded="rounded-2xl" tone="soft" />
+            <UserAvatar
+              user={user}
+              size={46}
+              rounded="rounded-full"
+              tone="soft"
+              className="ring-2 ring-[color-mix(in_srgb,var(--color-white)_55%,transparent)]"
+            />
             <div className="min-w-0">
               <p className="truncate text-[15px] font-semibold text-[var(--color-white)]">
                 {displayName}
@@ -228,6 +242,18 @@ export default function UserMenu({
             <button
               type="button"
               role="menuitem"
+              onClick={runThen(onChangePassword)}
+              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+            >
+              <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
+                <FiLock aria-hidden size={15} />
+                {profileCopy.menuPassword}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              role="menuitem"
               onClick={runThen(onReload)}
               className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
             >
@@ -264,9 +290,9 @@ export default function UserMenu({
               role="menuitem"
               onClick={runThen(onSignOut)}
               disabled={signingOut}
-              className="flex items-center gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_9%,var(--color-white))] px-3 py-2.5 text-left transition hover:border-[var(--color-danger)] hover:bg-[color-mix(in_srgb,var(--color-danger)_15%,var(--color-white))] disabled:opacity-60"
+              className="mt-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-danger)] px-3 py-2.5 transition hover:bg-[var(--color-danger-strong)] disabled:opacity-60"
             >
-              <span className="inline-flex items-center gap-2.5 text-[13px] font-semibold text-[var(--color-danger-strong)]">
+              <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
                 <FiLogOut aria-hidden size={15} />
                 {signingOut ? copy.signingOut : copy.signOut}
               </span>

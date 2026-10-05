@@ -66,6 +66,12 @@ export interface PaymentEntryCopy {
   dUnallocated: string;
   dContactPerson: string;
   dContactEmail: string;
+  /** Details-modal logical sections (redesigned popup). */
+  dSecInfo: string;
+  dSecAmount: string;
+  dSecReference: string;
+  /** Backend proof the payment really exists (verified chip). */
+  verified: string;
 
   referencesHeading: string;
   referencesEmpty: string;
@@ -193,6 +199,10 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dUnallocated: "অবরাদ্দ",
     dContactPerson: "যোগাযোগ ব্যক্তি",
     dContactEmail: "যোগাযোগ ইমেইল",
+    dSecInfo: "পেমেন্ট তথ্য",
+    dSecAmount: "পরিমাণ",
+    dSecReference: "লেনদেন / রেফারেন্স",
+    verified: "যাচাইকৃত",
 
     referencesHeading: "রেফারেন্স সারি",
     referencesEmpty: "কোনো রেফারেন্স সংযুক্ত নেই।",
@@ -326,6 +336,10 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dUnallocated: "Unallocated",
     dContactPerson: "Contact Person",
     dContactEmail: "Contact Email",
+    dSecInfo: "Payment information",
+    dSecAmount: "Amount",
+    dSecReference: "Transaction / Reference",
+    verified: "Verified",
 
     referencesHeading: "Reference rows",
     referencesEmpty: "No reference rows linked.",

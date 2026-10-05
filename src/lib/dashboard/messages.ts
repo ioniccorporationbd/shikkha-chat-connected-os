@@ -85,6 +85,12 @@ export interface DashboardCopy {
   seeLess: string;
   /** Overview profile-image hover affordance. */
   changePhoto: string;
+  /** Logout confirmation modal (opened by every Logout button). */
+  logoutConfirmTitle: string;
+  logoutConfirmMessage: string;
+  logoutConfirmYes: string;
+  logoutConfirmNo: string;
+  logoutConfirmSigning: string;
   /** Check In / Out quick-access card on the overview. */
   checkinCardHint: string;
   /** Expense Claim quick-access card on the overview. */
@@ -193,6 +199,11 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     seeMore: (n) => `আরও দেখুন (${n}টি)`,
     seeLess: "কম দেখুন",
     changePhoto: "ছবি পরিবর্তন করুন",
+    logoutConfirmTitle: "লগ আউট",
+    logoutConfirmMessage: "আপনি কি লগ আউট করতে চান?",
+    logoutConfirmYes: "হ্যাঁ, লগ আউট করুন",
+    logoutConfirmNo: "না",
+    logoutConfirmSigning: "লগ আউট হচ্ছে…",
     checkinCardHint: "চেক ইন / আউট করুন এবং আপনার দৈনিক উপস্থিতি রেকর্ড করুন।",
     expenseClaimCardHint: "আপনার খরচের দাবি তৈরি করুন এবং বর্তমান অবস্থা দেখুন।",
     openAction: "খুলুন",
@@ -325,6 +336,11 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     seeMore: (n) => `See more (${n})`,
     seeLess: "See less",
     changePhoto: "Change photo",
+    logoutConfirmTitle: "Log out",
+    logoutConfirmMessage: "Are you sure you want to log out?",
+    logoutConfirmYes: "Yes, log out",
+    logoutConfirmNo: "No",
+    logoutConfirmSigning: "Signing out…",
     checkinCardHint: "Check in or out and record your daily attendance.",
     expenseClaimCardHint: "Create your expense claims and track their current state.",
     openAction: "Open",
