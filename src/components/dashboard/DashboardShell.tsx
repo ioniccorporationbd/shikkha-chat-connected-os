@@ -20,9 +20,10 @@ import {
 
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
 import CheckInOutView from "@/components/dashboard/CheckInOutView";
-import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
+import CustomerRoutes from "@/components/dashboard/CustomerRoutes";
 import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
+import ProfileImageMenu from "@/components/dashboard/ProfileImageMenu";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
 import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
 import LoginHistoryCard from "@/components/dashboard/LoginHistoryCard";
@@ -98,6 +99,8 @@ export default function DashboardShell({
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [imageMenuOpen, setImageMenuOpen] = useState(false);
+  const [imageIntent, setImageIntent] = useState<"change-photo" | "remove-photo" | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
 
@@ -631,7 +634,7 @@ export default function DashboardShell({
             ) : onServiceBuildView ? (
               <ServiceBuildView onBack={() => router.push(basePath)} />
             ) : onCreateView ? (
-              <CreateCustomerView onBack={() => router.push(basePath)} />
+              <CustomerRoutes path={createCustomerPath} onExit={() => router.push(basePath)} />
             ) : onCheckinView ? (
               <CheckInOutView onBack={() => router.push(basePath)} />
             ) : onExpenseClaimNewView ? (
@@ -649,29 +652,49 @@ export default function DashboardShell({
             >
               <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))_0%,var(--color-white)_70%)] p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                  <button
-                    type="button"
-                    onClick={() => setEditOpen(true)}
-                    aria-label={copy.changePhoto}
-                    className="group relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
-                  >
-                    <UserAvatar
-                      user={user ?? { full_name: displayName, name: displayName }}
-                      size={112}
-                      rounded="rounded-full"
-                      sizeClass="h-24 w-24 sm:h-28 sm:w-28"
-                      className="ring-4 ring-[var(--color-white)] shadow-[0_20px_44px_-22px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
-                    />
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setImageMenuOpen((value) => !value)}
+                      aria-haspopup="menu"
+                      aria-expanded={imageMenuOpen}
+                      aria-label={copy.changePhoto}
+                      className="group relative block rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
                     >
-                      <span className="flex flex-col items-center gap-1 text-[var(--color-white)]">
-                        <FiCamera size={22} />
-                        <span className="text-[10.5px] font-semibold">{copy.changePhoto}</span>
+                      <UserAvatar
+                        user={user ?? { full_name: displayName, name: displayName }}
+                        size={112}
+                        rounded="rounded-full"
+                        sizeClass="h-24 w-24 sm:h-28 sm:w-28"
+                        className="ring-4 ring-[var(--color-white)] shadow-[0_20px_44px_-22px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      >
+                        <span className="flex flex-col items-center gap-1 text-[var(--color-white)]">
+                          <FiCamera size={22} />
+                          <span className="text-[10.5px] font-semibold">{copy.changePhoto}</span>
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+
+                    <ProfileImageMenu
+                      open={imageMenuOpen}
+                      hasImage={Boolean((user?.user_image ?? "").trim())}
+                      onChangePhoto={() => {
+                        setImageMenuOpen(false);
+                        setImageIntent("change-photo");
+                        setEditOpen(true);
+                      }}
+                      onRemovePhoto={() => {
+                        setImageMenuOpen(false);
+                        setImageIntent("remove-photo");
+                        setEditOpen(true);
+                      }}
+                      onClose={() => setImageMenuOpen(false)}
+                    />
+                  </div>
 
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
@@ -935,9 +958,14 @@ export default function DashboardShell({
 
       <EditProfileModal
         open={editOpen}
-        onClose={() => setEditOpen(false)}
+        onClose={() => {
+          setEditOpen(false);
+          setImageIntent(null);
+        }}
         fallbackName={displayName}
         fallbackEmail={user?.email}
+        intent={imageIntent}
+        onIntentHandled={() => setImageIntent(null)}
       />
       <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
       <LogoutConfirmModal

@@ -117,7 +117,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     navHeading: "মেনু",
     nav: {
       overview: "ওভারভিউ",
-      customers: "কাস্টমার তৈরি করুন",
+      customers: "কাস্টমার",
       checkin: "চেক ইন / আউট",
       expenseClaim: "এক্সপেন্স ক্লেম",
       paymentHistory: "পেমেন্ট ইতিহাস",
@@ -254,7 +254,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     navHeading: "Menu",
     nav: {
       overview: "Overview",
-      customers: "Create Customer",
+      customers: "Customers",
       checkin: "Check In / Out",
       expenseClaim: "Expense Claim",
       paymentHistory: "Payment History",

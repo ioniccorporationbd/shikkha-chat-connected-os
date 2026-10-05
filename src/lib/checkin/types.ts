@@ -46,3 +46,35 @@ export interface GeoPoint {
   /** Human-readable "lat, lng" string stored in the ERP's geolocation field. */
   geolocation: string;
 }
+
+/* ------------------------------------------------------------------ history */
+
+export interface CheckinPunch {
+  /** "IN" | "OUT". */
+  log_type: string;
+  time: string;
+}
+
+/** One calendar day of the employee's own punches. */
+export interface CheckinDay {
+  /** "YYYY-MM-DD". */
+  date: string;
+  punches: CheckinPunch[];
+  first_in: string | null;
+  last_out: string | null;
+  in_count: number;
+  out_count: number;
+  total: number;
+}
+
+/** `checkin.history` payload — the last N calendar days, newest day first. */
+export interface CheckinHistoryPayload {
+  doctype: string;
+  linked: boolean;
+  employee: CheckinEmployee | null;
+  window_days: number;
+  days: CheckinDay[];
+  from_date: string | null;
+  to_date: string | null;
+  server_time: string;
+}

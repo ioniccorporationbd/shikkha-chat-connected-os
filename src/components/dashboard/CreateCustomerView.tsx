@@ -9,6 +9,7 @@ import {
   FiCheck,
   FiCheckCircle,
   FiChevronDown,
+  FiEdit2,
   FiGlobe,
   FiInfo,
   FiLoader,
@@ -23,7 +24,13 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import { createCustomer, fetchCustomerLinkOptions, fetchCustomerSchema } from "@/lib/customer/api";
+import {
+  createCustomer,
+  fetchCustomerDetails,
+  fetchCustomerLinkOptions,
+  fetchCustomerSchema,
+  updateCustomer,
+} from "@/lib/customer/api";
 import { customerCopyFor, isDuplicateError, type CustomerCopy } from "@/lib/customer/messages";
 import type {
   CustomerCreateResult,
@@ -104,6 +111,16 @@ function valuesEqual(a: CustomerFormValues, b: CustomerFormValues): boolean {
   const keys = Object.keys(a);
   if (keys.length !== Object.keys(b).length) return false;
   return keys.every((key) => (a[key] ?? "") === (b[key] ?? ""));
+}
+
+/** Coerce an ERP value (string | number | boolean | null) to a form value. */
+function coerceValue(value: unknown, fieldType: string): CustomerFieldValue {
+  if (fieldType === "Check") {
+    return value === true || value === 1 || value === "1" || value === "true" || value === "Yes";
+  }
+  if (value === null || value === undefined) return "";
+  if (typeof value === "boolean") return value;
+  return String(value);
 }
 
 function buildInitialValues(schema: CustomerSchema): CustomerFormValues {
@@ -666,7 +683,17 @@ function ConfirmModal({ title, body, confirmLabel, cancelLabel, tone = "default"
 /* Header                                                              */
 /* ------------------------------------------------------------------ */
 
-function Header({ copy, onBack }: { copy: CustomerCopy; onBack: () => void }) {
+function Header({
+  copy,
+  onBack,
+  heading,
+  hint,
+}: {
+  copy: CustomerCopy;
+  onBack: () => void;
+  heading?: string;
+  hint?: string;
+}) {
   return (
     <header className={HEADER_CARD}>
       <div className="flex items-start justify-between gap-3">
@@ -676,10 +703,10 @@ function Header({ copy, onBack }: { copy: CustomerCopy; onBack: () => void }) {
           </span>
           <div className="min-w-0">
             <h1 className="text-[19px] font-bold tracking-[-0.01em] text-[var(--color-primary)] sm:text-[22px]">
-              {copy.heading}
+              {heading ?? copy.heading}
             </h1>
             <p className="mt-1 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)] sm:text-[13.5px]">
-              {copy.hint}
+              {hint ?? copy.hint}
             </p>
             <p className={`mt-1.5 inline-flex items-center gap-1.5 ${HELPER}`}>
               <FiInfo aria-hidden />
@@ -718,13 +745,15 @@ function SuccessCard({
   result,
   values,
   copy,
+  mode,
   onAnother,
   onBack,
 }: {
   result: CustomerCreateResult;
   values: CustomerFormValues;
   copy: CustomerCopy;
-  onAnother: () => void;
+  mode: "create" | "edit";
+  onAnother?: () => void;
   onBack: () => void;
 }) {
   const contact = [values.mobile_no, values.email_id]
@@ -746,7 +775,9 @@ function SuccessCard({
           <FiCheckCircle aria-hidden />
         </span>
         <div className="min-w-0">
-          <h2 className="text-[17px] font-bold text-[var(--color-primary)]">{copy.createdTitle}</h2>
+          <h2 className="text-[17px] font-bold text-[var(--color-primary)]">
+            {mode === "edit" ? copy.updatedTitle : copy.createdTitle}
+          </h2>
           {result.customer_name ? (
             <p className="mt-0.5 text-[14px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_82%,transparent)]">
               {result.customer_name}
@@ -782,10 +813,12 @@ function SuccessCard({
           <FiArrowLeft aria-hidden className="text-[var(--color-primary)]" />
           <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.back}</span>
         </button>
-        <button type="button" onClick={onAnother} className={BTN_PRIMARY}>
-          <FiUserPlus aria-hidden className="text-[var(--color-white)]" />
-          <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.createAnother}</span>
-        </button>
+        {mode === "create" && onAnother ? (
+          <button type="button" onClick={onAnother} className={BTN_PRIMARY}>
+            <FiUserPlus aria-hidden className="text-[var(--color-white)]" />
+            <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.createAnother}</span>
+          </button>
+        ) : null}
       </div>
     </section>
   );
@@ -862,11 +895,14 @@ function StateCard({
 
 interface CreateCustomerViewProps {
   onBack: () => void;
+  /** When set, the form edits this owned Customer instead of creating one. */
+  editName?: string;
 }
 
-export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) {
+export default function CreateCustomerView({ onBack, editName }: CreateCustomerViewProps) {
   const { language } = useLanguage();
   const copy = useMemo(() => customerCopyFor(language), [language]);
+  const isEdit = Boolean(editName);
 
   const [schema, setSchema] = useState<CustomerSchema | null>(null);
   const [loading, setLoading] = useState(true);
@@ -903,7 +939,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
     });
   }, []);
 
-  /* --- schema load (with draft hydration) --- */
+  /* --- schema load (with draft hydration / edit prefill) --- */
   // NOTE: no synchronous setState before the first await — keeps the effect
   // clean under react-hooks/set-state-in-effect (see the retry handler below
   // for the explicit reload path, where setState in an event handler is fine).
@@ -911,6 +947,26 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
     try {
       const data = await fetchCustomerSchema(language);
       const base = buildInitialValues(data);
+
+      if (editName) {
+        // Edit mode: prefill every editable field from the owned document.
+        const details = await fetchCustomerDetails(editName, language);
+        const merged: CustomerFormValues = { ...base };
+        for (const section of data.sections) {
+          for (const field of section.fields) {
+            if (Object.prototype.hasOwnProperty.call(details.values ?? {}, field.fieldname)) {
+              merged[field.fieldname] = coerceValue(details.values[field.fieldname], field.fieldtype);
+            }
+          }
+        }
+        setSchema(data);
+        setInitial(merged);
+        setValues(merged);
+        setErrors({});
+        setCreated(null);
+        return;
+      }
+
       const draft = readDraft();
       let next = base;
       if (draft) {
@@ -939,7 +995,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
     } finally {
       setLoading(false);
     }
-  }, [language, copy.draftRestored, copy.loadFailed]);
+  }, [language, editName, copy.draftRestored, copy.loadFailed]);
 
   const retry = useCallback(() => {
     setLoading(true);
@@ -957,21 +1013,22 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
     return () => clearTimeout(timer);
   }, [loadSchema]);
 
-  /* --- autofocus the first required editable field (once per mount) --- */
+  /* --- autofocus the first required editable field (create only) --- */
   useEffect(() => {
+    if (isEdit) return;
     if (!schema || loading || created || autoFocusRef.current) return;
     autoFocusRef.current = true;
     if (!firstRequired) return;
     const timer = setTimeout(() => focusField(firstRequired, false), 80);
     return () => clearTimeout(timer);
-  }, [schema, loading, created, firstRequired, focusField]);
+  }, [isEdit, schema, loading, created, firstRequired, focusField]);
 
-  /* --- draft persistence --- */
+  /* --- draft persistence (create only) --- */
   useEffect(() => {
-    if (!schema || createdRef.current) return;
+    if (isEdit || !schema || createdRef.current) return;
     if (isDirty) writeDraft(values);
     else clearDraft();
-  }, [values, isDirty, schema]);
+  }, [isEdit, values, isDirty, schema]);
 
   /* --- tab-close / refresh guard --- */
   useEffect(() => {
@@ -1027,11 +1084,17 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
 
       setSubmitting(true);
       try {
-        const result = await createCustomer(values, language);
+        const result =
+          isEdit && editName
+            ? await updateCustomer(editName, values, language)
+            : await createCustomer(values, language);
         setCreated(result);
         createdRef.current = result;
         clearDraft();
-        toast.success(copy.successBody(result.name), copy.successTitle);
+        toast.success(
+          copy.successBody(result.name),
+          isEdit ? copy.updateSuccessTitle : copy.successTitle
+        );
       } catch (error) {
         const failure = error as { code?: string; message?: string };
         const message = failure?.message || copy.loadFailed;
@@ -1046,7 +1109,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
         setSubmitting(false);
       }
     },
-    [submitting, validate, schema, copy, focusField, values, language]
+    [submitting, validate, schema, copy, focusField, values, language, isEdit, editName]
   );
 
   const resetForm = useCallback(
@@ -1057,9 +1120,9 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
       createdRef.current = null;
       clearDraft();
       setFormKey((key) => key + 1);
-      if (focus && firstRequired) focusField(firstRequired);
+      if (focus && !isEdit && firstRequired) focusField(firstRequired);
     },
-    [initial, firstRequired, focusField]
+    [initial, firstRequired, focusField, isEdit]
   );
 
   const requestReset = useCallback(() => {
@@ -1094,7 +1157,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   if (loadError) {
     return (
       <div className={PAGE}>
-        <Header copy={copy} onBack={onBack} />
+        <Header copy={copy} onBack={onBack} heading={isEdit ? copy.editHeading : undefined} hint={isEdit ? copy.editHint : undefined} />
         {isPermission ? (
           <StateCard
             icon={<FiLock aria-hidden />}
@@ -1141,7 +1204,7 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   if (!schema) {
     return (
       <div className={PAGE}>
-        <Header copy={copy} onBack={onBack} />
+        <Header copy={copy} onBack={onBack} heading={isEdit ? copy.editHeading : undefined} hint={isEdit ? copy.editHint : undefined} />
         <StateCard icon={<FiInfo aria-hidden />} title={copy.empty} actions={null} />
       </div>
     );
@@ -1150,12 +1213,13 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   if (created) {
     return (
       <div className={PAGE}>
-        <Header copy={copy} onBack={guardedBack} />
+        <Header copy={copy} onBack={guardedBack} heading={isEdit ? copy.editHeading : undefined} hint={isEdit ? copy.editHint : undefined} />
         <SuccessCard
           result={created}
           values={values}
           copy={copy}
-          onAnother={() => resetForm(true)}
+          mode={isEdit ? "edit" : "create"}
+          onAnother={isEdit ? undefined : () => resetForm(true)}
           onBack={onBack}
         />
       </div>
@@ -1163,10 +1227,12 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
   }
 
   const sections = schema.sections.filter((section) => section.fields.length > 0);
+  const Heading = isEdit ? copy.editHeading : undefined;
+  const Hint = isEdit ? copy.editHint : undefined;
 
   return (
     <div className={PAGE}>
-      <Header copy={copy} onBack={guardedBack} />
+      <Header copy={copy} onBack={guardedBack} heading={Heading} hint={Hint} />
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {sections.map((section) => {
@@ -1217,12 +1283,20 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
             {submitting ? (
               <>
                 <FiLoader aria-hidden className="animate-spin text-[var(--color-white)]" />
-                <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.submitting}</span>
+                <span className="text-[13px] font-semibold text-[var(--color-white)]">
+                  {isEdit ? copy.submittingEdit : copy.submitting}
+                </span>
               </>
             ) : (
               <>
-                <FiUserPlus aria-hidden className="text-[var(--color-white)]" />
-                <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.submit}</span>
+                {isEdit ? (
+                  <FiEdit2 aria-hidden className="text-[var(--color-white)]" />
+                ) : (
+                  <FiUserPlus aria-hidden className="text-[var(--color-white)]" />
+                )}
+                <span className="text-[13px] font-semibold text-[var(--color-white)]">
+                  {isEdit ? copy.submitEdit : copy.submit}
+                </span>
               </>
             )}
           </button>

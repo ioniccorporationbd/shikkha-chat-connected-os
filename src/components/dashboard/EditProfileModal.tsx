@@ -10,6 +10,7 @@ import {
   FiLock,
   FiSave,
   FiShield,
+  FiTrash2,
 } from "react-icons/fi";
 
 import DashboardModal from "@/components/dashboard/DashboardModal";
@@ -35,6 +36,13 @@ interface EditProfileModalProps {
   /** Shown while the profile request is in flight, so the header is never blank. */
   fallbackName?: string;
   fallbackEmail?: string;
+  /**
+   * An optional one-shot intent when the modal is opened from the Overview
+   * avatar menu: jump straight to picking a photo, or stage the removal of the
+   * current one. Consumed once via `onIntentHandled`.
+   */
+  intent?: "change-photo" | "remove-photo" | null;
+  onIntentHandled?: () => void;
 }
 
 /** Fieldtypes that get a textarea rather than a single-line input. */
@@ -56,6 +64,8 @@ export default function EditProfileModal({
   onClose,
   fallbackName,
   fallbackEmail,
+  intent,
+  onIntentHandled,
 }: EditProfileModalProps) {
   const { language } = useLanguage();
   const copy = profileCopyFor(language);
@@ -73,6 +83,9 @@ export default function EditProfileModal({
 
   const [step, setStep] = useState<"form" | "otp">("form");
   const [staged, setStaged] = useState<{ fileUrl: string; preview: string } | null>(null);
+  // Removal is staged (not applied) until the OTP step commits it, exactly like
+  // a newly-picked picture.
+  const [removeStaged, setRemoveStaged] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -88,7 +101,8 @@ export default function EditProfileModal({
   const values = useMemo(() => draft ?? data?.values ?? {}, [draft, data]);
   const email = data?.email || fallbackEmail || "";
   const name = data?.full_name || fallbackName || "";
-  const previewSrc = staged?.preview ?? null;
+  const previewSrc = removeStaged ? null : staged?.preview ?? null;
+  const hasExistingImage = Boolean((data?.user_image ?? "").trim());
 
   /** Field presentation meta from the ERP, with a safe local fallback. */
   const fields = useMemo<ProfileFieldMeta[]>(() => {
@@ -121,6 +135,7 @@ export default function EditProfileModal({
     setDraft(null);
     setStep("form");
     setStaged(null);
+    setRemoveStaged(false);
     setUploadingImage(false);
     setSending(false);
     setVerifying(false);
@@ -143,6 +158,22 @@ export default function EditProfileModal({
     return () => window.clearInterval(timer);
   }, [step, resendIn]);
 
+  // Honour a one-shot intent from the Overview avatar menu. Deferred off the
+  // effect's synchronous path so no state is set during render.
+  useEffect(() => {
+    if (!open || !intent) return;
+    const timer = window.setTimeout(() => {
+      if (intent === "change-photo") {
+        fileInputRef.current?.click();
+      } else if (intent === "remove-photo") {
+        setStaged(null);
+        setRemoveStaged(true);
+      }
+      onIntentHandled?.();
+    }, 160);
+    return () => window.clearTimeout(timer);
+  }, [open, intent, onIntentHandled]);
+
   /** Which editable fields actually differ from the fetched values. */
   const changedFields = useMemo(() => {
     if (!data) return [] as string[];
@@ -150,7 +181,7 @@ export default function EditProfileModal({
     return editable.filter((field) => (values[field] ?? "").trim() !== (data.values[field] ?? "").trim());
   }, [data, editable, values]);
 
-  const hasChanges = changedFields.length > 0 || Boolean(staged);
+  const hasChanges = changedFields.length > 0 || Boolean(staged) || removeStaged;
 
   const handlePickImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -182,6 +213,7 @@ export default function EditProfileModal({
       });
 
       setStaged({ fileUrl: result.file_url, preview: dataUrl });
+      setRemoveStaged(false);
       toast.success(copy.imageChange);
     } catch (caught) {
       const raw = caught instanceof Error ? caught.message : "";
@@ -196,6 +228,7 @@ export default function EditProfileModal({
     const payload: Record<string, string> = {};
     for (const field of editable) payload[field] = (values[field] ?? "").trim();
     if (staged) payload.user_image = staged.fileUrl;
+    if (removeStaged) payload.remove_image = "1";
     // The OTP message language follows the portal's own language switch.
     payload.ui_language = language;
     return payload;
@@ -481,7 +514,7 @@ export default function EditProfileModal({
                 />
               ) : (
                 <UserAvatar
-                  user={{ full_name: name, name, user_image: data?.user_image }}
+                  user={{ full_name: name, name, user_image: removeStaged ? "" : data?.user_image }}
                   size={58}
                   rounded="rounded-full"
                 />
@@ -517,6 +550,7 @@ export default function EditProfileModal({
                     {uploadingImage ? copy.imageUploading : previewSrc ? copy.imageChange : copy.imageChoose}
                   </span>
                 </button>
+
                 {previewSrc ? (
                   <button
                     type="button"
@@ -529,9 +563,36 @@ export default function EditProfileModal({
                     </span>
                   </button>
                 ) : null}
+
+                {!previewSrc && hasExistingImage && !removeStaged ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStaged(null);
+                      setRemoveStaged(true);
+                    }}
+                    disabled={uploadingImage}
+                    className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] disabled:opacity-60"
+                  >
+                    <FiTrash2 size={12} className="text-[var(--color-danger-strong)]" />
+                    <span className="text-[11px] font-semibold text-[var(--color-danger-strong)]">
+                      {copy.imageRemove}
+                    </span>
+                  </button>
+                ) : null}
+
+                {removeStaged ? (
+                  <button
+                    type="button"
+                    onClick={() => setRemoveStaged(false)}
+                    className="rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
+                  >
+                    <span className="text-[11px] font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
+                  </button>
+                ) : null}
               </div>
               <p className="mt-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                {copy.imageHint}
+                {removeStaged ? copy.imageRemove : copy.imageHint}
               </p>
             </div>
 

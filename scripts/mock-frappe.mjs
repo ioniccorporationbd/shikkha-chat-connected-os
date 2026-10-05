@@ -1297,8 +1297,14 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
   const method = url.pathname.replace(/^\/api\/method\//, "");
 
-  // The user picture the portal proxies through /api/auth/avatar.
-  if (url.pathname === AVATAR_PATH) {
+  // The user picture the portal proxies through /api/auth/avatar. Serve any
+  // site file path so a changed / uploaded picture resolves too (the real ERP
+  // serves these from its own file store).
+  if (
+    url.pathname === AVATAR_PATH ||
+    url.pathname.startsWith("/files/") ||
+    url.pathname.startsWith("/private/files/")
+  ) {
     response.writeHead(200, {
       "content-type": "image/png",
       "content-length": AVATAR_BYTES.length,
@@ -1789,8 +1795,9 @@ const server = createServer(async (request, response) => {
       (field) => typeof body[field] === "string" && body[field].trim() !== (current[field] ?? "")
     );
     const hasImage = typeof body.user_image === "string" && body.user_image.trim();
+    const removeImage = truthy(body.remove_image);
 
-    if (!changed.length && !hasImage) {
+    if (!changed.length && !hasImage && !removeImage) {
       failure(response, 417, "ValidationError", "There is nothing to update.", "Edit Profile");
       return;
     }
@@ -1802,6 +1809,7 @@ const server = createServer(async (request, response) => {
       if (typeof body[field] === "string") values[field] = body[field].trim();
     }
     if (hasImage) values.user_image = body.user_image.trim();
+    if (removeImage) values.remove_image = "1";
 
     pendingProfileOtps.set(email, { code, attempts: 0, values, expires: Date.now() + 10 * 60 * 1000 });
 
@@ -1865,7 +1873,9 @@ const server = createServer(async (request, response) => {
       if (typeof pending.values[field] === "string") extra[field] = pending.values[field].trim();
     }
     profileExtras.set(email, extra);
-    if (typeof pending.values.user_image === "string" && pending.values.user_image.trim()) {
+    if (truthy(pending.values.remove_image)) {
+      account.profile.user_image = "";
+    } else if (typeof pending.values.user_image === "string" && pending.values.user_image.trim()) {
       account.profile.user_image = pending.values.user_image.trim();
     }
 
@@ -2142,6 +2152,7 @@ const server = createServer(async (request, response) => {
       territory: String(data.territory ?? "").trim(),
       owner: email,
       creation,
+      values: { ...data },
       verified: true,
     };
     createdCustomers.set(name.toLowerCase(), record);
@@ -2564,6 +2575,234 @@ const server = createServer(async (request, response) => {
       message: String(body.message || ""),
     });
     return;
+  }
+
+  // --- Customer management: list / details / update / delete -----------------
+  if (method === "shikkha_os.api.v1.customer.list_mine") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
+      return;
+    }
+    ok(response, {
+      doctype: "Customer",
+      count: ownCustomers(email).length,
+      customers: ownCustomers(email).map(customerRowPayload),
+      verified: true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.customer.details") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
+      return;
+    }
+    const record = ownedCustomer(email, (url.searchParams.get("name") ?? "").trim(), response);
+    if (!record) return;
+    ok(response, {
+      doctype: "Customer",
+      name: record.name,
+      customer_name: record.customer_name,
+      owner: record.owner,
+      values: { ...(record.values || {}) },
+      verified: true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.customer.update") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
+      return;
+    }
+    const body = await readBody(request);
+    const name = String(body.name ?? "").trim();
+    const data = body && typeof body.data === "object" && body.data ? body.data : {};
+    const record = ownedCustomer(email, name, response);
+    if (!record) return;
+
+    const newName = String(data.customer_name ?? record.customer_name).trim();
+    if (
+      newName &&
+      newName.toLowerCase() !== String(record.customer_name).toLowerCase() &&
+      createdCustomers.has(newName.toLowerCase())
+    ) {
+      failure(response, 417, "DuplicateEntryError", "A customer with that name already exists.", "Customer");
+      return;
+    }
+
+    record.values = { ...(record.values || {}), ...data };
+    const previousNameKey = String(record.customer_name).toLowerCase();
+    if (newName) record.customer_name = newName;
+    createdCustomers.delete(previousNameKey);
+    createdCustomers.set(String(record.customer_name).toLowerCase(), record);
+    createdCustomers.set(String(record.name).toLowerCase(), record);
+    if (data.customer_type != null) record.customer_type = String(data.customer_type);
+    if (data.customer_group != null) record.customer_group = String(data.customer_group);
+    if (data.territory != null) record.territory = String(data.territory);
+
+    console.log(`[mock-frappe] CUSTOMER UPDATED ${record.name} by ${email}`);
+
+    ok(response, customerRowPayload(record));
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.customer.delete") {
+    if (request.method !== "POST") {
+      failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
+      return;
+    }
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    const denied = customerGate(account);
+    if (denied) {
+      failure(response, denied.status, denied.exc, denied.message, "Customer");
+      return;
+    }
+    const body = await readBody(request);
+    const name = String(body.name ?? "").trim();
+    const record = ownedCustomer(email, name, response);
+    if (!record) return;
+
+    // A customer whose name hints at a transaction is "linked" — demonstrates the
+    // friendly 409 the portal renders for a real dependency block.
+    if (/invoice|order|linked/i.test(record.customer_name || "")) {
+      failure(response, 409, "LinkExistsError", "This customer has linked transactions, so it cannot be deleted.", "Customer");
+      return;
+    }
+
+    for (const [key, value] of Array.from(createdCustomers.entries())) {
+      if (value === record) createdCustomers.delete(key);
+    }
+
+    console.log(`[mock-frappe] CUSTOMER DELETED ${record.name} by ${email}`);
+
+    ok(response, { deleted: true, name: record.name, verified: true });
+    return;
+  }
+
+  // --- Check-in history ------------------------------------------------------
+  if (method === "shikkha_os.api.v1.checkin.history") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 403, "PermissionError", "You are not permitted to access this resource. Login to access.", "Method Not Allowed");
+      return;
+    }
+    const employee = employeeFor(email);
+    const days = clampDays(url.searchParams.get("days"));
+    if (!employee) {
+      ok(response, {
+        doctype: "Employee Checkin",
+        linked: false,
+        employee: null,
+        window_days: days,
+        days: [],
+        from_date: null,
+        to_date: null,
+        server_time: nowStamp(),
+      });
+      return;
+    }
+    ok(response, {
+      doctype: "Employee Checkin",
+      linked: true,
+      employee,
+      window_days: days,
+      days: recentCheckinDays(employee.name, days),
+      from_date: dayISO(offsetFromToday(days - 1)),
+      to_date: dayISO(new Date()),
+      server_time: nowStamp(),
+    });
+    return;
+  }
+
+  function clampDays(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.max(1, Math.min(Math.trunc(n), 31)) : 10;
+  }
+
+  function ownCustomers(email) {
+    const unique = new Map();
+    for (const record of createdCustomers.values()) unique.set(record.name, record);
+    return Array.from(unique.values()).filter((record) => record.owner === email);
+  }
+
+  function customerRowPayload(record) {
+    return {
+      name: record.name,
+      customer_name: record.customer_name || "",
+      customer_type: record.customer_type || "",
+      customer_group: record.customer_group || "",
+      territory: record.territory || "",
+      mobile_no: (record.values && record.values.mobile_no) || "",
+      email_id: (record.values && record.values.email_id) || "",
+      creation: record.creation || "",
+      owner: record.owner || "",
+    };
+  }
+
+  function ownedCustomer(email, name, response) {
+    const unique = new Map();
+    for (const record of createdCustomers.values()) unique.set(record.name, record);
+    const list = Array.from(unique.values());
+    const record =
+      list.find((r) => r.name === name) ||
+      list.find((r) => String(r.customer_name).toLowerCase() === name.toLowerCase());
+    if (!name || !record) {
+      failure(response, 404, "DoesNotExistError", "This customer could not be found.", "Customer");
+      return null;
+    }
+    if (record.owner !== email) {
+      failure(response, 403, "PermissionError", "This customer was not created by you, so it cannot be edited or deleted.", "Customer");
+      return null;
+    }
+    return record;
+  }
+
+  function offsetFromToday(daysAgo) {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date;
+  }
+
+  function dayISO(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  function recentCheckinDays(employee, days) {
+    const out = [];
+    for (let offset = 0; offset < days; offset += 1) {
+      const date = dayISO(offsetFromToday(offset));
+      const punches = checkinRecords
+        .filter((row) => row.employee === employee && String(row.time).slice(0, 10) === date)
+        .map((row) => ({ log_type: String(row.log_type || "").toUpperCase(), time: row.time }));
+      const ins = punches.filter((p) => p.log_type === "IN");
+      const outs = punches.filter((p) => p.log_type === "OUT");
+      out.push({
+        date,
+        punches,
+        first_in: ins.length ? ins[0].time : null,
+        last_out: outs.length ? outs[outs.length - 1].time : null,
+        in_count: ins.length,
+        out_count: outs.length,
+        total: punches.length,
+      });
+    }
+    return out; // newest day first
   }
 
   failure(response, 417, "ValidationError", `Failed to get method for command ${method}`, "Method Not Found");

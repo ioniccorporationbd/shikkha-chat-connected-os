@@ -4,19 +4,28 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FiActivity,
   FiArrowLeft,
+  FiCalendar,
+  FiChevronDown,
+  FiChevronUp,
   FiClock,
+  FiLogIn,
+  FiLogOut,
   FiMapPin,
-  FiMonitor,
   FiNavigation,
-  FiPlayCircle,
   FiRefreshCw,
-  FiStopCircle,
   FiUserCheck,
 } from "react-icons/fi";
 
+import { initialsOf } from "@/components/dashboard/UserAvatar";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
-import { checkinCopyFor } from "@/lib/checkin/messages";
-import type { CheckinPunchResult, CheckinStatus, GeoPoint } from "@/lib/checkin/types";
+import { CHECKIN_HISTORY_DAYS, checkinCopyFor } from "@/lib/checkin/messages";
+import type {
+  CheckinDay,
+  CheckinHistoryPayload,
+  CheckinPunchResult,
+  CheckinStatus,
+  GeoPoint,
+} from "@/lib/checkin/types";
 import { getDeviceId } from "@/lib/device/deviceId";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
@@ -31,24 +40,41 @@ interface CheckInOutViewProps {
   onBack?: () => void;
 }
 
-/** Frappe returns "YYYY-MM-DD HH:MM:SS.ffffff" in the site timezone. */
-function formatStamp(value: string | null | undefined, locale: string): string {
-  if (!value) return "";
-
+/** Parse a Frappe timestamp ("YYYY-MM-DD HH:MM:SS.ffffff" or "YYYY-MM-DD"). */
+function parseStamp(value: string | null | undefined): Date | null {
+  if (!value) return null;
   const iso = value.replace(" ", "T").replace(/\.(\d{3})\d*$/, ".$1");
   const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return value;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
 
+/** Date only — "05 Oct 2026". */
+function formatDate(value: string | null | undefined, locale: string): string {
+  const parsed = parseStamp(value);
+  if (!parsed) return (value || "").slice(0, 10);
   try {
-    return parsed.toLocaleString(locale === "en" ? "en-GB" : "bn-BD", {
-      year: "numeric",
-      month: "short",
+    return parsed.toLocaleDateString(locale === "en" ? "en-GB" : "bn-BD", {
       day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   } catch {
-    return value;
+    return (value || "").slice(0, 10);
+  }
+}
+
+/** Time only — "09:05 AM" (hour + minute, no seconds). */
+function formatTime(value: string | null | undefined, locale: string): string {
+  const parsed = parseStamp(value);
+  if (!parsed) return "";
+  try {
+    return parsed.toLocaleTimeString(locale === "en" ? "en-US" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "";
   }
 }
 
@@ -73,9 +99,7 @@ function InfoTile({
         <div className="min-w-0">
           <p className="text-[12.5px] font-semibold text-[var(--color-primary)]">{title}</p>
           {hint ? (
-            <p className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-              {hint}
-            </p>
+            <p className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">{hint}</p>
           ) : null}
         </div>
       </div>
@@ -87,10 +111,10 @@ function InfoTile({
 /**
  * The Employee Check In / Out card.
  *
- * The current state comes from the ERP (the latest `Employee Checkin` record),
- * the location from the browser's Geolocation API and the device id from a
- * stable per-browser value. The employee is always resolved server-side, so the
- * browser never sends — and can never choose — an employee id.
+ * The current state and history come from the ERP (the employee's own `Employee
+ * Checkin` records), the location from the browser's Geolocation API and the
+ * device id from a stable per-browser value. The employee is always resolved
+ * server-side, so the browser never sends — and can never choose — an employee.
  */
 export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
   const { language } = useLanguage();
@@ -104,15 +128,23 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [punching, setPunching] = useState(false);
 
+  const [history, setHistory] = useState<CheckinHistoryPayload | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
+
+  const [clock, setClock] = useState(() => Date.now());
+
   const [deviceId] = useState(getDeviceId);
   const [point, setPoint] = useState<GeoPoint | null>(null);
   const [locationState, setLocationState] = useState<LocationState>("idle");
 
   const checkedIn = status?.checked_in ?? false;
 
+  /* ------------------------------------------------------------ loaders */
+
   const loadStatus = useCallback(async () => {
     try {
-      const data = await getJson<CheckinStatus>("/api/checkin/status");
+      const data = await getJson<CheckinStatus>("/api/checkin/status?language=" + encodeURIComponent(language));
       setStatus(data);
       setLoadError("");
       setPermissionDenied(false);
@@ -128,11 +160,23 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
         setLoadError(err?.message || copy.loadFailed);
       }
     } finally {
-      // First load (and every refresh / post-punch reload) always settles here,
-      // so the loading skeleton can never get stuck on screen.
       setLoading(false);
     }
-  }, [copy.loadFailed]);
+  }, [language, copy.loadFailed]);
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const data = await getJson<CheckinHistoryPayload>(
+        `/api/checkin/history?days=${CHECKIN_HISTORY_DAYS}&language=${encodeURIComponent(language)}`
+      );
+      setHistory(data);
+    } catch {
+      setHistory(null);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [language]);
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
@@ -158,17 +202,24 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
 
   useEffect(() => {
     let active = true;
-    // Defer the first status fetch / location prompt out of the effect body so
-    // it runs as a callback (not a synchronous state update during render).
+    // Defer the first fetches / location prompt out of the effect body so they
+    // run as callbacks (not a synchronous state update during render).
     queueMicrotask(() => {
       if (!active) return;
       void loadStatus();
+      void loadHistory();
       requestLocation();
     });
     return () => {
       active = false;
     };
-  }, [loadStatus, requestLocation]);
+  }, [loadStatus, loadHistory, requestLocation]);
+
+  // A gentle live clock (updated every 30s) for the "current time" hero tile.
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   /** One-shot geolocation capture returning the point (or null). */
   const locate = useCallback((): Promise<GeoPoint | null> => {
@@ -193,13 +244,13 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      await loadStatus();
+      await Promise.all([loadStatus(), loadHistory()]);
       requestLocation();
       toast.success(copy.refreshed);
     } finally {
       setRefreshing(false);
     }
-  }, [refreshing, loadStatus, requestLocation, copy.refreshed]);
+  }, [refreshing, loadStatus, loadHistory, requestLocation, copy.refreshed]);
 
   const handlePunch = useCallback(async () => {
     if (!status || punching) return;
@@ -240,19 +291,19 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
       });
 
       toast.success(logType === "IN" ? copy.successIn : copy.successOut);
-      await loadStatus();
+      await Promise.all([loadStatus(), loadHistory()]);
     } catch (error) {
       const err = error as ApiError;
       const message = err?.message || copy.requestError;
       toast.error(message);
       // The ERP refused because our view was stale (already in / out): refresh.
       if (/already/i.test(message) || err?.code === "validation_error") {
-        await loadStatus();
+        await Promise.all([loadStatus(), loadHistory()]);
       }
     } finally {
       setPunching(false);
     }
-  }, [status, punching, point, locationState, locate, deviceId, language, copy, loadStatus]);
+  }, [status, punching, point, locationState, locate, deviceId, language, copy, loadStatus, loadHistory]);
 
   const locationText = useMemo(() => {
     if (point) return copy.locationReady;
@@ -262,10 +313,41 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
     return copy.captureLocation;
   }, [point, locationState, copy]);
 
+  const today = history?.days?.[0] ?? null;
+  const clockDate = new Date(clock);
+
+  const employeeName = status?.employee?.employee_name ?? status?.employee?.name ?? "";
+  const heroLine = status?.employee
+    ? `${status.employee.employee_name} · ${status.employee.name}`
+    : "";
+
+  const nowDateText = (() => {
+    try {
+      return clockDate.toLocaleDateString(language === "en" ? "en-GB" : "bn-BD", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return clockDate.toISOString().slice(0, 10);
+    }
+  })();
+
+  const nowTimeText = (() => {
+    try {
+      return clockDate.toLocaleTimeString(language === "en" ? "en-US" : "bn-BD", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "";
+    }
+  })();
+
   return (
-    <section
-      className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}
-    >
+    <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
       {/* ---------------------------------------------------------- header */}
       <div className="flex flex-col gap-4 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))_0%,var(--color-white)_70%)] p-5 sm:flex-row sm:items-center sm:gap-3 sm:p-6">
         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -322,9 +404,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
               >
-                <span className="text-[13px] font-semibold text-[var(--color-white)]">
-                  {copy.signInAgain}
-                </span>
+                <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.signInAgain}</span>
               </a>
             }
           />
@@ -343,9 +423,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 }}
                 className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
               >
-                <span className="text-[13px] font-semibold text-[var(--color-primary)]">
-                  {copy.retry}
-                </span>
+                <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
               </button>
             }
           />
@@ -364,66 +442,56 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 }}
                 className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
               >
-                <span className="text-[13px] font-semibold text-[var(--color-white)]">
-                  {copy.retry}
-                </span>
+                <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.retry}</span>
               </button>
             }
           />
         ) : status && !status.linked ? (
-          <CalmState
-            icon={<FiUserCheck size={22} />}
-            title={copy.noEmployeeTitle}
-            hint={copy.noEmployeeHint}
-          />
+          <CalmState icon={<FiUserCheck size={22} />} title={copy.noEmployeeTitle} hint={copy.noEmployeeHint} />
         ) : status ? (
           <div className="flex flex-col gap-4">
-            {/* ------------------------------------------------ status banner */}
-            <div className="flex flex-col gap-4 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                  {copy.statusHeading}
-                </p>
-
-                <div className="mt-2">
-                  {checkedIn ? (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-3.5 py-1.5">
-                      <span className="text-[13px] font-semibold text-[var(--color-white)]">
-                        {copy.checkedIn}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-3.5 py-1.5">
-                      <span className="text-[13px] font-semibold text-[var(--color-primary)]">
-                        {copy.checkedOut}
-                      </span>
-                    </span>
-                  )}
-                </div>
-
-                <p className="mt-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                  {checkedIn ? copy.statusInHint : copy.statusOutHint}
-                </p>
-
-                {status.employee ? (
-                  <p className="mt-1 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
-                    {status.employee.employee_name} · {status.employee.name}
+            {/* ------------------------------------------- hero / status */}
+            <div className="flex flex-col gap-4 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] p-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-3xl bg-[var(--color-primary)] text-[20px] font-semibold text-[var(--color-white)]">
+                  <span data-no-translate="true">{initialsOf(employeeName || "?")}</span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                    {copy.employeeHeading}
                   </p>
-                ) : null}
+                  <p className="mt-0.5 truncate text-[15px] font-bold text-[var(--color-primary)]">
+                    {status.employee?.employee_name || copy.none}
+                  </p>
+                  {heroLine ? (
+                    <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                      {heroLine}
+                    </p>
+                  ) : null}
+                  <div className="mt-2">
+                    {checkedIn ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-[var(--color-primary)] px-3.5 py-1.5">
+                        <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.checkedIn}</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-3.5 py-1.5">
+                        <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.checkedOut}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <span
-                className={
-                  checkedIn
-                    ? "grid h-14 w-14 shrink-0 place-items-center rounded-3xl bg-[var(--color-primary)] text-[var(--color-white)] shadow-[0_16px_36px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]"
-                    : "grid h-14 w-14 shrink-0 place-items-center rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)]"
-                }
-              >
-                <FiClock size={22} />
-              </span>
+              <div className="min-w-0 text-left lg:text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                  {copy.clockHeading}
+                </p>
+                <p className="mt-0.5 text-[22px] font-bold tabular-nums text-[var(--color-primary)]">{nowTimeText}</p>
+                <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">{nowDateText}</p>
+              </div>
             </div>
 
-            {/* --------------------------------------------------- info tiles */}
+            {/* ------------------------------------------------ info tiles */}
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <InfoTile icon={<FiMapPin size={16} />} title={copy.locationHeading}>
                 {point ? (
@@ -460,12 +528,6 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 </button>
               </InfoTile>
 
-              <InfoTile icon={<FiMonitor size={16} />} title={copy.deviceHeading} hint={copy.deviceHint}>
-                <p className="break-all font-mono text-[12px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                  {deviceId || copy.none}
-                </p>
-              </InfoTile>
-
               <InfoTile icon={<FiActivity size={16} />} title={copy.activityHeading}>
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-start justify-between gap-3">
@@ -473,7 +535,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                       {copy.lastIn}
                     </span>
                     <span className="text-right text-[12.5px] font-medium">
-                      {status.last_in?.time ? formatStamp(status.last_in.time, language) : copy.none}
+                      {status.last_in?.time ? formatTime(status.last_in.time, language) : copy.none}
                     </span>
                   </div>
                   <div className="flex items-start justify-between gap-3">
@@ -481,12 +543,50 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                       {copy.lastOut}
                     </span>
                     <span className="text-right text-[12.5px] font-medium">
-                      {status.last_out?.time
-                        ? formatStamp(status.last_out.time, language)
-                        : copy.none}
+                      {status.last_out?.time ? formatTime(status.last_out.time, language) : copy.none}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.locationHeading}
+                    </span>
+                    <span className="text-right text-[12.5px] font-medium">
+                      {status.last?.latitude != null && status.last?.longitude != null
+                        ? `${Number(status.last.latitude).toFixed(4)}, ${Number(status.last.longitude).toFixed(4)}`
+                        : copy.noLocation}
                     </span>
                   </div>
                 </div>
+              </InfoTile>
+
+              <InfoTile icon={<FiCalendar size={16} />} title={copy.todaySummaryHeading}>
+                {today && today.total > 0 ? (
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                        {copy.firstInLabel}
+                      </span>
+                      <span className="text-right text-[12.5px] font-medium">
+                        {today.first_in ? formatTime(today.first_in, language) : copy.none}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                        {copy.lastOutLabel}
+                      </span>
+                      <span className="text-right text-[12.5px] font-medium">
+                        {today.last_out ? formatTime(today.last_out, language) : copy.none}
+                      </span>
+                    </div>
+                    <p className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+                      {copy.multiSummary(today.in_count, today.out_count)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                    {copy.noPunchesToday}
+                  </p>
+                )}
               </InfoTile>
             </div>
 
@@ -499,7 +599,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
-                  {checkedIn ? <FiStopCircle size={17} /> : <FiPlayCircle size={17} />}
+                  {checkedIn ? <FiLogOut size={17} /> : <FiLogIn size={17} />}
                   {punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
                 </span>
               </button>
@@ -516,10 +616,148 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 </span>
               </button>
             </div>
+
+            {/* --------------------------------------------------- history */}
+            <div className="mt-1 flex flex-col gap-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+                <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">{copy.historyHeading}</h2>
+                <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                  {copy.historyHint(history?.window_days ?? CHECKIN_HISTORY_DAYS)}
+                </p>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex flex-col gap-3">
+                  {[0, 1, 2].map((index) => (
+                    <div
+                      key={index}
+                      className="h-[76px] animate-pulse rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                    />
+                  ))}
+                  <span className="sr-only">{copy.historyLoading}</span>
+                </div>
+              ) : history && history.days.length > 0 ? (
+                <div className="flex flex-col gap-2.5">
+                  {history.days.map((day) => (
+                    <DayCard
+                      key={day.date}
+                      day={day}
+                      copy={copy}
+                      language={language}
+                      open={Boolean(openDays[day.date])}
+                      onToggle={() => setOpenDays((prev) => ({ ...prev, [day.date]: !prev[day.date] }))}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                  {copy.historyEmpty}
+                </p>
+              )}
+            </div>
           </div>
         ) : null}
       </div>
     </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* One day in the history timeline                                     */
+/* ------------------------------------------------------------------ */
+
+function DayCard({
+  day,
+  copy,
+  language,
+  open,
+  onToggle,
+}: {
+  day: CheckinDay;
+  copy: ReturnType<typeof checkinCopyFor>;
+  language: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const hasPunches = day.total > 0;
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)]">
+      <button
+        type="button"
+        onClick={hasPunches ? onToggle : undefined}
+        aria-expanded={hasPunches ? open : undefined}
+        disabled={!hasPunches}
+        className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
+          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]" : "cursor-default"
+        }`}
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-2xl text-[15px] ${
+              hasPunches
+                ? "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]"
+                : "bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
+            }`}
+          >
+            <FiCalendar size={15} />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-[var(--color-primary)]">{formatDate(day.date, language)}</p>
+            <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {hasPunches
+                ? copy.multiSummary(day.in_count, day.out_count)
+                : copy.noPunchesToday}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-3">
+          {hasPunches ? (
+            <div className="hidden text-right sm:block">
+              <p className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">{copy.firstInLabel}</p>
+              <p className="text-[12.5px] font-medium text-[var(--color-primary)]">
+                {day.first_in ? formatTime(day.first_in, language) : copy.none}
+              </p>
+            </div>
+          ) : null}
+          {hasPunches ? (
+            <span className="text-[var(--color-primary)]">
+              {open ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+            </span>
+          ) : null}
+        </div>
+      </button>
+
+      {open && hasPunches ? (
+        <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_6%,var(--color-white))] p-4">
+          <div className="flex flex-col gap-2.5">
+            {day.punches.map((punch, index) => {
+              const isIn = String(punch.log_type).toUpperCase() === "IN";
+              return (
+                <div key={`${punch.time}-${index}`} className="flex items-center gap-3">
+                  <span
+                    className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl text-[13px] ${
+                      isIn
+                        ? "bg-[color-mix(in_srgb,var(--color-success)_14%,var(--color-white))] text-[var(--color-success)]"
+                        : "bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))] text-[var(--color-danger-strong)]"
+                    }`}
+                  >
+                    {isIn ? <FiLogIn size={14} /> : <FiLogOut size={14} />}
+                  </span>
+                  <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+                    {isIn ? copy.checkIn : copy.checkOut}
+                  </span>
+                  <span className="ml-auto text-[13px] font-medium tabular-nums text-[var(--color-primary)]">
+                    {formatTime(punch.time, language)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -542,9 +780,7 @@ function CalmState({
       </span>
       <h2 className="text-[16px] font-semibold">{title}</h2>
       {hint ? (
-        <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-          {hint}
-        </p>
+        <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">{hint}</p>
       ) : null}
       {action ? <div className="mt-1">{action}</div> : null}
     </div>

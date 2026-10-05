@@ -63,3 +63,43 @@ export interface CustomerCreateResult {
 export type CustomerFieldValue = string | boolean;
 
 export type CustomerFormValues = Record<string, CustomerFieldValue>;
+
+/* ------------------------------------------------------------------ management */
+
+/** One row in the owner-scoped Customer list (from `customer.list_mine`). */
+export interface CustomerListRow {
+  name: string;
+  customer_name?: string;
+  customer_type?: string;
+  customer_group?: string;
+  territory?: string;
+  mobile_no?: string;
+  email_id?: string;
+  creation?: string;
+  owner?: string;
+}
+
+/** `customer.list_mine` payload — only the signed-in user's own Customers. */
+export interface CustomerListPayload {
+  doctype: string;
+  count: number;
+  customers: CustomerListRow[];
+  verified?: boolean;
+}
+
+/** Prefill for the edit form (from `customer.details`). */
+export interface CustomerDetails {
+  doctype: string;
+  name: string;
+  customer_name?: string;
+  owner?: string;
+  values: Record<string, CustomerFieldValue>;
+  verified?: boolean;
+}
+
+/** `customer.delete` result. */
+export interface CustomerDeleteResult {
+  deleted: boolean;
+  name: string;
+  verified?: boolean;
+}

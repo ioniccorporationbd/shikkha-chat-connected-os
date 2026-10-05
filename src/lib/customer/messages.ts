@@ -66,6 +66,13 @@ export interface CustomerCopy {
   idLabel: string;
   typeLabel: string;
   contactLabel: string;
+  /** Edit mode reuses the create surface with update semantics. */
+  editHeading: string;
+  editHint: string;
+  submitEdit: string;
+  submittingEdit: string;
+  updatedTitle: string;
+  updateSuccessTitle: string;
   /** Known section labels, keyed by the ERP's English label. */
   sectionLabels: Record<string, string>;
   /** One-line helper per section, keyed by the ERP's English label. */
@@ -126,6 +133,12 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     idLabel: "কাস্টমার আইডি",
     typeLabel: "ধরন",
     contactLabel: "যোগাযোগ",
+    editHeading: "কাস্টমার সম্পাদনা",
+    editHint: "এই কাস্টমারের তথ্য হালনাগাদ করুন এবং সংরক্ষণ করুন।",
+    submitEdit: "পরিবর্তন সংরক্ষণ করুন",
+    submittingEdit: "সংরক্ষণ হচ্ছে…",
+    updatedTitle: "কাস্টমার সফলভাবে হালনাগাদ হয়েছে",
+    updateSuccessTitle: "কাস্টমার হালনাগাদ হয়েছে",
     sectionLabels: {
       "Customer Information": "কাস্টমার তথ্য",
       "Basic Information": "মৌলিক তথ্য",
@@ -204,6 +217,12 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     idLabel: "Customer ID",
     typeLabel: "Type",
     contactLabel: "Contact",
+    editHeading: "Edit Customer",
+    editHint: "Update this customer's details and save your changes.",
+    submitEdit: "Save changes",
+    submittingEdit: "Saving…",
+    updatedTitle: "Customer updated successfully",
+    updateSuccessTitle: "Customer updated",
     sectionLabels: {},
     sectionHelp: {
       "Customer Information": "Core identity and classification for this customer.",

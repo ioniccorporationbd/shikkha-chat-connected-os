@@ -47,6 +47,26 @@ export interface CheckinCopy {
   locationError: string;
   requestError: string;
   refreshed: string;
+  /** Hero header. */
+  clockHeading: string;
+  employeeHeading: string;
+  todaySummaryHeading: string;
+  /** History section. */
+  historyHeading: string;
+  historyHint: (days: number) => string;
+  historyLoading: string;
+  historyEmpty: string;
+  expandDay: string;
+  collapseDay: string;
+  firstInLabel: string;
+  lastOutLabel: string;
+  inShort: string;
+  outShort: string;
+  totalPunchesLabel: string;
+  noPunchesToday: string;
+  noLocation: string;
+  /** "2 In · 2 Out". */
+  multiSummary: (ins: number, outs: number) => string;
 }
 
 export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
@@ -96,6 +116,23 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     locationError: "আপনার বর্তমান লোকেশন পাওয়া যায়নি।",
     requestError: "চেক-ইন অনুরোধ সম্পন্ন করা যায়নি।",
     refreshed: "স্ট্যাটাস হালনাগাদ হয়েছে।",
+    clockHeading: "বর্তমান সময়",
+    employeeHeading: "কর্মী",
+    todaySummaryHeading: "আজকের হিসাব",
+    historyHeading: "সাম্প্রতিক উপস্থিতি",
+    historyHint: (days) => `আজসহ সর্বশেষ ${days} দিনের চেক ইন / আউট`,
+    historyLoading: "ইতিহাস লোড হচ্ছে…",
+    historyEmpty: "এই সময়ে কোনো রেকর্ড নেই।",
+    expandDay: "বিস্তারিত",
+    collapseDay: "গোপন করুন",
+    firstInLabel: "প্রথম চেক ইন",
+    lastOutLabel: "শেষ চেক আউট",
+    inShort: "ইন",
+    outShort: "আউট",
+    totalPunchesLabel: "মোট পাঞ্চ",
+    noPunchesToday: "আজ এখনো কোনো পাঞ্চ নেই।",
+    noLocation: "লোকেশন নেই",
+    multiSummary: (ins, outs) => `${ins} ইন · ${outs} আউট`,
   },
   en: {
     heading: "Check In / Out",
@@ -143,9 +180,29 @@ export const checkinCopy: Record<"bn" | "en", CheckinCopy> = {
     locationError: "Unable to get your current location.",
     requestError: "Unable to complete the check-in request.",
     refreshed: "Status refreshed.",
+    clockHeading: "Current time",
+    employeeHeading: "Employee",
+    todaySummaryHeading: "Today",
+    historyHeading: "Recent attendance",
+    historyHint: (days) => `Your check in / check out over the last ${days} days (including today)`,
+    historyLoading: "Loading history…",
+    historyEmpty: "No records in this period.",
+    expandDay: "View details",
+    collapseDay: "Hide details",
+    firstInLabel: "First check in",
+    lastOutLabel: "Last check out",
+    inShort: "In",
+    outShort: "Out",
+    totalPunchesLabel: "Total punches",
+    noPunchesToday: "No punches yet today.",
+    noLocation: "No location",
+    multiSummary: (ins, outs) => `${ins} Check In · ${outs} Check Out`,
   },
 };
 
 export function checkinCopyFor(language: string): CheckinCopy {
   return checkinCopy[language === "en" ? "en" : "bn"];
 }
+
+/** Minutes+hours since start of day, for the "today" summary helper. */
+export const CHECKIN_HISTORY_DAYS = 10;

@@ -67,9 +67,17 @@ export async function GET(request: Request) {
   let upstream: Response;
   try {
     upstream = await fetch(url, {
-      headers: { Accept: "image/*" },
+      headers: {
+        Accept: "image/*",
+        // The ERP stores a freshly-uploaded picture as a PRIVATE file against
+        // the caller's own User record, so the proxy must present the session
+        // cookie or the ERP answers 403 (and the avatar would silently fall back
+        // to the monogram). The cookie is the caller's own — never a caller-
+        // supplied value.
+        Cookie: `${SESSION_COOKIE}=${sid}`,
+      },
       cache: "no-store",
-      redirect: "error",
+      redirect: "follow",
     });
   } catch {
     return new Response(null, { status: 404 });
