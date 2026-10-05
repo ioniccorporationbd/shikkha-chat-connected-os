@@ -650,7 +650,7 @@ function manualSummary(rows) {
   return {
     total: rows.length,
     total_amount: rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
-    pending: rows.filter((r) => r.status === "Pending Verification").length,
+    draft: rows.filter((r) => r.status === "Draft").length,
     verified: rows.filter((r) => r.status === "Verified").length,
     rejected: rows.filter((r) => r.status === "Rejected").length,
     currency: "BDT",
@@ -2837,7 +2837,7 @@ const server = createServer(async (request, response) => {
       transfer_reference: wallet.transfer_reference || "",
       proof_attachment: "/private/files/payment-proof.png",
       note: String(body.note || ""),
-      status: "Pending Verification",
+      status: "Draft",
       verified_by: "",
       verified_on: "",
       payment_entry: "",

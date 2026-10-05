@@ -117,7 +117,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   const [makePaymentOpen, setMakePaymentOpen] = useState(false);
   const mpCopy = manualPaymentCopyFor(language);
   // The customer's own Manual Payment Requests — real ERP documents
-  // (status "Pending Verification" until an admin verifies).
+  // (status "Draft" until an admin verifies).
   const [manualRequests, setManualRequests] = useState<ManualPaymentRecord[]>([]);
   const [manualLoading, setManualLoading] = useState(true);
   const [manualError, setManualError] = useState(false);
@@ -1054,6 +1054,7 @@ function manualStatusTone(key: ManualPaymentStatusKey): string {
   if (key === "verified") return "var(--color-success)";
   if (key === "rejected") return "var(--color-danger-strong)";
   if (key === "cancelled") return "color-mix(in srgb, var(--color-primary) 45%, var(--color-white))";
+  if (key === "draft") return "color-mix(in srgb, var(--color-primary) 45%, var(--color-white))";
   return "var(--color-warning)";
 }
 

@@ -3,7 +3,7 @@
  *
  * These mirror the backend contract (`shikkha_os.api.v1.manual_payment`): the
  * portal posts a proof to the ERP, which writes a real **Manual Payment
- * Request** row (status "Pending Verification") — it never creates/submits an
+ * Request** row (status "Draft") — it never creates/submits an
  * ERPNext Payment Entry from an unverified screenshot.
  */
 
@@ -42,6 +42,7 @@ export interface SupportedBank {
 
 /** Server status text -> a stable key the UI can switch on. */
 export type ManualPaymentStatusKey =
+  | "draft"
   | "pending"
   | "verified"
   | "rejected"
@@ -63,7 +64,7 @@ export interface ManualPaymentRecord {
   transfer_reference?: string;
   proof_attachment?: string;
   note?: string;
-  /** Raw server status text (e.g. "Pending Verification"). */
+  /** Raw server status text (e.g. "Draft"). */
   status: string;
   submitted_at: string;
   verified_on?: string;
@@ -74,7 +75,7 @@ export interface ManualPaymentRecord {
 export interface ManualPaymentSummary {
   total: number;
   total_amount: number;
-  pending: number;
+  draft: number;
   verified: number;
   rejected: number;
   currency: string;

@@ -106,6 +106,7 @@ export interface ManualPaymentCopy {
   successRef: string;
   successMethod: string;
   successAmount: string;
+  successStatus: string;
   successClose: string;
 
   // ---- manual request history (server-backed) ----
@@ -222,11 +223,12 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "প্রেরকের অ্যাকাউন্টের নাম লিখুন।",
     errSummary: "কিছু তথ্য সঠিকভাবে পূরণ করুন।",
 
-    successTitle: "পেমেন্ট রিকোয়েস্ট জমা হয়েছে।",
+    successTitle: "পেমেন্ট তথ্য সফলভাবে জমা হয়েছে।",
     successBody: "সার্ভারে সংরক্ষিত হয়েছে। যাচাইয়ের পর আপডেট জানানো হবে।",
     successRef: "রিকোয়েস্ট আইডি",
     successMethod: "মাধ্যম",
     successAmount: "পরিমাণ",
+    successStatus: "স্ট্যাটাস",
     successClose: "ঠিক আছে",
 
     historyHeading: "ম্যানুয়াল পেমেন্ট রিকোয়েস্ট",
@@ -242,6 +244,7 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     histColStatus: "স্ট্যাটাস",
     histColSubmitted: "জমা দেওয়ার সময়",
     statuses: {
+      draft: "ড্রাফ্ট",
       pending: "যাচাইয়ের অপেক্ষায়",
       verified: "যাচাইকৃত",
       rejected: "বাতিল করা হয়েছে",
@@ -344,11 +347,12 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     errSenderName: "Enter the sender account name.",
     errSummary: "Please correct the highlighted fields.",
 
-    successTitle: "Payment request submitted.",
+    successTitle: "Payment information submitted successfully.",
     successBody: "It has been saved on the server. You'll be updated once it is verified.",
     successRef: "Request ID",
     successMethod: "Method",
     successAmount: "Amount",
+    successStatus: "Status",
     successClose: "Done",
 
     historyHeading: "Manual Payment Requests",
@@ -364,6 +368,7 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     histColStatus: "Status",
     histColSubmitted: "Submitted at",
     statuses: {
+      draft: "Draft",
       pending: "Pending verification",
       verified: "Verified",
       rejected: "Rejected",

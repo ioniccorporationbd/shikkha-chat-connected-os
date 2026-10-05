@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  *         session and filters by customer=that customer; the browser never
  *         talks to the ERP and can never ask about another customer).
  * POST -> manual_payment.create (a real Manual Payment Request row is written,
- *         status "Pending Verification"; the proof image is stored privately by
+ *         status "Draft"; the proof image is stored privately by
  *         the ERP). The upload can be a few megabytes, so the timeout is raised.
  */
 export async function GET(request: Request) {

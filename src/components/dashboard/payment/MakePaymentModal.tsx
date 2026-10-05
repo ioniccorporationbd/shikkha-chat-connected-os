@@ -6,7 +6,7 @@ import { FiArrowLeft, FiCheckCircle, FiClock, FiInfo } from "react-icons/fi";
 import DashboardModal from "@/components/dashboard/DashboardModal";
 import { formatAmount } from "@/lib/payment-entry/format";
 import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/messages";
-import { submitManualPayment } from "@/lib/payment-entry/manual-payment/service";
+import { statusKey, submitManualPayment } from "@/lib/payment-entry/manual-payment/service";
 import type {
   MakePaymentStep,
   ManualPaymentMethod,
@@ -36,7 +36,7 @@ interface MakePaymentModalProps {
  *   method → (online info | manual) → bKash/Rocket/Bank form → success
  *
  * On submit it posts the proof to the ERP (a real Manual Payment Request row,
- * status "Pending Verification") and shows the **server-issued** request id
+ * status "Draft") and shows the **server-issued** request id
  * (e.g. MPR-2026-00001). It never creates/ submits an ERPNext Payment Entry
  * from an unverified screenshot.
  */
@@ -218,7 +218,7 @@ export default function MakePaymentModal({
               />
               <span className="inline-flex items-center gap-1.5 pt-1 text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
                 <FiClock size={13} />
-                {copy.statuses.pending}
+                {copy.successStatus}: {copy.statuses[statusKey(result.status)]}
               </span>
             </div>
 

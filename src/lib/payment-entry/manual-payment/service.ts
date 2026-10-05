@@ -6,7 +6,7 @@
  * (`/api/payment-entry/manual*`), which writes/reads a real **Manual Payment
  * Request** document. The flow never creates an ERPNext Payment Entry from an
  * unverified screenshot — a proof becomes a request with status
- * "Pending Verification", and the ERP returns its real document id
+ * "Draft", and the ERP returns its real document id
  * (e.g. "MPR-2026-00001").
  */
 
@@ -41,5 +41,6 @@ export function statusKey(server: string | undefined): ManualPaymentStatusKey {
   if (value.startsWith("verified")) return "verified";
   if (value.startsWith("rejected")) return "rejected";
   if (value.startsWith("cancel")) return "cancelled";
+  if (value.startsWith("draft")) return "draft";
   return "pending";
 }
