@@ -102,9 +102,10 @@ export interface ManualPaymentSubmitInput {
   sender_account_name?: string;
   sender_account_number?: string;
   transfer_reference?: string;
-  // Proof (base64 `data:` URL + original file name)
-  proof_file_data: string;
-  proof_file_name: string;
+  // Proof (base64 `data:` URL + original file name) — required for a Bank
+  // transfer only; omitted entirely for bKash / Rocket (no screenshot).
+  proof_file_data?: string;
+  proof_file_name?: string;
   language: string;
 }
 

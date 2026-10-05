@@ -2763,8 +2763,10 @@ const server = createServer(async (request, response) => {
       failure(response, 417, "ValidationError", t("সঠিক পরিমাণ লিখুন (০-এর বেশি)।", "Enter a valid amount (greater than 0)."), "Manual Payment");
       return;
     }
-    if (!String(body.proof_file_data || "").trim()) {
-      failure(response, 417, "ValidationError", t("পেমেন্টের প্রমাণের ছবি যোগ করুন।", "Attach the payment proof image."), "Manual Payment");
+    // A receipt image is required for Bank transfers only; bKash / Rocket no longer
+    // submit any proof (mirrors shikkha_os.api.v1.manual_payment.create).
+    if (canon === "Bank" && !String(body.proof_file_data || "").trim()) {
+      failure(response, 417, "ValidationError", t("পেমেন্টের রিসিট যোগ করুন।", "Attach the payment receipt image."), "Manual Payment");
       return;
     }
 
@@ -2835,7 +2837,7 @@ const server = createServer(async (request, response) => {
       sender_account_name: wallet.sender_account_name || "",
       sender_account_number: wallet.sender_account_number || "",
       transfer_reference: wallet.transfer_reference || "",
-      proof_attachment: "/private/files/payment-proof.png",
+      proof_attachment: canon === "Bank" ? "/private/files/payment-proof.png" : "",
       note: String(body.note || ""),
       status: "Draft",
       verified_by: "",

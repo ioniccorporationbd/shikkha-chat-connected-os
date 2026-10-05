@@ -12,7 +12,6 @@ import type { ManualPaymentSubmitInput } from "@/lib/payment-entry/manual-paymen
 import { toast } from "@/lib/ui/toast";
 
 import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentField";
-import PaymentProofUpload, { type ProofSelection } from "./PaymentProofUpload";
 import { amountInput, digitsOnly, todayISO } from "./form-utils";
 
 export interface MobileWalletFormProps {
@@ -26,11 +25,12 @@ export interface MobileWalletFormProps {
 /**
  * The bKash / Rocket manual-payment form — one implementation for the shared
  * "mobile wallet" family. Fields: amount, sender mobile, transaction ID,
- * payment date, proof image, optional note.
+ * payment date, optional note. No payment proof / screenshot is required for
+ * wallet transfers (only a Bank transfer needs a receipt), so no file is
+ * uploaded here.
  *
- * On submit it produces the real backend payload (the proof travels as a
- * base64 `data:` URL); validation here is convenience only — the ERP validates
- * again.
+ * On submit it produces the real backend payload; validation here is
+ * convenience only — the ERP validates again.
  */
 export default function MobileWalletForm({
   method,
@@ -45,7 +45,6 @@ export default function MobileWalletForm({
   const [trx, setTrx] = useState("");
   const [date, setDate] = useState(today);
   const [note, setNote] = useState("");
-  const [proof, setProof] = useState<ProofSelection | null>(null);
   const [touched, setTouched] = useState(false);
 
   const idPrefix = method;
@@ -58,7 +57,6 @@ export default function MobileWalletForm({
     if (trx.trim().length < 4) errors.trx = copy.errTransactionId;
     if (!date) errors.date = copy.errDate;
     else if (date > today) errors.date = copy.errFutureDate;
-    if (!proof) errors.proof = copy.errProof;
     return errors;
   };
 
@@ -71,7 +69,6 @@ export default function MobileWalletForm({
       toast.warning(copy.errSummary);
       return;
     }
-    if (!proof) return;
     onSubmit({
       payment_method: method,
       amount: Number(amount),
@@ -79,8 +76,6 @@ export default function MobileWalletForm({
       sender_mobile: normalizeMobile(mobile),
       transaction_id: trx.trim(),
       note: note.trim() || undefined,
-      proof_file_data: proof.preview,
-      proof_file_name: proof.file.name,
       language,
     });
   };
@@ -154,13 +149,6 @@ export default function MobileWalletForm({
           className={`${PAY_FIELD_CLASS} ${payBorder(Boolean(errors.date))}`}
         />
       </PaymentField>
-
-      <PaymentProofUpload
-        copy={copy}
-        inputId={`${idPrefix}-proof`}
-        invalid={Boolean(errors.proof)}
-        onChange={setProof}
-      />
 
       <PaymentField
         id={`${idPrefix}-note`}
