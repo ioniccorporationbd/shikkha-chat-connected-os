@@ -24,6 +24,7 @@ import {
   EMPTY_AMOUNT,
   EMPTY_APPLIED,
   ROWS_PER_PAGE_OPTIONS,
+  matchesQuery,
   type AmountFilter,
   type AppliedFilters,
 } from "@/lib/dashboard/list-controls";
@@ -105,6 +106,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   const [amountDraft, setAmountDraft] = useState<AmountFilter>(EMPTY_AMOUNT);
   const [fromDraft, setFromDraft] = useState("");
   const [toDraft, setToDraft] = useState("");
+  const [searchDraft, setSearchDraft] = useState("");
   const [applied, setApplied] = useState<AppliedFilters>(EMPTY_APPLIED);
   const [filterError, setFilterError] = useState("");
 
@@ -249,7 +251,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   }, [payments, copy]);
 
   const filtered = useMemo(() => {
-    const { amount, fromDate, toDate } = applied;
+    const { amount, fromDate, toDate, search } = applied;
     return payments.filter((row) => {
       if (statusFilter !== "all" && String(row.display_status || "").trim().toLowerCase() !== statusFilter) {
         return false;
@@ -265,6 +267,19 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
       const posting = String(row.posting_date || "");
       if (fromDate && posting < fromDate) return false;
       if (toDate && posting > toDate) return false;
+      if (
+        !matchesQuery(
+          [
+            row.name,
+            row.mode_of_payment,
+            (row as { customer_name?: string }).customer_name,
+            (row as { reference_no?: string }).reference_no,
+          ],
+          search,
+        )
+      ) {
+        return false;
+      }
       return true;
     });
   }, [payments, statusFilter, applied]);
@@ -331,15 +346,16 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
 
     setFilterError("");
     setAmountDraft((prev) => ({ ...prev }));
-    setApplied({ amount: { ...amountDraft }, fromDate: fromDraft, toDate: toDraft });
+    setApplied({ amount: { ...amountDraft }, fromDate: fromDraft, toDate: toDraft, search: searchDraft });
     setPage(1);
-  }, [amountDraft, fromDraft, toDraft, copy.filterInvalidAmount, copy.filterInvalidAmountRange, copy.filterInvalidDateRange]);
+  }, [amountDraft, fromDraft, toDraft, searchDraft, copy.filterInvalidAmount, copy.filterInvalidAmountRange, copy.filterInvalidDateRange]);
 
   const resetFilters = useCallback(() => {
     setStatusFilter("all");
     setAmountDraft(EMPTY_AMOUNT);
     setFromDraft("");
     setToDraft("");
+    setSearchDraft("");
     setApplied(EMPTY_APPLIED);
     setFilterError("");
     setRowsPerPage(ROWS_PER_PAGE_OPTIONS[0]);
@@ -523,6 +539,8 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
               {/* ---- Filter toolbar (ERPNext-style, shared) ---- */}
               <ListFilterBar
                 copy={copy}
+                search={searchDraft}
+                onSearchChange={setSearchDraft}
                 statusValue={statusFilter}
                 statusOptions={statusOptions}
                 onStatusChange={(value) => {
@@ -598,7 +616,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                             ].map((heading) => (
                               <th
                                 key={heading}
-                                className="whitespace-nowrap px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                                className="whitespace-nowrap px-4 py-3.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
                               >
                                 {heading}
                               </th>
@@ -609,7 +627,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                           {pageRows.map((payment, index) => (
                             <tr
                               key={payment.name}
-                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] [&>td]:py-3.5"
                             >
                               <td className="px-4 py-3 text-[13px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
                                 {pageStart + index + 1}

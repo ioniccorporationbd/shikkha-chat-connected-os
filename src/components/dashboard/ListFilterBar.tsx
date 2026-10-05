@@ -1,22 +1,25 @@
 "use client";
 
-import { FiFilter, FiRotateCcw, FiSliders } from "react-icons/fi";
+import { FiFilter, FiRotateCcw, FiSearch, FiSliders, FiX } from "react-icons/fi";
 
 import type { AmountFilter, ListFilterCopy } from "@/lib/dashboard/list-controls";
 
 const INPUT =
-  "h-9 w-full rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)]";
+  "h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const LABEL =
-  "text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]";
+  "text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
 /**
- * Compact, ERPNext/Frappe DocType-list-style filter toolbar shared by the
- * dashboard list panels. One bordered strip of compact controls (status, amount
- * exact/min/max, posting-date from/to) with Apply + Reset — dense, wrapped, and
- * theme-aligned. Purely controlled: the caller owns the filter state + handlers.
+ * Premium, ERPNext/Frappe DocType-list-style filter card shared by the dashboard
+ * list panels (Service Build, Payment Entry). A titled surface with a prominent
+ * search field, status, amount (exact/min/max) and posting-date from/to, plus
+ * Apply + Reset — roomy spacing, no squeezed controls. Purely controlled: the
+ * caller owns the filter state + handlers.
  */
 export default function ListFilterBar({
   copy,
+  search,
+  onSearchChange,
   statusValue,
   statusOptions,
   onStatusChange,
@@ -31,6 +34,8 @@ export default function ListFilterBar({
   error,
 }: {
   copy: ListFilterCopy;
+  search: string;
+  onSearchChange: (value: string) => void;
   statusValue: string;
   statusOptions: { value: string; label: string }[];
   onStatusChange: (value: string) => void;
@@ -45,17 +50,48 @@ export default function ListFilterBar({
   error?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-3 shadow-[0_10px_26px_-20px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
-      <div className="flex flex-wrap items-end gap-2.5">
-        <span
-          className="mb-1 inline-flex items-center gap-1.5 self-center text-[var(--color-primary)]"
-          title={copy.filterHint}
-        >
+    <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_20px_44px_-34px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:p-5">
+      <div className="flex items-center gap-2.5">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[var(--color-primary)]">
           <FiSliders size={15} aria-hidden />
-          <span className="hidden text-[11.5px] font-semibold sm:inline">{copy.filterHeading}</span>
         </span>
+        <div className="min-w-0">
+          <h2 className="text-[13.5px] font-semibold">{copy.filterHeading}</h2>
+          <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+            {copy.filterHint}
+          </p>
+        </div>
+      </div>
 
-        <label className="flex min-w-[128px] flex-1 flex-col gap-1 sm:flex-none">
+      <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+        <label className="flex flex-col gap-1.5 sm:col-span-2 xl:col-span-4">
+          <span className={LABEL}>{copy.filterSearchLabel}</span>
+          <span className="relative block">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+              <FiSearch size={15} aria-hidden />
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={copy.filterSearchPlaceholder}
+              aria-label={copy.filterSearchLabel}
+              className={`${INPUT} pr-9 pl-9`}
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                aria-label={copy.filterClear}
+                className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] hover:text-[var(--color-primary)]"
+              >
+                <FiX size={14} aria-hidden />
+              </button>
+            ) : null}
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterStatusLabel}</span>
           <select
             value={statusValue}
@@ -72,7 +108,7 @@ export default function ListFilterBar({
           </select>
         </label>
 
-        <label className="flex min-w-[128px] flex-1 flex-col gap-1 sm:flex-none">
+        <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterAmountLabel}</span>
           <select
             value={amount.mode}
@@ -87,7 +123,7 @@ export default function ListFilterBar({
         </label>
 
         {amount.mode === "exact" ? (
-          <label className="flex min-w-[110px] flex-1 flex-col gap-1 sm:flex-none">
+          <label className="flex flex-col gap-1.5">
             <span className={LABEL}>{copy.filterAmountExact}</span>
             <input
               type="number"
@@ -104,7 +140,7 @@ export default function ListFilterBar({
 
         {amount.mode === "range" ? (
           <>
-            <label className="flex min-w-[96px] flex-1 flex-col gap-1 sm:flex-none">
+            <label className="flex flex-col gap-1.5">
               <span className={LABEL}>{copy.filterMinPlaceholder}</span>
               <input
                 type="number"
@@ -117,7 +153,7 @@ export default function ListFilterBar({
                 className={INPUT}
               />
             </label>
-            <label className="flex min-w-[96px] flex-1 flex-col gap-1 sm:flex-none">
+            <label className="flex flex-col gap-1.5">
               <span className={LABEL}>{copy.filterMaxPlaceholder}</span>
               <input
                 type="number"
@@ -133,7 +169,7 @@ export default function ListFilterBar({
           </>
         ) : null}
 
-        <label className="flex min-w-[132px] flex-1 flex-col gap-1 sm:flex-none">
+        <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterFromLabel}</span>
           <input
             type="date"
@@ -144,7 +180,7 @@ export default function ListFilterBar({
           />
         </label>
 
-        <label className="flex min-w-[132px] flex-1 flex-col gap-1 sm:flex-none">
+        <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterToLabel}</span>
           <input
             type="date"
@@ -154,28 +190,32 @@ export default function ListFilterBar({
             className={INPUT}
           />
         </label>
-
-        <div className="flex items-center gap-2 self-end">
-          <button
-            type="button"
-            onClick={onApply}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3.5 transition hover:opacity-90"
-          >
-            <FiFilter size={14} className="text-[var(--color-white)]" aria-hidden />
-            <span className="text-[12.5px] font-semibold text-[var(--color-white)]">{copy.filterApply}</span>
-          </button>
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-3 transition hover:border-[var(--color-primary)]"
-          >
-            <FiRotateCcw size={14} className="text-[var(--color-primary)]" aria-hidden />
-            <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.filterClear}</span>
-          </button>
-        </div>
       </div>
 
-      {error ? <p className="mt-2 text-[12px] font-medium text-[var(--color-danger-strong)]">{error}</p> : null}
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <button
+          type="button"
+          onClick={onReset}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+        >
+          <span className="text-[var(--color-primary)]">
+            <FiRotateCcw size={15} aria-hidden />
+          </span>
+          <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.filterClear}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onApply}
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-5 shadow-[0_14px_28px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-90 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus:outline-none"
+        >
+          <span className="text-[var(--color-white)]">
+            <FiFilter size={15} aria-hidden />
+          </span>
+          <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.filterApply}</span>
+        </button>
+      </div>
+
+      {error ? <p className="mt-3 text-[12px] font-medium text-[var(--color-danger-strong)]">{error}</p> : null}
     </div>
   );
 }

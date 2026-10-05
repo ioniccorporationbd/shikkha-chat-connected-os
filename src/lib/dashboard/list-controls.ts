@@ -7,7 +7,7 @@
  * duplicates the other's pagination/filter logic.
  */
 
-export const ROWS_PER_PAGE_OPTIONS = [20, 100, 500] as const;
+export const ROWS_PER_PAGE_OPTIONS = [20, 100, 500, 1000] as const;
 export type RowsPerPage = (typeof ROWS_PER_PAGE_OPTIONS)[number];
 
 export type AmountMode = "any" | "exact" | "range";
@@ -25,14 +25,40 @@ export interface AppliedFilters {
   amount: AmountFilter;
   fromDate: string;
   toDate: string;
+  /** Free-text search over the already-loaded rows (client-side only). */
+  search: string;
 }
 
-export const EMPTY_APPLIED: AppliedFilters = { amount: EMPTY_AMOUNT, fromDate: "", toDate: "" };
+export const EMPTY_APPLIED: AppliedFilters = {
+  amount: EMPTY_AMOUNT,
+  fromDate: "",
+  toDate: "",
+  search: "",
+};
+
+/**
+ * Case-insensitive "does any of these fields contain the query" test.
+ *
+ * Pure and framework-free so both panels share one search semantics. An empty /
+ * whitespace-only query always matches (search is a no-op until the user types).
+ * Only ever run against rows the backend already returned — it never widens the
+ * server-side scope.
+ */
+export function matchesQuery(
+  fields: (string | number | null | undefined)[],
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return fields.some((field) => String(field ?? "").toLowerCase().includes(needle));
+}
 
 /** Labels the shared filter toolbar needs (structurally met by each panel copy). */
 export interface ListFilterCopy {
   filterHeading: string;
   filterHint: string;
+  filterSearchLabel: string;
+  filterSearchPlaceholder: string;
   filterStatusLabel: string;
   filterStatusAll: string;
   filterAmountLabel: string;
@@ -50,6 +76,7 @@ export interface ListFilterCopy {
 
 /** Labels the shared pagination footer needs. */
 export interface ListPaginationCopy {
+  totalRecordsLabel: string;
   rowsPerPageShow: string;
   rowsPerPageSuffix: string;
   pagePrev: string;

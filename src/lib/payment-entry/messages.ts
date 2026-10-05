@@ -86,6 +86,8 @@ export interface PaymentEntryCopy {
   colSl: string;
   filterHeading: string;
   filterHint: string;
+  filterSearchLabel: string;
+  filterSearchPlaceholder: string;
   filterStatusLabel: string;
   filterStatusAll: string;
   filterAmountLabel: string;
@@ -112,6 +114,7 @@ export interface PaymentEntryCopy {
   chartAvg: string;
   chartStatusBreakdown: string;
 
+  totalRecordsLabel: string;
   rowsPerPageShow: string;
   rowsPerPageSuffix: string;
   pagePrev: string;
@@ -216,6 +219,8 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     colSl: "ক্রম",
     filterHeading: "ফিল্টার",
     filterHint: "আপনার পেমেন্ট সহজে খুঁজে বের করুন।",
+    filterSearchLabel: "খুঁজুন",
+    filterSearchPlaceholder: "আইডি, কাস্টমার বা রেফারেন্স…",
     filterStatusLabel: "স্ট্যাটাস",
     filterStatusAll: "সব",
     filterAmountLabel: "পরিমাণ",
@@ -242,6 +247,7 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     chartAvg: "গড় পেমেন্ট",
     chartStatusBreakdown: "স্ট্যাটাস অনুযায়ী বিভাজন",
 
+    totalRecordsLabel: "মোট রেকর্ড",
     rowsPerPageShow: "দেখান",
     rowsPerPageSuffix: "টি পেমেন্ট",
     pagePrev: "আগের",
@@ -353,6 +359,8 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     colSl: "SL",
     filterHeading: "Filters",
     filterHint: "Narrow down your payments.",
+    filterSearchLabel: "Search",
+    filterSearchPlaceholder: "Search by ID, customer or reference…",
     filterStatusLabel: "Status",
     filterStatusAll: "All",
     filterAmountLabel: "Amount",
@@ -379,6 +387,7 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     chartAvg: "Average payment",
     chartStatusBreakdown: "Status breakdown",
 
+    totalRecordsLabel: "Total Records",
     rowsPerPageShow: "Show",
     rowsPerPageSuffix: "payments",
     pagePrev: "Prev",

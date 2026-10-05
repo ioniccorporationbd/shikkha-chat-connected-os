@@ -52,6 +52,8 @@ export interface ServiceBuildCopy {
   // ---- Filters ----
   filterHeading: string;
   filterHint: string;
+  filterSearchLabel: string;
+  filterSearchPlaceholder: string;
   filterStatusLabel: string;
   filterStatusAll: string;
   filterAmountLabel: string;
@@ -70,6 +72,7 @@ export interface ServiceBuildCopy {
   filterInvalidDateRange: string;
 
   // ---- Rows per page + pagination ----
+  totalRecordsLabel: string;
   rowsPerPageShow: string;
   rowsPerPageSuffix: string;
   pagePrev: string;
@@ -175,6 +178,8 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
 
     filterHeading: "ফিল্টার",
     filterHint: "আপনার ইনভয়েস সহজে খুঁজে বের করুন।",
+    filterSearchLabel: "খুঁজুন",
+    filterSearchPlaceholder: "আইডি, শিরোনাম বা কাস্টমার…",
     filterStatusLabel: "স্ট্যাটাস",
     filterStatusAll: "সব",
     filterAmountLabel: "পরিমাণ",
@@ -192,6 +197,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     filterInvalidAmountRange: "সর্বনিম্ন পরিমাণ সর্বোচ্চ পরিমাণের চেয়ে বেশি হতে পারে না।",
     filterInvalidDateRange: "শুরুর তারিখ শেষ তারিখের চেয়ে পরে হতে পারে না।",
 
+    totalRecordsLabel: "মোট রেকর্ড",
     rowsPerPageShow: "দেখান",
     rowsPerPageSuffix: "টি ইনভয়েস",
     pagePrev: "আগের",
@@ -300,6 +306,8 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
 
     filterHeading: "Filters",
     filterHint: "Narrow down your invoices.",
+    filterSearchLabel: "Search",
+    filterSearchPlaceholder: "Search by ID, title or customer…",
     filterStatusLabel: "Status",
     filterStatusAll: "All",
     filterAmountLabel: "Amount",
@@ -317,6 +325,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     filterInvalidAmountRange: "Min amount cannot be greater than max amount.",
     filterInvalidDateRange: "The from date cannot be after the to date.",
 
+    totalRecordsLabel: "Total Records",
     rowsPerPageShow: "Show",
     rowsPerPageSuffix: "invoices",
     pagePrev: "Prev",
