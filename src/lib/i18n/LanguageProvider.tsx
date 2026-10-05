@@ -34,6 +34,9 @@ const translations: Record<string, string> = {
   "One connected platform for school, family and learning — tap a section to explore it.":
     "স্কুল, পরিবার ও শেখার জন্য একটি সংযুক্ত প্ল্যাটফর্ম — ঘুরে দেখতে যেকোনো সেকশনে ট্যাপ করুন।",
 
+  "Request a Demo": "ডেমো রিকোয়েস্ট করুন",
+  "Explore Features": "ফিচারসমূহ দেখুন",
+
   "Home Connections": "হোম কানেকশন",
   "Student Achievement": "শিক্ষার্থী অর্জন",
   "Operational Excellence": "অপারেশনাল উৎকর্ষতা",

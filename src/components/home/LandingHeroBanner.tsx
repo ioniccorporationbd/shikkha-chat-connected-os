@@ -263,6 +263,15 @@ export default function LandingHeroBanner() {
           <p className="mx-auto mt-3 max-w-[660px] text-[13px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_72%,transparent)] md:text-[15px]">
             One connected platform for school, family and learning — tap a section to explore it.
           </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <a className="mk-btn mk-btn--primary" href="#mk-cta">
+              Request a Demo
+            </a>
+            <a className="mk-btn mk-btn--ghost" href="#mk-features">
+              Explore Features
+            </a>
+          </div>
         </motion.div>
 
         <div className="relative mt-5 flex flex-1 items-center justify-center lg:mt-8">
