@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import {
+  FiCamera,
   FiClock,
   FiDollarSign,
   FiEdit2,
@@ -13,16 +14,17 @@ import {
   FiLogOut,
   FiMenu,
   FiRefreshCw,
+  FiSmartphone,
   FiX,
 } from "react-icons/fi";
 
-import ActivityList from "@/components/dashboard/ActivityList";
 import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
 import CheckInOutView from "@/components/dashboard/CheckInOutView";
 import CreateCustomerView from "@/components/dashboard/CreateCustomerView";
 import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
+import LoginHistoryCard from "@/components/dashboard/LoginHistoryCard";
 import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
 import PanelCard from "@/components/dashboard/PanelCard";
 import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
@@ -38,6 +40,8 @@ import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
+import { formatBdMobile } from "@/lib/format/mobile";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
@@ -68,8 +72,6 @@ const CLIENT_NAV_KEYS = ["overview"] as const;
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
-/** Profile rows already shown in the identity header of the account card. */
-const SKIP_PROFILE_ROWS = new Set(["Full Name", "Email"]);
 /** Roles shown before the "+N more" control appears. */
 const MAX_ROLES = 3;
 
@@ -169,14 +171,33 @@ export default function DashboardShell({
   }, [resetSession, router]);
 
   const handleReload = useCallback(async () => {
+    // Smart reload: remember the visible state, refetch, then compare. Nothing
+    // changed → a lightweight query refresh is enough; something changed → a
+    // full browser reload so every panel resyncs. Runs once per click, so a
+    // reload can never loop.
+    const before = dashboardSnapshot(data);
+
     try {
       const result = await refetch();
-      if (result.error) toast.error(copy.reloadFailed);
-      else toast.success(copy.reloadDone);
+
+      if (result.error) {
+        toast.error(copy.reloadFailed);
+        return;
+      }
+
+      const after = dashboardSnapshot(result.data);
+
+      if (before && after && before !== after) {
+        toast.info(copy.reloadChanged);
+        window.location.reload();
+        return;
+      }
+
+      toast.success(copy.reloadNoChanges);
     } catch {
       toast.error(copy.reloadFailed);
     }
-  }, [refetch, copy]);
+  }, [refetch, copy, data]);
 
   const displayName = user?.full_name || user?.name || "";
   const accountType = (user?.user_type ?? "").trim();
@@ -206,9 +227,30 @@ export default function DashboardShell({
   const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
   const visibleRoles = rolesOpen ? roles : roles.slice(0, MAX_ROLES);
 
-  const infoRows = (data?.profile ?? [])
-    .filter((row) => !SKIP_PROFILE_ROWS.has(row.label))
-    .slice(0, 4);
+  // Profile rows the ERP sends for the account (label → value).
+  const profileRow = (label: string) =>
+    (data?.profile ?? []).find((row) => row.label.toLowerCase() === label.toLowerCase())?.value ?? "";
+
+  // The Overview shows the account's mobile in the local 01XXXXXXXXX form.
+  const mobileRaw =
+    (data?.profile ?? []).find((row) => /mobile|phone|মোবাইল|ফোন/i.test(row.label))?.value ?? "";
+  const mobileNumber = formatBdMobile(mobileRaw);
+
+  const username = user?.name ?? "";
+  const emailValue = user?.email ?? "";
+
+  // Only the meaningful, non-empty profile fields — never a blank row.
+  const profileInfo = [
+    { label: "Full Name", value: displayName },
+    { label: "Username", value: username && username !== emailValue ? username : "" },
+    { label: "Mobile", value: mobileNumber },
+    { label: "Email", value: emailValue },
+    { label: "Designation", value: user?.designation ?? profileRow("Designation") },
+    { label: "Department", value: user?.department ?? profileRow("Department") },
+    { label: "Location", value: profileRow("Location") },
+    { label: "Time Zone", value: user?.time_zone ?? profileRow("Time Zone") },
+    { label: "Language", value: user?.language ?? profileRow("Language") },
+  ].filter((row) => String(row.value ?? "").trim() !== "");
 
   // Prefill the New Ticket form from the signed-in profile (name/email/mobile).
   const helpDeskContact = {
@@ -598,28 +640,54 @@ export default function DashboardShell({
               />
             ) : (
               <>
-            {/* Overview top profile section (item 1) */}
+            {/* Overview — profile hero (item 1) */}
             <section
               className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}
             >
               <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))_0%,var(--color-white)_70%)] p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex min-w-0 items-center gap-4">
-                  <UserAvatar
-                    user={user ?? { full_name: displayName, name: displayName }}
-                    size={72}
-                    rounded="rounded-3xl"
-                    className="shadow-[0_16px_36px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
-                  />
+                <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    aria-label={copy.changePhoto}
+                    className="group relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
+                  >
+                    <UserAvatar
+                      user={user ?? { full_name: displayName, name: displayName }}
+                      size={112}
+                      rounded="rounded-full"
+                      sizeClass="h-24 w-24 sm:h-28 sm:w-28"
+                      className="ring-4 ring-[var(--color-white)] shadow-[0_20px_44px_-22px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    >
+                      <span className="flex flex-col items-center gap-1 text-[var(--color-white)]">
+                        <FiCamera size={22} />
+                        <span className="text-[10.5px] font-semibold">{copy.changePhoto}</span>
+                      </span>
+                    </span>
+                  </button>
 
                   <div className="min-w-0">
-                    <h1 className="truncate text-[20px] font-semibold leading-tight sm:text-[23px]">
+                    <h1 className="truncate text-[21px] font-semibold leading-tight sm:text-[24px]">
                       {displayName || copy.greetingFallback}
                     </h1>
+
+                    {mobileNumber ? (
+                      <p className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                        <FiSmartphone size={13} />
+                        <span className="tabular-nums">{mobileNumber}</span>
+                      </p>
+                    ) : null}
+
                     {user?.name ? (
-                      <p className="mt-0.5 flex items-center gap-1.5 truncate text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                      <p className="mt-0.5 truncate text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                         <span className="font-medium">@{user.name}</span>
                       </p>
                     ) : null}
+
                     {accountLabel ? (
                       <span className="mt-2 inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-0.5">
                         <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-primary)]">
@@ -630,7 +698,7 @@ export default function DashboardShell({
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start lg:justify-end">
                   <button
                     type="button"
                     onClick={() => setEditOpen(true)}
@@ -655,11 +723,11 @@ export default function DashboardShell({
                 </div>
               </div>
 
-              {(infoRows.length || roles.length) ? (
+              {(profileInfo.length || roles.length) ? (
                 <div className="grid gap-4 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] p-5 sm:grid-cols-2 sm:p-6">
-                  {infoRows.length ? (
+                  {profileInfo.length ? (
                     <dl className="grid gap-3 sm:grid-cols-2">
-                      {infoRows.map((row) => (
+                      {profileInfo.map((row) => (
                         <div key={row.label} className="min-w-0">
                           <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                             {copy.profileFields[row.label] ?? row.label}
@@ -673,7 +741,7 @@ export default function DashboardShell({
                   ) : null}
 
                   {roles.length ? (
-                    <div className={infoRows.length ? "sm:border-l sm:border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:pl-4" : ""}>
+                    <div className={profileInfo.length ? "sm:border-l sm:border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:pl-4" : ""}>
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.roleLabel}
                       </p>
@@ -812,26 +880,11 @@ export default function DashboardShell({
                 </section>
 
                 <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
-                  <PanelCard title={copy.activityHeading} hint={copy.activityHint}>
-                    <ActivityList rows={data.activity} copy={copy} />
+                  <PanelCard title={copy.loginHistoryHeading} hint={copy.loginHistoryHint}>
+                    <LoginHistoryCard rows={data.activity} copy={copy} language={language} />
                   </PanelCard>
 
                   <div className="flex flex-col gap-4">
-                    <PanelCard title={copy.profileHeading} hint={copy.profileHint}>
-                      <dl className="flex flex-col gap-2.5">
-                        {data.profile.map((row) => (
-                          <div key={row.label} className="flex items-start justify-between gap-4">
-                            <dt className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                              {copy.profileFields[row.label] ?? row.label}
-                            </dt>
-                            <dd className="max-w-[60%] break-words text-right text-[13px] font-medium">
-                              {row.value}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </PanelCard>
-
                     <PanelCard title={copy.quickLinksHeading} hint={copy.quickLinksHint}>
                       <QuickLinks
                         links={data.quick_links}

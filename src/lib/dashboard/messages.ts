@@ -74,6 +74,17 @@ export interface DashboardCopy {
   closeMenu: string;
   reloadDone: string;
   reloadFailed: string;
+  /** Smart Reload — nothing changed (lightweight refresh) vs something did (hard reload). */
+  reloadNoChanges: string;
+  reloadChanged: string;
+  /** Login history (redesigned from the account's sign-in audit trail). */
+  loginHistoryHeading: string;
+  loginHistoryHint: string;
+  loginHistoryEmpty: string;
+  seeMore: (n: number) => string;
+  seeLess: string;
+  /** Overview profile-image hover affordance. */
+  changePhoto: string;
   /** Check In / Out quick-access card on the overview. */
   checkinCardHint: string;
   /** Expense Claim quick-access card on the overview. */
@@ -174,6 +185,14 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     closeMenu: "মেনু বন্ধ করুন",
     reloadDone: "ড্যাশবোর্ডের তথ্য হালনাগাদ হয়েছে।",
     reloadFailed: "রিফ্রেশ করা যায়নি। আবার চেষ্টা করুন।",
+    reloadNoChanges: "কোনো নতুন পরিবর্তন নেই। তথ্য হালনাগাদ করা হয়েছে।",
+    reloadChanged: "নতুন পরিবর্তন পাওয়া গেছে। ড্যাশবোর্ড পুনরায় লোড হচ্ছে।",
+    loginHistoryHeading: "লগইন ইতিহাস",
+    loginHistoryHint: "আপনার অ্যাকাউন্টে সাম্প্রতিক সাইন-ইন কার্যক্রম",
+    loginHistoryEmpty: "এখনও কোনো লগইন ইতিহাস পাওয়া যায়নি।",
+    seeMore: (n) => `আরও দেখুন (${n}টি)`,
+    seeLess: "কম দেখুন",
+    changePhoto: "ছবি পরিবর্তন করুন",
     checkinCardHint: "চেক ইন / আউট করুন এবং আপনার দৈনিক উপস্থিতি রেকর্ড করুন।",
     expenseClaimCardHint: "আপনার খরচের দাবি তৈরি করুন এবং বর্তমান অবস্থা দেখুন।",
     openAction: "খুলুন",
@@ -197,9 +216,12 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     },
     profileFields: {
       "Full Name": "পূর্ণ নাম",
+      Username: "ব্যবহারকারী নাম",
+      Mobile: "মোবাইল",
       Email: "ইমেইল",
       Designation: "পদবি",
       Department: "বিভাগ",
+      Location: "লোকেশন",
       "Time Zone": "টাইম জোন",
       Language: "ভাষা",
       "Last Login": "সর্বশেষ লগইন",
@@ -295,6 +317,14 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     closeMenu: "Close menu",
     reloadDone: "Dashboard data refreshed.",
     reloadFailed: "Could not refresh. Please try again.",
+    reloadNoChanges: "No new changes. Data refreshed.",
+    reloadChanged: "New changes found. Reloading the dashboard.",
+    loginHistoryHeading: "Login History",
+    loginHistoryHint: "Recent sign-in activity on your account",
+    loginHistoryEmpty: "No login history yet.",
+    seeMore: (n) => `See more (${n})`,
+    seeLess: "See less",
+    changePhoto: "Change photo",
     checkinCardHint: "Check in or out and record your daily attendance.",
     expenseClaimCardHint: "Create your expense claims and track their current state.",
     openAction: "Open",

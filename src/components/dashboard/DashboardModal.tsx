@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { FiX } from "react-icons/fi";
 
@@ -14,6 +15,8 @@ interface DashboardModalProps {
   /** Right-aligned action row; rendered only when provided. */
   footer?: ReactNode;
   widthClass?: string;
+  /** Render the Shikkha Chat logo at the top of the dialog body. */
+  logo?: boolean;
 }
 
 /**
@@ -35,6 +38,7 @@ export default function DashboardModal({
   children,
   footer,
   widthClass = "max-w-[480px]",
+  logo = false,
 }: DashboardModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -168,7 +172,24 @@ export default function DashboardModal({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          {logo ? (
+            <div className="mb-4 flex justify-center">
+              <span className="relative block h-9 w-[130px]">
+                <Image
+                  src="/images/logo.png"
+                  alt="Shikkha Chat"
+                  fill
+                  priority
+                  sizes="130px"
+                  className="object-contain"
+                />
+              </span>
+            </div>
+          ) : null}
+
+          {children}
+        </div>
 
         {footer ? (
           <footer className="flex items-center justify-end gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-5 py-3">

@@ -38,6 +38,12 @@ type UserAvatarProps = {
   tone?: "solid" | "soft";
   rounded?: string;
   className?: string;
+  /**
+   * Responsive sizing classes (e.g. `h-24 w-24 sm:h-28 sm:w-28`). When given,
+   * these replace the fixed inline pixel box so the avatar can scale with the
+   * viewport; `size` still drives the monogram font scale.
+   */
+  sizeClass?: string;
 };
 
 /**
@@ -53,6 +59,7 @@ export default function UserAvatar({
   tone = "solid",
   rounded = "rounded-xl",
   className = "",
+  sizeClass,
 }: UserAvatarProps) {
   const name = user?.full_name || user?.name || "";
   const src = avatarSrc(user);
@@ -70,9 +77,14 @@ export default function UserAvatar({
         "relative grid shrink-0 place-items-center overflow-hidden font-semibold",
         rounded,
         toneClass,
+        sizeClass ?? "",
         className,
       ].join(" ")}
-      style={{ width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)) }}
+      style={
+        sizeClass
+          ? { fontSize: Math.max(12, Math.round(size * 0.38)) }
+          : { width: size, height: size, fontSize: Math.max(10, Math.round(size * 0.38)) }
+      }
     >
       {showImage ? (
         <Image

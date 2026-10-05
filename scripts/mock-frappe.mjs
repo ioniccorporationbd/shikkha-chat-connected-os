@@ -36,6 +36,10 @@ const AVATAR_BYTES = Buffer.from(
 );
 
 const sessions = new Map();
+// Optional per-request jitter for exercising the portal's Smart Reload: with
+// MOCK_OVERVIEW_JITTER=1 each dashboard payload changes slightly, so a refetch
+// genuinely differs and the portal must fall back to a hard reload.
+let overviewCallSeq = 0;
 
 const envelope = (data) =>
   JSON.stringify({ message: { api: "shikkha_os.v1", ok: true, data, meta: { duration_ms: 4 } } });
@@ -1070,9 +1074,18 @@ function clientProfile(email, fullName) {
  * quick links — the same scoping the real API applies for a non-desk user.
  */
 function dashboardPayload(account) {
-  const stamp = new Date().toISOString().slice(0, 19).replace("T", " ");
   const profile = account.profile;
   const staff = account.kind === "staff";
+
+  // Realistic, staggered audit timestamps (minutes ago) so the login-history
+  // timeline and its expand control can be exercised deterministically.
+  const aud = (minutesAgo, name, event, status, clientIp) => ({
+    name,
+    event,
+    status,
+    creation: new Date(Date.now() - minutesAgo * 60_000).toISOString().slice(0, 19).replace("T", " "),
+    client_ip: clientIp,
+  });
 
   const personalStats = [
     { key: "roles", label: "Roles", value: profile.roles.length, icon: "badge", hint: "Roles assigned to your account", scope: "personal" },
@@ -1082,7 +1095,7 @@ function dashboardPayload(account) {
 
   const siteStats = [
     { key: "users", label: "Active Users", value: 184, icon: "users", hint: "Enabled user accounts", scope: "site" },
-    { key: "customers", label: "Customers", value: 1268, icon: "customer", hint: "Active customer records", scope: "site" },
+    { key: "customers", label: "Customers", value: 1268 + Number(process.env.MOCK_OVERVIEW_BUMP || 0) + (process.env.MOCK_OVERVIEW_JITTER === "1" ? overviewCallSeq++ : 0), icon: "customer", hint: "Active customer records", scope: "site" },
     { key: "items", label: "Items", value: 342, icon: "box", hint: "Active item master records", scope: "site" },
     { key: "employees", label: "Employees", value: 57, icon: "badge", hint: "Active employees", scope: "site" },
     { key: "invoices", label: "Invoices (30 days)", value: 903, icon: "receipt", hint: "Submitted in the last 30 days", scope: "site" },
@@ -1092,6 +1105,9 @@ function dashboardPayload(account) {
     { label: "Full Name", value: profile.full_name },
     { label: "Email", value: profile.email },
   ];
+
+  const mobileNo = profileMobile(profile.email);
+  if (mobileNo) rows.push({ label: "Mobile", value: mobileNo });
 
   if (profile.designation) rows.push({ label: "Designation", value: profile.designation });
   if (profile.department) rows.push({ label: "Department", value: profile.department });
@@ -1105,13 +1121,26 @@ function dashboardPayload(account) {
     profile: rows,
     activity: staff
       ? [
-          { name: "SHIKKHA-AUD-2026-00008", event: "login_success", status: "Success", creation: stamp, client_ip: "103.15.20.4" },
-          { name: "SHIKKHA-AUD-2026-00007", event: "session_probe", status: "Success", creation: stamp, client_ip: "103.15.20.4" },
-          { name: "SHIKKHA-AUD-2026-00006", event: "login_failed", status: "Failed", creation: stamp, client_ip: "45.126.7.9" },
-          { name: "SHIKKHA-AUD-2026-00005", event: "logout", status: "Success", creation: stamp, client_ip: "103.15.20.4" },
+          aud(0, "SHIKKHA-AUD-2026-00012", "login_success", "Success", "103.15.20.4"),
+          aud(1, "SHIKKHA-AUD-2026-00011", "session_probe", "Success", "103.15.20.4"),
+          aud(3, "SHIKKHA-AUD-2026-00010", "login_failed", "Failed", "45.126.7.9"),
+          aud(8, "SHIKKHA-AUD-2026-00009", "login_success", "Success", "103.15.20.4"),
+          aud(20, "SHIKKHA-AUD-2026-00008", "logout", "Success", "103.15.20.4"),
+          aud(55, "SHIKKHA-AUD-2026-00007", "login_success", "Success", "103.15.20.4"),
+          aud(130, "SHIKKHA-AUD-2026-00006", "login_failed", "Failed", "45.126.7.9"),
+          aud(300, "SHIKKHA-AUD-2026-00005", "login_success", "Success", "103.15.20.4"),
+          aud(720, "SHIKKHA-AUD-2026-00004", "logout", "Success", "103.15.20.4"),
+          aud(1500, "SHIKKHA-AUD-2026-00003", "login_success", "Success", "103.15.20.4"),
+          aud(2600, "SHIKKHA-AUD-2026-00002", "login_failed", "Failed", "45.126.7.9"),
+          aud(4400, "SHIKKHA-AUD-2026-00001", "login_success", "Success", "103.15.20.4"),
         ]
       : [
-          { name: "SHIKKHA-AUD-2026-00004", event: "login_success", status: "Success", creation: stamp, client_ip: "103.15.20.4" },
+          aud(5, "SHIKKHA-AUD-2026-00006", "login_success", "Success", "103.15.20.4"),
+          aud(60, "SHIKKHA-AUD-2026-00005", "login_failed", "Failed", "45.126.7.9"),
+          aud(240, "SHIKKHA-AUD-2026-00004", "login_success", "Success", "103.15.20.4"),
+          aud(600, "SHIKKHA-AUD-2026-00003", "logout", "Success", "103.15.20.4"),
+          aud(1400, "SHIKKHA-AUD-2026-00002", "login_success", "Success", "103.15.20.4"),
+          aud(3000, "SHIKKHA-AUD-2026-00001", "session_probe", "Success", "103.15.20.4"),
         ],
     quick_links: staff
       ? [

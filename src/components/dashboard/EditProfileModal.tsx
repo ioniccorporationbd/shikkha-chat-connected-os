@@ -19,6 +19,7 @@ import { profileCopyFor } from "@/lib/auth/profile-messages";
 import { useProfileQuery } from "@/lib/auth/queries";
 import { looksTechnical } from "@/lib/auth/sanitize";
 import { useAuthStore } from "@/lib/auth/store";
+import { formatBdMobile } from "@/lib/format/mobile";
 import type {
   ProfileFieldMeta,
   ProfileImageUploadResult,
@@ -345,7 +346,7 @@ export default function EditProfileModal({
       <span className="relative block">
         <input
           type="text"
-          value={data?.mobile_no ?? ""}
+          value={formatBdMobile(data?.mobile_no)}
           readOnly
           disabled
           aria-readonly="true"
@@ -371,6 +372,7 @@ export default function EditProfileModal({
       closeLabel={copy.close}
       onClose={close}
       widthClass="max-w-[560px]"
+      logo
       footer={
         otpStep ? (
           <>
@@ -475,13 +477,13 @@ export default function EditProfileModal({
                 <img
                   src={previewSrc}
                   alt={name}
-                  className="h-[58px] w-[58px] rounded-2xl object-cover"
+                  className="h-[58px] w-[58px] rounded-full object-cover"
                 />
               ) : (
                 <UserAvatar
                   user={{ full_name: name, name, user_image: data?.user_image }}
                   size={58}
-                  rounded="rounded-2xl"
+                  rounded="rounded-full"
                 />
               )}
 
@@ -566,7 +568,10 @@ export default function EditProfileModal({
                 if (!list.length && !isBasic) return null;
 
                 return (
-                  <section key={section} className="flex flex-col gap-3">
+                  <section
+                    key={section}
+                    className="flex flex-col gap-3.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4"
+                  >
                     <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                       {copy.sectionLabels[section] ?? section}
                     </h3>

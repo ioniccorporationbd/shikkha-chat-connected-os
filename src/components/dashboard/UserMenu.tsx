@@ -16,6 +16,7 @@ import { authCopyFor } from "@/lib/auth/messages";
 import { profileCopyFor } from "@/lib/auth/profile-messages";
 import type { DashboardProfileRow, SessionUser } from "@/lib/auth/types";
 import { dashboardCopyFor } from "@/lib/dashboard/messages";
+import { formatBdMobile } from "@/lib/format/mobile";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 type UserMenuProps = {
@@ -176,7 +177,7 @@ export default function UserMenu({
                     {dashCopy.profileFields[row.label] ?? row.label}
                   </p>
                   <p className="mt-0.5 break-words text-[12px] font-medium text-[var(--color-primary)]">
-                    {row.value}
+                    {/mobile|phone|মোবাইল|ফোন/i.test(row.label) ? formatBdMobile(row.value) : row.value}
                   </p>
                 </div>
               ))}

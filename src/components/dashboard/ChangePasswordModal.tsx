@@ -129,6 +129,8 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
       subtitle={copy.passwordSubtitle}
       closeLabel={copy.close}
       onClose={onClose}
+      widthClass="max-w-[460px]"
+      logo
       footer={
         <>
           <button
@@ -157,38 +159,40 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
       }
     >
       <form
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();
           void handleSubmit();
         }}
       >
-        <PasswordField
-          label={copy.currentPassword}
-          value={current}
-          placeholder={copy.currentPasswordPlaceholder}
-          autoComplete="current-password"
-          onChange={setCurrent}
-          copy={copy}
-        />
+        <div className="flex flex-col gap-3.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4">
+          <PasswordField
+            label={copy.currentPassword}
+            value={current}
+            placeholder={copy.currentPasswordPlaceholder}
+            autoComplete="current-password"
+            onChange={setCurrent}
+            copy={copy}
+          />
 
-        <PasswordField
-          label={copy.newPassword}
-          value={next}
-          placeholder={copy.newPasswordPlaceholder}
-          autoComplete="new-password"
-          onChange={setNext}
-          copy={copy}
-        />
+          <PasswordField
+            label={copy.newPassword}
+            value={next}
+            placeholder={copy.newPasswordPlaceholder}
+            autoComplete="new-password"
+            onChange={setNext}
+            copy={copy}
+          />
 
-        <PasswordField
-          label={copy.confirmPassword}
-          value={confirm}
-          placeholder={copy.confirmPasswordPlaceholder}
-          autoComplete="new-password"
-          onChange={setConfirm}
-          copy={copy}
-        />
+          <PasswordField
+            label={copy.confirmPassword}
+            value={confirm}
+            placeholder={copy.confirmPasswordPlaceholder}
+            autoComplete="new-password"
+            onChange={setConfirm}
+            copy={copy}
+          />
+        </div>
 
         <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
           {copy.passwordHint}
