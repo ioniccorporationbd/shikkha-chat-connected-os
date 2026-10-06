@@ -55,14 +55,11 @@ export default function RecruitingAndHRPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      logo={text.logo}
       productDetailsText={text.productDetailsText}
       saveProductText={text.saveProductText}
       activeProductText={text.activeProductText}
-      imageAlt={text.imageAlt}
       pillStyle="solid"
       showButtons={false}
-      image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=220&q=80"
     />
   );
 }

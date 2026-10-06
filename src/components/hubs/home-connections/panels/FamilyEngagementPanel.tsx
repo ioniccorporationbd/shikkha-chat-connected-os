@@ -47,8 +47,6 @@ export default function FamilyEngagementPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      image="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=220&q=80"
-      logo={text.logo}
     />
   );
 }

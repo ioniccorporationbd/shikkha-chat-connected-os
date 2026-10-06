@@ -51,8 +51,6 @@ export default function EnrollmentPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      image="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=220&q=80"
-      logo={text.logo}
     />
   );
 }

@@ -15,8 +15,6 @@ type SectionPanelProps = {
   quote?: string;
   author?: string;
   role?: string;
-  image?: string;
-  logo?: string;
   showButtons?: boolean;
   /**
    * Overrides some panels pass through. They are optional and kept for API
@@ -25,31 +23,34 @@ type SectionPanelProps = {
   productDetailsText?: string;
   saveProductText?: string;
   activeProductText?: string;
-  imageAlt?: string;
 };
 
 const panelText = {
   bn: {
     productDetails: "পণ্যের বিস্তারিত",
     saveProduct: "পণ্য সংরক্ষণ করুন",
-    schoolLeader: "স্কুল নেতৃত্ব",
-    schoolLogo: "স্কুল লোগো",
   },
   en: {
     productDetails: "Product Details",
     saveProduct: "Save Product",
-    schoolLeader: "School leader",
-    schoolLogo: "School Logo",
   },
 } as const;
 
 /**
  * A right-hand detail card.
  *
- * Previously every card carried a sticky "সক্রিয় পণ্য / Active Product" bar at
- * the top; that repetitive chrome was removed (item 3) and each card now opens
- * with a clean header — a relevant icon plus the product label — above its
- * title and short description (item 4).
+ * Text-first and content-driven: each card opens with a clean header — a small
+ * icon plus the product eyebrow — sitting above its headline and short
+ * description. Action buttons, key stats and a short supporting statement
+ * (a quote with its author) follow when the panel supplies them.
+ *
+ * The former large image / logo media block was removed so each card
+ * communicates through its own copy rather than artwork, and no empty
+ * placeholder is left behind.
+ *
+ * Height is natural on mobile/tablet and locked to one viewport on desktop
+ * (>=1280px) so the right rail keeps the pinned-scroll alignment the home
+ * section relies on.
  */
 export default function SectionPanel({
   id,
@@ -60,12 +61,9 @@ export default function SectionPanel({
   quote,
   author,
   role,
-  image,
-  logo,
   showButtons = true,
   productDetailsText,
   saveProductText,
-  imageAlt,
 }: SectionPanelProps) {
   const { language } = useLanguage();
   const reduceMotion = useReducedMotion();
@@ -80,14 +78,14 @@ export default function SectionPanel({
     <motion.aside
       id={id}
       lang={currentLanguage}
-      className="right-panel-section relative min-h-screen w-full overflow-hidden bg-[var(--color-white)] px-5 py-5 text-[var(--color-primary)] sm:px-6 md:px-8 lg:px-9 lg:py-7"
+      className="right-panel-section relative min-h-0 w-full overflow-hidden bg-[var(--color-white)] px-5 py-5 text-[var(--color-primary)] sm:px-6 md:px-8 lg:px-9 lg:py-7 xl:min-h-screen"
       initial={reduceMotion ? false : { opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.12 }}
       transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex min-h-[calc(100vh-112px)] w-full flex-col justify-start pb-10 pt-3">
-        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_5%,var(--color-white))] p-5 sm:p-6">
+      <div className="flex w-full flex-col justify-start pb-10 pt-3 xl:min-h-[calc(100vh-112px)]">
+        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_5%,var(--color-white))] p-5 shadow-[0_18px_46px_-34px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition duration-500 hover:shadow-[0_30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-6">
         <motion.div
           className="mb-5 flex items-center gap-3"
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
@@ -208,30 +206,6 @@ export default function SectionPanel({
             >
               “{quote}”
             </motion.p>
-
-            <div className="right-quote-media relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent)]" />
-
-              <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8">
-                {image ? (
-                  <motion.img
-                    src={image}
-                    alt={imageAlt || author || text.schoolLeader}
-                    className="h-[78px] w-[78px] rounded-2xl object-cover grayscale shadow-[0_12px_28px_color-mix(in_srgb,var(--color-black)_15%,transparent)]"
-                    whileHover={reduceMotion ? undefined : { scale: 1.05, rotate: -1.5 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  />
-                ) : null}
-
-                <motion.div
-                  className="brand-logo-text flex min-h-[84px] w-[140px] items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_42%,transparent)] px-4 text-center font-black uppercase text-[var(--color-primary)] backdrop-blur-sm"
-                  whileHover={reduceMotion ? undefined : { scale: 1.035, rotate: 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                >
-                  {logo || text.schoolLogo}
-                </motion.div>
-              </div>
-            </div>
 
             {author ? (
               <motion.div

@@ -78,8 +78,6 @@ export default function StudentInformationSystemPanel() {
         quote={text.quote}
         author={text.author}
         role={text.role}
-        image="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=220&q=80"
-        logo={text.logo}
       />
     </section>
   );

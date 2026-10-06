@@ -62,9 +62,6 @@ export default function StudentInformationPanel() {
           quote={text.quote}
           author={text.author}
           role={text.role}
-          logo={text.logo}
-          image="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=220&q=80"
-          imageAlt={text.imageAlt}
         />
       </div>
     </section>

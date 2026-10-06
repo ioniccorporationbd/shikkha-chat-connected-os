@@ -897,10 +897,6 @@ html[data-lang="en"] .language-toggle-knob {
     inset 0 1px 0 color-mix(in srgb, var(--color-white) 30%, transparent);
 }
 
-.right-quote-media {
-  background: color-mix(in srgb, var(--color-secondary) 82%, var(--color-white));
-}
-
 /* Exact right-side type hierarchy */
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 :is(.active-product-text, .stat-label-text, .author-name-text, .author-role-text, .action-text, .interface-icon-text, .video-banner-pill-text) {
@@ -909,7 +905,7 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
-:is(.section-description, .quote-text, .brand-logo-text, .video-banner-description-text) {
+:is(.section-description, .quote-text, .video-banner-description-text) {
   font-size: 16px !important;
   line-height: 1.72 !important;
 }

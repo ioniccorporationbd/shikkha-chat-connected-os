@@ -51,8 +51,6 @@ export default function AttendanceSupportPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      image="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=220&q=80"
-      logo={text.logo}
     />
   );
 }

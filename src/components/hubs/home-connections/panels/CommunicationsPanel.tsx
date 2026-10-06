@@ -53,8 +53,6 @@ export default function CommunicationsPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      image="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=220&q=80"
-      logo={text.logo}
     />
   );
 }

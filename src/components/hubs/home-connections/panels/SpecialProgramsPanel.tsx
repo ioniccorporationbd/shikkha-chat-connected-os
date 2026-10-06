@@ -53,7 +53,6 @@ export default function SpecialProgramsPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      logo={text.logo}
     />
   );
 }
