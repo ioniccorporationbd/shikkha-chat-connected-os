@@ -542,7 +542,7 @@ export default function ProductRouterSection() {
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08]" />
+      <div className="pointer-events-none absolute inset-0 opacity-0" />
 
       <div className="pointer-events-none absolute left-1/2 top-12 h-[280px] w-[280px] -translate-x-1/2 rounded-full bg-[var(--color-secondary)] opacity-70 blur-[90px]" />
 
