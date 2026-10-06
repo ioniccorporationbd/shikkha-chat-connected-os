@@ -196,9 +196,13 @@ export default function RegisterForm() {
       setOtp("");
       setStep("otp");
       setBusy(false);
-      toast.success(copy.otpSentNotice);
-      if (payload?.delivery?.sms === false) toast.warning(copy.smsNotSent);
-      if (payload?.delivery?.email === false) toast.warning(copy.emailNotSent);
+      // Registration delivers to both channels; only claim "sent" when the
+      // account's primary (email) channel landed, otherwise name the real result.
+      const smsFailed = payload?.delivery?.sms === false;
+      const emailFailed = payload?.delivery?.email === false;
+      if (!emailFailed) toast.success(copy.otpSentNotice);
+      if (smsFailed) toast.warning(copy.smsNotSent);
+      if (emailFailed) toast.warning(copy.emailNotSent);
     } catch (thrown) {
       handleApiError(thrown);
     }

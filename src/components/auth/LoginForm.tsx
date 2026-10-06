@@ -199,9 +199,14 @@ export default function LoginForm() {
       setOtp("");
       setStep("otp");
       setBusy(false);
-      toast.success(copy.otpSentNotice);
-      if (payload?.delivery?.sms === false) toast.warning(copy.smsNotSent);
-      if (payload?.delivery?.email === false) toast.warning(copy.emailNotSent);
+      // Do not claim a blanket "sent" when the channel the caller is waiting on
+      // failed - name the real per-channel outcome instead.
+      const smsFailed = payload?.delivery?.sms === false;
+      const emailFailed = payload?.delivery?.email === false;
+      const primaryFailed = typedEmail ? emailFailed : smsFailed;
+      if (!primaryFailed) toast.success(copy.otpSentNotice);
+      if (smsFailed) toast.warning(copy.smsNotSent);
+      if (emailFailed) toast.warning(copy.emailNotSent);
     } catch (thrown) {
       handleApiError(thrown);
     }
