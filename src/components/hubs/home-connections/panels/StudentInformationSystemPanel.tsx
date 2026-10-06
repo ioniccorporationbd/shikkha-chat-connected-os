@@ -65,7 +65,6 @@ export default function StudentInformationSystemPanel() {
 
   return (
     <section
-      id="sis-section-wrapper"
       lang={currentLanguage}
       className="home-connections-section text-[var(--color-primary)]"
     >

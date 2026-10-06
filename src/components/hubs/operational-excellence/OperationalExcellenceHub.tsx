@@ -99,7 +99,6 @@ export default function OperationalExcellenceHub() {
 
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[var(--color-white)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.08]" />
 
       <div className="pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
       <div className="pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[105px]" />
@@ -136,9 +135,9 @@ export default function OperationalExcellenceHub() {
             key={activeSection}
             initial={{
               opacity: 0,
-              y: 30,
-              scale: 0.965,
-              filter: "blur(10px)",
+              y: 24,
+              scale: 0.97,
+              filter: "blur(8px)",
             }}
             animate={{
               opacity: 1,
@@ -148,12 +147,12 @@ export default function OperationalExcellenceHub() {
             }}
             exit={{
               opacity: 0,
-              y: -24,
-              scale: 0.975,
-              filter: "blur(8px)",
+              y: -18,
+              scale: 0.98,
+              filter: "blur(6px)",
             }}
             transition={{
-              duration: 0.58,
+              duration: 0.5,
               ease: [0.22, 1, 0.36, 1],
             }}
             className="absolute inset-0 flex h-full w-full items-center justify-center"

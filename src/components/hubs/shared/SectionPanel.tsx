@@ -208,7 +208,6 @@ export default function SectionPanel({
             </motion.p>
 
             <div className="right-quote-media relative mt-6 flex min-h-[130px] items-center justify-center overflow-hidden rounded-2xl">
-              <div className="absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1.15px,transparent_1.15px)] [background-size:17px_17px] opacity-30" />
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,transparent,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent)]" />
 
               <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 sm:gap-8">

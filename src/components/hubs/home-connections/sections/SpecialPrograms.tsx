@@ -979,7 +979,6 @@ export default function SpecialPrograms() {
 
   return (
     <section className="relative h-full min-h-[680px] w-full overflow-hidden bg-[var(--color-white)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-border-soft)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.55]" />
 
       <motion.div
         aria-hidden="true"

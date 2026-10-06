@@ -1033,7 +1033,6 @@ export default function LearningManagementSchoology() {
 
   return (
     <section className="relative h-full w-full overflow-hidden bg-[var(--color-white)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"

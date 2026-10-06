@@ -69,7 +69,6 @@ export default function HomeConnectionsOverviewPanel() {
 
   return (
     <section
-      id="home-connections-panel-wrapper"
       lang={currentLanguage}
       className={[
         "home-connections-section",

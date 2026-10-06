@@ -212,14 +212,6 @@ function ProductTile({
     >
       <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in srgb, var(--color-white) 85%, transparent),transparent_34%),linear-gradient(145deg,color-mix(in srgb, var(--color-white) 45%, transparent),transparent_48%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
-      <span
-        className="pointer-events-none absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage: `radial-gradient(circle, ${themeColor} 0.8px, transparent 0.8px)`,
-          backgroundSize: "12px 12px",
-        }}
-      />
-
       <motion.span
         aria-hidden="true"
         className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
@@ -292,7 +284,6 @@ export default function OrbitProductPanel({
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,var(--color-primary)_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.62]" />
 
       <motion.div
         aria-hidden="true"

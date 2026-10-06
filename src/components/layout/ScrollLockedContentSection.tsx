@@ -12,6 +12,18 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+/* -------------------------------------------------------------------------
+ * Middle-section scroll pacing (frontend-only, no backend impact).
+ *   WHEEL_SPEED     – multiplier applied to each wheel delta (lower = slower).
+ *   MAX_WHEEL_DELTA – clamp one event so a fast flick can't jump whole scenes.
+ *   SMOOTH_EASE     – per-frame interpolation toward the target scroll.
+ *                     Lower = smoother & slower to settle, so the internal
+ *                     scenes play out instead of skipping.
+ * ----------------------------------------------------------------------- */
+const WHEEL_SPEED = 0.95;
+const MAX_WHEEL_DELTA = 90;
+const SMOOTH_EASE = 0.26;
+
 export default function ScrollLockedContentSection({
   middle,
   right,
@@ -110,7 +122,11 @@ export default function ScrollLockedContentSection({
     const ids = getRightSectionIds();
     if (!ids.length) return;
 
-    const panelCenter = panel.scrollTop + panel.clientHeight / 2;
+    // Measure against the panel viewport via getBoundingClientRect rather than
+    // offsetTop: offsetTop is offsetParent-relative and reads 0 for panels whose
+    // wrapper is positioned, which mis-mapped the active scene at the top.
+    const panelRect = panel.getBoundingClientRect();
+    const panelCenter = panelRect.top + panel.clientHeight / 2;
 
     let activeId = ids[0];
     let closestDistance = Number.POSITIVE_INFINITY;
@@ -119,7 +135,8 @@ export default function ScrollLockedContentSection({
       const element = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
       if (!element) return;
 
-      const elementCenter = element.offsetTop + element.offsetHeight / 2;
+      const elementRect = element.getBoundingClientRect();
+      const elementCenter = elementRect.top + elementRect.height / 2;
       const distance = Math.abs(panelCenter - elementCenter);
 
       if (distance < closestDistance) {
@@ -149,7 +166,7 @@ export default function ScrollLockedContentSection({
 
     stopSmoothScroll();
 
-    const EASE = 0.42;
+    const EASE = SMOOTH_EASE;
 
     const animate = () => {
       const currentPanel = rightScrollRef.current;
@@ -195,14 +212,16 @@ export default function ScrollLockedContentSection({
       return false;
     }
 
-    const SPEED = 1.35;
+    const clampedDelta = clamp(deltaY, -MAX_WHEEL_DELTA, MAX_WHEEL_DELTA);
 
-    const baseScroll =
-      animationFrameRef.current === null
-        ? currentScroll
-        : targetScrollRef.current;
-
-    const nextScroll = clamp(baseScroll + deltaY * SPEED, 0, maxScroll);
+    // Re-base on the *rendered* position (never the still-pending target) so a
+    // fast flick accumulates toward a single controlled step instead of a
+    // runaway target that completes the section instantly and skips scenes.
+    const nextScroll = clamp(
+      currentScroll + clampedDelta * WHEEL_SPEED,
+      0,
+      maxScroll
+    );
 
     if (Math.abs(nextScroll - currentScroll) < 0.2) return false;
 
@@ -218,9 +237,11 @@ export default function ScrollLockedContentSection({
     if (!target) return;
 
     const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-    const targetTop = clamp(target.offsetTop, 0, maxScroll);
+    const panelRect = panel.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTopInContent = panel.scrollTop + (targetRect.top - panelRect.top);
 
-    smoothScrollToTarget(targetTop);
+    smoothScrollToTarget(clamp(targetTopInContent, 0, maxScroll));
     dispatchActiveSection(id);
   };
 
