@@ -3,30 +3,67 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import SegmentScene from "@/components/hubs/home-connections/sections/SegmentScenes";
-import {
-  getChapter,
-  segmentOrder,
-  type SegmentId,
-} from "@/components/hubs/home-connections/segmentData";
+import HomeConnections from "@/components/hubs/home-connections/sections/HomeConnectionsOverview";
+import StudentInformation from "@/components/hubs/home-connections/sections/StudentInformation";
+import SIS from "@/components/hubs/home-connections/sections/StudentInformationSystem";
+import Enrollment from "@/components/hubs/home-connections/sections/Enrollment";
+import SpecialPrograms from "@/components/hubs/home-connections/sections/SpecialPrograms";
+import FamilyEngagement from "@/components/hubs/home-connections/sections/FamilyEngagement";
+import Communications from "@/components/hubs/home-connections/sections/Communications";
+import AttendanceSupport from "@/components/hubs/home-connections/sections/AttendanceSupport";
 
-const defaultActiveSection: SegmentId = "home-connections-panel";
+type ActiveSectionId =
+  | "home-connections-panel"
+  | "student-information"
+  | "sis"
+  | "enrollment"
+  | "special-programs"
+  | "family-engagement"
+  | "communications"
+  | "attendance-support";
 
-const sectionComponents = Object.fromEntries(
-  segmentOrder.map((id) => [id, <SegmentScene key={id} chapterId={id} />])
-) as Record<SegmentId, ReactNode>;
+const defaultActiveSection: ActiveSectionId = "home-connections-panel";
 
-function isValidSectionId(id: string): id is SegmentId {
-  return (segmentOrder as string[]).includes(id);
+const sectionOrder: ActiveSectionId[] = [
+  "home-connections-panel",
+  "student-information",
+  "sis",
+  "enrollment",
+  "special-programs",
+  "family-engagement",
+  "communications",
+  "attendance-support",
+];
+
+const sectionTitles: Record<ActiveSectionId, string> = {
+  "home-connections-panel": "Home Connections",
+  "student-information": "Student Information",
+  sis: "SIS",
+  enrollment: "Enrollment",
+  "special-programs": "Special Programs",
+  "family-engagement": "Family Engagement",
+  communications: "Communications",
+  "attendance-support": "Attendance Support",
+};
+
+const sectionComponents: Record<ActiveSectionId, ReactNode> = {
+  "home-connections-panel": <HomeConnections />,
+  "student-information": <StudentInformation />,
+  sis: <SIS />,
+  enrollment: <Enrollment />,
+  "special-programs": <SpecialPrograms />,
+  "family-engagement": <FamilyEngagement />,
+  communications: <Communications />,
+  "attendance-support": <AttendanceSupport />,
+};
+
+function isValidSectionId(id: string): id is ActiveSectionId {
+  return sectionOrder.includes(id as ActiveSectionId);
 }
 
 export default function HomeConnectionsHub() {
-  const { language } = useLanguage();
-  const lang = language === "en" ? "en" : "bn";
-
   const [activeSection, setActiveSection] =
-    useState<SegmentId>(defaultActiveSection);
+    useState<ActiveSectionId>(defaultActiveSection);
 
   useEffect(() => {
     const handleActiveSection = (event: Event) => {
@@ -60,10 +97,9 @@ export default function HomeConnectionsHub() {
     };
   }, []);
 
-  const activeTitle = useMemo(
-    () => getChapter(activeSection).eyebrow[lang],
-    [activeSection, lang]
-  );
+  const activeTitle = useMemo(() => {
+    return sectionTitles[activeSection];
+  }, [activeSection]);
 
   const ActiveComponent = sectionComponents[activeSection];
 
