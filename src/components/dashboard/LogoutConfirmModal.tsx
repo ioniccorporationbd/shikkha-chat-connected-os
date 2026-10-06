@@ -55,7 +55,7 @@ export default function LogoutConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={signingOut}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-danger)] px-4 py-2.5 transition hover:bg-[var(--color-danger-strong)] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
           >
             <FiLogOut aria-hidden size={15} className="text-[var(--color-white)]" />
             <span className="text-[13px] font-semibold text-[var(--color-white)]">
@@ -66,7 +66,7 @@ export default function LogoutConfirmModal({
       }
     >
       <div className="flex flex-col items-center gap-3 py-3 text-center">
-        <span className="grid h-14 w-14 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-danger)_26%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] text-[var(--color-danger-strong)]">
+        <span className="grid h-14 w-14 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-action)_26%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action-hover)]">
           <FiLogOut size={24} />
         </span>
         <p className="max-w-[34ch] text-[14px] font-medium">{copy.message}</p>

@@ -493,7 +493,7 @@ export default function DashboardShell({
         type="button"
         onClick={requestSignOut}
         disabled={signingOut}
-        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-danger)] px-3.5 py-2.5 transition hover:bg-[var(--color-danger-strong)] disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2.5 transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
       >
         <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
           <FiLogOut size={16} />

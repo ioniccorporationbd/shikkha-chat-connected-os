@@ -1055,8 +1055,20 @@ html[data-lang="en"] .language-toggle-knob {
   align-items: flex-start;
 }
 
-.sc-toast__progress {
-  background: color-mix(in srgb, var(--color-white) 72%, transparent);
+/* Progress bar (react-toastify) — kept enabled but styled to sit as a thin
+   translucent-white line on the coloured card, so no default library colour
+   clashes with the application (Part D §30). */
+.sc-toast .Toastify__progress-bar {
+  height: 3px;
+  background: color-mix(in srgb, var(--color-white) 58%, transparent);
+}
+/* Neutralise the library's per-type track colour + rounded corners so the
+   progress row stays rectangular and on-brand. */
+.sc-toast .Toastify__progress-bar--bg {
+  background: transparent;
+}
+.sc-toast .Toastify__progress-bar--wrp {
+  border-radius: 0;
 }
 
 @media (max-width: 640px) {
