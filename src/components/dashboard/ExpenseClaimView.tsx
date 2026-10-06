@@ -271,7 +271,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
             <button
               type="button"
               onClick={onNew}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)]"
             >
               <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
                 <FiPlus size={15} />
@@ -462,7 +462,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                     <button
                       type="button"
                       onClick={onNew}
-                      className="mt-1 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+                      className="mt-1 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
                     >
                       <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
                         <FiPlus size={15} />
@@ -724,7 +724,7 @@ function DetailsDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.close}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
           >
             <span className="text-[var(--color-primary)]">
               <FiX size={16} />

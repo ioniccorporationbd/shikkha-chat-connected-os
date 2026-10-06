@@ -341,7 +341,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
           <button
             type="button"
             onClick={() => setMakePaymentOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-primary)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
           >
             <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
               <FiPlusCircle size={15} />

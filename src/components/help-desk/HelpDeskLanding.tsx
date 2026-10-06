@@ -93,14 +93,14 @@ export default function HelpDeskLanding({
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Link
             href={HELP_DESK_NEW_PATH}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 transition duration-200 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 transition duration-200 hover:-translate-y-[2px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
           >
             <FiPlus className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-white)]">{copy.landingCreate}</span>
           </Link>
           <Link
             href={HELP_DESK_TICKETS_PATH}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-5 py-3 transition duration-200 hover:-translate-y-[2px] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-5 py-3 transition duration-200 hover:-translate-y-[2px] hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
           >
             <FiList className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.landingBrowse}</span>
@@ -152,7 +152,7 @@ export default function HelpDeskLanding({
                       <li key={ticket.id}>
                         <Link
                           href={`${HELP_DESK_TICKETS_PATH}/${ticket.id}`}
-                          className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-3 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+                          className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-3 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
                         >
                           <span className="min-w-0">
                             <span className="block text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_66%,var(--color-white))]">
@@ -181,7 +181,7 @@ export default function HelpDeskLanding({
                 <p className="text-sm font-semibold text-[var(--color-primary)]">{copy.listGuestTitle}</p>
                 <Link
                   href={LOGIN_PATH}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
                 >
                   <span className="text-sm font-semibold text-[var(--color-white)]">{copy.navLogin}</span>
                 </Link>

@@ -206,7 +206,7 @@ export default function ListFilterBar({
         <button
           type="button"
           onClick={onApply}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-primary)] px-5 shadow-[0_14px_28px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-90 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus:outline-none"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--color-action)] px-5 shadow-[0_14px_28px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-action)_28%,transparent)] focus:outline-none"
         >
           <span className="text-[var(--color-white)]">
             <FiFilter size={15} aria-hidden />

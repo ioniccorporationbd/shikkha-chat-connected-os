@@ -75,7 +75,7 @@ export default function TicketSuccessCard({
         <button
           type="button"
           onClick={onAnother}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] px-5 py-3 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] px-5 py-3 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
         >
           <FiPlus className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.successAnother}</span>

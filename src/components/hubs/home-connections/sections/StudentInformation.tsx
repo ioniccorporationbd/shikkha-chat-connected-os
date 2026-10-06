@@ -287,7 +287,7 @@ function ProductTile({
             : item.ghost
               ? "border border-[var(--color-primary)] bg-[var(--color-secondary-light)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
               : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
+        "hover:-translate-y-1 hover:border-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-45" />
@@ -421,7 +421,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active || product.featured
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)]",
+                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -430,7 +430,7 @@ function MobileTabletView({
                     className={[
                       "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
                       active || product.featured
-                        ? "bg-[var(--color-secondary)] text-[var(--color-text-inverse)]"
+                        ? "bg-[var(--color-secondary)] text-[var(--color-primary)]"
                         : "bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
                     ].join(" ")}
                   >
@@ -599,7 +599,7 @@ export default function StudentInformation() {
                 "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)]",
                 "px-[28px] text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
-                "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
+                "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
               ].join(" ")}
             >
               {text.title}

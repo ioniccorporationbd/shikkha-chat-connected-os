@@ -45,9 +45,9 @@ export default function SidebarRegisterButton({
       href={REGISTER_PATH}
       data-no-translate="true"
       className={[
-        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition duration-300 ease-out",
-        "hover:-translate-y-[2px] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
-        "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-primary)_58%,transparent)]",
+        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-action)_16%,transparent)] transition duration-300 ease-out",
+        "hover:-translate-y-[2px] hover:bg-[var(--color-action-hover)] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-action)_62%,transparent)]",
+        "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-action)_58%,transparent)]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))] focus-visible:ring-offset-2",
         compact ? "px-3 py-2" : "mt-1 px-3.5 py-2.5",
       ].join(" ")}
@@ -55,7 +55,7 @@ export default function SidebarRegisterButton({
       {/* Hover fill: a lighter gradient wipes in from the left. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[linear-gradient(115deg,color-mix(in_srgb,var(--color-primary)_74%,var(--color-secondary)),color-mix(in_srgb,var(--color-primary)_88%,var(--color-secondary)))] opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:scale-x-100 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[linear-gradient(115deg,color-mix(in_srgb,var(--color-action)_82%,var(--color-white)),var(--color-action-hover))] opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:scale-x-100 group-hover:opacity-100"
       />
       <span className="relative z-10 inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
         <FiUserPlus aria-hidden size={15} />

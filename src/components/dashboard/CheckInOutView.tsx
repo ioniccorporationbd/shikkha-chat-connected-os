@@ -439,7 +439,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] sm:w-auto"
           >
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
               <FiArrowLeft size={15} />
@@ -671,7 +671,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 type="button"
                 onClick={handlePunch}
                 disabled={punching}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
                   {checkedIn ? <FiLogOut size={17} /> : <FiLogIn size={17} />}
@@ -732,7 +732,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                     type="button"
                     onClick={applyFilter}
                     disabled={historyLoading}
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:flex-none"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:flex-none"
                   >
                     <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.applyFilter}</span>
                   </button>
@@ -826,7 +826,7 @@ function DayCard({
         aria-expanded={hasPunches ? open : undefined}
         disabled={!hasPunches}
         className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
-          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" : "cursor-default"
+          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]" : "cursor-default"
         }`}
       >
         <div className="flex min-w-0 items-center gap-3">

@@ -16,22 +16,21 @@
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Status colours — semantic system states, kept (§6):
-     Success = green · Warning = amber · Error = red · Info = navy/blue. */
   --color-danger: #b4453a;
   --color-danger-strong: #8f3329;
   --color-warning: #c98a1f;
   --color-success: #2f7d5a;
 
-  /* Brand anchors — the Shikkha Chat logo palette (source of truth). */
-  --color-brand-black: #030303;
-  --color-brand-navy: #071e2e;
-  --color-brand-red: #e00516;
-  --color-brand-white: #ffffff;
+  /* NEW global colour — warm gold accent (usable as bg-accent / text-accent
+     / border-accent and the matching *-soft surface). */
+  --color-accent: #ddab52;
+  --color-accent-soft: #f7ecd6;
 
-  /* Brand accent — now the logo red (was a warm gold accent). */
-  --color-accent: #e00516;
-  --color-accent-soft: #fbe3e5;
+  /* Central ACTION-button colour — the Shikkha logo red. Only primary
+     action buttons (Homepage + Dashboard) use these; secondary, ghost,
+     danger and neutral controls deliberately do NOT. */
+  --color-action: #e00516;
+  --color-action-hover: #c80013;
 }
 
 :root {
@@ -39,26 +38,17 @@
      MAIN BRAND COLORS
   ========================================================= */
 
-  /* Brand anchors — the Shikkha Chat logo palette (source of truth). */
-  --shikkha-black: #030303;
-  --shikkha-navy: #071e2e;
-  --shikkha-red: #e00516;
-  --shikkha-white: #ffffff;
-
-  /* Semantic map — the old brand (dark green / mint / gold) is fully
-     replaced; the token NAMES stay so components need no rewrite (§8). */
-  --color-primary: var(--shikkha-navy);   /* was the legacy dark green */
-  --color-secondary: var(--shikkha-red);  /* was the legacy mint-teal */
-  --color-secondary-strong: #c80013;      /* was the legacy teal */
-  --color-primary-strong: var(--shikkha-black);
-  --color-white: var(--shikkha-white);
-  --color-black: var(--shikkha-black);
+  --color-primary: #032521;
+  --color-secondary: #4fb39a;        /* UPDATED: premium mint-teal (was #a2c4c0) */
+  --color-secondary-strong: #2e8b76; /* NEW: deeper secondary (hover / borders / icons) */
+  --color-white: #ffffff;
+  --color-black: #000000;
 
   /* =========================================================
      DERIVED BRAND COLORS
   ========================================================= */
 
-  --color-primary-dark: #04141f;          /* was #021a17 (deep green) */
+  --color-primary-dark: #021a17;
 
   --color-secondary-light: color-mix(
     in srgb,
@@ -67,9 +57,6 @@
   );
 
   --color-surface: var(--color-white);
-  --color-surface-soft: #f6f8f9;
-  --color-surface-muted: #eef2f4;
-  --color-border: #dfe5e8;
 
   /* =========================================================
      TEXT COLORS
@@ -78,9 +65,11 @@
   --color-text-primary: var(--color-black);
   --color-text-secondary: var(--color-primary);
 
-  --color-text-gray: #5f6970;
-  --color-text-muted: #5f6970;
-  --color-text-strong: var(--color-primary);
+  --color-text-gray: color-mix(
+    in srgb,
+    var(--color-black) 62%,
+    var(--color-white)
+  );
 
   --color-text-inverse: var(--color-white);
 
@@ -657,7 +646,7 @@ html[data-lang="en"] .language-toggle-knob {
 
 .sc-title-pill:hover {
   background: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: var(--color-primary);
 }
 
 .sc-muted-text {
@@ -687,7 +676,7 @@ html[data-lang="en"] .language-toggle-knob {
 
 .sc-secondary-bg {
   background: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: var(--color-primary);
 }
 
 .sc-surface-bg {
@@ -1108,12 +1097,13 @@ html[data-lang="en"] .language-toggle-knob {
   transform: translateY(1px);
 }
 .mk-btn--primary {
-  background: linear-gradient(135deg, #0b2c40, var(--color-primary));
+  background: linear-gradient(135deg, #c80013, var(--color-action));
   color: #ffffff;
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-action) 30%, transparent);
 }
 .mk-btn--primary:hover {
-  box-shadow: 0 16px 42px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  background: var(--color-action-hover);
+  box-shadow: 0 16px 42px color-mix(in srgb, var(--color-action) 40%, transparent);
   transform: translateY(-2px);
 }
 .mk-btn--ghost {

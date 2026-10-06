@@ -142,7 +142,7 @@ export default function DynamicError({
           className={
             primary
               ? "inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5"
-              : "inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] px-5 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+              : "inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] px-5 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
           }
         >
           <span
@@ -168,7 +168,7 @@ export default function DynamicError({
         className={
           primary
             ? "inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5"
-            : "inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] px-5 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+            : "inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] px-5 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
         }
       >
         <span

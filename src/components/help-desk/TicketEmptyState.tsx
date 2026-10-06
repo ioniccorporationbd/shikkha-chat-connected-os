@@ -21,7 +21,7 @@ export function TicketEmptyState({ copy, basePath }: { copy: HelpDeskCopy; baseP
       </p>
       <Link
         href={links.newTicket}
-        className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+        className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-action)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
       >
         <span className="text-sm font-semibold text-[var(--color-white)]">{copy.emptyCta}</span>
       </Link>

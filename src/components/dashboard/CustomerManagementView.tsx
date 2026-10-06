@@ -33,10 +33,10 @@ const HEADER_CARD =
   "relative overflow-hidden rounded-[24px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_10%,var(--color-white)),var(--color-white)_58%)] p-4 shadow-[0_22px_50px_-30px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:p-6";
 
 const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60";
 
 const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60";
 
 const INPUT_BASE =
   "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
@@ -304,7 +304,7 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
             type="button"
             onClick={() => void loadList("refresh")}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
           >
             <FiRefreshCw aria-hidden className={refreshing ? "animate-spin" : ""} />
             {copy.retry}
@@ -352,7 +352,7 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
                 {filtered.map((row, index) => (
                   <tr
                     key={row.name}
-                    className="border-b border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] last:border-0 hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+                    className="border-b border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] last:border-0 hover:bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))]"
                   >
                     <td className="px-4 py-3 text-[12.5px] font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
                       {index + 1}
@@ -388,7 +388,7 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
                         <button
                           type="button"
                           onClick={() => onEdit(row.name)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
                         >
                           <FiEdit2 aria-hidden className="text-[var(--color-primary)]" size={13} />
                           <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.edit}</span>

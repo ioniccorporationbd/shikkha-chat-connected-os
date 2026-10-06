@@ -36,7 +36,7 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
     `group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] ${
       isActive
         ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-secondary)_50%,var(--color-white))]"
-        : "border-transparent hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+        : "border-transparent hover:bg-[color-mix(in_srgb,var(--color-secondary)_32%,var(--color-white))]"
     }`;
 
   return (
@@ -71,7 +71,7 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
         <button
           type="button"
           onClick={toggleLanguage}
-          className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] px-3 py-2 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] px-3 py-2 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_32%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
           aria-label={language === "en" ? "বাংলা ভাষায় দেখান" : "Switch to English"}
         >
           <FiGlobe className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />

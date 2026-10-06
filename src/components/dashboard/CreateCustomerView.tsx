@@ -72,10 +72,10 @@ const ICON_TILE =
   "grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[16px] text-[var(--color-primary)]";
 
 const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60";
 
 const BTN_PRIMARY =
-  "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
+  "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
 
 const TEXTAREA_TYPES = new Set(["Small Text", "Text", "Long Text", "Text Editor"]);
 const NUMBER_TYPES = new Set(["Int", "Float", "Currency", "Percent"]);
@@ -374,7 +374,7 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
               setQuery("");
               setOpen(false);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
           >
             <FiX aria-hidden />
           </button>
@@ -414,7 +414,7 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
                       className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
                         isActive
                           ? "bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
-                          : "hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+                          : "hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
                       }`}
                     >
                       <span className="min-w-0 truncate text-[13px] font-medium text-[var(--color-primary)]">

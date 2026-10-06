@@ -330,7 +330,7 @@ export default function BankPaymentForm({
         type="button"
         onClick={submit}
         disabled={submitting}
-        className={`inline-flex w-full items-center justify-center rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-95 disabled:opacity-60 ${PAY_FOCUS}`}
+        className={`inline-flex w-full items-center justify-center rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-60 ${PAY_FOCUS}`}
       >
         <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
           <FiSend size={15} />

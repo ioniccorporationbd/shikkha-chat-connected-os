@@ -70,7 +70,7 @@ export const DEFAULT_PRIORITY: TicketPriority = "medium";
 
 /** Colour tokens per status. Muted, semantic, theme-aligned (no neon). */
 export const STATUS_TONE: Record<TicketStatus, string> = {
-  open: "#071e2e",
+  open: "#0f5c50",
   in_progress: "#b45309",
   waiting_for_user: "#2f5f7d",
   resolved: "#2f7d5a",

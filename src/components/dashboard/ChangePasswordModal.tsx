@@ -137,7 +137,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-60"
+            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
           >
             <span className="text-[13px] font-semibold text-[var(--color-primary)]">
               {copy.cancel}
@@ -148,7 +148,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
             type="button"
             onClick={handleSubmit}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:opacity-92 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
           >
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
               <FiLock size={15} />

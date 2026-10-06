@@ -49,10 +49,10 @@ const ICON_CLASS =
   "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]";
 
 const SUBMIT_CLASS =
-  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-primary)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-primary)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-action)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-action)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-action)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
 
 const SUBMIT_SHEEN =
-  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_58%,var(--color-secondary)))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-action),var(--color-action-hover))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
 
 function formatClock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
@@ -449,7 +449,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setReveal((value) => !value)}
                 aria-label={reveal ? copy.hidePassword : copy.showPassword}
-                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] hover:text-[var(--color-primary)]"
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:text-[var(--color-primary)]"
               >
                 {reveal ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
@@ -460,7 +460,7 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={openForgot}
-              className="rounded-xl px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+              className="rounded-xl px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)]"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
                 {copy.forgotPassword}
@@ -504,7 +504,7 @@ export default function LoginForm() {
               type="button"
               onClick={() => void sendLoginOtp()}
               disabled={busy || resendIn > 0}
-              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
                 {resendIn > 0 ? copy.resendWait.replace("{s}", String(resendIn)) : copy.resend}
@@ -599,7 +599,7 @@ export default function LoginForm() {
               type="button"
               onClick={() => void sendForgotOtp()}
               disabled={busy || forgotResendIn > 0}
-              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
                 {forgotResendIn > 0

@@ -87,7 +87,7 @@ export default function HelpDeskOverview({
   const unresolved = useMemo(() => list.filter((ticket) => isUnresolved(ticket.status)).slice(0, 4), [list]);
 
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
-    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#071e2e", icon: FiInbox },
+    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#0f5c50", icon: FiInbox },
     { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
     { key: "in_progress", label: copy.statuses.in_progress, value: summary.inProgress, tone: STATUS_TONE.in_progress, icon: FiRefreshCw },
     { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: STATUS_TONE.waiting_for_user, icon: FiClock },
@@ -128,7 +128,7 @@ export default function HelpDeskOverview({
           <div className="flex flex-wrap gap-2">
             <Link
               href={links.newTicket}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
             >
               <FiPlusCircle size={15} className="text-[var(--color-white)]" aria-hidden />
               <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.navNewTicket}</span>
@@ -170,7 +170,7 @@ export default function HelpDeskOverview({
                   <Link
                     key={action.key}
                     href={action.href}
-                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] text-[var(--color-primary)]">
                       <Icon size={18} aria-hidden />
