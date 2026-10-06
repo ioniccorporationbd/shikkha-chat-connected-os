@@ -90,7 +90,7 @@ const sidebarDropdownLinkTextClass =
    One muted border + soft shadow family for every card and pill in the rail,
    so the sidebar reads as a single balanced surface instead of a stack of
    harsh full-strength outlines. Everything stays inside the existing brand
-   tokens (primary #032521 / secondary #a2c4c0), only softened with color-mix,
+   tokens (primary navy #071e2e / secondary red #e00516), only softened with color-mix,
    so no new palette is introduced.
 ------------------------------------------------------------------------- */
 const cardBorderClass =

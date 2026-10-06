@@ -87,7 +87,7 @@ export default function HelpDeskOverview({
   const unresolved = useMemo(() => list.filter((ticket) => isUnresolved(ticket.status)).slice(0, 4), [list]);
 
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
-    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#0f5c50", icon: FiInbox },
+    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#071e2e", icon: FiInbox },
     { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
     { key: "in_progress", label: copy.statuses.in_progress, value: summary.inProgress, tone: STATUS_TONE.in_progress, icon: FiRefreshCw },
     { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: STATUS_TONE.waiting_for_user, icon: FiClock },

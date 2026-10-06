@@ -448,7 +448,7 @@ function ProductCard({
         "group relative flex h-[124px] flex-col justify-center rounded-[18px] border p-3 text-center",
         "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
         "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
-        "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)]",
+        "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)]",
         "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
         product.featured ? "items-start text-left" : "items-center",
       ].join(" ")}
@@ -555,7 +555,7 @@ export default function ProductRouterSection() {
               "flex h-[50px] items-center gap-2 rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-7 sm:text-[17px]",
               tab === "saved"
                 ? "bg-[var(--color-primary)] text-[var(--color-white)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)]",
             ].join(" ")}
           >
             <FaStar className="text-[17px]" />
@@ -569,7 +569,7 @@ export default function ProductRouterSection() {
               "h-[50px] rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-8 sm:text-[17px]",
               tab === "all"
                 ? "bg-[var(--color-primary)] text-[var(--color-white)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)]",
             ].join(" ")}
           >
             {text.allProducts}
@@ -597,7 +597,7 @@ export default function ProductRouterSection() {
                     "relative z-20 rounded-full border border-[var(--color-primary)] px-7 py-3 text-[16px] font-bold",
                     "bg-[var(--color-primary)] text-[var(--color-white)]",
                     "shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
-                    "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+                    "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-text-inverse)]",
                   ].join(" ")}
                 >
                   {group.title}

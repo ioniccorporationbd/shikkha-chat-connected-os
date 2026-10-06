@@ -16,15 +16,22 @@
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Status colours — semantic system states, kept (§6):
+     Success = green · Warning = amber · Error = red · Info = navy/blue. */
   --color-danger: #b4453a;
   --color-danger-strong: #8f3329;
   --color-warning: #c98a1f;
   --color-success: #2f7d5a;
 
-  /* NEW global colour — warm gold accent (usable as bg-accent / text-accent
-     / border-accent and the matching *-soft surface). */
-  --color-accent: #ddab52;
-  --color-accent-soft: #f7ecd6;
+  /* Brand anchors — the Shikkha Chat logo palette (source of truth). */
+  --color-brand-black: #030303;
+  --color-brand-navy: #071e2e;
+  --color-brand-red: #e00516;
+  --color-brand-white: #ffffff;
+
+  /* Brand accent — now the logo red (was a warm gold #ddab52). */
+  --color-accent: #e00516;
+  --color-accent-soft: #fbe3e5;
 }
 
 :root {
@@ -32,17 +39,26 @@
      MAIN BRAND COLORS
   ========================================================= */
 
-  --color-primary: #032521;
-  --color-secondary: #4fb39a;        /* UPDATED: premium mint-teal (was #a2c4c0) */
-  --color-secondary-strong: #2e8b76; /* NEW: deeper secondary (hover / borders / icons) */
-  --color-white: #ffffff;
-  --color-black: #000000;
+  /* Brand anchors — the Shikkha Chat logo palette (source of truth). */
+  --shikkha-black: #030303;
+  --shikkha-navy: #071e2e;
+  --shikkha-red: #e00516;
+  --shikkha-white: #ffffff;
+
+  /* Semantic map — the old brand (dark green / mint / gold) is fully
+     replaced; the token NAMES stay so components need no rewrite (§8). */
+  --color-primary: var(--shikkha-navy);   /* was dark green #032521 */
+  --color-secondary: var(--shikkha-red);  /* was mint-teal #4fb39a */
+  --color-secondary-strong: #c80013;      /* was #2e8b76 */
+  --color-primary-strong: var(--shikkha-black);
+  --color-white: var(--shikkha-white);
+  --color-black: var(--shikkha-black);
 
   /* =========================================================
      DERIVED BRAND COLORS
   ========================================================= */
 
-  --color-primary-dark: #021a17;
+  --color-primary-dark: #04141f;          /* was #021a17 (deep green) */
 
   --color-secondary-light: color-mix(
     in srgb,
@@ -51,6 +67,9 @@
   );
 
   --color-surface: var(--color-white);
+  --color-surface-soft: #f6f8f9;
+  --color-surface-muted: #eef2f4;
+  --color-border: #dfe5e8;
 
   /* =========================================================
      TEXT COLORS
@@ -59,11 +78,9 @@
   --color-text-primary: var(--color-black);
   --color-text-secondary: var(--color-primary);
 
-  --color-text-gray: color-mix(
-    in srgb,
-    var(--color-black) 62%,
-    var(--color-white)
-  );
+  --color-text-gray: #5f6970;
+  --color-text-muted: #5f6970;
+  --color-text-strong: var(--color-primary);
 
   --color-text-inverse: var(--color-white);
 
@@ -640,7 +657,7 @@ html[data-lang="en"] .language-toggle-knob {
 
 .sc-title-pill:hover {
   background: var(--color-secondary);
-  color: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .sc-muted-text {
@@ -670,7 +687,7 @@ html[data-lang="en"] .language-toggle-knob {
 
 .sc-secondary-bg {
   background: var(--color-secondary);
-  color: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .sc-surface-bg {
@@ -1091,7 +1108,7 @@ html[data-lang="en"] .language-toggle-knob {
   transform: translateY(1px);
 }
 .mk-btn--primary {
-  background: linear-gradient(135deg, #0a3a33, var(--color-primary));
+  background: linear-gradient(135deg, #0b2c40, var(--color-primary));
   color: #ffffff;
   box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
