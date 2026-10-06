@@ -106,6 +106,8 @@ export interface ExpenseClaimCopy {
   linkLoading: string;
   linkNoOptions: string;
   linkEmptyHint: string;
+  linkNoDepartments: string;
+  deptLoadFailed: string;
   linkLoadFailed: string;
   searchPlaceholder: string;
   yes: string;
@@ -217,6 +219,8 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     linkNoOptions: "কিছু পাওয়া যায়নি।",
     linkEmptyHint:
       "কোনো Expense Claim Type পাওয়া যায়নি। ERPNext-এ আগে Expense Claim Type তৈরি করুন।",
+    linkNoDepartments: "কোনো বিভাগ পাওয়া যায়নি।",
+    deptLoadFailed: "বিভাগের তালিকা লোড করা যায়নি। আবার চেষ্টা করুন।",
     linkLoadFailed: "Expense Type তালিকা লোড করা যাচ্ছে না। আবার চেষ্টা করুন।",
     searchPlaceholder: "খুঁজুন…",
     yes: "হ্যাঁ",
@@ -323,6 +327,8 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     linkLoading: "Searching…",
     linkNoOptions: "No results.",
     linkEmptyHint: "No Expense Claim Type found. Create one in ERPNext first.",
+    linkNoDepartments: "No departments found.",
+    deptLoadFailed: "Department data could not be loaded. Please try again.",
     linkLoadFailed: "The Expense Type list could not be loaded. Please try again.",
     searchPlaceholder: "Search…",
     yes: "Yes",

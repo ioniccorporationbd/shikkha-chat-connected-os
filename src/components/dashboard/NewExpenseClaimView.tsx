@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import {
   FiArrowLeft,
   FiCheckCircle,
@@ -738,6 +745,7 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const loadedRef = useRef(false);
 
   const load = useCallback(
@@ -747,10 +755,14 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
         const payload = await fetchExpenseClaimLinkOptions(field.link_doctype, txt, language);
         setOptions(payload.options);
         setLoadFailed(false);
+        setActiveIndex(-1);
       } catch {
         setOptions([]);
         setLoadFailed(true);
-        toast.error(copy.linkLoadFailed, copy.errorTitle);
+        toast.error(
+          field.link_doctype === "Department" ? copy.deptLoadFailed : copy.linkLoadFailed,
+          copy.errorTitle
+        );
       } finally {
         setLoading(false);
       }
@@ -761,6 +773,7 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
   const openList = useCallback(() => {
     setOpen(true);
     setShowList(true);
+    setActiveIndex(-1);
     if (!loadedRef.current) {
       loadedRef.current = true;
       void load("");
@@ -784,6 +797,51 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
     );
   }, [options, query]);
 
+  const selectOption = useCallback(
+    (option: ExpenseClaimLinkOption) => {
+      onChange(option.value);
+      setQuery("");
+      setActiveIndex(-1);
+      setShowList(false);
+    },
+    [onChange]
+  );
+
+  const onKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (!showList) {
+          openList();
+          setActiveIndex(0);
+        } else {
+          setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
+        }
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveIndex((index) => Math.max(index - 1, 0));
+      } else if (event.key === "Enter") {
+        if (showList && filtered.length > 0) {
+          event.preventDefault();
+          selectOption(filtered[activeIndex >= 0 ? activeIndex : 0]);
+        }
+      } else if (event.key === "Escape") {
+        if (showList) {
+          event.preventDefault();
+          setShowList(false);
+        }
+      }
+    },
+    [showList, filtered, activeIndex, openList, selectOption]
+  );
+
+  const emptyText =
+    field.link_doctype === "Department" && !loadFailed
+      ? copy.linkNoDepartments
+      : !query.trim() && !loadFailed && field.link_doctype === "Expense Claim Type"
+        ? copy.linkEmptyHint
+        : copy.linkNoOptions;
+
   return (
     <div className="relative">
       <div className="relative">
@@ -801,10 +859,12 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
           onBlur={() => {
             window.setTimeout(() => setShowList(false), 150);
           }}
+          onKeyDown={onKeyDown}
           onChange={(event) => {
             onChange(event.target.value);
             setQuery(event.target.value);
             setShowList(true);
+            setActiveIndex(-1);
           }}
           className={`${INPUT_BASE} ${borderClass(invalid)} pl-9`}
         />
@@ -815,22 +875,19 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
           {loading ? (
             <li className={`px-3 py-2 ${HELPER}`}>{copy.linkLoading}</li>
           ) : filtered.length === 0 ? (
-            <li className={`px-3 py-2 ${HELPER}`}>
-              {!query.trim() && !loadFailed && field.link_doctype === "Expense Claim Type"
-                ? copy.linkEmptyHint
-                : copy.linkNoOptions}
-            </li>
+            <li className={`px-3 py-2 ${HELPER}`}>{emptyText}</li>
           ) : (
-            filtered.map((option) => (
+            filtered.map((option, index) => (
               <li key={option.value}>
                 <button
                   type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setQuery("");
-                    setShowList(false);
-                  }}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => selectOption(option)}
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
+                    index === activeIndex
+                      ? "bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))]"
+                      : "hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
+                  }`}
                 >
                   <span className="min-w-0 truncate text-[13px] font-medium text-[var(--color-primary)]">
                     {option.label}

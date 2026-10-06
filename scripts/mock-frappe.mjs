@@ -429,7 +429,7 @@ const EXPENSE_LINK_OPTIONS = {
   "Cost Center": ["Main - MSL", "Sales - MSL"],
   Employee: ["HR-EMP-00001", "HR-EMP-00002"],
   Company: ["Magnetic Solution Limited"],
-  Department: ["Engineering", "Sales", "Accounts - MSL", "HR - MSL"],
+  Department: ["Sales - MSL", "Accounts - MSL", "Human Resources - MSL"],
   Currency: ["BDT", "USD", "EUR"],
 };
 
@@ -438,7 +438,7 @@ function expenseAuto(user, employee) {
     employee: employee.name,
     employee_name: employee.employee_name,
     company: "Magnetic Solution Limited",
-    department: employee.name === "HR-EMP-00002" ? "Sales" : "Engineering",
+    department: "Sales - MSL",
     cost_center: "Main - MSL",
     currency: "BDT",
     expense_approver: user,
@@ -454,7 +454,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-10-04",
@@ -482,7 +482,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-10-03",
@@ -511,7 +511,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-10-02",
@@ -539,7 +539,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-10-01",
@@ -567,7 +567,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-09-30",
@@ -595,7 +595,7 @@ expenseClaims.push({
   employee: "HR-EMP-00001",
   employee_name: "Tamim Hasan Tast",
   company: "Magnetic Solution Limited",
-  department: "Engineering",
+  department: "Sales - MSL",
   cost_center: "Main - MSL",
   currency: "BDT",
   posting_date: "2026-09-29",
@@ -2568,8 +2568,14 @@ const server = createServer(async (request, response) => {
 
     const departmentOptions = EXPENSE_LINK_OPTIONS["Department"] || [];
     const requestedDept = String(data.department || "").trim();
-    const defaultDept = employee.name === "HR-EMP-00002" ? "Sales" : "Engineering";
-    const department = departmentOptions.includes(requestedDept) ? requestedDept : defaultDept;
+    const defaultDept = "Sales - MSL";
+    // Mirror the real backend (§10): an explicit, unknown Department is refused
+    // outright - the browser can never force an arbitrary string.
+    if (requestedDept && !departmentOptions.includes(requestedDept)) {
+      failure(response, 417, "ValidationError", "Selected Department is invalid.", "Expense Claim");
+      return;
+    }
+    const department = requestedDept || defaultDept;
 
     const record = {
       name,
