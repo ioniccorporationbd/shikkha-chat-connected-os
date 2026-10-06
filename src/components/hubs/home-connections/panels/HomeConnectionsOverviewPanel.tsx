@@ -8,54 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "হোম কানেকশন",
-    title: "প্রতিটি বিদ্যালয়ের জন্য সংযুক্ত পারিবারিক অভিজ্ঞতা।",
-    description:
-      "শিক্ষা চ্যাট শিক্ষার্থীর তথ্য, পরিবারের সঙ্গে যোগাযোগ, উপস্থিতি সহায়তা, ভর্তি ব্যবস্থাপনা এবং বিদ্যালয়ের কার্যক্রমকে একটি নির্ভরযোগ্য প্ল্যাটফর্মে যুক্ত করে। বিদ্যালয় সহজভাবে প্রয়োজনীয় হালনাগাদ তথ্য শেয়ার করতে পারে, পরিবার সবসময় গুরুত্বপূর্ণ তথ্য জানতে পারে এবং প্রতিটি শিক্ষার্থী আরও কার্যকর সহায়তা পায়।",
+    title: "একটি প্রতিষ্ঠান। একটি সংযুক্ত ব্যবস্থা।",
+    description: "শিক্ষা চ্যাট একটি web-based education management platform, যা ভর্তি, শিক্ষার্থী তথ্য, কর্মী ব্যবস্থাপনা, উপস্থিতি, যোগাযোগ, হিসাব ও রিপোর্টকে একটি সংযুক্ত digital ecosystem-এ নিয়ে আসে।",
     stats: [
-      {
-        value: "+৭০%",
-        label: "তথ্যের নির্ভুলতা বৃদ্ধি",
-      },
-      {
-        value: "২৪/৭",
-        label: "পরিবারের সার্বক্ষণিক প্রবেশাধিকার",
-      },
-      {
-        value: "১টি ব্যবস্থা",
-        label: "সমন্বিত বিদ্যালয় ব্যবস্থাপনা",
-      },
+      { value: "১টি সিস্টেম", label: "প্রতিষ্ঠানের সব operational তথ্য এক জায়গায়" },
+      { value: "রোল-ভিত্তিক", label: "প্রতিটি ব্যবহারকারীর জন্য নিয়ন্ত্রিত আলাদা access" },
     ],
-    quote:
-      "শিক্ষা চ্যাট আমাদের যোগাযোগের ব্যবধান কমাতে এবং আরও আধুনিক ও সংযুক্ত বিদ্যালয় অভিজ্ঞতা তৈরি করতে সাহায্য করেছে।",
-    author: "ড. অ্যাঞ্জেলা হারগ্রেভ",
-    role: "প্রযুক্তি প্রধান, সংযুক্ত বিদ্যালয় সম্প্রদায়",
-    logo: "শিক্ষা চ্যাট",
+    quote: "আপনার প্রতিষ্ঠানের প্রয়োজনীয় digital operations, users, information ও communication—একটি সংযুক্ত platform থেকে পরিচালিত।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
-
   en: {
     pill: "Home Connections",
-    title: "A connected family experience for every school.",
-    description:
-      "Shikkha Chat connects student information, family communication, attendance support, enrollment management, and school operations through one trusted platform. Schools can share clear updates, families can always access important information, and every learner can receive better support.",
+    title: "One Institution. One Connected System.",
+    description: "Shikkha Chat is a web-based education management platform that brings admission, student information, employee management, attendance, communication, accounts, and reports into one connected digital ecosystem.",
     stats: [
-      {
-        value: "+70%",
-        label: "Improved data accuracy",
-      },
-      {
-        value: "24/7",
-        label: "Continuous family access",
-      },
-      {
-        value: "1 System",
-        label: "Unified school management",
-      },
+      { value: "1 System", label: "All of your institution's operational data in one place" },
+      { value: "Role-based", label: "A controlled, separate experience for every user" },
     ],
-    quote:
-      "Shikkha Chat helped us reduce communication gaps and create a smarter, more connected school experience.",
-    author: "Dr. Angela Hargrave",
-    role: "Technology Leader, Connected School Community",
-    logo: "Shikkha Chat",
+    quote: "Your institution's digital operations, users, information, and communication—managed from one connected platform.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

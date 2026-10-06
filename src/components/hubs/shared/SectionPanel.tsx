@@ -84,7 +84,7 @@ export default function SectionPanel({
       viewport={{ once: true, amount: 0.12 }}
       transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex w-full flex-col justify-start pb-10 pt-3 xl:min-h-[calc(100vh-112px)]">
+      <div className="flex w-full flex-col justify-start pb-10 pt-3 xl:min-h-[calc(100vh-112px)] xl:justify-center">
         <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_5%,var(--color-white))] p-5 shadow-[0_18px_46px_-34px_color-mix(in_srgb,var(--color-primary)_26%,transparent)] transition duration-500 hover:shadow-[0_30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_38%,transparent)] sm:p-6">
         <motion.div
           className="mb-5 flex items-center gap-3"
@@ -160,7 +160,7 @@ export default function SectionPanel({
 
         {stats.length ? (
           <motion.div
-            className="mt-9 grid gap-5 sm:grid-cols-2"
+            className="mt-8 grid gap-5 sm:grid-cols-2"
             initial={reduceMotion ? false : "hidden"}
             whileInView="show"
             viewport={{ once: true, amount: 0.25 }}

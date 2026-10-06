@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'কারিকুলাম ও পাঠদান',
-    title: 'কারিকুলাম, পাঠদান এবং শিক্ষার্থীর ফলাফল একসাথে মিলিয়ে নিন।',
-    description: 'সংযুক্ত কারিকুলাম পরিকল্পনা, মানদণ্ড সামঞ্জস্য, শ্রেণিকক্ষ রিসোর্স এবং অগ্রগতি দৃশ্যমানতার মাধ্যমে শক্তিশালী পাঠদান নিশ্চিত করুন।',
-    stats: [{ value: '১০০%', label: 'শিক্ষার্থীর প্রয়োজন অনুযায়ী পাঠদান সামঞ্জস্য' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'কারিকুলাম',
+    pill: "কারিকুলাম ও পাঠদান",
+    title: "পাঠ্যক্রম ও পাঠদানকে এক কাঠামোয় সাজান।",
+    description: "Academic program, subject ও curriculum-এর তথ্য structuredভাবে রাখুন। Exam create, subject assign ও marks entry-সহ পাঠদান-সংশ্লিষ্ট workflow এক system থেকে পরিচালনা করুন।",
+    stats: [
+      { value: "Academic তথ্য", label: "Program ও curriculum information এক জায়গায়" },
+      { value: "Structured", label: "Subject ও exam workflow সংগঠিত" },
+    ],
+    quote: "একটি integrated examination system subject assign ও marks entry-এর মতো workflow সহজ করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Curriculum and Instruction',
-    title: 'Align curriculum, teaching, and student outcomes.',
-    description: 'Support stronger instruction with connected curriculum planning, standards alignment, classroom resources, and progress visibility.',
-    stats: [{ value: '100%', label: 'Instruction aligned around student needs' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Curriculum',
+    pill: "Curriculum and Instruction",
+    title: "Structure curriculum and instruction in one place.",
+    description: "Keep academic programs, subjects, and curriculum information structured. Manage teaching-related workflows—including exam creation, subject assignment, and marks entry—from one system.",
+    stats: [
+      { value: "Academic data", label: "Program and curriculum information in one place" },
+      { value: "Structured", label: "Organized subject and exam workflows" },
+    ],
+    quote: "An integrated examination system simplifies workflows such as subject assignment and marks entry.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

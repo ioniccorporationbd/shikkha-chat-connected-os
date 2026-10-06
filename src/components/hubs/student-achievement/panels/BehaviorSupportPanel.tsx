@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'আচরণগত সহায়তা',
-    title: 'ভালো প্রেক্ষাপট দিয়ে ইতিবাচক আচরণে সহায়তা দিন।',
-    description: 'সংযুক্ত তথ্যের মাধ্যমে স্টাফদের আচরণের ধরন বুঝতে, সহায়তা নথিভুক্ত করতে এবং শিক্ষার্থীর সুস্থতা কার্যধারা সমন্বয় করতে সাহায্য করুন।',
-    stats: [{ value: '৩৬০°', label: 'শিক্ষার্থী সহায়তার পূর্ণ প্রেক্ষাপট' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'আচরণ',
+    pill: "আচরণগত সহায়তা",
+    title: "সঠিক তথ্য, সময়মতো পদক্ষেপ।",
+    description: "প্রতিটি শিক্ষার্থীর তথ্য ও অগ্রগতি এক জায়গায় থাকলে staff দ্রুত বুঝতে পারে কে সহায়তা প্রয়োজন, আর role-based access নিশ্চিত করে সঠিক ব্যক্তি সঠিক তথ্য দেখে।",
+    stats: [
+      { value: "Role-based", label: "নিয়ন্ত্রিত access—যতটুকু প্রয়োজন ততটুকু" },
+      { value: "সংযুক্ত", label: "শিক্ষার্থীর তথ্য এক জায়গায়" },
+    ],
+    quote: "সংগঠিত, নিরাপদ তথ্য staff-কে দ্রুত ও সঠিক সিদ্ধান্ত নিতে সাহায্য করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Behavior Support',
-    title: 'Support positive behavior with better context.',
-    description: 'Help staff understand behavior patterns, document supports, and coordinate student wellbeing workflows with connected information.',
-    stats: [{ value: '360°', label: 'Student support context' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Behavior',
+    pill: "Behavior Support",
+    title: "The right information, at the right time.",
+    description: "When each student's information and progress live in one place, staff can quickly see who needs support—and role-based access ensures the right people see the right information.",
+    stats: [
+      { value: "Role-based", label: "Controlled access—only what each user needs" },
+      { value: "Connected", label: "Student information in one place" },
+    ],
+    quote: "Organized, secure information helps staff make fast and accurate decisions.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

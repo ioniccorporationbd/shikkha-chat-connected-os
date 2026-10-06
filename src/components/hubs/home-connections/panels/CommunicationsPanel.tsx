@@ -6,35 +6,25 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 const sectionText = {
   bn: {
     pill: "যোগাযোগ ব্যবস্থা",
-    title: "ম্যানুয়াল যোগাযোগ কমান, পরিবারকে আরও সংযুক্ত রাখুন।",
-    description:
-      "যোগাযোগকে সরাসরি শিক্ষার্থীর তথ্যের সাথে যুক্ত করে শিক্ষা চ্যাট নিশ্চিত করে প্রতিটি আপডেট সঠিক, সময়মতো এবং সহজে পাঠানো যায়। এতে স্টাফদের সময় বাঁচে এবং পরিবার অবগত ও আত্মবিশ্বাসী থাকে।",
+    title: "কম manual outreach, বেশি সংযুক্ত প্রতিষ্ঠান।",
+    description: "যোগাযোগকে শিক্ষার্থীর তথ্যের সাথে যুক্ত করে নিশ্চিত করুন প্রতিটি update সঠিক ও সময়মতো। notice, announcement ও জরুরি তথ্য একই system থেকে পাঠান।",
     stats: [
-      { value: "৪০০০+", label: "যোগাযোগের জন্য শিক্ষা চ্যাট ব্যবহারকারী প্রতিষ্ঠান" },
-      { value: "২২M+", label: "সহায়তা পাওয়া শিক্ষার্থী" },
-      { value: "৫B+", label: "প্রতি স্কুল বছরে পাঠানো বার্তা" },
+      { value: "সেন্ট্রালাইজড", label: "Academic, exam, holiday ও admission notice এক জায়গায়" },
     ],
-    quote:
-      "এটি শিক্ষা চ্যাটের মধ্যেই আছে। আমি টুল বদলানো ছাড়াই কয়েক সেকেন্ডে বার্তা পাঠাতে পারি। ব্যস্ত প্রশাসকদের জন্য এটি বড় সুবিধা।",
-    author: "কেল ব্লিকেনস্টাফ",
-    role: "জেলা নেতৃত্ব, মিল ক্রিক কমিউনিটি স্কুল কর্পোরেশন, ইন্ডিয়ানা",
-    logo: "মিল ক্রিক",
+    quote: "একই information বিভিন্ন channel-এ manually পাঠানোর প্রয়োজন কমে আসে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Communications",
-    title: "Less Manual Outreach. More Connected Families.",
-    description:
-      "By connecting communications directly to student information, Shikkha Chat ensures every update is accurate, timely, and easy to deliver—saving staff time while keeping families informed and confident.",
+    title: "Less manual outreach. More connected institutions.",
+    description: "Connect communication to student information so every update is accurate and on time. Send notices, announcements, and urgent information from one system.",
     stats: [
-      { value: "4000+", label: "Organizations using Shikkha Chat for communications" },
-      { value: "22M+", label: "Students supported" },
-      { value: "5B+", label: "Messages sent each school year" },
+      { value: "Centralized", label: "Academic, exam, holiday, and admission notices in one place" },
     ],
-    quote:
-      "It’s built right into Shikkha Chat. I can send a message in seconds, without switching tools. That’s a big deal for busy administrators.",
-    author: "Kale Blickenstaff",
-    role: "District Leader, Mill Creek Community School Corporation, Indiana",
-    logo: "Mill Creek",
+    quote: "The need to send the same information to different channels manually is reduced.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

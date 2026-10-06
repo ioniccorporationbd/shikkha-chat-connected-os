@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'বহুস্তরীয় সহায়তা ব্যবস্থা',
-    title: 'বহুস্তরীয় সহায়তাকে একটি সংযুক্ত কার্যধারায় আনুন।',
-    description: 'একাডেমিক, আচরণ, উপস্থিতি এবং সহায়তা ডেটা যুক্ত করুন, যাতে স্কুলগুলো বিভিন্ন স্তরে সহায়তা আরও পরিষ্কারভাবে সমন্বয় করতে পারে।',
-    stats: [{ value: 'স্তর ১–৩', label: 'সহায়তা পরিকল্পনার দৃশ্যমানতা' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'সহায়তা',
+    pill: "বহুস্তরীয় সহায়তা ব্যবস্থা",
+    title: "প্রতিটি শিক্ষার্থীর জন্য সঠিক স্তরের সহায়তা।",
+    description: "উপস্থিতি ও অগ্রগতির তথ্যের ভিত্তিতে যেসব শিক্ষার্থীর অতিরিক্ত সহায়তা দরকার তাদের চিহ্নিত করুন এবং tiered সহায়তাকে সংগঠিতভাবে track করুন।",
+    stats: [
+      { value: "তথ্য-ভিত্তিক", label: "উপস্থিতি ও অগ্রগতি থেকে শিক্ষার্থী চিহ্নিতকরণ" },
+      { value: "স্তরভিত্তিক", label: "সংগঠিত, ধাপভিত্তিক সহায়তা" },
+    ],
+    quote: "ছোট লক্ষণ আগে দেখা গেলে বড় সমস্যা হওয়ার আগেই পদক্ষেপ নেওয়া যায়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Multi-Tier Support System',
-    title: 'Bring multi-tier support into one connected workflow.',
-    description: 'Connect academic, behavior, attendance, and intervention data so schools can coordinate supports across tiers with better clarity.',
-    stats: [{ value: 'Tier 1–3', label: 'Support planning visibility' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Support',
+    pill: "Multi-Tier Support System",
+    title: "The right level of support for every student.",
+    description: "Identify the students who need extra support from attendance and progress data, and track tiered support in an organized way.",
+    stats: [
+      { value: "Data-driven", label: "Identify students from attendance and progress" },
+      { value: "Tiered", label: "Organized, step-based support" },
+    ],
+    quote: "Seeing small signs early means acting before they become a bigger problem.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

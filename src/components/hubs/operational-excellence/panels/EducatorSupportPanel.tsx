@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "শিক্ষক সহায়তা",
-    title: "শিক্ষকদের প্রাপ্য অপারেশনাল সহায়তা দিন।",
-    description: "প্রশাসনিক জটিলতা কমান এবং সহায়তা কাজের ধারাকে যুক্ত করুন, যাতে শিক্ষকরা শিক্ষার্থীদের ওপর আরও বেশি মনোযোগ দিতে পারেন।",
+    title: "শিক্ষকদের প্রয়োজনীয় operational সহায়তা দিন।",
+    description: "প্রশাসনিক জটিলতা কমিয়ে দিন এবং প্রয়োজনীয় তথ্য এক জায়গায় রাখুন, যাতে শিক্ষকরা শিক্ষার্থীদের উপর আরও বেশি মনোযোগ দিতে পারেন।",
     stats: [
-      { value: "আরও সময়", label: "শিক্ষক ও স্টাফের সহায়তা" },
+      { value: "কম জটিলতা", label: "প্রশাসনিক কাজ সহজ" },
+      { value: "তথ্য এক জায়গায়", label: "শিক্ষকদের জন্য দ্রুত তথ্য" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "শিক্ষক",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "শিক্ষকদের প্রশাসনিক কাজ কমলে তারা শিক্ষার্থীদের উপর আরও মনোযোগ দিতে পারেন।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Educator Support",
     title: "Give educators the operational support they deserve.",
-    description: "Reduce administrative friction and connect support workflows so educators can focus more energy on students.",
+    description: "Reduce administrative friction and keep the information educators need in one place, so they can focus more energy on students.",
     stats: [
-      { value: "More time", label: "Support for teachers and staff" },
+      { value: "Less friction", label: "Administrative work made simpler" },
+      { value: "One place", label: "Information educators need, at hand" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "Educator",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "When administrative work is reduced, educators can focus more on students.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function EducatorSupportPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "ইআরপি সিস্টেম",
-    title: "মূল ব্যবসায়িক সিস্টেমকে আধুনিক করুন।",
-    description: "স্কুল অপারেশনের জন্য অর্থ, ক্রয়, মানবসম্পদ, বেতন এবং প্রশাসনিক কাজের ধারাকে একটি নির্ভরযোগ্য ইআরপি অভিজ্ঞতায় যুক্ত করুন।",
+    title: "মূল ব্যবস্থাকে আধুনিক, ERP-backed foundation দিন।",
+    description: "Finance, purchasing, HR, payroll ও administrative workflow-কে ERPNext-compatible architecture-এ যুক্ত করুন, যাতে প্রতিষ্ঠানের core operation নির্ভরযোগ্যভাবে চলে।",
     stats: [
-      { value: "মূল", label: "সংযুক্ত ইআরপি কার্যধারা" },
+      { value: "ERPNext-compatible", label: "Enterprise-grade ERP architecture" },
+      { value: "সংযুক্ত", label: "Finance, HR ও administrative workflow একসাথে" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "ইআরপি",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "ERP-backed architecture একটি powerful enterprise data management foundation দেয়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "ERP Systems",
-    title: "Modernize the core business system.",
-    description: "Connect finance, purchasing, HR, payroll, and administrative workflows in a reliable ERP experience for school operations.",
+    title: "Give the core system a modern, ERP-backed foundation.",
+    description: "Connect finance, purchasing, HR, payroll, and administrative workflows on an ERPNext-compatible architecture so the institution's core operation runs reliably.",
     stats: [
-      { value: "Core", label: "ERP workflows connected" },
+      { value: "ERPNext-compatible", label: "Enterprise-grade ERP architecture" },
+      { value: "Connected", label: "Finance, HR, and administrative workflow together" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "ERP",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "An ERP-backed architecture provides a powerful enterprise data management foundation.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function ERPSystemsPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

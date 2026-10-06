@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "নিয়োগ ও মানবসম্পদ",
-    title: "সবার জন্য নিয়োগ ও মানবসম্পদ কাজ সহজ করুন।",
-    description: "নিয়োগ, অনবোর্ডিং, মানবসম্পদ রেকর্ড এবং স্টাফ কাজের ধারাকে সহজ করুন, যাতে স্কুল দ্রুত এগোতে পারে এবং টিমকে ভালোভাবে সহায়তা করতে পারে।",
+    title: "নিয়োগ ও HR কাজকে সহজ করুন।",
+    description: "Employee profile, attendance ও Check-In / Check-Out-সহ HR workflow এক system-এ যুক্ত করুন, যাতে নিয়োগ ও মানবসম্পদ কাজ সংগঠিতভাবে চলে।",
     stats: [
-      { value: "দ্রুত", label: "নিয়োগ ও মানবসম্পদ অপারেশন" },
+      { value: "HR workflow", label: "Profile, attendance ও Check-In / Check-Out" },
+      { value: "সংগঠিত", label: "নিয়োগ থেকে HR record—এক system-এ" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "মানবসম্পদ",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "বর্তমান Employee Check-In/Out workflow HR ecosystem-এর একটি গুরুত্বপূর্ণ foundation।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Recruiting and HR",
-    title: "Make hiring and HR smoother for everyone.",
-    description: "Streamline recruiting, onboarding, HR records, and staff workflows so schools can move faster and support teams better.",
+    title: "Make hiring and HR smoother.",
+    description: "Connect employee profiles, attendance, and Check-In / Check-Out in one system, so hiring and HR work runs in an organized way.",
     stats: [
-      { value: "Faster", label: "Recruiting and HR operations" },
+      { value: "HR workflow", label: "Profile, attendance, and Check-In / Check-Out" },
+      { value: "Organized", label: "Hiring to HR records in one system" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "HR",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "The current Employee Check-In/Out workflow is an important foundation of the HR ecosystem.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function RecruitingAndHRPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

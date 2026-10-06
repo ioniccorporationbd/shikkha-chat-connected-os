@@ -6,33 +6,27 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 const sectionText = {
   bn: {
     pill: "উপস্থিতি সহায়তা",
-    title: "লক্ষণ আগে দেখুন, আরও দ্রুত পদক্ষেপ নিন।",
-    description:
-      "অনুপস্থিতি বড় সমস্যায় পরিণত হওয়ার অনেক আগেই ছোট ছোট লক্ষণ দেখা যায়। শিক্ষা চ্যাট উপস্থিতি সহায়তা সেই লক্ষণগুলো আগে শনাক্ত করে এবং পরিবারে যোগাযোগ স্বয়ংক্রিয় করে, যাতে স্টাফ দ্রুত সাড়া দিতে পারে এবং শিক্ষার্থীদের সঠিক পথে রাখতে পারে।",
+    title: "উপস্থিতি ডিজিটাল করুন, কাগজের রেজিস্টার কমান।",
+    description: "দৈনিক উপস্থিতি, present/absent report, মাসিক report ও শিক্ষার্থী-ভিত্তিক history digitally পরিচালনা করুন। কর্মীদের জন্য Check-In / Check-Out workflow attendance-কে HR-এর সাথে যুক্ত করে।",
     stats: [
-      { value: "৬০০+", label: "উপস্থিতি সহায়তার জন্য শিক্ষা চ্যাট ব্যবহারকারী প্রতিষ্ঠান" },
-      { value: "২.২M+", label: "সহায়তা পাওয়া শিক্ষার্থী" },
-      { value: "৮০M+", label: "প্রতি স্কুল বছরে পাঠানো বার্তা" },
+      { value: "দৈনিক ও মাসিক", label: "Present/Absent report ও শিক্ষার্থী-ভিত্তিক history" },
+      { value: "Check-In / Out", label: "কর্মীদের ডিজিটাল attendance workflow" },
     ],
-    quote: "হেইউড কাউন্টি স্কুলস শিক্ষা চ্যাটের সহায়তায় দীর্ঘমেয়াদি অনুপস্থিতি কমিয়েছে।",
-    author: "নিকোল বন্ড",
-    role: "উপস্থিতি ও ভর্তি নেতৃত্ব, হেইউড কাউন্টি স্কুলস, টেনেসি",
-    logo: "হেইউড কাউন্টি স্কুলস",
+    quote: "ডিজিটাল attendance manual register-এর উপর নির্ভরতা কমায় এবং guardian notification integration সহজ করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Attendance Support",
-    title: "Spot the Signs Early. Step in Sooner.",
-    description:
-      "Absenteeism starts with small signs long before it becomes a serious problem. Shikkha Chat Attendance Support detects those signs early and automates family outreach so staff can respond quickly and keep students on track.",
+    title: "Digitize attendance, reduce the paper register.",
+    description: "Manage daily attendance, present/absent reports, monthly summaries, and student-level history digitally. For staff, a Check-In / Check-Out workflow connects attendance to HR.",
     stats: [
-      { value: "600+", label: "Organizations using Shikkha Chat for attendance support" },
-      { value: "2.2M+", label: "Students supported" },
-      { value: "80M+", label: "Messages sent each school year" },
+      { value: "Daily & monthly", label: "Present/absent reports and student-level history" },
+      { value: "Check-In / Out", label: "A digital attendance workflow for employees" },
     ],
-    quote: "Haywood County Schools lowers chronic absenteeism with support from Shikkha Chat.",
-    author: "Nicole Bond",
-    role: "Attendance and Enrollment Leader, Haywood County Schools, Tennessee",
-    logo: "Haywood County Schools",
+    quote: "Digital attendance reduces reliance on manual registers and makes guardian notification integration easier.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

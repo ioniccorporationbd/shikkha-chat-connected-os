@@ -6,33 +6,27 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 const sectionText = {
   bn: {
     pill: "ভর্তি ব্যবস্থাপনা",
-    title: "প্রতিটি শিক্ষার্থীর জন্য আরও সহজ শুরু।",
-    description:
-      "আপনার শিক্ষার্থী নিবন্ধনের সব তথ্য সঠিক ও আপডেট রাখুন এবং তা শিক্ষার্থী তথ্য ব্যবস্থার সাথে সহজভাবে যুক্ত করুন। শিক্ষা চ্যাট ভর্তি ব্যবস্থাপনা ম্যানুয়াল ডেটা এন্ট্রি ও কাগজের কাজ কমায়, যাতে স্টাফ এবং পরিবার প্রথম যোগাযোগ থেকে গ্র্যাজুয়েশন পর্যন্ত সহজ অভিজ্ঞতা পায়।",
+    title: "প্রতিটি নতুন শিক্ষার্থীর জন্য সহজ, নিরাপদ শুরু।",
+    description: "ভর্তির তথ্য সংগ্রহ থেকে account creation পর্যন্ত—OTP verification-সহ একটি structured registration workflow, যা শিক্ষার্থী তথ্য ব্যবস্থার সাথে সরাসরি যুক্ত।",
     stats: [
-      { value: "৪৫০০+", label: "ভর্তি ও নিবন্ধনের জন্য শিক্ষা চ্যাট ব্যবহারকারী প্রতিষ্ঠান" },
-      { value: "১৬M+", label: "প্রতি বছর ভর্তি হওয়া শিক্ষার্থী" },
+      { value: "OTP-যাচাইকৃত", label: "Email বা configured SMS channel দিয়ে verification" },
+      { value: "সংযুক্ত", label: "Registration থেকে student profile—একই workflow-এ" },
     ],
-    quote:
-      "সপ্তাহ বা মাস ধরে ম্যানুয়ালি শিক্ষার্থী তথ্য এন্ট্রি করার বদলে স্টাফরা এখন শুধু তথ্য অনুমোদন বা বাতিল করতে পারে এবং গুরুত্বপূর্ণ কাজে এগিয়ে যেতে পারে।",
-    author: "ক্রিস্টিন বোলিং",
-    role: "প্রযুক্তি নেতৃত্ব, এন্টারপ্রাইজ এলিমেন্টারি স্কুল ডিস্ট্রিক্ট",
-    logo: "এন্টারপ্রাইজ এলিমেন্টারি স্কুল ডিস্ট্রিক্ট",
+    quote: "নিরাপদ registration workflow unauthorized বা ভুল account creation-এর ঝুঁকি কমায়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Enrollment Management",
-    title: "A Smoother Start for Every Student",
-    description:
-      "Keep all your student registration information accurate and up to date with seamless connections to your SIS. Shikkha Chat Enrollment reduces manual entry and paperwork, so your staff and families enjoy a smooth experience from first contact to graduation.",
+    title: "A simple, secure start for every new student.",
+    description: "From collecting admission information to account creation—a structured registration workflow with OTP verification, connected directly to your student information system.",
     stats: [
-      { value: "4500+", label: "Organizations using Shikkha Chat for enrollment and registrations" },
-      { value: "16M+", label: "Students enrolled every year" },
+      { value: "OTP-verified", label: "Verification over email or a configured SMS channel" },
+      { value: "Connected", label: "Registration to student profile in one workflow" },
     ],
-    quote:
-      "Instead of spending weeks—or even months—manually entering student information, staff could simply approve or reject entries, allowing them to move on to more critical tasks.",
-    author: "Kristin Bowling",
-    role: "Technology Leader, Enterprise Elementary School District",
-    logo: "Enterprise Elementary School District",
+    quote: "A secure registration workflow reduces the risk of unauthorized or incorrect account creation.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

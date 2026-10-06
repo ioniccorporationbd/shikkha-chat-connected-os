@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'শ্রেণিকক্ষ সমাধান',
-    title: 'শিক্ষকদের জন্য দৈনন্দিন শ্রেণিকক্ষ কাজ আরও পরিষ্কার করুন।',
-    description: 'পাঠদান, অংশগ্রহণ, অ্যাসাইনমেন্ট এবং শিক্ষার্থীর প্রেক্ষাপট এক জায়গায় আনুন, যাতে শিক্ষকরা সিস্টেম বদলানোর বদলে শেখানোর কাজে বেশি সময় দিতে পারেন।',
-    stats: [{ value: '১ ভিউ', label: 'শিক্ষার্থীকে কেন্দ্র করে সংযুক্ত শ্রেণিকক্ষ টুল' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'শ্রেণিকক্ষ',
+    pill: "শ্রেণিকক্ষ সমাধান",
+    title: "শ্রেণিকক্ষের তথ্য ও অগ্রগতি একসাথে।",
+    description: "Class, section ও roll-সহ শ্রেণিকক্ষ-সংশ্লিষ্ট তথ্য এবং শিক্ষার্থীর academic history একত্রে রাখুন, যাতে শিক্ষক দ্রুত প্রয়োজনীয় তথ্য খুঁজে পান।",
+    stats: [
+      { value: "Class ও Section", label: "শ্রেণিকক্ষ কাঠামো অনুযায়ী শিক্ষার্থী তথ্য" },
+      { value: "Academic history", label: "শিক্ষার্থী-ভিত্তিক অগ্রগতির record" },
+    ],
+    quote: "তথ্য খুঁজে পাওয়া সহজ হলে শিক্ষকদের মূল্যবান সময় শিক্ষার্থীদের জন্য বাঁচে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Classroom Solutions',
-    title: 'Give teachers a clearer daily classroom workflow.',
-    description: 'Bring instruction, participation, assignments, and student context together so teachers can spend more time teaching and less time switching systems.',
-    stats: [{ value: '1 View', label: 'Classroom tools connected around the learner' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Classroom',
+    pill: "Classroom Solutions",
+    title: "Classroom and progress data together.",
+    description: "Keep classroom information—class, section, and roll—alongside each student's academic history, so teachers can find what they need quickly.",
+    stats: [
+      { value: "Class & Section", label: "Student records by classroom structure" },
+      { value: "Academic history", label: "Student-level progress records" },
+    ],
+    quote: "When information is easy to find, teachers' valuable time goes back to students.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

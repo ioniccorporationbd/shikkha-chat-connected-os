@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "প্রতিভা ব্যবস্থাপনা",
-    title: "কর্মজীবনের পুরো যাত্রায় মানুষকে সহায়তা করুন।",
-    description: "স্টাফ বৃদ্ধি, পারফরম্যান্স, শেখা, মূল্যায়ন এবং ধরে রাখার কাজের ধারাকে যুক্ত করুন, যাতে স্কুল শক্তিশালী টিমকে সহায়তা করতে পারে।",
+    title: "কর্মজীবনের পুরো যাত্রায় মানুষকে সহায়তা করুন।",
+    description: "Employee profile, department, designation, joining information ও HR record structuredভাবে manage করুন, যাতে প্রতিষ্ঠান তার টিমকে ভালোভাবে সহায়তা করতে পারে।",
     stats: [
-      { value: "মানুষ", label: "প্রতিভার দৃশ্যমানতা ও স্টাফ বৃদ্ধি" },
+      { value: "HR record", label: "Profile, department, designation ও joining তথ্য" },
+      { value: "সংগঠিত", label: "Employee lifecycle-এর তথ্য এক জায়গায়" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "প্রতিভা",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "সংগঠিত HR তথ্য প্রতিষ্ঠানকে তার টিমকে ভালোভাবে সহায়তা করতে সাহায্য করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Talent Management",
     title: "Support people across the employee lifecycle.",
-    description: "Connect staff growth, performance, learning, evaluation, and retention workflows so schools can support great teams.",
+    description: "Manage employee profiles, departments, designations, joining information, and HR records in a structured way, so the institution can support its team well.",
     stats: [
-      { value: "People", label: "Talent visibility and staff growth" },
+      { value: "HR records", label: "Profile, department, designation, and joining data" },
+      { value: "Organized", label: "Employee lifecycle data in one place" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "Talent",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "Organized HR information helps an institution support its team well.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function TalentManagementPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

@@ -9,49 +9,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "শিক্ষার্থী তথ্য ব্যবস্থা",
-    title: "তথ্যের বিশৃঙ্খলা কমান, শিক্ষার্থীর পরিষ্কার ধারণা বাড়ান।",
-    description:
-      "শিক্ষা চ্যাট শিক্ষার্থী তথ্য ব্যবস্থা ভর্তি, সময়সূচি, উপস্থিতি, গ্রেড এবং কার্যক্রমের তথ্যকে একটি নির্ভরযোগ্য কেন্দ্রীভূত ব্যবস্থায় সংরক্ষণ করে। সঠিক ও সহজলভ্য শিক্ষার্থী তথ্যের মাধ্যমে কর্মীরা তথ্য সংশোধনে কম সময় ব্যয় করে শিক্ষার্থী, পরিবার এবং বিদ্যালয়ের দৈনন্দিন কার্যক্রমে আরও বেশি সহায়তা দিতে পারেন।",
+    title: "ছড়িয়ে থাকা তথ্য নয়—একটি নির্ভরযোগ্য উৎস।",
+    description: "ERP-backed architecture ব্যবহার করে ভর্তি, সময়সূচি, উপস্থিতি, গ্রেড ও কার্যক্রমের তথ্য একটি কেন্দ্রীভূত, structured record হিসেবে রক্ষণাবেক্ষণ করুন।",
     stats: [
-      {
-        value: "৫০০০+",
-        label:
-          "শিক্ষা চ্যাট শিক্ষার্থী তথ্য ব্যবস্থা ব্যবহারকারী প্রতিষ্ঠান",
-      },
-      {
-        value: "১ কোটি ৭০ লাখ+",
-        label: "সহায়তা পাওয়া শিক্ষার্থী",
-      },
+      { value: "ERP-ভিত্তিক", label: "Enterprise-grade structured data foundation" },
+      { value: "অডিট-বান্ধব", label: "Permission-controlled, traceable record" },
     ],
-    quote:
-      "আমাদের ব্যবস্থাগুলো অবশেষে একসঙ্গে কাজ করছে। এর ফলে আমাদের কর্মীরাও আরও সমন্বিতভাবে কাজ করতে পারছেন।",
-    author: "সারা মিলার",
-    role:
-      "প্রযুক্তি প্রধান, লোরেনা ইন্ডিপেনডেন্ট স্কুল ডিস্ট্রিক্ট, টেক্সাস",
-    logo: "লোরেনা আইএসডি",
+    quote: "কেন্দ্রীভূত তথ্য reporting সহজ করে, permission নিয়ন্ত্রণ বাড়ায় এবং ভবিষ্যতের automation সম্ভব করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
-
   en: {
     pill: "Student Information System",
-    title: "Less information chaos. More student clarity.",
-    description:
-      "Shikkha Chat SIS centralizes enrollment, schedules, attendance, grades, and program data in one reliable source of truth. With accurate and accessible student information, staff spend less time correcting data and more time supporting students, families, and daily school operations.",
+    title: "Not scattered data—one reliable source.",
+    description: "An ERP-backed architecture keeps enrollment, schedules, attendance, grades, and activity data as one centralized, structured record.",
     stats: [
-      {
-        value: "5000+",
-        label: "Organizations using Shikkha Chat SIS",
-      },
-      {
-        value: "17M+",
-        label: "Students supported",
-      },
+      { value: "ERP-backed", label: "An enterprise-grade structured data foundation" },
+      { value: "Audit-friendly", label: "Permission-controlled, traceable records" },
     ],
-    quote:
-      "Our systems are finally working together. That means our people can work together more effectively too.",
-    author: "Sarah Miller",
-    role:
-      "Technology Leader, Lorena Independent School District, Texas",
-    logo: "Lorena ISD",
+    quote: "Centralized information makes reporting easier, strengthens permission control, and enables future automation.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

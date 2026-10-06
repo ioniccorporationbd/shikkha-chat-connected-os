@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা',
-    title: 'ব্যক্তিগত পরিকল্পনার মতো অনুভব হয় এমন দিকনির্দেশনা দিন।',
-    description: 'প্রস্তুতি নির্দেশনা টুল শিক্ষার্থীদের পথ খুঁজতে, লক্ষ্য ঠিক করতে এবং শেখাকে কলেজ, ক্যারিয়ার ও জীবনের পরিকল্পনার সাথে যুক্ত করতে সাহায্য করে।',
-    stats: [{ value: 'পথনির্দেশনা', label: 'কলেজ ও ক্যারিয়ার পরিকল্পনা সহায়তা' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'প্রস্তুতি',
+    pill: "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা",
+    title: "Career ও জীবন প্রস্তুতির দিকনির্দেশনা এক জায়গায়।",
+    description: "শিক্ষার্থীর academic তথ্য ও ফলাফল structuredভাবে রাখুন, যাতে career ও higher-study সংক্রান্ত দিকনির্দেশনার জন্য প্রয়োজনীয় তথ্য সহজে পাওয়া যায়।",
+    stats: [
+      { value: "Academic record", label: "ফলাফল ও অগ্রগতির তথ্য এক জায়গায়" },
+      { value: "Guidance-ready", label: "দিকনির্দেশনার জন্য তথ্য প্রস্তুত" },
+    ],
+    quote: "সঠিক তথ্য থাকলে শিক্ষার্থীদের জন্য দিকনির্দেশনা দেওয়া সহজ হয়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Career and Life Readiness Guidance',
-    title: 'Guide students with planning that feels personal.',
-    description: 'Readiness guidance tools help students explore pathways, set goals, and connect learning to college, career, and life plans.',
-    stats: [{ value: 'Pathway', label: 'College and career planning support' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Readiness',
+    pill: "Career and Life Readiness Guidance",
+    title: "Career and life-readiness guidance, in one place.",
+    description: "Keep student academic information and results structured, so the information needed for career and higher-study guidance is easy to find.",
+    stats: [
+      { value: "Academic record", label: "Results and progress in one place" },
+      { value: "Guidance-ready", label: "Information ready for guidance" },
+    ],
+    quote: "Having the right information makes guiding students easier.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

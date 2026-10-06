@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি',
-    title: 'শিক্ষার্থীদের অর্থপূর্ণ পরবর্তী ধাপের জন্য প্রস্তুত করুন।',
-    description: 'একাডেমিক অগ্রগতি, আগ্রহ, লক্ষ্য, পরিকল্পনা এবং প্রস্তুতি ডেটা যুক্ত করুন, যাতে শিক্ষার্থীরা আরও শক্তিশালী ভবিষ্যৎ তৈরি করতে পারে।',
-    stats: [{ value: 'ভবিষ্যৎ', label: 'প্রতিটি শিক্ষার্থীর জন্য প্রস্তুতি পরিকল্পনা' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'প্রস্তুতি',
+    pill: "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি",
+    title: "প্রস্তুতির প্রতিটি ধাপ track করুন।",
+    description: "শিক্ষার্থীর অগ্রগতি ও ফলাফলের ধারাবাহিক record রাখুন, যাতে college, career ও জীবনের জন্য প্রস্তুতির প্রতিটি ধাপ management দেখতে পারে।",
+    stats: [
+      { value: "অগ্রগতির record", label: "ধারাবাহিক academic তথ্য" },
+      { value: "Management insight", label: "প্রস্তুতির চিত্র এক দৃশ্যে" },
+    ],
+    quote: "ধারাবাহিক record ভবিষ্যৎ পরিকল্পনা ও সিদ্ধান্ত সহজ করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'College, Career and Life Readiness',
-    title: 'Prepare students for meaningful next steps.',
-    description: 'Connect academic progress, interests, goals, planning, and readiness data so students can build stronger futures.',
-    stats: [{ value: 'Future', label: 'Readiness planning for every learner' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Readiness',
+    pill: "College, Career and Life Readiness",
+    title: "Track every step of readiness.",
+    description: "Keep a continuous record of student progress and results, so management can see each stage of preparation for college, career, and life.",
+    stats: [
+      { value: "Progress record", label: "Continuous academic information" },
+      { value: "Management insight", label: "A clear view of readiness" },
+    ],
+    quote: "A continuous record makes future planning and decisions easier.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

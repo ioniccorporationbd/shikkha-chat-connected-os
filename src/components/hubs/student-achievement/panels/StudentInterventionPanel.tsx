@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'শিক্ষার্থী সহায়তা',
-    title: 'শিক্ষার্থী পিছিয়ে পড়ার আগে সহায়তা সমন্বয় করুন।',
-    description: 'শেখার ঝুঁকি শনাক্ত করুন, সহায়তা কার্যক্রম নির্ধারণ করুন, সহায়তা পরিকল্পনা পর্যবেক্ষণ করুন এবং শিক্ষার্থীর সাফল্যের জন্য টিমকে একসাথে রাখুন।',
-    stats: [{ value: 'আগাম', label: 'কার্যকর পদক্ষেপের সাথে যুক্ত সহায়তা সংকেত' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'সহায়তা',
+    pill: "শিক্ষার্থী সহায়তা",
+    title: "সহায়তা কার্যক্রম সংগঠিতভাবে পরিচালনা করুন।",
+    description: "যেসব শিক্ষার্থীর হস্তক্ষেপ দরকার তাদের জন্য কার্যক্রম, দায়িত্ব ও অগ্রগতি এক জায়গায় track করুন, যাতে কেউ পিছিয়ে না পড়ে।",
+    stats: [
+      { value: "Track", label: "সহায়তা কার্যক্রমের অগ্রগতি এক জায়গায়" },
+      { value: "দলগত", label: "দায়িত্ব ও সমন্বয় সংগঠিত" },
+    ],
+    quote: "সংগঠিত সহায়তা নিশ্চিত করে প্রতিটি শিক্ষার্থী প্রয়োজনীয় মনোযোগ পায়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Student Intervention',
-    title: 'Coordinate support before students fall behind.',
-    description: 'Identify learning risks, assign interventions, monitor support plans, and keep teams aligned around student success.',
-    stats: [{ value: 'Early', label: 'Intervention signals connected to action' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Intervention',
+    pill: "Student Intervention",
+    title: "Manage support activity in an organized way.",
+    description: "Track activity, ownership, and progress for every student who needs intervention in one place, so no one is left behind.",
+    stats: [
+      { value: "Track", label: "Intervention progress in one place" },
+      { value: "Team-based", label: "Organized ownership and coordination" },
+    ],
+    quote: "Organized support ensures every student gets the attention they need.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

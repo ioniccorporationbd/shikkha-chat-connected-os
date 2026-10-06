@@ -6,35 +6,27 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 const sectionText = {
   bn: {
     pill: "বিশেষ কার্যক্রম",
-    title: "শিক্ষার্থীদের প্রাপ্য সহায়তা পৌঁছে দিন।",
-    description:
-      "কমপ্লায়েন্স কার্যধারা এবং ডেটাকে একটি সংযুক্ত ব্যবস্থায় আনুন। ম্যানুয়াল ট্র্যাকিং কমিয়ে এবং দলগত সমন্বয় উন্নত করে নিশ্চিত করুন প্রতিটি শিক্ষার্থী সময়মতো সঠিক সেবা পাচ্ছে।",
+    title: "আপনার প্রতিষ্ঠানের নিয়মে চলা কার্যক্রম।",
+    description: "প্রতিটি প্রতিষ্ঠানের workflow আলাদা। শিক্ষা চ্যাট customizable architecture-এর উপর তৈরি—প্রয়োজন অনুযায়ী modules, fields ও access কনফিগার করে প্রতিষ্ঠান-নির্দিষ্ট কার্যক্রম পরিচালনা করা যায়।",
     stats: [
-      { value: "১২০০+", label: "বিশেষ কার্যক্রমের জন্য শিক্ষা চ্যাট ব্যবহারকারী প্রতিষ্ঠান" },
-      { value: "১.৭M", label: "প্রতি বছর সম্পন্ন শিক্ষার্থী সেবা ফর্ম" },
-      { value: "৯M+", label: "সহায়তা পাওয়া শিক্ষার্থী" },
+      { value: "কাস্টমাইজযোগ্য", label: "প্রতিষ্ঠানের process অনুযায়ী module configuration" },
+      { value: "নমনীয়", label: "ছোট প্রতিষ্ঠান থেকে বড় organization পর্যন্ত" },
     ],
-    quote:
-      "শিক্ষা চ্যাট শিক্ষার্থী তথ্য ব্যবস্থা এবং বিশেষ কার্যক্রমের মধ্যে দুই দিকের ডেটা প্রবাহ নিশ্চিত করে যে ডেটা সবসময় বর্তমান থাকে। শিক্ষকরা শিক্ষার্থীর প্রয়োজনীয় সুবিধার সতর্কতাও পান।",
-    author: "পল হাওয়ার্ড",
-    role: "বিশেষ সেবা নেতৃত্ব, স্কুল অব ড্রিমস একাডেমি",
-    logo: "স্কুল অব ড্রিমস একাডেমি",
+    quote: "প্রতিষ্ঠানের workflow অনুযায়ী feature customize করার সুযোগ শিক্ষা চ্যাটের অন্যতম মূল সুবিধা।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Special Programs",
-    title: "Deliver the Support Students Deserve",
-    description:
-      "Bring compliance workflows and data into one connected system. Ensure every student receives the right services on time by reducing manual tracking and improving team alignment.",
+    title: "Programs that run the way your institution works.",
+    description: "Every institution's workflow is different. Shikkha Chat is built on a customizable architecture, so modules, fields, and access can be configured around your institution's specific programs.",
     stats: [
-      { value: "1200+", label: "Organizations using Shikkha Chat for special programs" },
-      { value: "1.7M", label: "Student services forms completed each year" },
-      { value: "9M+", label: "Students supported" },
+      { value: "Customizable", label: "Module configuration around your institution's process" },
+      { value: "Flexible", label: "From a small institution to a growing organization" },
     ],
-    quote:
-      "Two-way data flow between Shikkha Chat SIS and Special Programs ensures that data is always current. Teachers also get alerts for student accommodations.",
-    author: "Paul Howard",
-    role: "Special Services Leader, School of Dreams Academy",
-    logo: "School of Dreams Academy",
+    quote: "The ability to customize features around your workflow is one of Shikkha Chat's core strengths.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

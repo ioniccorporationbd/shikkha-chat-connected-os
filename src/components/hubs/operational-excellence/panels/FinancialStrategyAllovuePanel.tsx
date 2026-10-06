@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "আর্থিক কৌশল",
-    title: "প্রতিটি বাজেট সিদ্ধান্তকে আরও কৌশলগত করুন।",
-    description: "আর্থিক কৌশল ব্যয়, পরিকল্পনা এবং ফলাফলকে যুক্ত করে, যাতে স্কুল বাজেটকে অগ্রাধিকারের সাথে মিলিয়ে নিতে পারে।",
+    title: "প্রতিটি আর্থিক সিদ্ধান্তকে আরও কৌশলগত করুন।",
+    description: "Admission fee, monthly fee, exam fee, transport fee, payment, due tracking ও collection report-কে structuredভাবে পরিচালনা করুন—ERP-backed architecture আর্থিক ব্যবস্থাপনাকে আরও সংগঠিত করে।",
     stats: [
-      { value: "বাজেট", label: "প্রভাবের সাথে মিলানো কৌশল" },
+      { value: "Fee ব্যবস্থাপনা", label: "Admission, monthly, exam, transport fee ও due tracking" },
+      { value: "সংগঠিত report", label: "Daily collection summary ও report" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "অর্থ",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "ERP-backed architecture আর্থিক ব্যবস্থাপনাকে আরও structured করার সুযোগ তৈরি করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Financial Strategy",
-    title: "Make every budget decision more strategic.",
-    description: "Financial strategy connects spending, planning, and outcomes so schools can align budgets with priorities.",
+    title: "Make every financial decision more strategic.",
+    description: "Manage admission fees, monthly fees, exam fees, transport fees, payments, due tracking, and collection reports in a structured way—an ERP-backed architecture keeps financial management organized.",
     stats: [
-      { value: "Budget", label: "Strategy aligned to impact" },
+      { value: "Fee management", label: "Admission, monthly, exam, transport fees and due tracking" },
+      { value: "Organized reporting", label: "Daily collection summaries and reports" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "Finance",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "An ERP-backed architecture creates the opportunity to structure financial management.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function FinancialStrategyAllovuePanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

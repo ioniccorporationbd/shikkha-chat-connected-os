@@ -8,35 +8,27 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "অপারেশনাল উৎকর্ষতা",
-    title: "সংযুক্ত ডেটা দিয়ে আরও স্মার্ট স্কুল অপারেশন পরিচালনা করুন।",
-    description: "অর্থ, মানবসম্পদ, রিসোর্স পরিকল্পনা, এন্টারপ্রাইজ রিসোর্স ব্যবস্থা, ভর্তি পূর্বাভাস এবং শিক্ষক সহায়তাকে যুক্ত করুন, যাতে নেতৃত্ব আত্মবিশ্বাসের সাথে পরিকল্পনা ও পরিচালনা করতে পারে।",
+    title: "সংযুক্ত ডেটা দিয়ে স্মার্ট প্রতিষ্ঠান পরিচালনা।",
+    description: "অর্থ, মানবসম্পদ, রিসোর্স পরিকল্পনা, ERP, ভর্তি ও শিক্ষক সহায়তা—সব একটি ERP-backed architecture-এ যুক্ত করে management-কে সঠিক সিদ্ধান্ত নিতে সহায়তা করুন।",
     stats: [
-      { value: "১ সিস্টেম", label: "সিদ্ধান্তকে কেন্দ্র করে সংযুক্ত অপারেশন" },
+      { value: "ERP-backed", label: "Finance, HR ও operations এক কাঠামোয়" },
+      { value: "Management insight", label: "Report-ভিত্তিক দ্রুত সিদ্ধান্ত" },
     ],
-    quote: "সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, মানুষকে ভালোভাবে সহায়তা করতে এবং শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার ধারণা দেয়।",
-    author: "শিক্ষা চ্যাট টিম",
-    role: "সংযুক্ত অপারেটিং সিস্টেম বাস্তবায়ন সহযোগী",
-    logo: "অপারেশন",
-    productDetailsText: "পণ্যের বিস্তারিত",
-    saveProductText: "পণ্য সংরক্ষণ করুন",
-    activeProductText: "সক্রিয় পণ্য",
-    imageAlt: "স্কুল নেতৃত্বের ছবি",
+    quote: "Management যেন প্রয়োজনীয় তথ্যের ভিত্তিতে দ্রুত সিদ্ধান্ত নিতে পারে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
     pill: "Operational Excellence",
-    title: "Run smarter school operations with connected data.",
-    description: "Connect finance, HR, resource planning, ERP, enrollment forecasting, and educator support so leaders can plan and operate with confidence.",
+    title: "Run smarter operations with connected data.",
+    description: "Connect finance, HR, resource planning, ERP, admissions, and educator support on one ERP-backed architecture so management can make the right decisions.",
     stats: [
-      { value: "1 OS", label: "Operations connected around decisions" },
+      { value: "ERP-backed", label: "Finance, HR, and operations in one structure" },
+      { value: "Management insight", label: "Report-based, faster decisions" },
     ],
-    quote: "Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.",
-    author: "Shikkha Chat Team",
-    role: "Connected OS Implementation Partner",
-    logo: "OpsOS",
-    productDetailsText: "Product Details",
-    saveProductText: "Save Product",
-    activeProductText: "Active Product",
-    imageAlt: "School leader image",
+    quote: "So management can make fast decisions based on the information they need.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
@@ -55,9 +47,6 @@ export default function OperationalExcellenceOverviewPanel() {
       quote={text.quote}
       author={text.author}
       role={text.role}
-      productDetailsText={text.productDetailsText}
-      saveProductText={text.saveProductText}
-      activeProductText={text.activeProductText}
       pillStyle="solid"
       showButtons={false}
     />

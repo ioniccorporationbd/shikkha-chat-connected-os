@@ -9,32 +9,23 @@ type LanguageCode = "bn" | "en";
 const sectionText = {
   bn: {
     pill: "শিক্ষার্থীর তথ্য ব্যবস্থাপনা",
-    title: "শিক্ষকদের মূল্যবান সময় ফিরিয়ে দিন",
-    description:
-      "শিক্ষার্থীদের তথ্য বিভিন্ন ব্যবস্থায় ছড়িয়ে থাকলে শিক্ষক ও কর্মীরা শিক্ষার্থীদের প্রতি মনোযোগ দেওয়ার পরিবর্তে রেকর্ড সংশোধনে মূল্যবান সময় ব্যয় করেন। শিক্ষা চ্যাট শিক্ষার্থীর তথ্য, ভর্তি কার্যক্রম এবং বিশেষ কর্মসূচি ব্যবস্থাপনাকে একটি সমন্বিত ব্যবস্থায় যুক্ত করে। এর ফলে বিদ্যালয় আত্মবিশ্বাসের সঙ্গে কার্যক্রম পরিচালনা করতে পারে এবং প্রতিটি শিক্ষার্থীর প্রয়োজন অনুযায়ী সহায়তা নিশ্চিত করতে পারে।",
-    statValue: "১০–২০ ঘণ্টা",
-    statLabel: "প্রতি সপ্তাহে শিক্ষকদের প্রশাসনিক কাজের সময় সাশ্রয়",
-    quote:
-      "শিক্ষা চ্যাট আমাদের শিক্ষকদের হাতে করা মূল্যায়ন ও পুনরাবৃত্তিমূলক কাজের সময় কমিয়ে দিচ্ছে। আমরা চাই শিক্ষকরা পাঠদান, শিক্ষার্থীদের সহায়তা এবং তাদের অগ্রগতি মূল্যায়নে আরও বেশি মনোযোগ দিন।",
-    author: "বার্ট ব্যানফিল্ড",
-    role: "সাবেক বিদ্যালয় প্রধান, এপিক চার্টার স্কুলস, ওকলাহোমা",
-    logo: "এপিক চার্টার স্কুলস",
-    imageAlt: "বিদ্যালয়ের সাবেক প্রধান বার্ট ব্যানফিল্ড",
+    title: "প্রতিটি শিক্ষার্থীর তথ্য এক জায়গায়, সবসময় হালনাগাদ।",
+    description: "শিক্ষার্থীর প্রোফাইল, ভর্তির তথ্য, ক্লাস, সেকশন, রোল, অভিভাবক ও যোগাযোগের তথ্য কাগজ বা Excel-এর বদলে একটি structured system-এ সংরক্ষণ করুন।",
+    statValue: "সেন্ট্রালাইজড",
+    statLabel: "প্রোফাইল, ভর্তি, ক্লাস, রোল ও অভিভাবকের তথ্য",
+    quote: "শিক্ষার্থীর তথ্য সঠিক ও সংগঠিত থাকলে প্রতিষ্ঠানের প্রতিদিনের কাজ অনেক সহজ হয়।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
-
   en: {
     pill: "Student Information Management",
-    title: "Give educators their valuable time back",
-    description:
-      "When student data is scattered across multiple systems, teachers and staff spend valuable time correcting records instead of focusing on learners. Shikkha Chat brings student information, enrollment operations, and special program management into one connected system. This helps schools operate confidently and provide support based on every student’s needs.",
-    statValue: "10–20 Hours",
-    statLabel: "Administrative work time saved by teachers every week",
-    quote:
-      "Shikkha Chat is reducing the time our teachers spend on manual grading and repetitive work. We want educators to focus more on teaching, supporting learners, and measuring student progress.",
-    author: "Bart Banfield",
-    role: "Former School Leader, Epic Charter Schools, Oklahoma",
-    logo: "Epic Charter Schools",
-    imageAlt: "Former school leader Bart Banfield",
+    title: "Every student's record in one place, always up to date.",
+    description: "Keep student profiles, admission details, class, section, roll, guardian, and contact information in one structured system—instead of paper registers or spreadsheets.",
+    statValue: "Centralized",
+    statLabel: "Profile, admission, class, roll, and guardian records",
+    quote: "When student information is accurate and organized, everyday institution work becomes far simpler.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

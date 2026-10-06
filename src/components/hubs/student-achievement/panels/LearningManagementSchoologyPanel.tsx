@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'লার্নিং ব্যবস্থাপনা',
-    title: 'ডিজিটাল শেখাকে শিক্ষার্থীর অগ্রগতির সাথে যুক্ত করুন।',
-    description: 'লার্নিং ব্যবস্থাপনা কোর্সওয়ার্ক, অ্যাসাইনমেন্ট, রিসোর্স এবং সম্পৃক্ততা ডেটাকে শিক্ষার্থী অর্জনের বিস্তৃত অভিজ্ঞতার সাথে যুক্ত করে।',
-    stats: [{ value: '২৪/৭', label: 'শিক্ষার্থী ও পরিবারের জন্য ডিজিটাল শেখার অ্যাক্সেস' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'লার্নিং',
+    pill: "লার্নিং ব্যবস্থাপনা",
+    title: "ডিজিটাল শেখার তথ্য একসাথে রাখুন।",
+    description: "Course, subject ও academic রিসোর্সের তথ্য structuredভাবে সংরক্ষণ করে শিক্ষার্থীর অগ্রগতির সাথে যুক্ত করুন, যাতে শিক্ষক ও প্রতিষ্ঠান এক দৃশ্যে সবকিছু দেখতে পারে।",
+    stats: [
+      { value: "Resource তথ্য", label: "Course ও academic data structuredভাবে" },
+      { value: "সংযুক্ত", label: "শিক্ষার্থীর অগ্রগতির সাথে যুক্ত" },
+    ],
+    quote: "Structured তথ্য শিক্ষক ও প্রতিষ্ঠানকে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Learning Management',
-    title: 'Connect digital learning with student progress.',
-    description: 'Learning management connects coursework, assignments, resources, and engagement data to the broader student achievement experience.',
-    stats: [{ value: '24/7', label: 'Digital learning access for students and families' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Learning',
+    pill: "Learning Management",
+    title: "Keep digital learning information together.",
+    description: "Store course, subject, and academic resource information in a structured way and link it to student progress, so teachers and the institution can see everything in one view.",
+    stats: [
+      { value: "Resource data", label: "Course and academic data, structured" },
+      { value: "Connected", label: "Linked to student progress" },
+    ],
+    quote: "Structured information helps teachers and the institution act faster.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 

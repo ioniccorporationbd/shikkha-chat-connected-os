@@ -7,24 +7,28 @@ type LanguageCode = "bn" | "en";
 
 const sectionText = {
   bn: {
-    pill: 'মূল্যায়ন ও পারফরম্যান্স বিশ্লেষণ',
-    title: 'মূল্যায়ন ডেটাকে পাঠদানের কার্যকর সিদ্ধান্তে রূপ দিন।',
-    description: 'বেঞ্চমার্ক, ফরমেটিভ এবং পারফরম্যান্স ডেটাকে পরিষ্কার ভিউতে আনুন, যাতে শিক্ষকরা ঘাটতি শনাক্ত করতে, দক্ষতা পর্যবেক্ষণ করতে এবং দ্রুত সাড়া দিতে পারেন।',
-    stats: [{ value: '৩ গুণ', label: 'আরও কার্যকর মূল্যায়ন আলোচনা' }],
-    quote: 'সংযুক্ত ডেটা স্কুল টিমকে দ্রুত সিদ্ধান্ত নিতে, ভালো সহায়তা দিতে এবং আরও শক্তিশালী ফলাফল তৈরি করতে পরিষ্কার দিকনির্দেশনা দেয়।',
-    author: 'শিক্ষা চ্যাট টিম',
-    role: 'সংযুক্ত সিস্টেম বাস্তবায়ন সহযোগী',
-    logo: 'মূল্যায়ন',
+    pill: "মূল্যায়ন ও পারফরম্যান্স বিশ্লেষণ",
+    title: "মূল্যায়ন থেকে দ্রুত সিদ্ধান্ত।",
+    description: "Exam create, marks entry, grade calculation ও result processing এক workflow-এ পরিচালনা করুন, যাতে ফলাফল process করে report card তৈরি সহজ হয়।",
+    stats: [
+      { value: "Exam workflow", label: "Exam create, subject assign ও result processing" },
+      { value: "Grade calculation", label: "সংগঠিত grade ও report card" },
+    ],
+    quote: "একটি integrated examination management system result processing সহজ করে।",
+    author: "শিক্ষা চ্যাট",
+    role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },
   en: {
-    pill: 'Assessment and Performance Analytics',
-    title: 'Turn assessment data into instructional action.',
-    description: 'Bring benchmark, formative, and performance data into clear views that help educators identify gaps, monitor mastery, and respond quickly.',
-    stats: [{ value: '3x', label: 'More actionable assessment conversations' }],
-    quote: 'Connected data gives school teams the clarity to act faster, support people better, and build stronger outcomes.',
-    author: 'Shikkha Chat Team',
-    role: 'Connected OS Implementation Partner',
-    logo: 'Assessment',
+    pill: "Assessment and Performance Analytics",
+    title: "From assessment to faster decisions.",
+    description: "Run exam creation, marks entry, grade calculation, and result processing in one workflow, so producing report cards after results is easier.",
+    stats: [
+      { value: "Exam workflow", label: "Exam create, subject assign, and result processing" },
+      { value: "Grade calculation", label: "Organized grades and report cards" },
+    ],
+    quote: "An integrated examination management system simplifies result processing.",
+    author: "Shikkha Chat",
+    role: "Smart Education Management Platform, IONIC Corporation",
   },
 } as const;
 
