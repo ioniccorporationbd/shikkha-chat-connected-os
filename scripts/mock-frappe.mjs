@@ -411,6 +411,7 @@ const EXPENSE_PARENT_SECTIONS = [
     label: "Claim Details",
     fields: [
       { fieldname: "posting_date", label: "Posting Date", fieldtype: "Date", options: [], link_doctype: "", required: true, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
+      { fieldname: "department", label: "Department", fieldtype: "Link", options: [], link_doctype: "Department", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
       { fieldname: "remark", label: "Remark", fieldtype: "Small Text", options: [], link_doctype: "", required: false, read_only: false, default: "", description: "", placeholder: "", depends_on: "" },
     ],
   },
@@ -428,6 +429,7 @@ const EXPENSE_LINK_OPTIONS = {
   "Cost Center": ["Main - MSL", "Sales - MSL"],
   Employee: ["HR-EMP-00001", "HR-EMP-00002"],
   Company: ["Magnetic Solution Limited"],
+  Department: ["Engineering", "Sales", "Accounts - MSL", "HR - MSL"],
   Currency: ["BDT", "USD", "EUR"],
 };
 
@@ -2564,12 +2566,17 @@ const server = createServer(async (request, response) => {
       cost_center: String(r.cost_center || data.cost_center || ""),
     }));
 
+    const departmentOptions = EXPENSE_LINK_OPTIONS["Department"] || [];
+    const requestedDept = String(data.department || "").trim();
+    const defaultDept = employee.name === "HR-EMP-00002" ? "Sales" : "Engineering";
+    const department = departmentOptions.includes(requestedDept) ? requestedDept : defaultDept;
+
     const record = {
       name,
       employee: employee.name,
       employee_name: employee.employee_name,
       company: "Magnetic Solution Limited",
-      department: employee.name === "HR-EMP-00002" ? "Sales" : "Engineering",
+      department,
       cost_center: String(data.cost_center || "Main - MSL"),
       currency: "BDT",
       posting_date: postingDate,

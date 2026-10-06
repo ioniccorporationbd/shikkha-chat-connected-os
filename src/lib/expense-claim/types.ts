@@ -105,6 +105,8 @@ export type ExpenseRowValue = Record<string, string>;
 
 export interface ExpenseClaimFormValues {
   posting_date?: string;
+  /** Link to the ERPNext Department DocType (prefilled from the Employee). */
+  department?: string;
   cost_center?: string;
   remark?: string;
   expenses: ExpenseRowValue[];

@@ -41,6 +41,20 @@ const TEXTAREA_TYPES = new Set(["Small Text", "Text", "Long Text", "Text Editor"
 const NUMBER_TYPES = new Set(["Int", "Float", "Currency", "Percent"]);
 
 /**
+ * Localised labels for a few well-known fields whose ERPNext DocField label is
+ * English-only. Falls back to the backend's label for anything not listed, so
+ * the catalogue stays schema-driven.
+ */
+const FIELD_LABEL_OVERRIDES: Record<string, (copy: ExpenseClaimCopy) => string> = {
+  department: (copy) => copy.dDepartment,
+};
+
+function fieldLabel(fieldname: string, fallback: string, copy: ExpenseClaimCopy): string {
+  const override = FIELD_LABEL_OVERRIDES[fieldname];
+  return override ? override(copy) : fallback;
+}
+
+/**
  * Fields the backend resolves for every claim. `Exchange Rate` /
  * `Conversion Rate` are mandatory on ERPNext's Expense Claim, but a portal claim
  * is always created in the company's own currency, so the server fills the rate.
@@ -107,9 +121,12 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
 
   const buildParentValues = useCallback((data: ExpenseClaimSchema): Record<string, string> => {
     const values: Record<string, string> = {};
+    const autoValues = data.auto ?? {};
     data.sections.forEach((section) =>
       section.fields.forEach((field) => {
-        values[field.fieldname] = field.default ?? "";
+        // Prefer the field's own default, then the server-resolved value (e.g.
+        // Department <- the Employee's department), then empty.
+        values[field.fieldname] = field.default || autoValues[field.fieldname] || "";
       })
     );
     if (!values.posting_date) values.posting_date = todayIso();
@@ -238,6 +255,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
       try {
         const payload = {
           posting_date: parentValues.posting_date || "",
+          department: parentValues.department || "",
           cost_center: parentValues.cost_center || "",
           remark: parentValues.remark || "",
           expenses: rows.map((row) => {
@@ -430,7 +448,12 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
   const parentFields = schema?.sections.flatMap((section) => section.fields) ?? [];
   const childFields = schema?.child.fields ?? [];
   const auto = schema?.auto ?? {};
-  const autoEntries = Object.entries(auto).filter(([, value]) => Boolean(value));
+  // Values shown read-only in "Your details", minus any value that is now an
+  // editable form field (e.g. Department) so it is not displayed twice.
+  const parentFieldNames = new Set(parentFields.map((field) => field.fieldname));
+  const autoEntries = Object.entries(auto).filter(
+    ([key, value]) => Boolean(value) && !parentFieldNames.has(key)
+  );
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
@@ -615,7 +638,7 @@ function FieldRow({ field, value, invalid, errorText, copy, language, onChange }
   return (
     <div>
       <label className="flex items-center gap-1">
-        <span className={LABEL}>{field.label}</span>
+        <span className={LABEL}>{fieldLabel(field.fieldname, field.label, copy)}</span>
         {field.required ? (
           <span aria-hidden className="text-[13px] leading-none text-[var(--color-danger)]">
             *
