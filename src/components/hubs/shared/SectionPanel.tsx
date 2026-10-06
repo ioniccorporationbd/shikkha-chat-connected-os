@@ -87,6 +87,7 @@ export default function SectionPanel({
       transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex min-h-[calc(100vh-112px)] w-full flex-col justify-start pb-10 pt-3">
+        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_5%,var(--color-white))] p-5 sm:p-6">
         <motion.div
           className="mb-5 flex items-center gap-3"
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
@@ -127,6 +128,7 @@ export default function SectionPanel({
         >
           {description}
         </motion.p>
+        </div>
 
         {showButtons ? (
           <motion.div

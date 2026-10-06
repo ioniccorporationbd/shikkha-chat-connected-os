@@ -2,6 +2,7 @@
 
 import { useMemo, type ReactNode, useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useDismissOnOutside } from "@/lib/hooks/useDismissOnOutside";
 import {
   AnimatePresence,
   motion,
@@ -850,8 +851,11 @@ function DetailPanel({
 
   const isNaviance = item.id === "cclr-naviance";
 
+  const panelRef = useDismissOnOutside(onClose);
+
   return (
     <motion.div
+      ref={panelRef}
       initial={{
         opacity: 0,
         x: -36,

@@ -14,6 +14,7 @@ import {
   MdOutlineHub,
 } from "react-icons/md";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useDismissOnOutside } from "@/lib/hooks/useDismissOnOutside";
 
 type LanguageCode = "bn" | "en";
 
@@ -505,8 +506,11 @@ function DetailPanel({
   openSectionText: string;
   closeText: string;
 }) {
+  const panelRef = useDismissOnOutside(onClose);
+
   return (
     <motion.div
+      ref={panelRef}
       initial={{
         opacity: 0,
         x: -36,

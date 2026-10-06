@@ -24,6 +24,7 @@ import {
   MdOutlinePsychology,
 } from "react-icons/md";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useDismissOnOutside } from "@/lib/hooks/useDismissOnOutside";
 
 type LanguageCode = "bn" | "en";
 type CardKind = "core" | "floating";
@@ -739,8 +740,11 @@ function DetailPanel({
 }) {
   const isSis = item.id === "sis";
 
+  const panelRef = useDismissOnOutside(onClose);
+
   return (
     <motion.div
+      ref={panelRef}
       initial={{
         opacity: 0,
         x: -36,

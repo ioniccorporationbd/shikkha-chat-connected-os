@@ -10,6 +10,7 @@ import StudentAchievementSidePanels from "@/components/hubs/student-achievement/
 import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
 import ScrollLockedContentSection from "@/components/layout/ScrollLockedContentSection";
 import StudentAchievementVideoBanner from "@/components/home/StudentAchievementVideoBanner";
+import SiteFooter from "@/components/home/SiteFooter";
 
 export default function Page() {
   return (
@@ -40,6 +41,8 @@ export default function Page() {
         right={<OperationalExcellenceSidePanels />}
       />
       <ProductRouterSection/>
+
+      <SiteFooter />
     </>
   );
 }

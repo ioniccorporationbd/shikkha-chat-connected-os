@@ -114,9 +114,9 @@ const sidebarText = {
     closeMenu: "মেনু বন্ধ করুন",
     toggleLanguage: "ভাষা পরিবর্তন করুন",
     bangla: "বাংলা",
-    english: "ইংরেজি",
+    english: "English",
     bnShort: "বাংলা",
-    enShort: "ইংরেজি",
+    enShort: "English",
     groups: {
       home: "হোম কানেকশন",
       student: "শিক্ষার্থী অর্জন",
@@ -166,9 +166,9 @@ const sidebarText = {
     menu: "Menu",
     closeMenu: "Close menu",
     toggleLanguage: "Change language",
-    bangla: "Bangla",
+    bangla: "বাংলা",
     english: "English",
-    bnShort: "Bangla",
+    bnShort: "বাংলা",
     enShort: "English",
     groups: {
       home: "Home Connections",
@@ -726,11 +726,10 @@ function LanguageSwitch() {
         </span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setLanguage(isBangla ? "en" : "bn")}
-        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1 transition duration-300 hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] sm:h-12"
+      <div
+        role="group"
         aria-label={text.toggleLanguage}
+        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] p-1 transition duration-300 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] sm:h-12"
       >
         <span
           className={[
@@ -740,30 +739,36 @@ function LanguageSwitch() {
           aria-hidden="true"
         />
 
-        <span className="relative z-10 grid h-full grid-cols-2 gap-[2px] text-[15px] font-semibold leading-[1.2] tracking-[-0.01em]">
-          <span
+        <div className="relative z-10 grid h-full grid-cols-2 gap-[2px] text-[14px] font-semibold leading-[1.2] tracking-[-0.01em]">
+          <button
+            type="button"
+            onClick={() => setLanguage("bn")}
+            aria-pressed={isBangla}
             className={[
               "grid place-items-center rounded-full transition duration-300",
               isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-primary)]",
             ].join(" ")}
           >
             {text.bangla}
-          </span>
+          </button>
 
-          <span
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            aria-pressed={!isBangla}
             className={[
               "grid place-items-center rounded-full transition duration-300",
               !isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-primary)]",
             ].join(" ")}
           >
             {text.english}
-          </span>
-        </span>
-      </button>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
