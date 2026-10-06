@@ -5,7 +5,6 @@ import StudentAchievementHub from "@/components/hubs/student-achievement/Student
 import OperationalExcellenceHub from "@/components/hubs/operational-excellence/OperationalExcellenceHub";
 import OperationalExcellenceVideoBanner from "@/components/home/OperationalExcellenceVideoBanner";
 import ProductRouterSection from "@/components/home/ProductRouterSection";
-import MarketingStory from "@/components/marketing/MarketingStory";
 import HomeConnectionsSidePanels from "@/components/hubs/home-connections/HomeConnectionsSidePanels";
 import StudentAchievementSidePanels from "@/components/hubs/student-achievement/StudentAchievementSidePanels";
 import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
@@ -41,8 +40,6 @@ export default function Page() {
         right={<OperationalExcellenceSidePanels />}
       />
       <ProductRouterSection/>
-
-      <MarketingStory />
     </>
   );
 }

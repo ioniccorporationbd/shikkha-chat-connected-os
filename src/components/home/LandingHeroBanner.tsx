@@ -269,10 +269,10 @@ export default function LandingHeroBanner() {
           </p>
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            <a className="mk-btn mk-btn--primary" href="#mk-cta">
+            <a className="mk-btn mk-btn--primary" href="#home-connections-content">
               Request a Demo
             </a>
-            <a className="mk-btn mk-btn--ghost" href="#mk-features">
+            <a className="mk-btn mk-btn--ghost" href="#home-connections-content">
               Explore Features
             </a>
           </div>
