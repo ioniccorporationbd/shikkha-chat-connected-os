@@ -118,20 +118,20 @@ const sidebarText = {
     bnShort: "বাংলা",
     enShort: "ইংরেজি",
     groups: {
-      home: "হোম কানেকশন",
+      home: "শিক্ষা চ্যাট প্ল্যাটফর্ম",
       student: "শিক্ষার্থী অর্জন",
       operational: "অপারেশনাল উৎকর্ষতা",
       myOs: "আমার সংযুক্ত সিস্টেম",
     },
     sections: {
-      homeConnectionsPanel: "হোম কানেকশন সারাংশ",
-      studentInformation: "শিক্ষার্থীর তথ্য",
-      sis: "শিক্ষার্থী তথ্য ব্যবস্থা",
-      enrollment: "ভর্তি ব্যবস্থাপনা",
-      specialPrograms: "বিশেষ কার্যক্রম",
-      familyEngagement: "পরিবারের সম্পৃক্ততা",
-      communications: "যোগাযোগ ব্যবস্থা",
-      attendanceSupport: "উপস্থিতি সহায়তা",
+      homeConnectionsPanel: "সমস্যাটি",
+      studentInformation: "সংযুক্ত সমাধান",
+      sis: "মূল অপারেশন",
+      enrollment: "আরও সক্ষমতা",
+      specialPrograms: "রোল-ভিত্তিক অভিজ্ঞতা",
+      familyEngagement: "ERP ভিত্তি",
+      communications: "কেন গুরুত্বপূর্ণ",
+      attendanceSupport: "ডেমো নিন",
 
       studentAchievement: "শিক্ষার্থী অর্জন",
       classroomSolutions: "শ্রেণিকক্ষ সমাধান",
@@ -171,20 +171,20 @@ const sidebarText = {
     bnShort: "Bangla",
     enShort: "English",
     groups: {
-      home: "Home Connections",
+      home: "Shikkha Chat Platform",
       student: "Student Achievement",
       operational: "Operational Excellence",
       myOs: "My Connected System",
     },
     sections: {
-      homeConnectionsPanel: "Home Connections Summary",
-      studentInformation: "Student Information",
-      sis: "Student Information System",
-      enrollment: "Enrollment Management",
-      specialPrograms: "Special Programs",
-      familyEngagement: "Family Engagement",
-      communications: "Communications",
-      attendanceSupport: "Attendance Support",
+      homeConnectionsPanel: "The Problem",
+      studentInformation: "Connected Solution",
+      sis: "Core Operations",
+      enrollment: "More Capabilities",
+      specialPrograms: "Role-Based Experience",
+      familyEngagement: "ERP Foundation",
+      communications: "Why It Matters",
+      attendanceSupport: "Request a Demo",
 
       studentAchievement: "Student Achievement",
       classroomSolutions: "Classroom Solutions",
@@ -1105,7 +1105,7 @@ export default function LeftSidebar() {
                           {item.href === "#home-connections-panel" ? (
                             <SidebarChildLink
                               child={{
-                                title: text.overview,
+                                title: text.sections.homeConnectionsPanel,
                                 href: "#home-connections-panel",
                               }}
                               active={activeId === "home-connections-panel"}

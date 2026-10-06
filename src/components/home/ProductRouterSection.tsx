@@ -83,33 +83,33 @@ const textContent = {
     noSavedDescription: "সংরক্ষণ করতে যেকোনো পণ্যের স্টার আইকনে ক্লিক করুন।",
     saveProduct: "পণ্য সংরক্ষণ করুন",
     groups: {
-      "home-connections": "হোম কানেকশন",
+      "home-connections": "শিক্ষা চ্যাট প্ল্যাটফর্ম",
       "student-achievement": "শিক্ষার্থী অর্জন",
       "operational-excellence": "অপারেশনাল উৎকর্ষতা",
     },
     products: {
       "student-information": {
-        title: "শিক্ষার্থীর তথ্য",
+        title: "সংযুক্ত সমাধান",
       },
       sis: {
-        title: "শিক্ষার্থী তথ্য ব্যবস্থা",
-        subtitle: "কেন্দ্রীয় শিক্ষার্থী সিস্টেম",
+        title: "মূল অপারেশন",
+        subtitle: "এক প্ল্যাটফর্মে",
       },
       enrollment: {
-        title: "ভর্তি ব্যবস্থাপনা",
+        title: "আরও সক্ষমতা",
       },
       "special-programs": {
-        title: "বিশেষ কার্যক্রম",
+        title: "রোল-ভিত্তিক অভিজ্ঞতা",
       },
       "family-engagement": {
-        title: "পরিবারের সম্পৃক্ততা",
+        title: "ERP ভিত্তি",
       },
       communications: {
-        title: "যোগাযোগ ব্যবস্থা",
-        subtitle: "স্কুল বার্তা",
+        title: "কেন গুরুত্বপূর্ণ",
+        subtitle: "কেন্দ্রীয় ভিত্তি",
       },
       "attendance-support": {
-        title: "উপস্থিতি সহায়তা",
+        title: "ডেমো নিন",
       },
       "classroom-solutions": {
         title: "শ্রেণিকক্ষ সমাধান",
@@ -172,33 +172,33 @@ const textContent = {
     noSavedDescription: "Click any star icon to save a product here.",
     saveProduct: "Save product",
     groups: {
-      "home-connections": "Home Connections",
+      "home-connections": "Shikkha Chat Platform",
       "student-achievement": "Student Achievement",
       "operational-excellence": "Operational Excellence",
     },
     products: {
       "student-information": {
-        title: "Student Information",
+        title: "Connected Solution",
       },
       sis: {
-        title: "Student Information System",
-        subtitle: "Central Student System",
+        title: "Core Operations",
+        subtitle: "On one platform",
       },
       enrollment: {
-        title: "Enrollment Management",
+        title: "More Capabilities",
       },
       "special-programs": {
-        title: "Special Programs",
+        title: "Role-Based Experience",
       },
       "family-engagement": {
-        title: "Family Engagement",
+        title: "ERP Foundation",
       },
       communications: {
-        title: "Communications",
-        subtitle: "School Messenger",
+        title: "Why It Matters",
+        subtitle: "A central foundation",
       },
       "attendance-support": {
-        title: "Attendance Support",
+        title: "Request a Demo",
       },
       "classroom-solutions": {
         title: "Classroom Solutions",
@@ -390,7 +390,7 @@ function getGroups(language: LanguageCode): ProductGroup[] {
     products: productBase[groupId].products.map((product) => ({
       ...product,
       title: text.products[product.id].title,
-      subtitle: text.products[product.id].subtitle,
+      subtitle: (text.products[product.id] as { subtitle?: string }).subtitle,
     })),
   }));
 }

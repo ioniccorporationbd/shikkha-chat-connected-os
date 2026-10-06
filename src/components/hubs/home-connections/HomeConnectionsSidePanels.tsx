@@ -1,38 +1,18 @@
-import HomeComponents from "@/components/hubs/home-connections/panels/HomeConnectionsOverviewPanel";
-import StudentInformation from "@/components/hubs/home-connections/panels/StudentInformationPanel";
-import SIS from "@/components/hubs/home-connections/panels/StudentInformationSystemPanel";
-import Enrollment from "@/components/hubs/home-connections/panels/EnrollmentPanel";
-import SpecialPrograms from "@/components/hubs/home-connections/panels/SpecialProgramsPanel";
-import FamilyEngagement from "@/components/hubs/home-connections/panels/FamilyEngagementPanel";
-import Communications from "@/components/hubs/home-connections/panels/CommunicationsPanel";
-import AttendanceSupport from "@/components/hubs/home-connections/panels/AttendanceSupportPanel";
+import SegmentPanel from "@/components/hubs/home-connections/panels/SegmentPanels";
+import { segmentOrder } from "@/components/hubs/home-connections/segmentData";
 
+/**
+ * The right-hand scroll stack for the segment between Video Banner 1 and
+ * Video Banner 2. On desktop it is the locked, scroll-synced rail; on mobile
+ * it becomes the single-column page content. Each panel carries its own
+ * anchor id, in the same order the scroll engine expects.
+ */
 export default function HomeConnectionsSidePanels() {
   return (
     <div className="min-h-full bg-white">
-      {/* 1 */}
-      <HomeComponents />
-
-      {/* 2 */}
-      <StudentInformation />
-
-      {/* 3 */}
-      <SIS />
-
-      {/* 4 */}
-      <Enrollment />
-
-      {/* 5 */}
-      <SpecialPrograms />
-
-      {/* 6 */}
-      <FamilyEngagement />
-
-      {/* 7 */}
-      <Communications />
-
-      {/* 8 */}
-      <AttendanceSupport />
+      {segmentOrder.map((id) => (
+        <SegmentPanel key={id} id={id} chapterId={id} />
+      ))}
     </div>
   );
 }
