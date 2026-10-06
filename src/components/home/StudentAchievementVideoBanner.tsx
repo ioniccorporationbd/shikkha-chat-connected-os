@@ -129,16 +129,16 @@ export default function StudentAchievementVideoBanner() {
           title={
             isPaused ? text.playVideo : text.pauseVideo
           }
-          className="absolute right-6 top-6 z-40 flex h-[64px] w-[64px] items-center justify-center rounded-full border border-white/50 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.12)] backdrop-blur-md transition duration-300 hover:scale-110 hover:bg-white hover:text-[var(--sc-primary)] lg:right-12 lg:top-9"
+          className="absolute right-5 top-5 z-40 flex h-[54px] w-[54px] items-center justify-center rounded-full border border-white/60 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-md transition duration-300 hover:scale-105 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:right-10 lg:top-8"
         >
           {isPaused ? (
             <FaPlay
-              className="text-[30px]"
+              className="text-[22px]"
               aria-hidden="true"
             />
           ) : (
             <FaPause
-              className="text-[30px]"
+              className="text-[22px]"
               aria-hidden="true"
             />
           )}
@@ -153,15 +153,15 @@ export default function StudentAchievementVideoBanner() {
             }}
             className="text-start-animation mx-auto max-w-[900px] text-center lg:text-left"
           >
-            <div className="mb-5 inline-flex min-h-[58px] items-center justify-center rounded-full border border-white/55 bg-white/25 px-8 py-3 text-[30px] font-black leading-[1.25] text-white backdrop-blur-md">
+            <span className="mb-6 inline-flex items-center justify-center gap-2 rounded-full border border-white/60 bg-white/25 px-5 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md md:text-[13px]">
               {text.pill}
-            </div>
+            </span>
 
-            <h2 className="text-[30px] font-black leading-[1.25] tracking-[-0.03em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.24)]">
+            <h2 className="text-balance text-[26px] font-black leading-[1.08] tracking-[-0.02em] text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.28)] sm:text-[32px] md:text-[42px] lg:text-[52px]">
               {text.title}
             </h2>
 
-            <p className="mt-6 max-w-[820px] text-[30px] font-medium leading-[1.55] text-white/95 drop-shadow-[0_8px_22px_rgba(0,0,0,0.18)]">
+            <p className="mt-6 max-w-[760px] text-[15px] font-medium leading-[1.7] text-white/90 drop-shadow-[0_8px_22px_rgba(0,0,0,0.2)] md:text-[17px] lg:text-[18px]">
               {text.description}
             </p>
           </motion.div>

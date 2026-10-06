@@ -96,7 +96,7 @@ export default function SectionPanel({
         >
           <motion.span
             aria-hidden
-            className="interface-icon-text grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-secondary)] font-black text-[var(--color-primary)] shadow-[0_14px_26px_-16px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+            className="interface-icon-text grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--color-secondary),color-mix(in_srgb,var(--color-secondary-strong)_72%,var(--color-secondary)))] font-black text-[var(--color-primary)] shadow-[0_14px_26px_-16px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
             whileHover={reduceMotion ? undefined : { rotate: 8, scale: 1.06 }}
             transition={{ type: "spring", stiffness: 340, damping: 18 }}
           >

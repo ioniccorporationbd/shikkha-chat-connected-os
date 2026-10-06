@@ -231,9 +231,11 @@ export default function LandingHeroBanner() {
       id="intro"
       className="relative min-h-[100svh] overflow-hidden bg-[var(--sc-surface)]"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b8c8d8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b9cec8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
 
       <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/10 blur-[120px]" />
+
+      <div className="pointer-events-none absolute -right-20 top-1/4 h-[380px] w-[380px] rounded-full bg-[var(--sc-secondary)]/12 blur-[140px]" />
 
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--sc-primary)_7%,transparent),transparent_46%)]" />
 
@@ -252,15 +254,17 @@ export default function LandingHeroBanner() {
           }}
           className="mx-auto text-center"
         >
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[var(--sc-primary)] md:text-[11px]">
+          <p className="mb-2.5 inline-flex items-center justify-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--sc-secondary-strong)] md:text-[12px]">
+            <span aria-hidden className="h-px w-6 bg-[var(--sc-secondary)]" />
             UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
+            <span aria-hidden className="h-px w-6 bg-[var(--sc-secondary)]" />
           </p>
 
-          <h1 className="text-[30px] font-black leading-[1.08] tracking-[-0.05em] text-[var(--sc-primary)] sm:text-[34px] md:text-[40px] lg:text-[44px]">
+          <h1 className="text-balance text-[32px] font-black leading-[1.06] tracking-[-0.03em] text-[var(--sc-primary)] sm:text-[38px] md:text-[44px] lg:text-[50px]">
             The K–12 Connected Operating System
           </h1>
 
-          <p className="mx-auto mt-3 max-w-[660px] text-[13px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_72%,transparent)] md:text-[15px]">
+          <p className="mx-auto mt-4 max-w-[620px] text-[14px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_68%,transparent)] md:text-[16px]">
             One connected platform for school, family and learning — tap a section to explore it.
           </p>
 
