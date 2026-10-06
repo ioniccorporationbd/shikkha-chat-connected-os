@@ -448,7 +448,7 @@ export default function TicketDetails({
               <button
                 type="submit"
                 disabled={simBusy}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] px-5 py-2.5 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] px-5 py-2.5 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
               >
                 <FiHeadphones className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                 <span className="text-sm font-semibold text-[var(--color-primary)]">

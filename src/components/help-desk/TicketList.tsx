@@ -93,7 +93,7 @@ export default function TicketList({
             {tickets.map((ticket) => (
               <tr
                 key={ticket.id}
-                className="border-t border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                className="border-t border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
               >
                 <td className="px-4 py-3 text-sm font-bold text-[var(--color-primary)]">{ticket.id}</td>
                 <td className="max-w-[22rem] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]">
@@ -121,7 +121,7 @@ export default function TicketList({
                 <td className="px-4 py-3">
                   <Link
                     href={links.ticket(ticket.id)}
-                    className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+                    className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
                   >
                     <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
                     <FiArrowRight className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />

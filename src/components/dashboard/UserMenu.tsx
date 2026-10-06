@@ -125,7 +125,7 @@ export default function UserMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         aria-label={`${copy.open}: ${displayName}`}
-        className="flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-2 py-1.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))]"
+        className="flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-2 py-1.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))]"
       >
         <UserAvatar
           user={user}
@@ -216,7 +216,7 @@ export default function UserMenu({
                   type="button"
                   onClick={() => setRolesOpen((value) => !value)}
                   aria-expanded={rolesOpen}
-                  className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2 py-0.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                  className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2 py-0.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                 >
                   <span className="text-[11px] font-semibold text-[var(--color-primary)]">
                     {rolesOpen ? dashCopy.lessRoles : dashCopy.moreRoles(hiddenRoles)}
@@ -231,7 +231,7 @@ export default function UserMenu({
               type="button"
               role="menuitem"
               onClick={runThen(onEditProfile)}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
             >
               <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
                 <FiEdit2 aria-hidden size={15} />
@@ -243,7 +243,7 @@ export default function UserMenu({
               type="button"
               role="menuitem"
               onClick={runThen(onChangePassword)}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
             >
               <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
                 <FiLock aria-hidden size={15} />
@@ -255,7 +255,7 @@ export default function UserMenu({
               type="button"
               role="menuitem"
               onClick={runThen(onReload)}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
             >
               <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
                 <span className={refreshing ? "animate-spin" : undefined}>
@@ -269,7 +269,7 @@ export default function UserMenu({
               href="/"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+              className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
             >
               <span className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[var(--color-primary)]">
                 <FiHome aria-hidden size={15} />

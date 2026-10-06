@@ -108,7 +108,7 @@ export default function LoginHistoryCard({ rows, copy, language }: LoginHistoryC
           type="button"
           onClick={() => setExpanded((value) => !value)}
           aria-expanded={expanded}
-          className="mt-1 inline-flex items-center justify-center gap-1.5 self-stretch rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]"
+          className="mt-1 inline-flex items-center justify-center gap-1.5 self-stretch rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
         >
           <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-primary)]">
             {expanded ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}

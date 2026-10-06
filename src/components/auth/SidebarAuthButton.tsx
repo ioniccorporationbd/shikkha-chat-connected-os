@@ -62,18 +62,18 @@ export default function SidebarAuthButton({
         data-no-translate="true"
         title={`${copy.signedInAs}: ${name}`}
         className={[
-          "group flex shrink-0 items-center gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] transition duration-300 hover:-translate-y-[2px] hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:shadow-[0_14px_28px_-12px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]",
+          "group flex shrink-0 items-center gap-2.5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] transition duration-300 hover:-translate-y-[2px] hover:bg-[var(--color-primary-dark)] hover:shadow-[0_14px_28px_-12px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]",
           compact ? "px-2.5 py-2" : "mt-1 px-2.5 py-2.5",
         ].join(" ")}
       >
         <UserAvatar user={user} size={26} rounded="rounded-lg" tone="soft" className="shrink-0" />
-        <span className="hidden max-w-[96px] truncate text-[13px] font-semibold text-[var(--color-primary)] sm:block">
+        <span className="hidden max-w-[96px] truncate text-[13px] font-semibold text-[var(--color-white)] sm:block">
           {copy.openDashboard}
         </span>
         <FiChevronRight
           aria-hidden
           size={15}
-          className="hidden text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-transform duration-300 group-hover:translate-x-0.5 sm:block"
+          className="hidden text-[var(--color-secondary)] transition-transform duration-300 group-hover:translate-x-0.5 sm:block"
         />
       </Link>
     );

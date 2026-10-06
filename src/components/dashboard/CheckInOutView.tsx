@@ -439,7 +439,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] sm:w-auto"
           >
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
               <FiArrowLeft size={15} />
@@ -826,7 +826,7 @@ function DayCard({
         aria-expanded={hasPunches ? open : undefined}
         disabled={!hasPunches}
         className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
-          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]" : "cursor-default"
+          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" : "cursor-default"
         }`}
       >
         <div className="flex min-w-0 items-center gap-3">

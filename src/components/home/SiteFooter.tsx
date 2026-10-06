@@ -86,7 +86,7 @@ export default function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative w-full border-t border-[color-mix(in_srgb,var(--color-white)_10%,transparent)] bg-[var(--color-primary-dark)] text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+    <footer className="relative w-full border-t-2 border-[var(--color-secondary)] bg-[var(--color-primary-dark)] text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
       <div className="mx-auto w-full max-w-[1240px] px-6 py-14 sm:px-8 md:py-16">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr] md:gap-12">
           <div>

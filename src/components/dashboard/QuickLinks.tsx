@@ -31,7 +31,7 @@ export default function QuickLinks({ links, emptyLabel, labels = {} }: QuickLink
               href={link.href}
               target={link.external ? "_blank" : undefined}
               rel={link.external ? "noreferrer noopener" : undefined}
-              className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3.5 py-3 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))]"
+              className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3.5 py-3 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
             >
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] text-[15px] text-[var(--color-primary)]">
                 <Icon />

@@ -231,7 +231,7 @@ export default function LandingHeroBanner() {
       id="intro"
       className="relative min-h-[100svh] overflow-hidden bg-[var(--sc-surface)]"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b9cec8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,color-mix(in_srgb,var(--color-primary)_16%,transparent)_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
 
       <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/10 blur-[120px]" />
 

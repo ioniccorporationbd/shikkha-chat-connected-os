@@ -29,7 +29,7 @@
   --color-brand-red: #e00516;
   --color-brand-white: #ffffff;
 
-  /* Brand accent — now the logo red (was a warm gold #ddab52). */
+  /* Brand accent — now the logo red (was a warm gold accent). */
   --color-accent: #e00516;
   --color-accent-soft: #fbe3e5;
 }
@@ -47,9 +47,9 @@
 
   /* Semantic map — the old brand (dark green / mint / gold) is fully
      replaced; the token NAMES stay so components need no rewrite (§8). */
-  --color-primary: var(--shikkha-navy);   /* was dark green #032521 */
-  --color-secondary: var(--shikkha-red);  /* was mint-teal #4fb39a */
-  --color-secondary-strong: #c80013;      /* was #2e8b76 */
+  --color-primary: var(--shikkha-navy);   /* was the legacy dark green */
+  --color-secondary: var(--shikkha-red);  /* was the legacy mint-teal */
+  --color-secondary-strong: #c80013;      /* was the legacy teal */
   --color-primary-strong: var(--shikkha-black);
   --color-white: var(--shikkha-white);
   --color-black: var(--shikkha-black);

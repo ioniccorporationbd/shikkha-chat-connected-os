@@ -314,7 +314,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-3.5 py-2 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+        className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-3.5 py-2 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
       >
         <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
           <FiArrowLeft size={15} />
@@ -886,7 +886,7 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
                     index === activeIndex
                       ? "bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))]"
-                      : "hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
+                      : "hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                   }`}
                 >
                   <span className="min-w-0 truncate text-[13px] font-medium text-[var(--color-primary)]">

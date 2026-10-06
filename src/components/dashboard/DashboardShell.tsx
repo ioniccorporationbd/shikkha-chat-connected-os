@@ -268,7 +268,7 @@ export default function DashboardShell({
   const navButtonClass = (active: boolean) =>
     active
       ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
-      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] hover:text-[var(--color-primary)]";
+      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] hover:text-[var(--color-primary)]";
 
   const navLabelClass = (active: boolean) =>
     `inline-flex items-center gap-3 text-[13px] ${active ? "font-semibold text-[var(--color-white)]" : "font-medium"}`;
@@ -542,7 +542,7 @@ export default function DashboardShell({
                   type="button"
                   onClick={() => setNavOpen(false)}
                   aria-label={copy.closeMenu}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                 >
                   <span className="text-[var(--color-primary)]">
                     <FiX size={16} />
@@ -572,7 +572,7 @@ export default function DashboardShell({
                 type="button"
                 onClick={() => setNavOpen(true)}
                 aria-label={copy.openMenu}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] lg:hidden"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] lg:hidden"
               >
                 <span className="text-[var(--color-primary)]">
                   <FiMenu size={16} />
@@ -596,7 +596,7 @@ export default function DashboardShell({
                 disabled={isFetching}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                className="grid h-9 w-9 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] disabled:opacity-70"
+                className="grid h-9 w-9 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-70"
               >
                 <span className="text-[var(--color-primary)]">
                   <FiRefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
@@ -744,7 +744,7 @@ export default function DashboardShell({
                   <button
                     type="button"
                     onClick={() => setPasswordOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                   >
                     <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
                       <FiLock size={15} />
@@ -790,7 +790,7 @@ export default function DashboardShell({
                             type="button"
                             onClick={() => setRolesOpen((value) => !value)}
                             aria-expanded={rolesOpen}
-                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                           >
                             <span className="text-[11px] font-semibold text-[var(--color-primary)]">
                               {rolesOpen ? copy.lessRoles : copy.moreRoles(hiddenRoles)}

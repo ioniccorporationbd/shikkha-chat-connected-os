@@ -724,7 +724,7 @@ function DetailsDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.close}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
           >
             <span className="text-[var(--color-primary)]">
               <FiX size={16} />

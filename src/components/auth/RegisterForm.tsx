@@ -341,7 +341,7 @@ export default function RegisterForm() {
                 type="button"
                 onClick={() => setReveal((value) => !value)}
                 aria-label={reveal ? copy.hidePassword : copy.showPassword}
-                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:text-[var(--color-primary)]"
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] hover:text-[var(--color-primary)]"
               >
                 {reveal ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>

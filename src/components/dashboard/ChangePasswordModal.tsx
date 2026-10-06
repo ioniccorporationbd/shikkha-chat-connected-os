@@ -137,7 +137,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
+            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-60"
           >
             <span className="text-[13px] font-semibold text-[var(--color-primary)]">
               {copy.cancel}
