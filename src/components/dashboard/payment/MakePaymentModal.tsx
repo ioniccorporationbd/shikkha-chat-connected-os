@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FiArrowLeft, FiCheckCircle, FiClock, FiInfo } from "react-icons/fi";
+import { FiArrowLeft, FiCheckCircle, FiClock, FiCreditCard } from "react-icons/fi";
 
 import DashboardModal from "@/components/dashboard/DashboardModal";
 import { formatAmount } from "@/lib/payment-entry/format";
@@ -14,6 +14,7 @@ import type {
   ManualPaymentSubmitInput,
   PaymentChannel,
 } from "@/lib/payment-entry/manual-payment/types";
+import { initiateSslcommerz } from "@/lib/payment-entry/sslcommerz/service";
 import { toast } from "@/lib/ui/toast";
 
 import BankPaymentForm from "./BankPaymentForm";
@@ -24,6 +25,7 @@ import PaymentBrandMark from "./PaymentBrandMark";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import { PAY_FOCUS } from "./PaymentField";
 import RocketPaymentForm from "./RocketPaymentForm";
+import SslcommerzPaymentPanel from "./SslcommerzPaymentPanel";
 
 interface MakePaymentModalProps {
   language: string;
@@ -35,12 +37,12 @@ interface MakePaymentModalProps {
 
 /**
  * The "Make Payment" modal — a small step machine:
- *   method → (online info | manual) → bKash/Rocket/Bank form → success
+ *   method → (sslcommerz | manual) → bKash/Rocket/Bank form → success
  *
- * On submit it posts the manual payment to the ERP (a real ERPNext Payment
- * Entry, status "Draft", with the matching Mode of Payment) and shows the
- * **server-issued** document id (e.g. ACC-PAY-2026-00001). There is no separate
- * "Manual Payment Request" DocType any more.
+ * Manual Pay posts the manual payment to the ERP (a real ERPNext Payment Entry,
+ * status "Draft"). The SSLCommerz branch opens a hosted sandbox session and
+ * sends the browser to the gateway; the final status is read back from our own
+ * backend after SSLCommerz validates the payment.
  */
 export default function MakePaymentModal({
   language,
@@ -51,7 +53,7 @@ export default function MakePaymentModal({
   const copy = manualPaymentCopyFor(language);
 
   const [step, setStep] = useState<MakePaymentStep>("method");
-  const [showOnlineInfo, setShowOnlineInfo] = useState(false);
+  const [sslSubmitting, setSslSubmitting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ManualPaymentResult | null>(null);
   const [submitted, setSubmitted] = useState<ManualPaymentSubmitInput | null>(null);
@@ -65,11 +67,7 @@ export default function MakePaymentModal({
   };
 
   const handleChannel = (channel: PaymentChannel) => {
-    if (channel === "online") {
-      setShowOnlineInfo(true);
-      return;
-    }
-    setStep("manual");
+    setStep(channel === "online" ? "sslcommerz" : "manual");
   };
 
   const handleMethod = (method: ManualPaymentMethod) => setStep(method);
@@ -93,12 +91,22 @@ export default function MakePaymentModal({
     }
   };
 
-  const goBack = () => {
-    if (showOnlineInfo) {
-      setShowOnlineInfo(false);
-      return;
+  const handleSslSubmit = async (amount: number) => {
+    setSslSubmitting(true);
+    try {
+      const session = await initiateSslcommerz({ amount, language });
+      // Hand the browser over to the SSLCommerz hosted page. The ERP opened the
+      // session server-side; nothing sensitive is in this URL but the gateway.
+      window.location.assign(session.gateway_page_url);
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : copy.submitFailed;
+      toast.error(message, copy.makePayment);
+      setSslSubmitting(false);
     }
-    if (step === "manual") {
+  };
+
+  const goBack = () => {
+    if (step === "manual" || step === "sslcommerz") {
       setStep("method");
       return;
     }
@@ -107,7 +115,13 @@ export default function MakePaymentModal({
     }
   };
 
-  const showBack = showOnlineInfo || step === "manual" || step === "bkash" || step === "rocket" || step === "nagad" || step === "bank";
+  const showBack =
+    step === "manual" ||
+    step === "sslcommerz" ||
+    step === "bkash" ||
+    step === "rocket" ||
+    step === "nagad" ||
+    step === "bank";
 
   const BackButton = (
     <button
@@ -135,24 +149,31 @@ export default function MakePaymentModal({
         {showBack ? BackButton : null}
 
         {step === "method" ? (
-          showOnlineInfo ? (
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-white))] px-5 py-8 text-center">
-              <span className="grid h-12 w-12 place-items-center rounded-3xl bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] text-[var(--color-warning)]">
-                <FiInfo size={22} />
-              </span>
-              <h3 className="text-[15px] font-semibold text-[var(--color-primary)]">
-                {copy.onlineInfoTitle}
-              </h3>
-              <p className="max-w-[44ch] text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                {copy.onlineInfoBody}
-              </p>
-            </div>
-          ) : (
-            <>
-              <StepHeading title={copy.stepMethodTitle} subtitle={copy.stepMethodSubtitle} />
-              <PaymentMethodSelector copy={copy} onSelect={handleChannel} />
-            </>
-          )
+          <>
+            <StepHeading title={copy.stepMethodTitle} subtitle={copy.stepMethodSubtitle} />
+            <PaymentMethodSelector copy={copy} onSelect={handleChannel} />
+          </>
+        ) : null}
+
+        {step === "sslcommerz" ? (
+          <>
+            <StepHeading
+              title={copy.sslcommerzStepTitle}
+              subtitle={copy.sslcommerzStepSubtitle}
+              icon={
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] text-[var(--color-action)]">
+                  <FiCreditCard size={18} />
+                </span>
+              }
+            />
+            <SslcommerzPaymentPanel
+              copy={copy}
+              language={language}
+              currency={currency}
+              submitting={sslSubmitting}
+              onSubmit={handleSslSubmit}
+            />
+          </>
         ) : null}
 
         {step === "manual" ? (

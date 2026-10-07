@@ -5,6 +5,9 @@
  * portal posts a manual payment to the ERP, which writes a real ERPNext
  * **Payment Entry** (status "Draft") with the matching Mode of Payment — there
  * is no separate "Manual Payment Request" DocType any more.
+ *
+ * The online (SSLCommerz) branch shares this step machine; its own payload
+ * shapes live in `@/lib/payment-entry/sslcommerz/types`.
  */
 
 /** The tender a manual payment is sent with (portal-side key). */
@@ -21,6 +24,7 @@ export type MakePaymentStep =
   | "rocket"
   | "nagad"
   | "bank"
+  | "sslcommerz"
   | "success";
 
 /** One supported bank account the customer can transfer money to. */

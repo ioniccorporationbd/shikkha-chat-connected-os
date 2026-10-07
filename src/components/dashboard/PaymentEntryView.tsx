@@ -43,6 +43,8 @@ import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/message
 import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
 import { paymentEntrySnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
+import { fetchSslcommerzStatus } from "@/lib/payment-entry/sslcommerz/service";
+import { toast } from "@/lib/ui/toast";
 import type {
   PaymentEntryDetails,
   PaymentEntryListPayload,
@@ -319,6 +321,54 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
     setFilterError("");
     setRowsPerPage(ROWS_PER_PAGE_OPTIONS[0]);
     setPage(1);
+  }, []);
+
+  // ---- SSLCommerz return: read the FINAL status from our own backend ----
+  // The gateway sends the browser back with ?ssl=1&result=…&tran_id=…; those
+  // params are only a hint. The authoritative state comes from the ERP (via the
+  // sslcommerz.status endpoint), so a hand-edited URL cannot fake a success.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("ssl")) return;
+    const tranId = params.get("tran_id") || "";
+
+    let active = true;
+    void (async () => {
+      let state: "success" | "fail" | "cancel" | "pending" = "fail";
+      try {
+        if (tranId) {
+          const status = await fetchSslcommerzStatus(tranId, language);
+          state = status.state;
+        }
+      } catch {
+        state = "fail";
+      }
+      if (!active) return;
+
+      if (state === "success") {
+        toast.success(mpCopy.sslResultSuccessBody, mpCopy.sslResultSuccessTitle);
+      } else if (state === "cancel") {
+        toast.warning(mpCopy.sslResultCancelBody, mpCopy.sslResultCancelTitle);
+      } else {
+        toast.error(mpCopy.sslResultFailBody, mpCopy.sslResultFailTitle);
+      }
+
+      void load();
+
+      // Strip the gateway params so a reload does not re-run this.
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ssl");
+      url.searchParams.delete("result");
+      url.searchParams.delete("tran_id");
+      router.replace(url.pathname + (url.search ? url.search : ""), { scroll: false });
+    })();
+
+    return () => {
+      active = false;
+    };
+    // Runs once on mount; `language` is stable for the session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currency = data?.summary?.currency || "BDT";

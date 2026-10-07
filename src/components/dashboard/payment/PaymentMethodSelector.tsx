@@ -1,6 +1,6 @@
 "use client";
 
-import { FiArrowRight, FiGlobe, FiSend } from "react-icons/fi";
+import { FiArrowRight, FiCreditCard, FiSend } from "react-icons/fi";
 
 import type { ManualPaymentCopy } from "@/lib/payment-entry/manual-payment/messages";
 import type { PaymentChannel } from "@/lib/payment-entry/manual-payment/types";
@@ -13,10 +13,11 @@ interface PaymentMethodSelectorProps {
 }
 
 /**
- * First step of the Make Payment modal: Online Pay vs Manual Pay.
+ * First step of the Make Payment modal: Manual Pay vs Pay with SSLCommerz.
  *
- * Manual Pay is the live path in this phase; Online Pay is an honest
- * informational choice (no fake gateway) that opens a "coming soon" state.
+ * Manual Pay records a transfer the customer already sent; SSLCommerz is the
+ * live online branch (sandbox) that opens the hosted gateway. Both are real,
+ * working paths — there is no "coming soon" placeholder.
  */
 export default function PaymentMethodSelector({ copy, onSelect }: PaymentMethodSelectorProps) {
   // Same hover / pressed / focus recipe as the manual-method cards so both
@@ -46,20 +47,20 @@ export default function PaymentMethodSelector({ copy, onSelect }: PaymentMethodS
       </button>
 
       <button type="button" onClick={() => onSelect("online")} className={cardClass}>
-        <span className={`${iconTile} bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]`}>
-          <FiGlobe size={19} />
+        <span className={`${iconTile} bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] text-[var(--color-action)]`}>
+          <FiCreditCard size={19} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-[14px] font-semibold text-[var(--color-primary)]">
-              {copy.onlineTitle}
+              {copy.sslcommerzTitle}
             </span>
             <span className="rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
-              {copy.onlineBadge}
+              {copy.sslcommerzBadge}
             </span>
           </span>
           <span className="mt-0.5 block text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {copy.onlineDesc}
+            {copy.sslcommerzDesc}
           </span>
         </span>
         <FiArrowRight size={18} className={arrowClass} />

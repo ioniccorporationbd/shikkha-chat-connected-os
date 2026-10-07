@@ -1,4 +1,4 @@
-/** Bilingual copy for the customer "Make Payment" (manual) flow. */
+/** Bilingual copy for the customer "Make Payment" (manual + SSLCommerz) flow. */
 
 import type { ManualPaymentStatusKey } from "./types";
 
@@ -19,6 +19,25 @@ export interface ManualPaymentCopy {
   onlineInfoBody: string;
   manualTitle: string;
   manualDesc: string;
+
+  // ---- step 1b: online (SSLCommerz) ----
+  sslcommerzTitle: string;
+  sslcommerzDesc: string;
+  sslcommerzBadge: string;
+  sslcommerzStepTitle: string;
+  sslcommerzStepSubtitle: string;
+  sslAmountLabel: string;
+  sslAmountPlaceholder: string;
+  sslAmountHint: string;
+  sslPayWith: string;
+  sslRedirecting: string;
+  sslEnvironmentNote: string;
+  sslResultSuccessTitle: string;
+  sslResultSuccessBody: string;
+  sslResultFailTitle: string;
+  sslResultFailBody: string;
+  sslResultCancelTitle: string;
+  sslResultCancelBody: string;
 
   // ---- step 2: manual method ----
   stepManualTitle: string;
@@ -135,6 +154,27 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
     manualTitle: "ম্যানুয়াল পেমেন্ট",
     manualDesc: "bKash, Rocket, Nagad বা ব্যাংক ট্রান্সফার করে পেমেন্ট রেকর্ড করুন।",
 
+    sslcommerzTitle: "SSLCommerz দিয়ে পরিশোধ",
+    sslcommerzDesc: "কার্ড / মোবাইল ব্যাংকিং দিয়ে নিরাপদে অনলাইন পেমেন্ট করুন।",
+    sslcommerzBadge: "স্যান্ডবক্স",
+    sslcommerzStepTitle: "SSLCommerz অনলাইন পেমেন্ট",
+    sslcommerzStepSubtitle: "যে পরিমাণ পরিশোধ করতে চান সেটি লিখুন।",
+    sslAmountLabel: "পরিমাণ",
+    sslAmountPlaceholder: "যেমন ১০০০",
+    sslAmountHint: "আপনি যত টাকা পরিশোধ করতে চান সেটি লিখুন।",
+    sslPayWith: "SSLCommerz দিয়ে {amount} পরিশোধ করুন",
+    sslRedirecting: "SSLCommerz-এ নিয়ে যাওয়া হচ্ছে…",
+    sslEnvironmentNote:
+      "এটি SSLCommerz স্যান্ডবক্স — কোনো প্রকৃত টাকা কাটা হবে না। টেস্ট কার্ড ব্যবহার করুন।",
+    sslResultSuccessTitle: "পেমেন্ট সফল হয়েছে।",
+    sslResultSuccessBody:
+      "আপনার পেমেন্ট যাচাই হয়ে Payment Entry তৈরি হয়েছে এবং পেমেন্ট হিস্টোরিতে দেখা যাচ্ছে।",
+    sslResultFailTitle: "পেমেন্ট ব্যর্থ হয়েছে।",
+    sslResultFailBody: "পেমেন্ট সম্পন্ন হয়নি। কোনো টাকা কাটা হয়নি — আবার চেষ্টা করুন।",
+    sslResultCancelTitle: "পেমেন্ট বাতিল হয়েছে।",
+    sslResultCancelBody:
+      "আপনি পেমেন্ট বাতিল করেছেন। আপনার ফি এখনো পরিশোধযোগ্য — আবার চেষ্টা করতে পারেন।",
+
     stepManualTitle: "ম্যানুয়াল পেমেন্টের মাধ্যম বাছুন",
     stepManualSubtitle: "যে মাধ্যমে টাকা পাঠিয়েছেন সেটি বেছে নিন।",
     methodBkash: "bKash",
@@ -248,6 +288,27 @@ export const manualPaymentCopy: Record<"bn" | "en", ManualPaymentCopy> = {
       "The online gateway isn't live yet. Please use Manual Pay to record your payment in the meantime.",
     manualTitle: "Manual Pay",
     manualDesc: "Record a payment sent via bKash, Rocket, Nagad or a bank transfer.",
+
+    sslcommerzTitle: "Pay with SSLCommerz",
+    sslcommerzDesc: "Pay securely online by card or mobile banking.",
+    sslcommerzBadge: "Sandbox",
+    sslcommerzStepTitle: "SSLCommerz online payment",
+    sslcommerzStepSubtitle: "Enter the amount you want to pay.",
+    sslAmountLabel: "Amount",
+    sslAmountPlaceholder: "e.g. 1000",
+    sslAmountHint: "Enter the amount you want to pay.",
+    sslPayWith: "Pay {amount} with SSLCommerz",
+    sslRedirecting: "Redirecting to SSLCommerz…",
+    sslEnvironmentNote:
+      "This is the SSLCommerz sandbox — no real money is charged. Use a test card.",
+    sslResultSuccessTitle: "Payment successful",
+    sslResultSuccessBody:
+      "Your payment was verified, a Payment Entry was created and now appears in your history.",
+    sslResultFailTitle: "Payment failed",
+    sslResultFailBody: "The payment did not complete. Nothing was charged — please try again.",
+    sslResultCancelTitle: "Payment cancelled",
+    sslResultCancelBody:
+      "You cancelled the payment. Your fee is still payable — you can try again.",
 
     stepManualTitle: "Choose a manual method",
     stepManualSubtitle: "Pick the method you used to send the money.",
