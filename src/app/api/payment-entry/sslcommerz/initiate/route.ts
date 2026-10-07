@@ -27,6 +27,11 @@ export async function POST(request: Request) {
     body = {};
   }
 
+  // Capture the portal's real origin so the ERP returns the customer *here*
+  // after the gateway round-trip, instead of a hard-coded host that may 404.
+  const returnUrl = callerOrigin(request);
+  if (returnUrl) body.return_url = returnUrl;
+
   const result = await callFrappe<SslcommerzInitiateResult>(
     "shikkha_os.api.v1.sslcommerz.initiate",
     { sid, httpMethod: "POST", body, timeoutMs: 30_000 }
@@ -40,4 +45,33 @@ export async function POST(request: Request) {
   }
 
   return jsonOk(result.data);
+}
+
+/**
+ * The public origin of the portal page that started this payment.
+ *
+ * Prefers the browser's `Origin` / `Referer` and falls back to the forwarded
+ * host. The ERP stores this and redirects the customer back to it after
+ * SSLCommerz validates the payment, so the return never depends on a
+ * hard-coded host.
+ */
+function callerOrigin(request: Request): string {
+  const origin = request.headers.get("origin");
+  if (origin && /^https?:\/\//i.test(origin)) return origin;
+
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      /* ignore a malformed referer */
+    }
+  }
+
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  if (!host) return "";
+  const proto =
+    request.headers.get("x-forwarded-proto") ||
+    (/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(host) ? "http" : "https");
+  return `${proto}://${host}`;
 }
