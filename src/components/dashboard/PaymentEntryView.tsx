@@ -52,26 +52,8 @@ import type {
   PaymentEntryRow,
 } from "@/lib/payment-entry/types";
 
-import { CLIENT_DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/session";
-
-/** The stable tone for a status key, reused by the chart bar and its legend. */
-function statusTone(key: string): string {
-  switch (key) {
-    case "paid":
-      return "var(--color-success)";
-    case "reconciled":
-    case "received":
-      return "color-mix(in srgb, var(--color-success) 72%, var(--color-white))";
-    case "submitted":
-      return "var(--color-primary)";
-    case "draft":
-      return "color-mix(in srgb, var(--color-primary) 42%, var(--color-white))";
-    case "cancelled":
-      return "var(--color-danger-strong)";
-    default:
-      return "color-mix(in srgb, var(--color-primary) 55%, var(--color-white))";
-  }
-}
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_SUCCESS_PATH } from "@/lib/auth/session";
+import { statusTone } from "@/lib/payment-entry/status";
 
 export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
   const { language } = useLanguage();
@@ -709,7 +691,14 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
         <MakePaymentModal
           language={language}
           currency={currency}
-          onSubmitted={() => void load()}
+          onCreated={(paymentEntryId) => {
+            // The backend confirmed the create and returned the REAL Payment
+            // Entry name. Close the modal and send the browser to the success
+            // route carrying that name, so the page (and a refresh) loads the
+            // genuine record.
+            setMakePaymentOpen(false);
+            router.push(`${PAYMENT_SUCCESS_PATH}?payment=${encodeURIComponent(paymentEntryId)}`);
+          }}
           onClose={() => setMakePaymentOpen(false)}
         />
       ) : null}

@@ -54,6 +54,14 @@ export const EXPENSE_CLAIM_NEW_PATH = `${EXPENSE_CLAIM_PATH}/new`;
 export const PAYMENT_HISTORY_PATH = `${CLIENT_DASHBOARD_PATH}/payment-entry`;
 
 /**
+ * Customer-facing child of the Payment History route that confirms a
+ * just-created Payment Entry. It carries the entry id in the query string
+ * (`?payment=<name>`) so the page re-loads the real record on refresh, and it
+ * renders inside the same client dashboard shell as the history it belongs to.
+ */
+export const PAYMENT_SUCCESS_PATH = `${PAYMENT_HISTORY_PATH}/success`;
+
+/**
  * Customer-facing sub-route that renders the account's own Service Build
  * (Sales Invoice) history, on its own URL inside the client dashboard shell so
  * opening it is a real navigation (the address bar changes, Back works) rather

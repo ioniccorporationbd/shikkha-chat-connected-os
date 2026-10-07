@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { FiArrowLeft, FiCheckCircle, FiClock, FiCreditCard } from "react-icons/fi";
+import { FiArrowLeft, FiCreditCard } from "react-icons/fi";
 
 import DashboardModal from "@/components/dashboard/DashboardModal";
-import { formatAmount } from "@/lib/payment-entry/format";
 import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/messages";
-import { statusKey, submitManualPayment } from "@/lib/payment-entry/manual-payment/service";
+import { submitManualPayment } from "@/lib/payment-entry/manual-payment/service";
 import type {
   MakePaymentStep,
   ManualPaymentMethod,
-  ManualPaymentResult,
   ManualPaymentSubmitInput,
   PaymentChannel,
 } from "@/lib/payment-entry/manual-payment/types";
@@ -30,24 +28,29 @@ import SslcommerzPaymentPanel from "./SslcommerzPaymentPanel";
 interface MakePaymentModalProps {
   language: string;
   currency: string;
-  /** Called after the backend confirms the request (so the page can refresh). */
-  onSubmitted?: () => void;
+  /**
+   * Called after the backend confirms the request, with the REAL created
+   * Payment Entry name (e.g. "ACC-PAY-2026-00001"). The page redirects to the
+   * dashboard-themed Payment Success page; there is no in-modal success screen.
+   */
+  onCreated?: (paymentEntryId: string) => void;
   onClose: () => void;
 }
 
 /**
  * The "Make Payment" modal — a small step machine:
- *   method → (sslcommerz | manual) → bKash/Rocket/Bank form → success
+ *   method → (sslcommerz | manual) → bKash/Rocket/Bank form → redirect
  *
  * Manual Pay posts the manual payment to the ERP (a real ERPNext Payment Entry,
- * status "Draft"). The SSLCommerz branch opens a hosted sandbox session and
- * sends the browser to the gateway; the final status is read back from our own
- * backend after SSLCommerz validates the payment.
+ * status "Draft") and then hands the created document name to the page, which
+ * navigates to the success route. The SSLCommerz branch opens a hosted sandbox
+ * session and sends the browser to the gateway; the final status is read back
+ * from our own backend after SSLCommerz validates the payment.
  */
 export default function MakePaymentModal({
   language,
   currency,
-  onSubmitted,
+  onCreated,
   onClose,
 }: MakePaymentModalProps) {
   const copy = manualPaymentCopyFor(language);
@@ -55,16 +58,6 @@ export default function MakePaymentModal({
   const [step, setStep] = useState<MakePaymentStep>("method");
   const [sslSubmitting, setSslSubmitting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<ManualPaymentResult | null>(null);
-  const [submitted, setSubmitted] = useState<ManualPaymentSubmitInput | null>(null);
-
-  const methodLabel = (method: ManualPaymentMethod | undefined): string => {
-    if (method === "bkash") return copy.methodBkash;
-    if (method === "rocket") return copy.methodRocket;
-    if (method === "nagad") return copy.methodNagad;
-    if (method === "bank") return copy.methodBank;
-    return "";
-  };
 
   const handleChannel = (channel: PaymentChannel) => {
     setStep(channel === "online" ? "sslcommerz" : "manual");
@@ -76,11 +69,10 @@ export default function MakePaymentModal({
     setSubmitting(true);
     try {
       const acknowledgement = await submitManualPayment(input);
-      setResult(acknowledgement);
-      setSubmitted(input);
-      setStep("success");
-      toast.success(copy.successTitle, copy.makePayment);
-      onSubmitted?.();
+      // No in-modal success screen and no toast: hand the real Payment Entry
+      // name to the page, which redirects to the success route — the single,
+      // authoritative confirmation.
+      onCreated?.(acknowledgement.name);
     } catch (error) {
       // The ERP's own message (duplicate transaction, invalid bank, file too
       // large, …) is surfaced as-is; fall back to a generic line.
@@ -230,45 +222,6 @@ export default function MakePaymentModal({
             />
           </>
         ) : null}
-
-        {step === "success" && result ? (
-          <>
-            <div className="flex flex-col items-center gap-2 pt-1 text-center">
-              <span className="grid h-14 w-14 place-items-center rounded-3xl bg-[color-mix(in_srgb,var(--color-success)_16%,var(--color-white))] text-[var(--color-success)]">
-                <FiCheckCircle size={26} />
-              </span>
-              <h3 className="text-[15px] font-semibold text-[var(--color-primary)]">
-                {copy.successTitle}
-              </h3>
-              <p className="max-w-[44ch] text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                {copy.successBody}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] p-4">
-              <SummaryLine label={copy.successRef} value={result.request_id} />
-              <SummaryLine label={copy.successMethod} value={methodLabel(submitted?.payment_method)} />
-              <SummaryLine
-                label={copy.successAmount}
-                value={formatAmount(submitted?.amount ?? 0, result.currency || currency, language)}
-              />
-              <span className="inline-flex items-center gap-1.5 pt-1 text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                <FiClock size={13} />
-                {copy.successStatus}: {copy.statuses[statusKey(result.status)]}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className={`inline-flex w-full items-center justify-center rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] ${PAY_FOCUS}`}
-            >
-              <span className="text-[13px] font-semibold text-[var(--color-white)]">
-                {copy.successClose}
-              </span>
-            </button>
-          </>
-        ) : null}
       </div>
     </DashboardModal>
   );
@@ -295,20 +248,6 @@ function StepHeading({
           </p>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-/** A label/value row in the success summary. */
-function SummaryLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-        {label}
-      </span>
-      <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]" title={value}>
-        {value}
-      </span>
     </div>
   );
 }

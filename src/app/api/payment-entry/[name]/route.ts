@@ -12,8 +12,9 @@ export const dynamic = "force-dynamic";
  *
  * The `name` is passed straight through, but ownership is enforced on the
  * server: the ERP refuses any entry whose party is not the logged-in customer
- * (and any entry that is not submitted), so a name picked from the URL can
- * never select someone else's payment.
+ * (and any Cancelled entry), so a name picked from the URL can never select
+ * someone else's payment. Draft entries are shown — a freshly created payment
+ * is a Draft until it is submitted.
  */
 export async function GET(
   request: Request,

@@ -30,6 +30,7 @@ import LoginHistoryCard from "@/components/dashboard/LoginHistoryCard";
 import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
 import PanelCard from "@/components/dashboard/PanelCard";
 import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
+import PaymentSuccessView from "@/components/dashboard/payment/PaymentSuccessView";
 import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
@@ -38,7 +39,7 @@ import UserMenu from "@/components/dashboard/UserMenu";
 import { postJson } from "@/lib/api/http";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
-import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCESS_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
@@ -119,6 +120,11 @@ export default function DashboardShell({
     !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
   // The client panel's own sub-route: the account's Payment Entry history.
   const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
+  // The client panel's child route: the confirmation page for a just-created
+  // Payment Entry (`/clientDashboard/payment-entry/success`). It renders inside
+  // this shell, and `onPaymentHistoryView` stays true for it so the Payment
+  // Entry rail item remains the active one.
+  const onPaymentSuccessView = isClient && pathname.startsWith(PAYMENT_SUCCESS_PATH);
   // The client panel's own sub-route: the account's Service Build (Sales Invoice) history.
   const onServiceBuildView = isClient && pathname.startsWith(SERVICE_BUILD_PATH);
   // The help desk is a dashboard-internal module on BOTH panels — the same
@@ -629,6 +635,8 @@ export default function DashboardShell({
                 language={language}
                 contact={helpDeskContact}
               />
+            ) : onPaymentSuccessView ? (
+              <PaymentSuccessView onBack={() => router.push(PAYMENT_HISTORY_PATH)} />
             ) : onPaymentHistoryView ? (
               <PaymentEntryView onBack={() => router.push(basePath)} />
             ) : onServiceBuildView ? (
