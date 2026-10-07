@@ -7,7 +7,7 @@ import type { AmountFilter, ListFilterCopy } from "@/lib/dashboard/list-controls
 import DashboardSelect from "./DashboardSelect";
 
 const INPUT =
-  "h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
+  "h-10 w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const LABEL =
   "text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
@@ -54,7 +54,7 @@ export default function ListFilterBar({
   return (
     <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_20px_44px_-34px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:p-5">
       <div className="flex items-center gap-2.5">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[var(--color-primary)]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
           <FiSliders size={15} aria-hidden />
         </span>
         <div className="min-w-0">

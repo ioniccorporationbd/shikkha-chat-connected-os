@@ -171,7 +171,7 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
     <header className={HEADER_CARD}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] text-[22px] text-[var(--color-primary)]">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[22px] text-[var(--color-white)]">
             <FiUsers aria-hidden />
           </span>
           <div className="min-w-0">

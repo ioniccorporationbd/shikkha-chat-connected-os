@@ -123,7 +123,7 @@ export default function DashboardSelect({
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openAtSelected())}
         onKeyDown={onKeyDown}
-        className={`flex h-10 w-full items-center justify-between gap-2 rounded-xl border ${border} bg-[var(--color-white)] px-3 text-left outline-none transition hover:border-[var(--color-action)] focus-visible:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
+        className={`flex h-10 w-full items-center justify-between gap-2 rounded-2xl border ${border} bg-[var(--color-white)] px-3 text-left outline-none transition hover:border-[var(--color-action)] focus-visible:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
       >
         <span
           className={`truncate text-[13px] ${

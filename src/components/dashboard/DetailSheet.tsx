@@ -136,7 +136,7 @@ export default function DetailSheet({
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 {icon ? (
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
                     {icon}
                   </span>
                 ) : null}

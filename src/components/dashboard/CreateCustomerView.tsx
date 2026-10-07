@@ -69,7 +69,7 @@ const REQUIRED_PILL =
   "rounded-full bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-danger-strong)]";
 
 const ICON_TILE =
-  "grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[16px] text-[var(--color-primary)]";
+  "grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[16px] text-[var(--color-white)]";
 
 const BTN_SECONDARY =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-60";
@@ -636,7 +636,7 @@ function ConfirmModal({ title, body, confirmLabel, cancelLabel, tone = "default"
       />
       <div className="relative w-full max-w-[430px] rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-5 shadow-[0_34px_72px_-30px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
         <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[19px] text-[var(--color-primary)]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[19px] text-[var(--color-white)]">
             <FiAlertCircle aria-hidden />
           </span>
           <div className="min-w-0">
@@ -685,7 +685,7 @@ function Header({
     <header className={HEADER_CARD}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] text-[22px] text-[var(--color-primary)]">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[22px] text-[var(--color-white)]">
             <FiUserPlus aria-hidden />
           </span>
           <div className="min-w-0">

@@ -46,7 +46,7 @@ export default function LoginHistoryCard({ rows, copy, language }: LoginHistoryC
   if (!items.length) {
     return (
       <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-8 text-center">
-        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] text-[var(--color-primary)]">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
           <FiClock size={20} />
         </span>
         <p className="text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">

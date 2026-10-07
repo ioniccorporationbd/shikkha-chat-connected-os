@@ -44,3 +44,18 @@ export function formatLoginStamp(value: string, language: string): string {
 
   return bn ? `${toBnDigits(dateText)} · ${toBnDigits(timeText)}` : `${dateText} · ${timeText}`;
 }
+
+/**
+ * Today's date as a local `YYYY-MM-DD` calendar date.
+ *
+ * Reads the local calendar fields directly (never `toISOString()`), so a
+ * Bangladesh user just after midnight never sees yesterday's/tomorrow's date
+ * from a UTC shift. Safe to use as an `<input type="date">` value.
+ */
+export function todayLocalIso(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

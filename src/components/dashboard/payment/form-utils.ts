@@ -1,5 +1,7 @@
 /** Small, UI-only helpers for the manual-payment forms. */
 
+import { todayLocalIso } from "@/lib/format/datetime";
+
 const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 
 /** Convert Bangla digits (০-৯) to ASCII so Number()/regex validation works. */
@@ -9,9 +11,7 @@ export function toAsciiDigits(value: string): string {
 
 /** Today's date as a local `YYYY-MM-DD` (never the UTC day). */
 export function todayISO(): string {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
+  return todayLocalIso();
 }
 
 /** Keep only digits from a typed value (for the mobile number). */

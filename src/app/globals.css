@@ -305,6 +305,54 @@ canvas {
 }
 
 /* =========================================================
+   DATE / TIME CONTROLS
+   One shared native-date system for every dashboard date
+   field (posting / expense / payment date, check-in From/To,
+   list date filters, profile dates). Even field height, a
+   light native picker popup, and a themed calendar affordance.
+========================================================= */
+
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  color-scheme: light;
+  min-height: 2.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The calendar glyph is a native control — restyle it only in the
+   browser-safe way (size + hover affordance); never rebuild it so the
+   native picker keeps working. */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 3px;
+  margin-inline-start: 2px;
+  border-radius: 7px;
+  opacity: 0.55;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: var(--color-action-tint);
+}
+
+@media (pointer: coarse) {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0.85;
+    padding: 5px;
+  }
+}
+
+/* =========================================================
    SCROLL UTILITIES
 ========================================================= */
 

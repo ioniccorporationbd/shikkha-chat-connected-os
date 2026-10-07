@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
+import { todayLocalIso } from "@/lib/format/datetime";
 import {
   useCallback,
   useEffect,
@@ -77,7 +78,7 @@ function borderClass(invalid: boolean): string {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayLocalIso();
 }
 
 const PERMISSION_HINTS = [
@@ -301,7 +302,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
   const heading = (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[19px] text-[var(--color-primary)]">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[19px] text-[var(--color-white)]">
           <FiDollarSign />
         </span>
         <div className="min-w-0">
