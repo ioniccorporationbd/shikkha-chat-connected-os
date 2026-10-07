@@ -483,6 +483,7 @@ div {
 
 .connected-sidebar {
   transform: translateX(-100%);
+  border-radius: 0; /* square site rail — never a rounded dashboard-style shell */
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
@@ -502,6 +503,45 @@ div {
   .sidebar-close-button {
     display: none !important;
   }
+}
+
+/* ---------------------------------------------------------------------
+   Homepage rail nav rows
+   The Dashboard rail's navigation language on the homepage's SQUARE shell.
+   Declared here (unlayered) on purpose: the base `a { color: inherit }`
+   reset outranks Tailwind's layered text-* utilities, so a link row's
+   idle / hover / active colour must live in a real rule, not a `text-[…]`
+   class. Selected = solid action red + white; idle hover = a light action
+   tint (never a solid red). Rows carry no decorative chips — icons are plain
+   inline glyphs, exactly like the Dashboard rail.
+--------------------------------------------------------------------- */
+.sidebar-row {
+  color: color-mix(in srgb, var(--color-primary) 72%, transparent);
+  transition: background-color 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1)),
+    color 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.sidebar-row:hover {
+  background-color: var(--color-action-tint);
+  color: var(--color-action);
+}
+.sidebar-row.is-active {
+  background-color: var(--color-action);
+  color: var(--color-white);
+  box-shadow: 0 12px 26px -14px color-mix(in srgb, var(--color-action) 70%, transparent);
+}
+.sidebar-row.is-active .sidebar-row-label {
+  font-weight: 600;
+}
+.sidebar-row .sidebar-row-index {
+  color: color-mix(in srgb, var(--color-primary) 48%, transparent);
+  transition: color 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.sidebar-row:hover .sidebar-row-index {
+  color: var(--color-action);
+}
+.sidebar-row.is-active .sidebar-row-index {
+  color: color-mix(in srgb, var(--color-white) 80%, transparent);
 }
 
 /* =========================================================

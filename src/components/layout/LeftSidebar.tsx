@@ -79,11 +79,21 @@ const sidebarTitleTextClass = "text-[15px] font-semibold tracking-[-0.02em]";
 const sidebarSubtitleTextClass =
   "text-[11px] font-semibold uppercase tracking-[0.14em]";
 
-const sidebarDropdownTitleTextClass =
-  "text-[15px] font-semibold tracking-[-0.02em]";
-
-const sidebarDropdownLinkTextClass =
-  "text-[13px] font-medium tracking-[-0.01em]";
+/* Homepage rail nav rows — the Dashboard rail's navigation language applied to
+   the homepage's SQUARE outer shell. A Dashboard row is borderless on one 16px
+   radius: selected = solid action red + white text/icon, idle hover = a light
+   action tint (never a heavy neutral fill), and a plain 13px label with a plain
+   inline 16px icon (the Dashboard never wraps icons/chevrons in decorative
+   chips). The idle / hover / active colour is declared in the unlayered
+   `.sidebar-row` rule in globals.css, because the base `a { color: inherit }`
+   reset outranks Tailwind's layered text-* utilities on <a> rows. */
+const sidebarRowClass =
+  "sidebar-row group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]";
+const sidebarRowLabelClass =
+  "sidebar-row-label inline-flex min-w-0 flex-1 items-center gap-3 text-[13px] leading-snug";
+const sidebarRowIconClass = "shrink-0 text-[16px]";
+const sidebarRowIndexClass =
+  "sidebar-row-index w-5 shrink-0 text-center text-[12px] font-bold tabular-nums";
 
 /* -------------------------------------------------------------------------
    Premium surface system
@@ -97,9 +107,6 @@ const cardBorderClass =
   "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]";
 const cardShadowClass =
   "shadow-[0_18px_44px_-32px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
-const softHoverClass =
-  "hover:border-[color-mix(in_srgb,var(--color-primary)_26%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))]";
-
 const sidebarText = {
   bn: {
     logoHome: "শিক্ষা চ্যাট হোম",
@@ -416,10 +423,6 @@ function getGroupColor(group: OpenGroup, isMyConnected = false) {
   return colorPrimary;
 }
 
-function getReadableGroupColor() {
-  return colorPrimary;
-}
-
 function getActiveTitle(activeId: ActiveSectionId, currentMenu: MenuGroup[]) {
   for (const item of currentMenu) {
     if (getIdFromHref(item.href) === activeId) return item.title;
@@ -656,36 +659,12 @@ function SidebarChildLink({
         event.preventDefault();
         handleSidebarNavigate(id);
       }}
-      className={[
-        [
-          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
-          sidebarDropdownLinkTextClass,
-        ].join(" "),
-        active
-          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_16px_32px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
-          : "border-transparent " + softHoverClass,
-      ].join(" ")}
-      style={{
-        color: active ? colorWhite : colorPrimary,
-      }}
+      aria-current={active ? "true" : undefined}
+      className={[sidebarRowClass, "py-2", active ? "is-active" : ""].join(" ")}
     >
-      {active ? (
-        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
-      ) : null}
-
-      <span
-        className={[
-          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-[10px] font-semibold transition duration-300",
-          active
-            ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
-            : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
-        ].join(" ")}
-      >
-        {index}
-      </span>
-
-      <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-[1.2] tracking-[-0.01em]">
-        {child.title}
+      <span className={[sidebarRowLabelClass, "font-medium tracking-[-0.01em]"].join(" ")}>
+        <span className={sidebarRowIndexClass}>{index}</span>
+        <span className="truncate">{child.title}</span>
       </span>
     </Link>
   );
@@ -699,7 +678,7 @@ function LanguageSwitch() {
 
   return (
     <div
-      className={`mt-4 rounded-[22px] border bg-[var(--color-white)] p-3 backdrop-blur-xl sm:rounded-[24px] sm:p-3.5 ${cardBorderClass} ${cardShadowClass}`}
+      className={`mt-4 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
@@ -722,7 +701,7 @@ function LanguageSwitch() {
       <div
         role="group"
         aria-label={text.toggleLanguage}
-        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] p-1 transition duration-300 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] sm:h-12"
+        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] p-1 transition duration-300 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] sm:h-12"
       >
         <span
           className={[
@@ -741,7 +720,7 @@ function LanguageSwitch() {
               "grid place-items-center rounded-full transition duration-300",
               isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-primary)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-action)]",
             ].join(" ")}
           >
             {text.bangla}
@@ -755,7 +734,7 @@ function LanguageSwitch() {
               "grid place-items-center rounded-full transition duration-300",
               !isBangla
                 ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-primary)]",
+                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-action)]",
             ].join(" ")}
           >
             {text.english}
@@ -783,42 +762,18 @@ function SidebarLink({
     <Link
       href={href}
       onClick={onClick}
-      className={[
-        [
-          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
-          sidebarTitleTextClass,
-        ].join(" "),
-        active
-          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_16px_32px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
-          : "border-transparent " + softHoverClass,
-      ].join(" ")}
-      style={{
-        color: active ? colorWhite : colorPrimary,
-      }}
+      aria-current={active ? "true" : undefined}
+      className={[sidebarRowClass, active ? "is-active" : ""].join(" ")}
     >
-      {active ? (
-        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
-      ) : null}
-
-      {icon ? (
-        (() => {
-          const LinkIcon = icon;
-          return (
-            <span
-              className={[
-                "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
-                active
-                  ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
-                  : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
-              ].join(" ")}
-            >
-              <LinkIcon size={15} />
-            </span>
-          );
-        })()
-      ) : null}
-
-      <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-[1.2]">{title}</span>
+      <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
+        {icon
+          ? (() => {
+              const LinkIcon = icon;
+              return <LinkIcon className={sidebarRowIconClass} />;
+            })()
+          : null}
+        <span className="truncate">{title}</span>
+      </span>
     </Link>
   );
 }
@@ -932,10 +887,6 @@ export default function LeftSidebar() {
           drawerOpen ? "is-open" : "",
         ].join(" ")}
       >
-        <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-[var(--color-secondary)] opacity-50 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-24 h-52 w-52 rounded-full bg-[var(--color-secondary)] opacity-60 blur-3xl" />
-        <div className="pointer-events-none absolute left-5 top-0 h-full w-px bg-[color-mix(in_srgb,var(--color-primary)_7%,transparent)]" />
-
         <div
           className={[
             "no-scrollbar relative flex h-full flex-col overflow-y-auto bg-[var(--color-white)]",
@@ -965,22 +916,15 @@ export default function LeftSidebar() {
           {/* Public support centre entry — a real navigation to /help-desk,
               visible to guests and signed-in users alike since the route is not
               session-gated. */}
-          <Link
-            href="/help-desk"
-            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border bg-[var(--color-white)] px-4 py-3 transition duration-300 hover:-translate-y-0.5 ${cardBorderClass} ${cardShadowClass} hover:border-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]`}
-          >
-            <span className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] text-[var(--color-primary)]">
-                <FiHeadphones size={15} />
-              </span>
-              <span className="text-[14px] font-semibold text-[var(--color-primary)]">
-                {text.helpDesk}
-              </span>
+          <Link href="/help-desk" className={[sidebarRowClass, "mt-4"].join(" ")}>
+            <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
+              <FiHeadphones className={sidebarRowIconClass} />
+              <span className="truncate">{text.helpDesk}</span>
             </span>
-            <FiArrowRight className="text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" />
+            <FiArrowRight className="shrink-0 text-[16px] transition-transform duration-300 group-hover:translate-x-0.5" />
           </Link>
 
-          <div className={`mt-5 rounded-3xl border bg-[var(--color-white)] p-3 sm:p-4 ${cardBorderClass} ${cardShadowClass}`}>
+          <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3">
               <p className={`${sidebarTitleTextClass} text-[var(--color-primary)]`}>
                 {text.theK12Os}
@@ -996,7 +940,7 @@ export default function LeftSidebar() {
             />
           </div>
 
-          <nav className="mt-5 space-y-1.5 sm:mt-6">
+          <nav className="mt-5 flex flex-col gap-1.5 sm:mt-6">
             {currentMenu.map((item) => {
               const itemId = getIdFromHref(item.href);
 
@@ -1011,7 +955,6 @@ export default function LeftSidebar() {
                   operationalGroupActive);
 
               const group = item.group ?? null;
-              const readableColor = getReadableGroupColor();
               const openState = group ? openGroup === group : false;
 
               if (item.children && group) {
@@ -1026,53 +969,25 @@ export default function LeftSidebar() {
                         )
                       }
                       className={[
-                        [
-                          "group relative flex w-full items-center justify-between overflow-hidden rounded-xl border px-3 py-3 text-left transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
-                          sidebarDropdownTitleTextClass,
-                        ].join(" "),
-                        activeGroup
-                          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_18px_36px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
-                          : "border-transparent " + softHoverClass,
+                        sidebarRowClass,
+                        activeGroup ? "is-active" : "",
                       ].join(" ")}
-                      style={{
-                        color: activeGroup ? colorWhite : readableColor,
-                      }}
                     >
-                      {activeGroup ? (
-                        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
-                      ) : null}
-
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <span
-                          className={[
-                            "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
-                            activeGroup
-                              ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
-                              : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
-                          ].join(" ")}
-                        >
-                          {(() => {
-                            const GroupIcon = GROUP_ICONS[group ?? ""] ?? FiGrid;
-                            return <GroupIcon size={15} />;
-                          })()}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-[1.2]">
-                          {item.title}
-                        </span>
+                      <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
+                        {(() => {
+                          const GroupIcon = GROUP_ICONS[group ?? ""] ?? FiGrid;
+                          return <GroupIcon className={sidebarRowIconClass} />;
+                        })()}
+                        <span className="truncate">{item.title}</span>
                       </span>
 
-                      <span
+                      <FiChevronDown
+                        aria-hidden="true"
                         className={[
-                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border transition-transform duration-300",
-                          activeGroup
-                            ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
-                            : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] text-[var(--color-primary)]",
+                          "shrink-0 text-[16px] transition-transform duration-300",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
-                        aria-hidden="true"
-                      >
-                        <FiChevronDown size={15} />
-                      </span>
+                      />
                     </button>
 
                     <div
@@ -1084,7 +999,7 @@ export default function LeftSidebar() {
                       ].join(" ")}
                     >
                       <div className="overflow-hidden">
-                        <div className="mt-1.5 space-y-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] border-l-[3px] border-l-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] py-1.5 pl-4 pr-1">
+                        <div className="mt-1.5 ml-3 space-y-1 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5">
                           {item.href === "#home-connections-panel" ? (
                             <SidebarChildLink
                               child={{
@@ -1143,7 +1058,7 @@ export default function LeftSidebar() {
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             <Link
               href="#connect"
-              className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-action)] bg-[var(--color-action)] text-[15px] font-semibold text-[var(--color-white)] shadow-[0_18px_40px_-20px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-action-hover)] sm:h-12"
+              className="flex h-11 items-center justify-center rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] text-[13px] font-semibold text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-action-hover)] sm:h-12"
             >
               {text.talkToExpert}
             </Link>
