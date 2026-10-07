@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
     "192.168.0.192",
     "192.168.0.*",
   ],
+  // The app ships no service worker, but some browser extensions probe
+  // /sw.js on every load, so the dev server logs a "GET /sw.js 404" line each
+  // time. Keep the dev request log clean by ignoring that path.
+  logging: {
+    incomingRequests: {
+      ignore: [/\/sw\.js(\?|$)/],
+    },
+  },
   reactCompiler: true,
   typescript: {
     // TypeScript is checked separately with `npx tsc --noEmit`.
