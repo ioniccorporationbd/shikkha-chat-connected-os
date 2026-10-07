@@ -9,7 +9,7 @@ import EducatorSupport from "@/components/hubs/operational-excellence/panels/Edu
 
 export default function OperationalExcellenceSidePanels() {
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full">
       {/* 1 */}
       <OperationalExcellenceOverview />
 

@@ -2,12 +2,19 @@
 
 import SectionPanel from "../../shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { LuUserPlus } from "react-icons/lu";
 
 const sectionText = {
   bn: {
     pill: "ভর্তি ব্যবস্থাপনা",
     title: "প্রতিটি নতুন শিক্ষার্থীর জন্য সহজ, নিরাপদ শুরু।",
     description: "ভর্তির তথ্য সংগ্রহ থেকে account creation পর্যন্ত—OTP verification-সহ একটি structured registration workflow, যা শিক্ষার্থী তথ্য ব্যবস্থার সাথে সরাসরি যুক্ত।",
+    supporting: "registration সরাসরি শিক্ষার্থী ব্যবস্থায় যুক্ত হওয়ায় নতুন record একবার তৈরি হয় এবং প্রথম দিন থেকেই সামঞ্জস্যপূর্ণ থাকে।",
+    capabilities: [
+      "সুসংগঠিত registration workflow",
+      "নিরাপদ account-এর জন্য OTP verification",
+      "শিক্ষার্থীর প্রোফাইলের সাথে যুক্ত registration",
+    ],
     stats: [
       { value: "OTP-যাচাইকৃত", label: "Email বা configured SMS channel দিয়ে verification" },
       { value: "সংযুক্ত", label: "Registration থেকে student profile—একই workflow-এ" },
@@ -20,6 +27,12 @@ const sectionText = {
     pill: "Enrollment Management",
     title: "A simple, secure start for every new student.",
     description: "From collecting admission information to account creation—a structured registration workflow with OTP verification, connected directly to your student information system.",
+    supporting: "Because registration flows straight into the student system, new records are created once and stay consistent from the first day.",
+    capabilities: [
+      "Structured registration workflow",
+      "OTP verification for secure accounts",
+      "Registration linked to the student profile",
+    ],
     stats: [
       { value: "OTP-verified", label: "Verification over email or a configured SMS channel" },
       { value: "Connected", label: "Registration to student profile in one workflow" },
@@ -41,6 +54,9 @@ export default function EnrollmentPanel() {
       pill={text.pill}
       title={text.title}
       description={text.description}
+      supporting={text.supporting}
+      capabilities={text.capabilities}
+      icon={LuUserPlus}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

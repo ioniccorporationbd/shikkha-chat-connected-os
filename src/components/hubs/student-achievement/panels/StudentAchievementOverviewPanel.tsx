@@ -2,6 +2,7 @@
 
 import SectionPanel from "../../shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { LuGraduationCap } from "react-icons/lu";
 
 type LanguageCode = "bn" | "en";
 
@@ -10,6 +11,12 @@ const sectionText = {
     pill: "শিক্ষার্থী অর্জন",
     title: "প্রতিটি শিক্ষার্থীর অগ্রগতির সংযুক্ত চিত্র।",
     description: "পরীক্ষা, ফলাফল, উপস্থিতি ও সহায়তা কার্যক্রমকে একসাথে এনে শিক্ষক ও management-কে প্রতিটি শিক্ষার্থীর অগ্রগতি আত্মবিশ্বাসের সাথে বুঝতে সহায়তা করুন।",
+    supporting: "পরীক্ষা, উপস্থিতি ও সহায়তার ডেটা একই ভিত্তি শেয়ার করায় staff আলাদা ফাইল থেকে জোড়া না দিয়েই পূর্ণ চিত্র দেখতে পান।",
+    capabilities: [
+      "Exam, result, attendance এক দৃশ্যে",
+      "শিক্ষকদের জন্য অগ্রগতির দৃশ্যমানতা",
+      "Management-এর জন্য report-ভিত্তিক insight",
+    ],
     stats: [
       { value: "এক দৃশ্যে", label: "Exam, result, attendance ও progress একসাথে" },
       { value: "সিদ্ধান্ত-সহায়ক", label: "Management-এর জন্য report-ভিত্তিক insight" },
@@ -22,6 +29,12 @@ const sectionText = {
     pill: "Student Achievement",
     title: "A connected view of every student's progress.",
     description: "Bring examination, results, attendance, and support activity together so teachers and management can understand every student's progress with confidence.",
+    supporting: "Because exam, attendance, and support data share one foundation, staff see the full picture instead of piecing it together from separate files.",
+    capabilities: [
+      "Exam, result, and attendance in one view",
+      "Progress visibility for teachers",
+      "Report-based insight for management",
+    ],
     stats: [
       { value: "One view", label: "Exam, result, attendance, and progress together" },
       { value: "Decision-ready", label: "Report-based insight for management" },
@@ -44,6 +57,9 @@ export default function StudentAchievementOverviewPanel() {
       pillStyle="solid"
       title={text.title}
       description={text.description}
+      supporting={text.supporting}
+      capabilities={text.capabilities}
+      icon={LuGraduationCap}
       showButtons={false}
       stats={text.stats}
       quote={text.quote}

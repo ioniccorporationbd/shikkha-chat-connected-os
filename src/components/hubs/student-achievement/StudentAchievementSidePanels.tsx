@@ -11,7 +11,7 @@ import CCLRNaviance from "@/components/hubs/student-achievement/panels/CCLRNavia
 
 export default function StudentAchievementSidePanels() {
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full">
       {/* 1 */}
       <StudentAchievementOverview />
 

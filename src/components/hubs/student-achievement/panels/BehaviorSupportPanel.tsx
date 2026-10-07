@@ -2,6 +2,7 @@
 
 import SectionPanel from "../../shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { LuHeartHandshake } from "react-icons/lu";
 
 type LanguageCode = "bn" | "en";
 
@@ -10,6 +11,12 @@ const sectionText = {
     pill: "আচরণগত সহায়তা",
     title: "সঠিক তথ্য, সময়মতো পদক্ষেপ।",
     description: "প্রতিটি শিক্ষার্থীর তথ্য ও অগ্রগতি এক জায়গায় থাকলে staff দ্রুত বুঝতে পারে কে সহায়তা প্রয়োজন, আর role-based access নিশ্চিত করে সঠিক ব্যক্তি সঠিক তথ্য দেখে।",
+    supporting: "তথ্য সংগঠিত ও access role-ভিত্তিক হওয়ায় সঠিক কর্মী দ্রুত সাড়া দিতে পারেন, আর record নিরাপদ থাকে।",
+    capabilities: [
+      "Role-ভিত্তিক, নিয়ন্ত্রিত access",
+      "শিক্ষার্থীর তথ্য এক জায়গায়",
+      "দ্রুত ও নির্ভুল সিদ্ধান্ত",
+    ],
     stats: [
       { value: "রোল-ভিত্তিক", label: "নিয়ন্ত্রিত access—যতটুকু প্রয়োজন ততটুকু" },
       { value: "সংযুক্ত", label: "শিক্ষার্থীর তথ্য এক জায়গায়" },
@@ -22,6 +29,12 @@ const sectionText = {
     pill: "Behavior Support",
     title: "The right information, at the right time.",
     description: "When each student's information and progress live in one place, staff can quickly see who needs support—and role-based access ensures the right people see the right information.",
+    supporting: "Because information is organized and access is role-based, the right staff can respond quickly while records stay secure.",
+    capabilities: [
+      "Role-based, controlled access",
+      "Student information in one place",
+      "Faster, more accurate decisions",
+    ],
     stats: [
       { value: "Role-based", label: "Controlled access—only what each user needs" },
       { value: "Connected", label: "Student information in one place" },
@@ -44,6 +57,9 @@ export default function BehaviorSupportPanel() {
       pillStyle="solid"
       title={text.title}
       description={text.description}
+      supporting={text.supporting}
+      capabilities={text.capabilities}
+      icon={LuHeartHandshake}
       showButtons={false}
       stats={text.stats}
       quote={text.quote}

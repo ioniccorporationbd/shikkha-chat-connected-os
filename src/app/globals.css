@@ -477,7 +477,9 @@ div {
   min-height: 100svh;
   overflow: visible;
   border-left: 0;
-  background: var(--color-white);
+  /* ONE unified, solid surface for the entire right rail. No gradient.
+     Cards sit directly on this surface and stay transparent. */
+  background: color-mix(in srgb, var(--color-secondary) 8%, var(--color-white));
   color: var(--color-primary);
 }
 
@@ -485,7 +487,8 @@ div {
   height: auto;
   min-height: 100svh;
   overflow: visible;
-  background: var(--color-white);
+  /* Same single unified surface as .connected-right-pane. */
+  background: color-mix(in srgb, var(--color-secondary) 8%, var(--color-white));
   color: var(--color-primary);
 }
 
@@ -844,11 +847,12 @@ html[data-lang="en"] .language-toggle-knob {
    Global typography: 13px / 16px / 18px
 ========================================================= */
 
+/* The right rail is ONE unified, solid surface owned by the parent
+   (.connected-right-pane / .connected-right-scroll-panel). Individual cards no
+   longer paint their own backgrounds and there is no gradient anywhere here. */
 .right-panel-section {
   isolation: isolate;
-  background-image:
-    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 28%),
-    radial-gradient(circle at 92% 88%, color-mix(in srgb, var(--color-primary) 5%, transparent), transparent 30%);
+  background: transparent;
 }
 
 .right-product-shell {
@@ -873,28 +877,19 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 .right-stat-card {
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--color-primary) 7%, transparent);
-  transition:
-    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: border-color 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .right-stat-card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
-  box-shadow: 0 20px 42px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .right-quote-card {
-  box-shadow:
-    0 18px 45px color-mix(in srgb, var(--color-primary) 13%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--color-white) 24%, transparent);
-  transition: box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: border-color 460ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .right-quote-card:hover {
-  box-shadow:
-    0 28px 64px color-mix(in srgb, var(--color-primary) 18%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--color-white) 30%, transparent);
+  border-color: color-mix(in srgb, var(--color-secondary-strong) 42%, transparent);
 }
 
 /* Exact right-side type hierarchy */
@@ -932,6 +927,14 @@ html[data-lang="en"] .language-toggle-knob {
 .section-main-title {
   font-size: 22px !important;
   line-height: 1.28 !important;
+}
+
+/* Capability list rows sit between body copy and labels — 15px keeps them
+   scannable without competing with the 22px headline. */
+:where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
+.capability-text {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
 }
 
 @media (max-width: 767px) {

@@ -9,7 +9,7 @@ import AttendanceSupport from "@/components/hubs/home-connections/panels/Attenda
 
 export default function HomeConnectionsSidePanels() {
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full">
       {/* 1 */}
       <HomeComponents />
 
