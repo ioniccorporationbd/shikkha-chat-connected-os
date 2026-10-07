@@ -57,13 +57,14 @@ export default function ListPagination({
         ) : null}
       </div>
 
+      {pageCount > 1 ? (
       <nav aria-label={copy.pageLabel} className="flex items-center justify-center gap-1.5">
         <button
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           aria-label={copy.pagePrev}
-          className={`${CONTROL} border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
+          className={`${CONTROL} border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
         >
           <span className="text-[var(--color-primary)]">
             <FiChevronLeft size={16} aria-hidden />
@@ -87,8 +88,8 @@ export default function ListPagination({
               aria-current={value === page ? "page" : undefined}
               className={`${CONTROL} ${
                 value === page
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_12px_24px_-14px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]"
-                  : "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+                  ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_12px_24px_-14px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
+                  : "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
               }`}
             >
               <span
@@ -109,13 +110,14 @@ export default function ListPagination({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= pageCount}
           aria-label={copy.pageNext}
-          className={`${CONTROL} border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
+          className={`${CONTROL} border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
         >
           <span className="text-[var(--color-primary)]">
             <FiChevronRight size={16} aria-hidden />
           </span>
         </button>
       </nav>
+      ) : null}
     </div>
   );
 }

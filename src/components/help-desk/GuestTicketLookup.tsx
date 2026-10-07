@@ -54,7 +54,7 @@ export default function GuestTicketLookup({
   return (
     <section className={`${HD_CARD} p-5 sm:p-6`} aria-labelledby="hd-guest-title">
       <div className="flex items-center gap-2.5">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_45%,var(--color-white))]">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
           <FiSearch className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
         </span>
         <div>
@@ -105,13 +105,13 @@ export default function GuestTicketLookup({
       </form>
 
       {status === "notfound" ? (
-        <p className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-warning)_34%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-white))] px-4 py-3 text-sm font-semibold text-[var(--color-warning)]">
+        <p className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_34%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] px-4 py-3 text-sm font-semibold text-[var(--color-danger-strong)]">
           {copy.guestNotFound}
         </p>
       ) : null}
 
       {status === "found" && match ? (
-        <div className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] p-4">
+        <div className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] p-4">
           <p className="text-xs font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
             {copy.guestFoundHint}
           </p>

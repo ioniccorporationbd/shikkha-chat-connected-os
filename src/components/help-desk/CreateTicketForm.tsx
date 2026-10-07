@@ -197,7 +197,7 @@ export default function CreateTicketForm({
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {isHelpDeskDemoEnabled() ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-4 py-3">
           <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
             {copy.demoBadge}
           </span>
@@ -454,7 +454,7 @@ export default function CreateTicketForm({
                       className="h-10 w-10 flex-none rounded-xl object-cover"
                     />
                   ) : (
-                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-secondary)_35%,var(--color-white))]">
+                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
                       <FiFileText className="h-5 w-5 text-[var(--color-primary)]" aria-hidden />
                     </span>
                   )}

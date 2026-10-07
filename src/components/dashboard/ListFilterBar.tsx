@@ -4,6 +4,8 @@ import { FiFilter, FiRotateCcw, FiSearch, FiSliders, FiX } from "react-icons/fi"
 
 import type { AmountFilter, ListFilterCopy } from "@/lib/dashboard/list-controls";
 
+import DashboardSelect from "./DashboardSelect";
+
 const INPUT =
   "h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const LABEL =
@@ -91,36 +93,32 @@ export default function ListFilterBar({
           </span>
         </label>
 
-        <label className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterStatusLabel}</span>
-          <select
+          <DashboardSelect
             value={statusValue}
-            onChange={(event) => onStatusChange(event.target.value)}
-            aria-label={copy.filterStatusLabel}
-            className={INPUT}
-          >
-            <option value="all">{copy.filterStatusAll}</option>
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={onStatusChange}
+            ariaLabel={copy.filterStatusLabel}
+            options={[
+              { value: "all", label: copy.filterStatusAll },
+              ...statusOptions.map((option) => ({ value: option.value, label: option.label })),
+            ]}
+          />
+        </div>
 
-        <label className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterAmountLabel}</span>
-          <select
+          <DashboardSelect
             value={amount.mode}
-            onChange={(event) => onAmountChange("mode", event.target.value)}
-            aria-label={copy.filterAmountLabel}
-            className={INPUT}
-          >
-            <option value="any">{copy.filterAmountAny}</option>
-            <option value="exact">{copy.filterAmountExact}</option>
-            <option value="range">{copy.filterAmountRange}</option>
-          </select>
-        </label>
+            onChange={(value) => onAmountChange("mode", value)}
+            ariaLabel={copy.filterAmountLabel}
+            options={[
+              { value: "any", label: copy.filterAmountAny },
+              { value: "exact", label: copy.filterAmountExact },
+              { value: "range", label: copy.filterAmountRange },
+            ]}
+          />
+        </div>
 
         {amount.mode === "exact" ? (
           <label className="flex flex-col gap-1.5">

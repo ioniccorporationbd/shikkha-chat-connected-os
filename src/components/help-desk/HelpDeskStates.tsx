@@ -87,7 +87,7 @@ export function HelpDeskNotFound({ copy, basePath }: { copy: HelpDeskCopy; baseP
   const links = helpDeskLinks(basePath);
   return (
     <div className={`${HD_CARD} flex flex-col items-center gap-3 p-8 text-center`}>
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_40%,var(--color-white))]">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
         <FiSearch className="h-7 w-7 text-[var(--color-primary)]" aria-hidden />
       </span>
       <h2 className="text-lg font-bold text-[var(--color-primary)]">{copy.notFoundTitle}</h2>

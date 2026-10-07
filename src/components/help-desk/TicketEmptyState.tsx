@@ -12,7 +12,7 @@ export function TicketEmptyState({ copy, basePath }: { copy: HelpDeskCopy; baseP
   const links = helpDeskLinks(basePath);
   return (
     <div className={`${HD_CARD} flex flex-col items-center gap-3 p-8 text-center sm:p-10`}>
-      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_38%,var(--color-white))]">
+      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
         <FiInbox className="h-8 w-8 text-[var(--color-primary)]" aria-hidden />
       </span>
       <h2 className="text-lg font-bold text-[var(--color-primary)]">{copy.emptyTitle}</h2>

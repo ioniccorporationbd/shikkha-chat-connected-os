@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import {
   useCallback,
   useEffect,
@@ -655,19 +656,15 @@ function FieldRow({ field, value, invalid, errorText, copy, language, onChange }
 
       <div className="mt-1.5">
         {field.fieldtype === "Select" ? (
-          <select
+          <DashboardSelect
             value={stringValue}
             disabled={field.read_only}
-            onChange={(event) => onChange(event.target.value)}
-            className={`${INPUT_BASE} ${borderClass(invalid)}`}
-          >
-            <option value="">{copy.selectPlaceholder}</option>
-            {field.options.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            invalid={invalid}
+            onChange={onChange}
+            placeholder={copy.selectPlaceholder}
+            ariaLabel={field.label}
+            options={field.options.map((option) => ({ value: option, label: option }))}
+          />
         ) : field.fieldtype === "Link" || field.fieldtype === "Dynamic Link" ? (
           field.link_doctype ? (
             <LinkField

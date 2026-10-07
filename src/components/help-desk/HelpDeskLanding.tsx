@@ -65,7 +65,7 @@ export default function HelpDeskLanding({
         className={`${HD_CARD} relative overflow-hidden p-6 sm:p-9`}
         style={{
           backgroundImage:
-            "linear-gradient(135deg, color-mix(in srgb, var(--color-secondary) 40%, white), white 60%)",
+            "linear-gradient(135deg, color-mix(in srgb, var(--color-action) 8%, white), white 60%)",
         }}
       >
         <div className="flex flex-wrap items-center gap-4">

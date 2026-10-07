@@ -515,12 +515,12 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                     type="button"
                     onClick={() => void handleRefresh()}
                     disabled={refreshing}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_28px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:border-[var(--color-action-hover)] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 disabled:opacity-60"
                   >
-                    <span className={`text-[var(--color-primary)] ${refreshing ? "animate-spin" : ""}`}>
+                    <span className={`text-[var(--color-white)] ${refreshing ? "animate-spin" : ""}`}>
                       <FiRotateCw size={15} />
                     </span>
-                    <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+                    <span className="text-[12.5px] font-semibold text-[var(--color-white)]">
                       {refreshing ? copy.refreshing : copy.refresh}
                     </span>
                   </button>

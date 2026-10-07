@@ -40,7 +40,7 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
     }`;
 
   return (
-    <header className="flex flex-col gap-4 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-white)_94%,var(--color-secondary))] p-4 shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] sm:flex-row sm:items-center sm:justify-between">
+    <header className="flex flex-col gap-4 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] p-4 shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] sm:flex-row sm:items-center sm:justify-between">
       <Link href="/" className="inline-flex items-center gap-3 focus-visible:outline-none">
         <Image
           src="/images/logo.png"

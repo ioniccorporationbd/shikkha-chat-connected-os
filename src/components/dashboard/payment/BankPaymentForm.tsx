@@ -11,6 +11,7 @@ import type {
 } from "@/lib/payment-entry/manual-payment/types";
 import { toast } from "@/lib/ui/toast";
 
+import DashboardSelect from "../DashboardSelect";
 import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentField";
 import PaymentProofUpload, { type ProofSelection } from "./PaymentProofUpload";
 import { amountInput, todayISO } from "./form-utils";
@@ -186,20 +187,15 @@ export default function BankPaymentForm({
   return (
     <div className="flex flex-col gap-4">
       <PaymentField id="bank-select" label={copy.bankSelectLabel} required error={errors.bank}>
-        <select
-          id="bank-select"
+        <DashboardSelect
           value={bankName}
-          onChange={(event) => setBankName(event.target.value)}
+          onChange={setBankName}
           disabled={banksLoading || banks.length === 0}
-          className={`${PAY_FIELD_CLASS} ${payBorder(Boolean(errors.bank))}`}
-        >
-          <option value="">{copy.bankSelectPlaceholder}</option>
-          {banks.map((option) => (
-            <option key={option.name} value={option.name}>
-              {option.bank_name}
-            </option>
-          ))}
-        </select>
+          invalid={Boolean(errors.bank)}
+          placeholder={copy.bankSelectPlaceholder}
+          ariaLabel={copy.bankSelectLabel}
+          options={banks.map((option) => ({ value: option.name, label: option.bank_name }))}
+        />
       </PaymentField>
 
       {banksLoading ? (

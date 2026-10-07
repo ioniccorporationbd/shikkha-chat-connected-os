@@ -29,8 +29,8 @@ export default function TicketSuccessCard({
   const links = helpDeskLinks(basePath);
   return (
     <section className={`${HD_CARD} overflow-hidden`} role="status" aria-live="polite">
-      <div className="flex flex-col items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-6 py-8 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-success)]">
+      <div className="flex flex-col items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-6 py-8 text-center">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-primary)]">
           <FiCheckCircle className="h-8 w-8 text-[var(--color-white)]" aria-hidden />
         </span>
         <h2 className="text-xl font-bold text-[var(--color-primary)]">{copy.successTitle}</h2>

@@ -68,21 +68,25 @@ export const TICKET_FILTERS: readonly (TicketStatus | "all")[] = [
 export const DEFAULT_CATEGORY: TicketCategoryId = "technical";
 export const DEFAULT_PRIORITY: TicketPriority = "medium";
 
-/** Colour tokens per status. Muted, semantic, theme-aligned (no neon). */
+/**
+ * Colour tokens per status — ONE consistent Shikkha red + neutral-gray palette
+ * (no teal/amber/blue/green). Red marks work that still needs attention; grey
+ * marks settled / neutral states.
+ */
 export const STATUS_TONE: Record<TicketStatus, string> = {
-  open: "#0f5c50",
-  in_progress: "#b45309",
-  waiting_for_user: "#2f5f7d",
-  resolved: "#2f7d5a",
-  closed: "#6b7280",
+  open: "#e00516",
+  in_progress: "#a10f1c",
+  waiting_for_user: "#6b7280",
+  resolved: "#4b5563",
+  closed: "#9ca3af",
 };
 
-/** Colour tokens per priority. */
+/** Colour tokens per priority — grey for routine, Shikkha red as urgency rises. */
 export const PRIORITY_TONE: Record<TicketPriority, string> = {
-  low: "#2f7d5a",
-  medium: "#2f5f7d",
-  high: "#c98a1f",
-  urgent: "#b4453a",
+  low: "#9ca3af",
+  medium: "#6b7280",
+  high: "#e00516",
+  urgent: "#a10f1c",
 };
 
 /** Categories that are considered "still open" work (not finished). */

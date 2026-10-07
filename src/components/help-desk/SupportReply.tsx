@@ -24,7 +24,7 @@ export default function SupportReply({
 
   return (
     <div className="flex justify-start">
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
         <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] px-4 py-3">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[var(--color-primary)]">
             <FiHeadphones className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
@@ -58,9 +58,9 @@ export default function SupportReply({
           ) : null}
 
           {message.statusChange ? (
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_16%,var(--color-white))] px-3 py-1">
-              <FiCheckCircle className="h-3.5 w-3.5 text-[var(--color-success)]" aria-hidden />
-              <span className="text-xs font-semibold text-[var(--color-success)]">
+            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action-tint)] px-3 py-1">
+              <FiCheckCircle className="h-3.5 w-3.5 text-[var(--color-action)]" aria-hidden />
+              <span className="text-xs font-semibold text-[var(--color-action)]">
                 {copy.timelineStatusTo}: {copy.statuses[message.statusChange]}
               </span>
             </span>

@@ -235,7 +235,7 @@ export default function TicketDetails({
                       key={file.id}
                       className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-2.5"
                     >
-                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-secondary)_35%,var(--color-white))]">
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
                         <FiFileText className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -296,9 +296,9 @@ export default function TicketDetails({
         <div className="space-y-4">
           {/* Resolved block */}
           {isResolved ? (
-            <section className="overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-success)_34%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] p-5">
+            <section className="overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] p-5">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--color-success)]">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--color-primary)]">
                   <FiCheckCircle className="h-5 w-5 text-[var(--color-white)]" aria-hidden />
                 </span>
                 <h2 className="text-base font-bold text-[var(--color-primary)]">{copy.resolvedTitle}</h2>
@@ -317,7 +317,7 @@ export default function TicketDetails({
                 </p>
               ) : null}
 
-              <div className="mt-4 border-t border-[color-mix(in_srgb,var(--color-success)_28%,var(--color-white))] pt-3">
+              <div className="mt-4 border-t border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] pt-3">
                 <p className="text-sm font-bold text-[var(--color-primary)]">{copy.reopenStillBroken}</p>
                 <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-primary)_64%,var(--color-white))]">
                   {copy.reopenHint}
@@ -479,7 +479,7 @@ function BackLink({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string })
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_32%,var(--color-white))] text-[var(--color-primary)]">
+      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] text-[var(--color-primary)]">
         {icon}
       </span>
       <div className="min-w-0">

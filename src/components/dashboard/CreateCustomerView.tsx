@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IconType } from "react-icons";
 import {
@@ -8,7 +9,6 @@ import {
   FiBriefcase,
   FiCheck,
   FiCheckCircle,
-  FiChevronDown,
   FiEdit2,
   FiGlobe,
   FiInfo,
@@ -516,28 +516,15 @@ function FieldRow({ field, value, errorText, copy, language, disabled, formKey, 
     );
   } else if (field.fieldtype === "Select") {
     control = (
-      <div className="relative">
-        <select
-          id={inputId}
-          value={typeof value === "string" ? value : ""}
-          disabled={disabled || field.read_only}
-          aria-invalid={invalid || undefined}
-          aria-required={field.required || undefined}
-          onChange={(event) => onChange(field.fieldname, event.target.value)}
-          className={`${INPUT_BASE} ${borderFor(invalid)} appearance-none pr-9`}
-        >
-          <option value="">{copy.selectPlaceholder}</option>
-          {field.options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <FiChevronDown
-          aria-hidden
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
-        />
-      </div>
+      <DashboardSelect
+        value={typeof value === "string" ? value : ""}
+        disabled={disabled || field.read_only}
+        invalid={invalid}
+        placeholder={copy.selectPlaceholder}
+        ariaLabel={field.label}
+        onChange={(next) => onChange(field.fieldname, next)}
+        options={field.options.map((option) => ({ value: option, label: option }))}
+      />
     );
   } else if (field.fieldtype === "Link" || field.fieldtype === "Dynamic Link") {
     control = (

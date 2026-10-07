@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -348,18 +349,13 @@ export default function EditProfileModal({
             className={FIELD_CLASS}
           />
         ) : isChoice ? (
-          <select
+          <DashboardSelect
             value={value}
-            onChange={(event) => setField(field.fieldname, event.target.value)}
-            className={FIELD_CLASS}
-          >
-            <option value="">{copy.selectPlaceholder}</option>
-            {field.options.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setField(field.fieldname, next)}
+            placeholder={copy.selectPlaceholder}
+            ariaLabel={label}
+            options={field.options.map((option) => ({ value: option, label: option }))}
+          />
         ) : (
           <input
             type="text"

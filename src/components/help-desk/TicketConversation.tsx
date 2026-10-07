@@ -46,7 +46,7 @@ export default function TicketConversation({
           <div key={message.id} className="flex justify-end">
             <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_7%,transparent)]">
               <div className="flex items-center gap-2.5 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] px-4 py-2.5">
-                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_45%,var(--color-white))]">
+                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
                   <FiUser className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
                 </span>
                 <p className="text-sm font-bold text-[var(--color-primary)]">{copy.you}</p>
