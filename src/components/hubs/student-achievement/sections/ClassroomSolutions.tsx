@@ -383,7 +383,7 @@ function formatTitle(title: string) {
   );
 }
 
-function ProductTile({ item, index }: { item: ProductCard; index: number }) {
+function ProductTile({ item }: { item: ProductCard }) {
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
@@ -398,10 +398,8 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
         shouldReduceMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.055,
-              rotateX: 2,
-              rotateY: index % 2 === 0 ? -2 : 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.32,
                 ease: premiumEase,
@@ -668,7 +666,7 @@ export default function ClassroomSolutions() {
                   ? undefined
                   : {
                       y: -4,
-                      scale: 1.035,
+                      scale: 1.025,
                     }
               }
               whileTap={{
@@ -738,8 +736,8 @@ export default function ClassroomSolutions() {
               />
 
               <div className="relative z-10 grid grid-cols-2 gap-[8px]">
-                {localizedProducts.map((product, index) => (
-                  <ProductTile key={product.id} item={product} index={index} />
+                {localizedProducts.map((product) => (
+                  <ProductTile key={product.id} item={product} />
                 ))}
               </div>
             </div>

@@ -621,14 +621,16 @@ function ActiveStatusCard({
 
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full w-full origin-left rounded-full transition-transform duration-500"
           style={{
-            width: isHomeConnectionSection(activeId)
-              ? "33%"
-              : isStudentAchievementSection(activeId)
-                ? "66%"
-                : "100%",
-            background: accentColor,
+            transform: `scaleX(${
+              isHomeConnectionSection(activeId)
+                ? 0.33
+                : isStudentAchievementSection(activeId)
+                  ? 0.66
+                  : 1
+            })`,
+            background: "var(--color-action)",
           }}
         />
       </div>
@@ -639,12 +641,10 @@ function ActiveStatusCard({
 function SidebarChildLink({
   child,
   active,
-  color,
   index,
 }: {
   child: MenuChild;
   active: boolean;
-  color: string;
   index: number;
 }) {
   const id = getIdFromHref(child.href);
@@ -658,40 +658,33 @@ function SidebarChildLink({
       }}
       className={[
         [
-          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300",
+          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
           sidebarDropdownLinkTextClass,
         ].join(" "),
         active
-          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_16px_32px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
           : "border-transparent " + softHoverClass,
       ].join(" ")}
       style={{
-        background: active
-          ? `color-mix(in srgb, ${color} 12%, transparent)`
-          : undefined,
-        color: colorPrimary,
+        color: active ? colorWhite : colorPrimary,
       }}
     >
       {active ? (
-        <span
-          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
-          style={{ background: color }}
-        />
+        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
       ) : null}
 
       <span
         className={[
           "grid h-6 w-6 shrink-0 place-items-center rounded-lg border text-[10px] font-semibold transition duration-300",
           active
-            ? "border-transparent text-[var(--color-white)]"
+            ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
             : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
         ].join(" ")}
-        style={active ? { background: color, borderColor: color, color: colorWhite } : undefined}
       >
         {index}
       </span>
 
-      <span className="text-[13px] font-medium leading-[1.2] tracking-[-0.01em]">
+      <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-[1.2] tracking-[-0.01em]">
         {child.title}
       </span>
     </Link>
@@ -777,14 +770,12 @@ function SidebarLink({
   title,
   href,
   active,
-  color,
   icon,
   onClick,
 }: {
   title: string;
   href: string;
   active: boolean;
-  color: string;
   icon?: IconType;
   onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
@@ -794,25 +785,19 @@ function SidebarLink({
       onClick={onClick}
       className={[
         [
-          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300",
+          "group relative flex items-center gap-2.5 overflow-hidden rounded-xl border px-3 py-2.5 transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
           sidebarTitleTextClass,
         ].join(" "),
         active
-          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_16px_32px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
           : "border-transparent " + softHoverClass,
       ].join(" ")}
       style={{
-        color: colorPrimary,
-        background: active
-          ? `color-mix(in srgb, ${color} 12%, transparent)`
-          : undefined,
+        color: active ? colorWhite : colorPrimary,
       }}
     >
       {active ? (
-        <span
-          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
-          style={{ background: color }}
-        />
+        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
       ) : null}
 
       {icon ? (
@@ -823,10 +808,9 @@ function SidebarLink({
               className={[
                 "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
                 active
-                  ? "border-transparent text-[var(--color-white)]"
+                  ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
                   : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
               ].join(" ")}
-              style={active ? { background: color } : undefined}
             >
               <LinkIcon size={15} />
             </span>
@@ -834,7 +818,7 @@ function SidebarLink({
         })()
       ) : null}
 
-      <span className="text-[15px] font-semibold leading-[1.2]">{title}</span>
+      <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-[1.2]">{title}</span>
     </Link>
   );
 }
@@ -1027,8 +1011,6 @@ export default function LeftSidebar() {
                   operationalGroupActive);
 
               const group = item.group ?? null;
-              const isMyConnected = item.href === "#my-connected-os";
-              const color = getGroupColor(group, isMyConnected);
               const readableColor = getReadableGroupColor();
               const openState = group ? openGroup === group : false;
 
@@ -1045,25 +1027,19 @@ export default function LeftSidebar() {
                       }
                       className={[
                         [
-                          "group relative flex w-full items-center justify-between overflow-hidden rounded-xl border px-3 py-3 text-left transition duration-300",
+                          "group relative flex w-full items-center justify-between overflow-hidden rounded-xl border px-3 py-3 text-left transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
                           sidebarDropdownTitleTextClass,
                         ].join(" "),
                         activeGroup
-                          ? "border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+                          ? "border-[var(--color-action)] bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_18px_36px_-18px_color-mix(in_srgb,var(--color-action)_72%,transparent)]"
                           : "border-transparent " + softHoverClass,
                       ].join(" ")}
                       style={{
-                        color: readableColor,
-                        background: activeGroup
-                          ? `color-mix(in srgb, ${color} 12%, transparent)`
-                          : undefined,
+                        color: activeGroup ? colorWhite : readableColor,
                       }}
                     >
                       {activeGroup ? (
-                        <span
-                          className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full"
-                          style={{ background: color }}
-                        />
+                        <span className="absolute left-0 top-1.5 h-[calc(100%-12px)] w-1 rounded-r-full bg-[var(--color-white)]" />
                       ) : null}
 
                       <span className="flex min-w-0 items-center gap-2.5">
@@ -1071,24 +1047,26 @@ export default function LeftSidebar() {
                           className={[
                             "grid h-8 w-8 shrink-0 place-items-center rounded-xl border transition duration-300",
                             activeGroup
-                              ? "border-transparent text-[var(--color-white)]"
+                              ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
                               : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)] group-hover:border-transparent group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-white)]",
                           ].join(" ")}
-                          style={activeGroup ? { background: color } : undefined}
                         >
                           {(() => {
                             const GroupIcon = GROUP_ICONS[group ?? ""] ?? FiGrid;
                             return <GroupIcon size={15} />;
                           })()}
                         </span>
-                        <span className="text-[15px] font-semibold leading-[1.2]">
+                        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-[1.2]">
                           {item.title}
                         </span>
                       </span>
 
                       <span
                         className={[
-                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] text-[var(--color-primary)] transition-transform duration-300",
+                          "grid h-6 w-6 shrink-0 place-items-center rounded-lg border transition-transform duration-300",
+                          activeGroup
+                            ? "border-[color-mix(in_srgb,var(--color-white)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] text-[var(--color-white)]"
+                            : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] text-[var(--color-primary)]",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
                         aria-hidden="true"
@@ -1114,7 +1092,6 @@ export default function LeftSidebar() {
                                 href: "#home-connections-panel",
                               }}
                               active={activeId === "home-connections-panel"}
-                              color={color}
                               index={1}
                             />
                           ) : null}
@@ -1132,7 +1109,6 @@ export default function LeftSidebar() {
                                 key={child.href}
                                 child={child}
                                 active={active}
-                                color={color}
                                 index={number}
                               />
                             );
@@ -1152,7 +1128,6 @@ export default function LeftSidebar() {
                   title={item.title}
                   href={item.href}
                   active={active}
-                  color={color}
                   icon={GROUP_ICONS.myOs}
                   onClick={(event) => {
                     event.preventDefault();

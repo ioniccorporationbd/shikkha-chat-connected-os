@@ -244,7 +244,7 @@ function formatTitle(title: string) {
   );
 }
 
-function ProductTile({ item, index }: { item: ProductCard; index: number }) {
+function ProductTile({ item }: { item: ProductCard }) {
   const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
@@ -260,10 +260,8 @@ function ProductTile({ item, index }: { item: ProductCard; index: number }) {
         shouldReduceMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.055,
-              rotateX: 2,
-              rotateY: index % 2 === 0 ? -2 : 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.32,
                 ease: premiumEase,
@@ -523,7 +521,7 @@ export default function ResourcePlanning() {
                   ? undefined
                   : {
                       y: -4,
-                      scale: 1.035,
+                      scale: 1.025,
                     }
               }
               whileTap={{ scale: 0.96 }}
@@ -591,8 +589,8 @@ export default function ResourcePlanning() {
               />
 
               <div className="relative z-10 grid grid-cols-2 gap-[8px]">
-                {products.map((product, index) => (
-                  <ProductTile key={product.id} item={product} index={index} />
+                {products.map((product) => (
+                  <ProductTile key={product.id} item={product} />
                 ))}
               </div>
             </div>

@@ -549,9 +549,8 @@ function CoreTile({
         shouldReduceMotion
           ? undefined
           : {
-              y: -7,
-              scale: 1.055,
-              rotateX: 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.28,
                 ease: premiumEase,
@@ -662,10 +661,8 @@ function FloatingTile({
         shouldReduceMotion
           ? undefined
           : {
-              y: -9,
-              scale: 1.06,
-              rotateX: 2,
-              rotateY: index % 2 === 0 ? -2 : 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.3,
                 ease: premiumEase,
@@ -695,7 +692,7 @@ function FloatingTile({
         active
           ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
           : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
-        "hover:bg-[var(--color-white)] hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
+        " hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
     >

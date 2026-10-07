@@ -920,6 +920,25 @@ html[data-lang="en"] .language-toggle-knob {
   letter-spacing: 0.08em !important;
   font-weight: 700 !important;
 }
+/* Unified Shikkha section label. The SAME red badge renders the middle sticky
+   current-section label and every right-side section-start label, so the active
+   section identity reads identically on both sides of the layout. */
+.section-label-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-action);
+  background: var(--color-action);
+  color: #ffffff !important;
+  padding: 7px 18px;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--color-action) 28%, transparent);
+}
 
 /* The headline is the visual anchor of each right-side card — promote it to 22px
    so the card hierarchy is eyebrow (13) < body (16) < headline (22). */

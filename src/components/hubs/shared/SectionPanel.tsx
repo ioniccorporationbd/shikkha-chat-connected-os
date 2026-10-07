@@ -116,7 +116,7 @@ export default function SectionPanel({
               {Icon ? <Icon className="h-[22px] w-[22px]" /> : <span aria-hidden>✦</span>}
             </motion.span>
 
-            <span className="product-pill-text inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-3.5 py-1.5 uppercase text-[var(--color-primary)]">
+            <span className="section-label-badge">
               {pill}
             </span>
           </motion.div>

@@ -158,12 +158,10 @@ function FloatingDot({
 
 function ProductTile({
   item,
-  index,
   themeColor,
   darkColor,
 }: {
   item: ProductCard;
-  index: number;
   themeColor: string;
   darkColor: string;
 }) {
@@ -182,10 +180,8 @@ function ProductTile({
         shouldReduceMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.055,
-              rotateX: 2,
-              rotateY: index % 2 === 0 ? -2 : 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.3,
                 ease: premiumEase,
@@ -247,7 +243,7 @@ function ProductTile({
         className={[
           "relative z-10 flex min-h-[34px] max-w-[88px] items-center justify-center",
           "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
-          "transition-colors duration-300 group-hover:text-[var(--color-primary)]",
+          "transition-colors duration-300",
           isSingleWord
             ? "text-[14px] leading-none"
             : isLongTitle
@@ -265,7 +261,7 @@ function ProductTile({
       ) : null}
 
       <span
-        className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-0 -translate-x-1/2 rounded-full transition-all duration-500 group-hover:w-[28px]"
+        className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-[28px] -translate-x-1/2 origin-center scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
         style={{ background: themeColor }}
       />
     </motion.button>
@@ -349,7 +345,7 @@ export default function OrbitProductPanel({
           <motion.button
             type="button"
             onClick={() => scrollRightSidebarTo(activeId)}
-            whileHover={shouldReduceMotion ? undefined : { y: -4, scale: 1.035 }}
+            whileHover={shouldReduceMotion ? undefined : { y: -3, scale: 1.025 }}
             whileTap={{ scale: 0.96 }}
             className={[
               "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
@@ -385,11 +381,10 @@ export default function OrbitProductPanel({
             />
 
             <div className="relative z-10 grid grid-cols-2 gap-[8px]">
-              {products.map((product, index) => (
+              {products.map((product) => (
                 <ProductTile
                   key={product.id}
                   item={product}
-                  index={index}
                   themeColor={themeColor}
                   darkColor={darkColor}
                 />

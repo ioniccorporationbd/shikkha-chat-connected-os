@@ -534,9 +534,8 @@ function MiniCard({
         shouldReduceMotion
           ? undefined
           : {
-              y: -7,
-              scale: 1.055,
-              rotateX: 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.28,
                 ease: premiumEase,
@@ -648,9 +647,8 @@ function ActiveBehaviorCard({
         shouldReduceMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.035,
-              rotateX: 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.28,
                 ease: premiumEase,
@@ -745,9 +743,8 @@ function FloatingCard({
         shouldReduceMotion
           ? undefined
           : {
-              y: -8,
-              scale: 1.055,
-              rotateX: 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.3,
                 ease: premiumEase,
@@ -778,7 +775,7 @@ function FloatingCard({
         active
           ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
           : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
-        "hover:bg-[var(--color-white)] hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
+        " hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 70%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_52%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />

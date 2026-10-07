@@ -366,9 +366,8 @@ function ProductTile({
         shouldReduceMotion
           ? undefined
           : {
-              y: -7,
-              scale: 1.055,
-              rotateX: 2,
+              y: -4,
+              scale: 1.025,
               transition: {
                 duration: 0.28,
                 ease: premiumEase,
@@ -389,7 +388,7 @@ function ProductTile({
             : item.muted
               ? "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
               : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)] hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+        "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-35" />
@@ -551,7 +550,7 @@ function DetailPanel({
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[var(--color-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-text-inverse)] transition hover:translate-y-[-1px] hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]"
+        className="mt-5 rounded-full bg-[var(--color-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-text-inverse)] transition hover:translate-y-[-1px]"
       >
         {openSectionText}
       </button>
@@ -709,7 +708,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -887,7 +886,7 @@ export default function FamilyEngagement() {
                 "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] px-[30px]",
                 "text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
-                "transition duration-300 hover:bg-[var(--color-secondary)] hover:text-[var(--color-primary)]",
+                "transition duration-300",
               ].join(" ")}
             >
               {text.groupTitle}

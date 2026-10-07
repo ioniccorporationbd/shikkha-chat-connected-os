@@ -133,7 +133,7 @@ export default function StudentAchievementHub() {
             duration: 0.38,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="rounded-full border border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] px-5 py-2 text-[12px] font-black uppercase tracking-[0.12em] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] backdrop-blur-md"
+          className="section-label-badge"
         >
           {activeTitle}
         </motion.div>
