@@ -18,6 +18,7 @@ import {
   FiUser,
 } from "react-icons/fi";
 
+import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { HD_CARD, HD_GHOST_BTN, HD_INPUT, TICKET_STATUSES } from "@/lib/help-desk/config";
 import { formatDateTime, formatFileSize } from "@/lib/help-desk/format";
 import { markTicketSeen } from "@/lib/help-desk/insights";
@@ -420,21 +421,18 @@ export default function TicketDetails({
                 className={`${HD_INPUT} resize-y`}
                 aria-label={copy.simStepsHint}
               />
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.simStatusLabel}</span>
-                <select
+                <DashboardSelect
+                  ariaLabel={copy.simStatusLabel}
                   value={simStatus}
-                  onChange={(e) => setSimStatus(e.target.value as SimStatus)}
-                  className={HD_INPUT}
-                >
-                  <option value="none">{copy.simStatusNone}</option>
-                  {TICKET_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {copy.statuses[status]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onChange={(value) => setSimStatus(value as SimStatus)}
+                  options={[
+                    { value: "none", label: copy.simStatusNone },
+                    ...TICKET_STATUSES.map((status) => ({ value: status, label: copy.statuses[status] })),
+                  ]}
+                />
+              </div>
               {simStatus === "resolved" ? (
                 <textarea
                   value={simResolution}

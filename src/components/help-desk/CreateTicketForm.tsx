@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FiAlertCircle, FiFileText, FiInfo, FiSend, FiUpload, FiX, FiZap } from "react-icons/fi";
 
+import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { useAuthStore } from "@/lib/auth/store";
 import {
   DEFAULT_CATEGORY,
@@ -349,19 +350,15 @@ export default function CreateTicketForm({
 
         <div className="mt-3">
           <Field label={copy.fieldDepartment} error={undefined} htmlFor="hd-department">
-            <select
-              id="hd-department"
+            <DashboardSelect
+              ariaLabel={copy.fieldDepartment}
               value={department}
-              onChange={(e) => setDepartment(e.target.value as HelpDeskDepartment | "")}
-              className={HD_INPUT}
-            >
-              <option value="">—</option>
-              {HELPDESK_DEPARTMENTS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setDepartment(value as HelpDeskDepartment | "")}
+              options={[
+                { value: "", label: "—" },
+                ...HELPDESK_DEPARTMENTS.map((option) => ({ value: option, label: option })),
+              ]}
+            />
           </Field>
         </div>
 
