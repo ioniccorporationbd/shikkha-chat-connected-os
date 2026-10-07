@@ -12,7 +12,7 @@ const sectionText = {
     description: "শিক্ষার্থীর অগ্রগতি ও ফলাফলের ধারাবাহিক record রাখুন, যাতে college, career ও জীবনের জন্য প্রস্তুতির প্রতিটি ধাপ management দেখতে পারে।",
     stats: [
       { value: "অগ্রগতির record", label: "ধারাবাহিক academic তথ্য" },
-      { value: "Management insight", label: "প্রস্তুতির চিত্র এক দৃশ্যে" },
+      { value: "ব্যবস্থাপনার অন্তর্দৃষ্টি", label: "প্রস্তুতির চিত্র এক দৃশ্যে" },
     ],
     quote: "ধারাবাহিক record ভবিষ্যৎ পরিকল্পনা ও সিদ্ধান্ত সহজ করে।",
     author: "শিক্ষা চ্যাট",

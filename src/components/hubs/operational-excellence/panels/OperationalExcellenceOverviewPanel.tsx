@@ -12,7 +12,7 @@ const sectionText = {
     description: "অর্থ, মানবসম্পদ, রিসোর্স পরিকল্পনা, ERP, ভর্তি ও শিক্ষক সহায়তা—সব একটি ERP-backed architecture-এ যুক্ত করে management-কে সঠিক সিদ্ধান্ত নিতে সহায়তা করুন।",
     stats: [
       { value: "ERP-backed", label: "Finance, HR ও operations এক কাঠামোয়" },
-      { value: "Management insight", label: "Report-ভিত্তিক দ্রুত সিদ্ধান্ত" },
+      { value: "ব্যবস্থাপনার অন্তর্দৃষ্টি", label: "Report-ভিত্তিক দ্রুত সিদ্ধান্ত" },
     ],
     quote: "Management যেন প্রয়োজনীয় তথ্যের ভিত্তিতে দ্রুত সিদ্ধান্ত নিতে পারে।",
     author: "শিক্ষা চ্যাট",

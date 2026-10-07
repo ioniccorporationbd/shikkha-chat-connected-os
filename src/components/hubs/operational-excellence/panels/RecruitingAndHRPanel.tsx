@@ -11,7 +11,7 @@ const sectionText = {
     title: "নিয়োগ ও HR কাজকে সহজ করুন।",
     description: "Employee profile, attendance ও Check-In / Check-Out-সহ HR workflow এক system-এ যুক্ত করুন, যাতে নিয়োগ ও মানবসম্পদ কাজ সংগঠিতভাবে চলে।",
     stats: [
-      { value: "HR workflow", label: "Profile, attendance ও Check-In / Check-Out" },
+      { value: "HR কার্যধারা", label: "Profile, attendance ও Check-In / Check-Out" },
       { value: "সংগঠিত", label: "নিয়োগ থেকে HR record—এক system-এ" },
     ],
     quote: "বর্তমান Employee Check-In/Out workflow HR ecosystem-এর একটি গুরুত্বপূর্ণ foundation।",

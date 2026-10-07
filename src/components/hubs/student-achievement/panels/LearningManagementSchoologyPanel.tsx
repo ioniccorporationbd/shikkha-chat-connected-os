@@ -14,7 +14,7 @@ const sectionText = {
       { value: "Resource তথ্য", label: "Course ও academic data structuredভাবে" },
       { value: "সংযুক্ত", label: "শিক্ষার্থীর অগ্রগতির সাথে যুক্ত" },
     ],
-    quote: "Structured তথ্য শিক্ষক ও প্রতিষ্ঠানকে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।",
+    quote: "সুসংগঠিত তথ্য শিক্ষক ও প্রতিষ্ঠানকে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।",
     author: "শিক্ষা চ্যাট",
     role: "স্মার্ট এডুকেশন ম্যানেজমেন্ট প্ল্যাটফর্ম, IONIC Corporation",
   },

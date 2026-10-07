@@ -12,7 +12,7 @@ const sectionText = {
     description: "Academic program, subject ও curriculum-এর তথ্য structuredভাবে রাখুন। Exam create, subject assign ও marks entry-সহ পাঠদান-সংশ্লিষ্ট workflow এক system থেকে পরিচালনা করুন।",
     stats: [
       { value: "Academic তথ্য", label: "Program ও curriculum information এক জায়গায়" },
-      { value: "Structured", label: "Subject ও exam workflow সংগঠিত" },
+      { value: "সুসংগঠিত", label: "Subject ও exam workflow সংগঠিত" },
     ],
     quote: "একটি integrated examination system subject assign ও marks entry-এর মতো workflow সহজ করে।",
     author: "শিক্ষা চ্যাট",

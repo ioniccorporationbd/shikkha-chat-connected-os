@@ -11,7 +11,7 @@ const sectionText = {
     title: "মূল ব্যবস্থাকে আধুনিক, ERP-backed foundation দিন।",
     description: "Finance, purchasing, HR, payroll ও administrative workflow-কে ERPNext-compatible architecture-এ যুক্ত করুন, যাতে প্রতিষ্ঠানের core operation নির্ভরযোগ্যভাবে চলে।",
     stats: [
-      { value: "ERPNext-compatible", label: "Enterprise-grade ERP architecture" },
+      { value: "ERPNext-compatible", label: "এন্টারপ্রাইজ-মানের ERP আর্কিটেকচার" },
       { value: "সংযুক্ত", label: "Finance, HR ও administrative workflow একসাথে" },
     ],
     quote: "ERP-backed architecture একটি powerful enterprise data management foundation দেয়।",

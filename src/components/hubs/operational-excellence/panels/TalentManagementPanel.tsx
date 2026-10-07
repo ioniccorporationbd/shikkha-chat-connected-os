@@ -11,7 +11,7 @@ const sectionText = {
     title: "কর্মজীবনের পুরো যাত্রায় মানুষকে সহায়তা করুন।",
     description: "Employee profile, department, designation, joining information ও HR record structuredভাবে manage করুন, যাতে প্রতিষ্ঠান তার টিমকে ভালোভাবে সহায়তা করতে পারে।",
     stats: [
-      { value: "HR record", label: "Profile, department, designation ও joining তথ্য" },
+      { value: "HR রেকর্ড", label: "Profile, department, designation ও joining তথ্য" },
       { value: "সংগঠিত", label: "Employee lifecycle-এর তথ্য এক জায়গায়" },
     ],
     quote: "সংগঠিত HR তথ্য প্রতিষ্ঠানকে তার টিমকে ভালোভাবে সহায়তা করতে সাহায্য করে।",

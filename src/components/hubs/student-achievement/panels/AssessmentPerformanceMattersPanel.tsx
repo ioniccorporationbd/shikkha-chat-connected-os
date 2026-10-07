@@ -11,8 +11,8 @@ const sectionText = {
     title: "মূল্যায়ন থেকে দ্রুত সিদ্ধান্ত।",
     description: "Exam create, marks entry, grade calculation ও result processing এক workflow-এ পরিচালনা করুন, যাতে ফলাফল process করে report card তৈরি সহজ হয়।",
     stats: [
-      { value: "Exam workflow", label: "Exam create, subject assign ও result processing" },
-      { value: "Grade calculation", label: "সংগঠিত grade ও report card" },
+      { value: "পরীক্ষা কার্যধারা", label: "Exam create, subject assign ও result processing" },
+      { value: "গ্রেড গণনা", label: "সংগঠিত grade ও report card" },
     ],
     quote: "একটি integrated examination management system result processing সহজ করে।",
     author: "শিক্ষা চ্যাট",

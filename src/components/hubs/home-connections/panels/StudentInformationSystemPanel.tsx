@@ -12,8 +12,8 @@ const sectionText = {
     title: "ছড়িয়ে থাকা তথ্য নয়—একটি নির্ভরযোগ্য উৎস।",
     description: "ERP-backed architecture ব্যবহার করে ভর্তি, সময়সূচি, উপস্থিতি, গ্রেড ও কার্যক্রমের তথ্য একটি কেন্দ্রীভূত, structured record হিসেবে রক্ষণাবেক্ষণ করুন।",
     stats: [
-      { value: "ERP-ভিত্তিক", label: "Enterprise-grade structured data foundation" },
-      { value: "অডিট-বান্ধব", label: "Permission-controlled, traceable record" },
+      { value: "ERP-ভিত্তিক", label: "এন্টারপ্রাইজ-মানের সুসংগঠিত ডেটা ভিত্তি" },
+      { value: "অডিট-বান্ধব", label: "Permission-নিয়ন্ত্রিত, ট্রেসযোগ্য record" },
     ],
     quote: "কেন্দ্রীভূত তথ্য reporting সহজ করে, permission নিয়ন্ত্রণ বাড়ায় এবং ভবিষ্যতের automation সম্ভব করে।",
     author: "শিক্ষা চ্যাট",
