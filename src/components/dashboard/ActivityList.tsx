@@ -6,9 +6,13 @@ interface ActivityListProps {
   copy: DashboardCopy;
 }
 
-function dotClass(status: string): string {
-  if (status === "Failed") return "bg-[var(--color-danger)]";
-  if (status === "Blocked") return "bg-[var(--color-warning)]";
+function dotClass(row: DashboardActivityRow): string {
+  if (row.status === "Failed") return "bg-[var(--color-danger)]";
+  if (row.status === "Blocked") return "bg-[var(--color-warning)]";
+  // The logout marker uses the Shikkha-red action token so signing out reads as
+  // the deliberate end of a session; sign-in / session-probe rows keep the
+  // neutral success green, and failed/blocked keep their semantic colours.
+  if (row.event === "logout") return "bg-[var(--color-action)]";
   return "bg-[var(--color-success)]";
 }
 
@@ -25,7 +29,7 @@ export default function ActivityList({ rows, copy }: ActivityListProps) {
     <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
       {rows.map((row) => (
         <li key={row.name} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${dotClass(row.status)}`} />
+          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${dotClass(row)}`} />
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-[var(--color-primary)]">

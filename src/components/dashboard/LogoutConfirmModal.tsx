@@ -19,8 +19,10 @@ export interface LogoutConfirmCopy {
  *
  * `DashboardModal` supplies the shared behaviour (overlay + `Escape` close,
  * scroll-lock, focus handling), so this stays a thin, presentational wrapper.
- * Redesigned for a clearer, more premium confirmation: a prominent alert-icon
- * cue, a stronger copy hierarchy, and a well-grouped Cancel / Sign Out row.
+ *
+ * Refined for a calmer, more premium confirmation: a larger haloed exit glyph
+ * anchors the eye, the description reads one clear sentence, and Cancel / Sign
+ * Out sit as a well-grouped, right-aligned action row.
  */
 export default function LogoutConfirmModal({
   open,
@@ -41,7 +43,7 @@ export default function LogoutConfirmModal({
       title={copy.title}
       closeLabel={copy.no}
       onClose={onClose}
-      widthClass="max-w-[420px]"
+      widthClass="max-w-[440px]"
       footer={
         <>
           <button
@@ -57,7 +59,9 @@ export default function LogoutConfirmModal({
             disabled={signingOut}
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
           >
-            <FiLogOut aria-hidden size={15} className="text-[var(--color-white)]" />
+            <span className="text-[var(--color-white)]">
+              <FiLogOut size={15} aria-hidden />
+            </span>
             <span className="text-[13px] font-semibold text-[var(--color-white)]">
               {signingOut ? copy.signing : copy.yes}
             </span>
@@ -65,11 +69,11 @@ export default function LogoutConfirmModal({
         </>
       }
     >
-      <div className="flex flex-col items-center gap-4 px-1 py-2 text-center">
-        <span className="grid h-16 w-16 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_24%,transparent)] bg-[var(--color-action-tint-strong)] text-[var(--color-action)] shadow-[0_18px_36px_-20px_color-mix(in_srgb,var(--color-action)_75%,transparent)]">
-          <FiLogOut size={26} />
+      <div className="flex flex-col items-center gap-5 px-2 pb-1 pt-2 text-center">
+        <span className="grid h-[72px] w-[72px] place-items-center rounded-[24px] bg-[var(--color-action-tint-strong)] text-[var(--color-action)] shadow-[0_20px_40px_-22px_color-mix(in_srgb,var(--color-action)_75%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--color-action)_22%,transparent)]">
+          <FiLogOut size={30} />
         </span>
-        <p className="max-w-[32ch] text-[13.5px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+        <p className="max-w-[34ch] text-[14px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_74%,transparent)]">
           {copy.message}
         </p>
       </div>

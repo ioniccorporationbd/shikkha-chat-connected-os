@@ -3,14 +3,15 @@ import { LuLandmark } from "react-icons/lu";
 import type { ManualPaymentMethod } from "@/lib/payment-entry/manual-payment/types";
 
 /**
- * Locally-bundled brand marks (see public/payment). Each SVG carries its own
- * recognised brand colour, so no CSS filter / recolour is ever applied here.
- * Bank has no brand asset — it falls back to a semantic landmark glyph.
+ * Locally-bundled brand marks (see public/payment). Each PNG is the official
+ * app icon published by the brand owner (Google Play), so no CSS filter /
+ * recolour is ever applied here. Bank has no brand asset — it falls back to a
+ * semantic landmark glyph.
  */
 const BRAND_SRC: Record<ManualPaymentMethod, string | null> = {
-  bkash: "/payment/bkash.svg",
-  nagad: "/payment/nagad.svg",
-  rocket: "/payment/rocket.svg",
+  bkash: "/payment/bkash.png",
+  nagad: "/payment/nagad.png",
+  rocket: "/payment/rocket.png",
   bank: null,
 };
 
@@ -35,7 +36,8 @@ export default function PaymentBrandMark({ method, size = 40, className = "" }: 
   if (src) {
     return (
       // Brand colours are baked into the asset, so a plain <img> is intentional
-      // (next/image blocks SVG through the optimiser by default).
+      // (next/image blocks SVG through the optimiser by default, and the icon is
+      // already a correctly-sized square raster asset).
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}

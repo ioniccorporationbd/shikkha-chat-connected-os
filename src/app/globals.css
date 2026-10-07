@@ -37,7 +37,7 @@
      is a whisper of Shikkha red over white; `-strong` for slightly denser
      surfaces; `--color-action-ring` is the low-opacity focus ring. Never use
      solid red for hover — solid red is reserved for SELECTED/primary. */
-  --color-action-tint: color-mix(in srgb, var(--color-action) 7%, var(--color-white));
+  --color-action-tint: color-mix(in srgb, var(--color-action) 8%, var(--color-white));
   --color-action-tint-strong: color-mix(in srgb, var(--color-action) 13%, var(--color-white));
   --color-action-ring: color-mix(in srgb, var(--color-action) 24%, transparent);
 }

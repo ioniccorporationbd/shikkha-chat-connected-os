@@ -1,27 +1,25 @@
 "use client";
 
-import { FiChevronDown, FiChevronLeft, FiChevronRight, FiHash } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiHash } from "react-icons/fi";
 
-import {
-  ROWS_PER_PAGE_OPTIONS,
-  pageWindow,
-  type ListPaginationCopy,
-} from "@/lib/dashboard/list-controls";
+import { pageWindow, type ListPaginationCopy } from "@/lib/dashboard/list-controls";
 
 const CONTROL =
   "grid h-9 min-w-9 place-items-center rounded-xl border px-2 text-[12.5px] font-semibold tabular-nums transition";
 
 /**
  * Premium, ERPNext/Frappe-style pagination footer shared by the dashboard list
- * panels. One horizontal toolbar: the Total Records chip, a "Show [n ▾] per
- * page" dropdown, the current range, then compact ‹ prev / page numbers / next ›
- * with a clear active + disabled state. Windowed page numbers keep large page
- * counts tidy (1 2 3 … 12). Pure presentational — the caller owns page state.
+ * panels. One horizontal toolbar: the Total Records chip and the current range
+ * on the left, then compact ‹ prev / page numbers / next › with a clear active +
+ * disabled state. Windowed page numbers keep large page counts tidy (1 2 3 … 12).
+ * Pure presentational — the caller owns page state.
+ *
+ * The former left-hand "rows per page" selector was removed: the panels paginate
+ * at one fixed, sensible page size, so the control only added footer clutter
+ * without changing anything a customer needed. Pagination itself is untouched.
  */
 export default function ListPagination({
   copy,
-  rowsPerPage,
-  onRowsPerPageChange,
   page,
   pageCount,
   onPageChange,
@@ -30,8 +28,6 @@ export default function ListPagination({
   total,
 }: {
   copy: ListPaginationCopy;
-  rowsPerPage: number;
-  onRowsPerPageChange: (value: number) => void;
   page: number;
   pageCount: number;
   onPageChange: (page: number) => void;
@@ -53,32 +49,6 @@ export default function ListPagination({
           </span>
           <span className="text-[13px] font-bold tabular-nums text-[var(--color-primary)]">{total}</span>
         </span>
-
-        <label className="inline-flex items-center gap-2">
-          <span className="text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {copy.rowsPerPageShow}
-          </span>
-          <span className="relative inline-block">
-            <select
-              value={rowsPerPage}
-              onChange={(event) => onRowsPerPageChange(Number(event.target.value))}
-              aria-label={copy.rowsPerPageShow}
-              className="h-9 appearance-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] pr-8 pl-3 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none transition hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
-            >
-              {ROWS_PER_PAGE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
-              <FiChevronDown size={14} aria-hidden />
-            </span>
-          </span>
-          <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {copy.rowsPerPageSuffix}
-          </span>
-        </label>
 
         {total > 0 ? (
           <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">

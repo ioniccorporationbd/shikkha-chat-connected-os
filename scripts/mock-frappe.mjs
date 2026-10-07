@@ -643,6 +643,7 @@ const manualBanks = [
   { name: "Islami Bank Bangladesh", bank_name: "Islami Bank Bangladesh", account_name: "Shikkha Chat Limited", account_number: "PLACEHOLDER-1251-00000000", branch: "Agrabad Branch", routing_number: "125000000", instructions: "", is_placeholder: true },
   { name: "Eastern Bank", bank_name: "Eastern Bank", account_name: "Shikkha Chat Limited", account_number: "PLACEHOLDER-1011-00000000", branch: "Banani Branch", routing_number: "095000000", instructions: "", is_placeholder: true },
   { name: "Sonali Bank", bank_name: "Sonali Bank", account_name: "Shikkha Chat Limited", account_number: "PLACEHOLDER-2001-00000000", branch: "Head Office Branch", routing_number: "200000000", instructions: "", is_placeholder: true },
+  { name: "Dhaka Bank", bank_name: "Dhaka Bank", account_name: "Shikkha Chat Limited", account_number: "PLACEHOLDER-1201-00000000", branch: "Motijheel Branch", routing_number: "110000000", instructions: "", is_placeholder: true },
 ];
 
 // Manual payments are written straight into the Payment Entry list (there is no

@@ -627,11 +627,6 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                     {/* pagination (ERPNext-style, shared) */}
                     <ListPagination
                       copy={copy}
-                      rowsPerPage={rowsPerPage}
-                      onRowsPerPageChange={(value) => {
-                        setRowsPerPage(value);
-                        setPage(1);
-                      }}
                       page={currentPage}
                       pageCount={totalPages}
                       onPageChange={setPage}

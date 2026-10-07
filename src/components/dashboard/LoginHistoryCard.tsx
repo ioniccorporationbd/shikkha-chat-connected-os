@@ -20,9 +20,12 @@ const MAX_ITEMS = 10;
 /** Rows shown before the "see more" control appears. */
 const DEFAULT_VISIBLE = 5;
 
-function dotClass(status: string): string {
-  if (status === "Failed") return "bg-[var(--color-danger)]";
-  if (status === "Blocked") return "bg-[var(--color-warning)]";
+function dotClass(row: DashboardActivityRow): string {
+  if (row.status === "Failed") return "bg-[var(--color-danger)]";
+  if (row.status === "Blocked") return "bg-[var(--color-warning)]";
+  // The logout marker uses the Shikkha-red action token so signing out reads as
+  // the deliberate end of a session; sign-in rows keep the neutral success green.
+  if (row.event === "logout") return "bg-[var(--color-action)]";
   return "bg-[var(--color-success)]";
 }
 
@@ -72,7 +75,7 @@ export default function LoginHistoryCard({ rows, copy, language }: LoginHistoryC
               ) : null}
 
               <span className="relative z-[1] mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)]">
-                <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${dotClass(row.status)}`} />
+                <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${dotClass(row)}`} />
               </span>
 
               <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
