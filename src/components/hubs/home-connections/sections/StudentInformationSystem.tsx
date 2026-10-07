@@ -802,7 +802,7 @@ function DetailPanel({
         </div>
 
         <div>
-          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--color-text-gray)]">
+          <p className="text-[11px] font-normal uppercase tracking-[0.12em] text-[var(--color-primary)]">
             {item.label ?? fallbackLabel}
           </p>
 

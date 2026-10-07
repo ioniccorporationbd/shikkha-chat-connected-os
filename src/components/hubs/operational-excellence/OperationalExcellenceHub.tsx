@@ -130,31 +130,26 @@ export default function OperationalExcellenceHub() {
       </div>
 
       <div className="relative z-10 h-screen w-full overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
           <motion.div
             key={activeSection}
             initial={{
               opacity: 0,
-              y: 24,
-              scale: 0.97,
-              filter: "blur(8px)",
+              y: 18,
+              scale: 0.985,
             }}
             animate={{
               opacity: 1,
               y: 0,
               scale: 1,
-              filter: "blur(0px)",
             }}
             exit={{
               opacity: 0,
-              y: -18,
-              scale: 0.98,
-              filter: "blur(6px)",
+              y: -12,
+              scale: 0.99,
+              transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
             }}
-            transition={{
-              duration: 0.5,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex h-full w-full items-center justify-center"
           >
             {ActiveComponent}

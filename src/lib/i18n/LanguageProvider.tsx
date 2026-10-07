@@ -365,6 +365,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       if (!originalValue.trim()) return;
 
       if (language === "en") {
+        // Only revert a node the translator itself turned into Bangla. Text a
+        // component already renders in the active language (bilingual { bn, en }
+        // copy resolved through `useLanguage()`) must be left untouched here:
+        // restoring a cached "original" over it would discard the English the
+        // component just rendered and leave stale Bangla on screen.
+        if (!reverseTranslations.has(normalizeText(currentValue))) {
+          return;
+        }
+
         if (node.nodeValue !== originalValue) {
           node.nodeValue = originalValue;
         }
