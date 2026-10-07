@@ -51,7 +51,7 @@ function CopyRow({ label, value, copy }: { label: string; value: string; copy: M
         type="button"
         onClick={doCopy}
         aria-label={`${copy.bankCopy}: ${label}`}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-primary)] ${PAY_FOCUS}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] ${PAY_FOCUS}`}
       >
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-primary)]">
           {copied ? <FiCheck size={12} /> : <FiCopy size={12} />}

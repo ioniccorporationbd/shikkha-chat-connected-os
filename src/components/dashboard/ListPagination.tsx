@@ -63,7 +63,7 @@ export default function ListPagination({
               value={rowsPerPage}
               onChange={(event) => onRowsPerPageChange(Number(event.target.value))}
               aria-label={copy.rowsPerPageShow}
-              className="h-9 appearance-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] pr-8 pl-3 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none transition hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
+              className="h-9 appearance-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] pr-8 pl-3 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none transition hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
             >
               {ROWS_PER_PAGE_OPTIONS.map((option) => (
                 <option key={option} value={option}>

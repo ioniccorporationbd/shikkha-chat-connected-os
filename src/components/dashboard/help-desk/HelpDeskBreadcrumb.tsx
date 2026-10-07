@@ -27,7 +27,7 @@ export default function HelpDeskBreadcrumb({
     <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[12.5px]">
       <Link
         href={basePath}
-        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
       >
         <FiHome className="h-3.5 w-3.5 text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]" aria-hidden />
         <span className="font-medium text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
@@ -39,7 +39,7 @@ export default function HelpDeskBreadcrumb({
 
       <Link
         href={basePath}
-        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+        className="inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
       >
         <span className="font-medium text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
           {copy.navHelpDesk}
@@ -55,7 +55,7 @@ export default function HelpDeskBreadcrumb({
           {crumb.href ? (
             <Link
               href={crumb.href}
-              className="rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+              className="rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
             >
               <span className="font-medium text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
                 {crumb.label}

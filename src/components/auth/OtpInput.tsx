@@ -172,10 +172,14 @@ export default function OtpInput({
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={(e) => handlePaste(i, e)}
           onFocus={(e) => e.target.select()}
-          className={`aspect-square w-full min-w-0 max-w-[52px] flex-1 rounded-xl border bg-[var(--color-white)] text-center text-[18px] font-semibold text-[var(--color-primary)] outline-none transition disabled:opacity-60 sm:text-[20px] ${
+          className={`aspect-square w-full min-w-0 max-w-[52px] flex-1 rounded-xl border text-center text-[18px] font-semibold text-[var(--color-primary)] outline-none transition disabled:opacity-60 sm:text-[20px] ${
             error
-              ? "border-[var(--color-danger-strong)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-danger-strong)_30%,transparent)]"
-              : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]"
+              ? "border-[var(--color-danger-strong)] bg-[var(--color-white)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-danger-strong)_30%,transparent)]"
+              : `${
+                  c
+                    ? "border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] bg-[var(--color-action-tint)]"
+                    : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)]"
+                } focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]`
           }`}
         />
       ))}

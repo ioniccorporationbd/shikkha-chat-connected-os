@@ -51,7 +51,7 @@ export default function ProfileImageMenu({
   if (!open) return null;
 
   const itemClass =
-    "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]";
+    "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition hover:bg-[var(--color-action-tint)]";
 
   return (
     <div

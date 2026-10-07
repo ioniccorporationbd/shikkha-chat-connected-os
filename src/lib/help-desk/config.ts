@@ -102,12 +102,12 @@ export const HD_CARD =
 
 /** Shared primary pill button (text utilities live on an inner span). */
 export const HD_PRIMARY_BTN =
-  "group inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-5 py-3 font-semibold transition duration-300 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2";
+  "group inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-5 py-3 font-semibold transition duration-300 hover:-translate-y-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2";
 
 /** Shared ghost/outline button. */
 export const HD_GHOST_BTN =
-  "group inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-5 py-3 font-semibold text-[var(--color-primary)] transition duration-300 hover:-translate-y-[2px] hover:bg-[var(--color-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2";
+  "group inline-flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] px-5 py-3 font-semibold text-[var(--color-primary)] transition duration-300 hover:-translate-y-[2px] hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2";
 
 /** Shared text input / textarea / select surface. */
 export const HD_INPUT =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-4 py-3 text-[15px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-secondary)_70%,var(--color-white))]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-4 py-3 text-[15px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]";

@@ -94,7 +94,7 @@ export default function GuestTicketLookup({
           <button
             type="submit"
             disabled={status === "searching"}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
           >
             <FiSearch className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-white)]">
@@ -127,7 +127,7 @@ export default function GuestTicketLookup({
             </span>
             <Link
               href={`${HELP_DESK_TICKETS_PATH}/${match.id}`}
-              className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+              className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
             >
               <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
               <FiArrowRight className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />

@@ -59,7 +59,7 @@ const ACTIONS_CARD =
   "sticky bottom-3 z-20 flex flex-col-reverse gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] p-3 shadow-[0_18px_44px_-30px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur sm:flex-row sm:items-center sm:justify-end";
 
 const INPUT_BASE =
-  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
+  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
 
 const LABEL = "text-[12px] font-semibold text-[var(--color-primary)]";
 const HELPER = "text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]";
@@ -72,7 +72,7 @@ const ICON_TILE =
   "grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[16px] text-[var(--color-primary)]";
 
 const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-60";
 
 const BTN_PRIMARY =
   "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
@@ -374,7 +374,7 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
               setQuery("");
               setOpen(false);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition hover:bg-[var(--color-action-tint)]"
           >
             <FiX aria-hidden />
           </button>
@@ -413,8 +413,8 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
                       onClick={() => selectOption(option)}
                       className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
                         isActive
-                          ? "bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
-                          : "hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                          ? "bg-[var(--color-action-tint)]"
+                          : "hover:bg-[var(--color-action-tint)]"
                       }`}
                     >
                       <span className="min-w-0 truncate text-[13px] font-medium text-[var(--color-primary)]">
@@ -668,7 +668,7 @@ function ConfirmModal({ title, body, confirmLabel, cancelLabel, tone = "default"
             type="button"
             onClick={onConfirm}
             className={`inline-flex items-center justify-center rounded-2xl px-4 py-2.5 transition hover:opacity-90 ${
-              tone === "danger" ? "bg-[var(--color-danger)]" : "bg-[var(--color-primary)]"
+              tone === "danger" ? "bg-[var(--color-danger)]" : "bg-[var(--color-action)]"
             }`}
           >
             <span className="text-[13px] font-semibold text-[var(--color-white)]">{confirmLabel}</span>

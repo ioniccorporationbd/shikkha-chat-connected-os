@@ -17,9 +17,10 @@ export interface LogoutConfirmCopy {
  * sidebar rail and the account dropdown). Its `onConfirm` runs the existing
  * sign-out flow — no custom logout API is introduced here.
  *
- * `DashboardModal` supplies the shared behaviour (logo, overlay + `Escape`
- * close, scroll-lock, focus handling), so this stays a thin, presentational
- * wrapper.
+ * `DashboardModal` supplies the shared behaviour (overlay + `Escape` close,
+ * scroll-lock, focus handling), so this stays a thin, presentational wrapper.
+ * Redesigned for a clearer, more premium confirmation: a prominent alert-icon
+ * cue, a stronger copy hierarchy, and a well-grouped Cancel / Sign Out row.
  */
 export default function LogoutConfirmModal({
   open,
@@ -40,14 +41,13 @@ export default function LogoutConfirmModal({
       title={copy.title}
       closeLabel={copy.no}
       onClose={onClose}
-      logo
-      widthClass="max-w-[400px]"
+      widthClass="max-w-[420px]"
       footer={
         <>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
+            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-5 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
           >
             <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.no}</span>
           </button>
@@ -55,7 +55,7 @@ export default function LogoutConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={signingOut}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
           >
             <FiLogOut aria-hidden size={15} className="text-[var(--color-white)]" />
             <span className="text-[13px] font-semibold text-[var(--color-white)]">
@@ -65,11 +65,13 @@ export default function LogoutConfirmModal({
         </>
       }
     >
-      <div className="flex flex-col items-center gap-3 py-3 text-center">
-        <span className="grid h-14 w-14 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-action)_26%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action-hover)]">
-          <FiLogOut size={24} />
+      <div className="flex flex-col items-center gap-4 px-1 py-2 text-center">
+        <span className="grid h-16 w-16 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_24%,transparent)] bg-[var(--color-action-tint-strong)] text-[var(--color-action)] shadow-[0_18px_36px_-20px_color-mix(in_srgb,var(--color-action)_75%,transparent)]">
+          <FiLogOut size={26} />
         </span>
-        <p className="max-w-[34ch] text-[14px] font-medium">{copy.message}</p>
+        <p className="max-w-[32ch] text-[13.5px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+          {copy.message}
+        </p>
       </div>
     </DashboardModal>
   );

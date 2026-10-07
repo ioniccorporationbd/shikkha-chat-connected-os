@@ -10,14 +10,14 @@ import type { ReactNode } from "react";
  * the inner <span>, never directly on a control.
  */
 export const PAY_FIELD_CLASS =
-  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
+  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
 
 export const PAY_LABEL_CLASS =
   "text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]";
 
 /** Focus ring for the non-input controls (cards, dropzone, buttons). */
 export const PAY_FOCUS =
-  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_20%,transparent)]";
 
 /** Border colour for a field, red when invalid (matches the ERP forms). */
 export function payBorder(invalid?: boolean): string {

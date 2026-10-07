@@ -31,7 +31,7 @@ export default function QuickLinks({ links, emptyLabel, labels = {} }: QuickLink
               href={link.href}
               target={link.external ? "_blank" : undefined}
               rel={link.external ? "noreferrer noopener" : undefined}
-              className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3.5 py-3 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))]"
+              className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3.5 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:shadow-[0_18px_38px_-26px_color-mix(in_srgb,var(--color-action)_55%,transparent)]"
             >
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] text-[15px] text-[var(--color-primary)]">
                 <Icon />
@@ -48,7 +48,7 @@ export default function QuickLinks({ links, emptyLabel, labels = {} }: QuickLink
 
               <FiExternalLink
                 aria-hidden
-                className="shrink-0 text-[14px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition group-hover:text-[var(--color-primary)]"
+                className="shrink-0 text-[14px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition group-hover:text-[var(--color-action)]"
               />
             </a>
           </li>

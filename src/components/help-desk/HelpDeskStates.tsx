@@ -66,14 +66,14 @@ export function HelpDeskErrorState({
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center justify-center rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-2xl bg-[var(--color-action)] px-5 py-2.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
           >
             <span className="text-sm font-semibold text-[var(--color-white)]">{copy.retry}</span>
           </button>
         ) : null}
         <Link
           href={links.root}
-          className="inline-flex items-center justify-center rounded-2xl border border-[var(--color-primary)] px-5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center justify-center rounded-2xl border border-[var(--color-primary)] px-5 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
         >
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.navHelpDesk}</span>
         </Link>
@@ -96,7 +96,7 @@ export function HelpDeskNotFound({ copy, basePath }: { copy: HelpDeskCopy; baseP
       </p>
       <Link
         href={links.tickets}
-        className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-action)] px-5 py-2.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+        className="mt-1 inline-flex items-center justify-center rounded-2xl bg-[var(--color-action)] px-5 py-2.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
       >
         <span className="text-sm font-semibold text-[var(--color-white)]">{copy.backToList}</span>
       </Link>

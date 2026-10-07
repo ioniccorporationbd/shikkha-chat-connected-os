@@ -40,7 +40,7 @@ const CARD_SHADOW =
   "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 const INPUT =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
 
 type LocationState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 
@@ -439,7 +439,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] sm:w-auto"
           >
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
               <FiArrowLeft size={15} />
@@ -474,7 +474,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
             action={
               <a
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.signInAgain}</span>
               </a>
@@ -493,7 +493,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                   setPermissionDenied(false);
                   void loadStatus().finally(() => setLoading(false));
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
+                className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
               </button>
@@ -512,7 +512,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                   setLoadError("");
                   void loadStatus().finally(() => setLoading(false));
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.retry}</span>
               </button>
@@ -594,7 +594,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                   type="button"
                   onClick={requestLocation}
                   disabled={locationState === "requesting"}
-                  className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-primary)] disabled:opacity-60"
+                  className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
                 >
                   <span className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--color-primary)]">
                     <FiNavigation size={14} />
@@ -683,7 +683,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                 type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-5 py-3 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-5 py-3 transition hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
                   <FiRefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
@@ -740,7 +740,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                     type="button"
                     onClick={resetFilter}
                     disabled={historyLoading}
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
                     <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.resetFilter}</span>
                   </button>
@@ -826,7 +826,7 @@ function DayCard({
         aria-expanded={hasPunches ? open : undefined}
         disabled={!hasPunches}
         className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition ${
-          hasPunches ? "hover:bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]" : "cursor-default"
+          hasPunches ? "hover:bg-[var(--color-action-tint)]" : "cursor-default"
         }`}
       >
         <div className="flex min-w-0 items-center gap-3">

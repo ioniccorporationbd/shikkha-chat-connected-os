@@ -362,7 +362,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
         <button
           type="button"
           onClick={() => (onBack ? onBack() : router.push(CLIENT_DASHBOARD_PATH))}
-          className="hidden items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-primary)] sm:inline-flex"
+          className="hidden items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] sm:inline-flex"
         >
           <span className="text-[var(--color-primary)]">
             <FiArrowLeft size={15} />
@@ -380,7 +380,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
               <button
                 type="button"
                 onClick={() => router.push(LOGIN_PATH)}
-                className="rounded-2xl bg-[var(--color-primary)] px-4 py-2"
+                className="rounded-2xl bg-[var(--color-action)] px-4 py-2"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.signInAgain}</span>
               </button>
@@ -527,7 +527,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                     type="button"
                     onClick={() => void handleRefresh()}
                     disabled={refreshing}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-primary)] disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
                   >
                     <span className={`text-[var(--color-primary)] ${refreshing ? "animate-spin" : ""}`}>
                       <FiRotateCw size={15} />
@@ -588,7 +588,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                           {pageRows.map((invoice, index) => (
                             <tr
                               key={invoice.name}
-                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] [&>td]:py-3.5"
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-colors hover:bg-[var(--color-action-tint)] [&>td]:py-3.5"
                             >
                               <td className="px-4 py-3 text-[13px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
                                 {pageStart + index + 1}
@@ -611,7 +611,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                 <button
                                   type="button"
                                   onClick={() => void openDetails(invoice.name)}
-                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-primary)]"
+                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
                                 >
                                   <span className="text-[12px] font-semibold text-[var(--color-primary)]">
                                     {copy.viewDetails}
@@ -896,7 +896,7 @@ function InvoiceCard({
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-primary)]"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
         >
           <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
           <FiChevronRight size={14} className="text-[var(--color-primary)]" />

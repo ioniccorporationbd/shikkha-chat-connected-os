@@ -33,10 +33,10 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
   const authed = status === "authenticated" && Boolean(user);
 
   const navClass = (isActive: boolean) =>
-    `group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] ${
+    `group inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
       isActive
-        ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-secondary)_50%,var(--color-white))]"
-        : "border-transparent hover:bg-[color-mix(in_srgb,var(--color-secondary)_32%,var(--color-white))]"
+        ? "border-[var(--color-action)] bg-[var(--color-action)]"
+        : "border-transparent hover:bg-[var(--color-action-tint)]"
     }`;
 
   return (
@@ -59,19 +59,19 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
         </Link>
 
         <Link href={HELP_DESK_PATH} className={navClass(active === "home")} aria-current={active === "home" ? "page" : undefined}>
-          <FiHeadphones className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-          <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.navHelpDesk}</span>
+          <FiHeadphones className={`h-4 w-4 ${active === "home" ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+          <span className={`text-sm font-semibold ${active === "home" ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>{copy.navHelpDesk}</span>
         </Link>
 
         <Link href={HELP_DESK_TICKETS_PATH} className={navClass(active === "tickets")} aria-current={active === "tickets" ? "page" : undefined}>
-          <FiList className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-          <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.navMyTickets}</span>
+          <FiList className={`h-4 w-4 ${active === "tickets" ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+          <span className={`text-sm font-semibold ${active === "tickets" ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>{copy.navMyTickets}</span>
         </Link>
 
         <button
           type="button"
           onClick={toggleLanguage}
-          className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] px-3 py-2 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_32%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] px-3 py-2 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
           aria-label={language === "en" ? "বাংলা ভাষায় দেখান" : "Switch to English"}
         >
           <FiGlobe className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
@@ -83,7 +83,7 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
         {authed ? (
           <Link
             href={dashboardPathFor(user)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
           >
             <FiGrid className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-white)]">{copy.navDashboard}</span>
@@ -91,7 +91,7 @@ export default function HelpDeskHeader({ active }: { active?: ActiveTab }) {
         ) : (
           <Link
             href={LOGIN_PATH}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
           >
             <FiLogIn className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-white)]">{copy.navLogin}</span>

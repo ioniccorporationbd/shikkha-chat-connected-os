@@ -31,10 +31,10 @@ export default function TicketFilters({
               role="tab"
               aria-selected={isActive}
               onClick={() => onChange({ ...value, status })}
-              className={`inline-flex items-center rounded-full border px-4 py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] ${
+              className={`inline-flex items-center rounded-full border px-4 py-2 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
                 isActive
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]"
-                  : "border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] bg-[var(--color-white)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))]"
+                  ? "border-[var(--color-action)] bg-[var(--color-action)]"
+                  : "border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] bg-[var(--color-white)] hover:bg-[var(--color-action-tint)]"
               }`}
             >
               <span
@@ -67,7 +67,7 @@ export default function TicketFilters({
             type="button"
             onClick={() => onChange({ ...value, query: "" })}
             aria-label={copy.filterAll}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[color-mix(in_srgb,var(--color-secondary)_35%,var(--color-white))]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-[var(--color-action-tint)]"
           >
             <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
           </button>

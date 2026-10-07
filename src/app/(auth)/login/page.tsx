@@ -13,7 +13,7 @@ export default function LoginPage() {
     /* useSearchParams() inside LoginForm needs a Suspense boundary. */
     <Suspense
       fallback={
-        <div className="relative z-10 h-[420px] w-full max-w-[460px] rounded-[28px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)]" />
+        <div className="relative z-10 h-[440px] w-full max-w-[468px] rounded-[30px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] shadow-[0_36px_80px_-40px_color-mix(in_srgb,var(--color-action)_38%,transparent)]" />
       }
     >
       <LoginForm />

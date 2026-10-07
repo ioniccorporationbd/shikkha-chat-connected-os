@@ -17,7 +17,7 @@ interface ChangePasswordModalProps {
 }
 
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 pr-12 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 pr-12 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:bg-[var(--color-white)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)]";
 
 const LABEL_CLASS =
   "text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]";
@@ -137,7 +137,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
+            className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
           >
             <span className="text-[13px] font-semibold text-[var(--color-primary)]">
               {copy.cancel}

@@ -39,7 +39,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]";
 
 // This project's reset sets `font: inherit` on inputs, so the type size is
 // carried by the wrapper and inherited by the field.
@@ -49,10 +49,10 @@ const ICON_CLASS =
   "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]";
 
 const SUBMIT_CLASS =
-  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-action)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-action)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-action)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-action)] px-4 py-3 shadow-[0_18px_34px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:bg-[var(--color-action-hover)] hover:shadow-[0_24px_44px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-white)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
 
 const SUBMIT_SHEEN =
-  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-action),var(--color-action-hover))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent_60%)] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
 
 function formatClock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
@@ -390,8 +390,8 @@ export default function LoginForm() {
                 className={[
                   "h-1.5 flex-1 rounded-full transition-colors duration-300",
                   index <= stepIndex
-                    ? "bg-[var(--color-primary)]"
-                    : "bg-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+                    ? "bg-[var(--color-action)]"
+                    : "bg-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]",
                 ].join(" ")}
               />
             ))}
@@ -449,7 +449,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setReveal((value) => !value)}
                 aria-label={reveal ? copy.hidePassword : copy.showPassword}
-                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:text-[var(--color-primary)]"
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] hover:text-[var(--color-primary)]"
               >
                 {reveal ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
@@ -460,7 +460,7 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={openForgot}
-              className="rounded-xl px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)]"
+              className="rounded-xl px-1.5 py-1 transition hover:bg-[var(--color-action-tint)]"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
                 {copy.forgotPassword}
@@ -480,8 +480,8 @@ export default function LoginForm() {
 
       {isLogin && step === "otp" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerifyOtp} noValidate>
-          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_20%,transparent)] bg-[var(--color-action-tint)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px] text-[var(--color-action)]" />
             {loginOtpHint}
           </p>
 
@@ -504,7 +504,7 @@ export default function LoginForm() {
               type="button"
               onClick={() => void sendLoginOtp()}
               disabled={busy || resendIn > 0}
-              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
                 {resendIn > 0 ? copy.resendWait.replace("{s}", String(resendIn)) : copy.resend}
@@ -575,8 +575,8 @@ export default function LoginForm() {
 
       {!isLogin && forgotStep === "otp" ? (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleForgotVerify} noValidate>
-          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_20%,transparent)] bg-[var(--color-action-tint)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px] text-[var(--color-action)]" />
             {forgotOtpHint}
           </p>
 
@@ -599,7 +599,7 @@ export default function LoginForm() {
               type="button"
               onClick={() => void sendForgotOtp()}
               disabled={busy || forgotResendIn > 0}
-              className="rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,transparent)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="rounded-lg px-1.5 py-1 transition hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
               <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline disabled:no-underline">
                 {forgotResendIn > 0
@@ -632,8 +632,8 @@ export default function LoginForm() {
 
       {!isLogin && forgotStep === "done" ? (
         <div className="mt-5 flex flex-col gap-4">
-          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)]">
-            <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[15px]" />
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_20%,transparent)] bg-[var(--color-action-tint)] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)]">
+            <FiCheckCircle aria-hidden className="mt-0.5 shrink-0 text-[15px] text-[var(--color-success)]" />
             {forgotDoneBody}
           </p>
 

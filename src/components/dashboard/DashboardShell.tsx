@@ -267,11 +267,11 @@ export default function DashboardShell({
 
   const navButtonClass = (active: boolean) =>
     active
-      ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
-      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] hover:text-[var(--color-primary)]";
+      ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-action)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]";
 
   const navLabelClass = (active: boolean) =>
-    `inline-flex items-center gap-3 text-[13px] ${active ? "font-semibold text-[var(--color-white)]" : "font-medium"}`;
+    `inline-flex min-w-0 flex-1 items-center gap-3 text-[13px] leading-snug ${active ? "font-semibold text-[var(--color-white)]" : "font-medium"}`;
 
   /** The rail nav, shared by the desktop sidebar and the mobile drawer. */
   const renderNav = () => {
@@ -291,8 +291,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <Icon className="text-[16px]" />
-            {copy.nav[key]}
+            <Icon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav[key]}</span>
           </span>
         </button>
       );
@@ -314,8 +314,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <CreateIcon className="text-[16px]" />
-            {copy.nav.customers}
+            <CreateIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.customers}</span>
           </span>
         </button>
       );
@@ -337,8 +337,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <CheckinIcon className="text-[16px]" />
-            {copy.nav.checkin}
+            <CheckinIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.checkin}</span>
           </span>
         </button>
       );
@@ -360,8 +360,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <ExpenseIcon className="text-[16px]" />
-            {copy.nav.expenseClaim}
+            <ExpenseIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.expenseClaim}</span>
           </span>
         </button>
       );
@@ -383,8 +383,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <PaymentIcon className="text-[16px]" />
-            {copy.nav.paymentHistory}
+            <PaymentIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.paymentHistory}</span>
           </span>
         </button>
       );
@@ -406,8 +406,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <ServiceIcon className="text-[16px]" />
-            {copy.nav.serviceBuild}
+            <ServiceIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.serviceBuild}</span>
           </span>
         </button>
       );
@@ -442,8 +442,8 @@ export default function DashboardShell({
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
-            <HelpDeskIcon className="text-[16px]" />
-            {copy.nav.helpDesk}
+            <HelpDeskIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.helpDesk}</span>
           </span>
         </button>
       );
@@ -473,7 +473,7 @@ export default function DashboardShell({
     <Link
       href="/"
       onClick={onClick}
-      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_85%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] active:translate-y-0"
+      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-action)_75%,transparent)] active:translate-y-0"
     >
       <FiHome aria-hidden size={16} className="shrink-0 text-[var(--color-white)]" />
       <span className="text-[13px] font-black tracking-[-0.01em] text-[var(--color-white)]">
@@ -542,7 +542,7 @@ export default function DashboardShell({
                   type="button"
                   onClick={() => setNavOpen(false)}
                   aria-label={copy.closeMenu}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
                 >
                   <span className="text-[var(--color-primary)]">
                     <FiX size={16} />
@@ -572,7 +572,7 @@ export default function DashboardShell({
                 type="button"
                 onClick={() => setNavOpen(true)}
                 aria-label={copy.openMenu}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] lg:hidden"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] lg:hidden"
               >
                 <span className="text-[var(--color-primary)]">
                   <FiMenu size={16} />
@@ -596,9 +596,9 @@ export default function DashboardShell({
                 disabled={isFetching}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                className="grid h-9 w-9 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] disabled:opacity-70"
+                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-action)] bg-[var(--color-action)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-70"
               >
-                <span className="text-[var(--color-primary)]">
+                <span className="text-[var(--color-white)]">
                   <FiRefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
                 </span>
               </button>
@@ -659,7 +659,7 @@ export default function DashboardShell({
                       aria-haspopup="menu"
                       aria-expanded={imageMenuOpen}
                       aria-label={copy.changePhoto}
-                      className="group relative block rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
+                      className="group relative block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
                     >
                       <UserAvatar
                         user={user ?? { full_name: displayName, name: displayName }}
@@ -790,7 +790,7 @@ export default function DashboardShell({
                             type="button"
                             onClick={() => setRolesOpen((value) => !value)}
                             aria-expanded={rolesOpen}
-                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
                           >
                             <span className="text-[11px] font-semibold text-[var(--color-primary)]">
                               {rolesOpen ? copy.lessRoles : copy.moreRoles(hiddenRoles)}
@@ -813,7 +813,7 @@ export default function DashboardShell({
                     <FiClock size={20} />
                   </span>
                   <div className="min-w-0">
-                    <h2 className="text-[15px] font-semibold">{copy.nav.checkin}</h2>
+                    <h2 className="text-[15px] font-semibold"><span className="truncate">{copy.nav.checkin}</span></h2>
                     <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                       {copy.checkinCardHint}
                     </p>
@@ -840,7 +840,7 @@ export default function DashboardShell({
                     <FiDollarSign size={20} />
                   </span>
                   <div className="min-w-0">
-                    <h2 className="text-[15px] font-semibold">{copy.nav.expenseClaim}</h2>
+                    <h2 className="text-[15px] font-semibold"><span className="truncate">{copy.nav.expenseClaim}</span></h2>
                     <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                       {copy.expenseClaimCardHint}
                     </p>
@@ -863,7 +863,7 @@ export default function DashboardShell({
                 <button
                   type="button"
                   onClick={() => refetch()}
-                  className="rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+                  className="rounded-2xl bg-[var(--color-action)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
                 >
                   {copy.retry}
                 </button>

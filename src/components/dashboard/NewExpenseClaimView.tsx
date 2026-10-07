@@ -39,7 +39,7 @@ const CARD =
   "rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-28px_color-mix(in_srgb,var(--color-primary)_40%,transparent)] sm:p-5";
 
 const INPUT_BASE =
-  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
+  "w-full rounded-2xl border bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] disabled:cursor-not-allowed disabled:bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]";
 
 const LABEL = "text-[12px] font-semibold text-[var(--color-primary)]";
 const HELPER = "text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]";
@@ -314,7 +314,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-3.5 py-2 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+        className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-3.5 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
       >
         <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
           <FiArrowLeft size={15} />
@@ -371,7 +371,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
           {isAuth ? (
             <a
               href="/login"
-              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
             >
               <span className="text-[13px] font-semibold text-[var(--color-white)]">
                 {copy.signInAgain}
@@ -381,7 +381,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
             <button
               type="button"
               onClick={onBack}
-              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
             >
               <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.back}</span>
             </button>
@@ -389,7 +389,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
             <button
               type="button"
               onClick={() => void loadSchema()}
-              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+              className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
             >
               <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
                 <FiRefreshCw size={15} />
@@ -442,7 +442,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
             >
               <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.back}</span>
             </button>
@@ -526,7 +526,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
           <button
             type="button"
             onClick={addRow}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-primary)]"
+            className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
           >
             <span className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--color-primary)]">
               <FiPlus size={14} />
@@ -594,7 +594,7 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
           type="button"
           onClick={handleReset}
           disabled={submitting}
-          className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)] disabled:opacity-60"
+          className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
         >
           <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.reset}</span>
         </button>
@@ -885,8 +885,8 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
                   onClick={() => selectOption(option)}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition ${
                     index === activeIndex
-                      ? "bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))]"
-                      : "hover:bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))]"
+                      ? "bg-[var(--color-action-tint)]"
+                      : "hover:bg-[var(--color-action-tint)]"
                   }`}
                 >
                   <span className="min-w-0 truncate text-[13px] font-medium text-[var(--color-primary)]">

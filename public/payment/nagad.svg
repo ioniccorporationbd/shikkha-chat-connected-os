@@ -1,0 +1,7 @@
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nagad">
+  <title>Nagad</title>
+  <rect width="56" height="56" rx="15" fill="#EE6622" />
+  <rect x="15" y="16" width="6.5" height="24" rx="2.2" fill="#FFFFFF" />
+  <rect x="34.5" y="16" width="6.5" height="24" rx="2.2" fill="#FFFFFF" />
+  <path d="M15 16 L22 16 L41 40 L34.5 40 Z" fill="#FFFFFF" />
+</svg>

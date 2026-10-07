@@ -37,7 +37,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]";
 
 const FIELD_WRAPPER_CLASS = "relative block text-[14px]";
 
@@ -45,10 +45,10 @@ const ICON_CLASS =
   "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[15px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]";
 
 const SUBMIT_CLASS =
-  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-action)] px-4 py-3 shadow-[0_6px_16px_-10px_color-mix(in_srgb,var(--color-action)_72%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:shadow-[0_18px_32px_-14px_color-mix(in_srgb,var(--color-action)_72%,transparent)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+  "group relative mt-1 inline-flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--color-action)] px-4 py-3 shadow-[0_18px_34px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition duration-300 ease-out hover:-translate-y-[2px] hover:bg-[var(--color-action-hover)] hover:shadow-[0_24px_44px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-white)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:shadow-none";
 
 const SUBMIT_SHEEN =
-  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,var(--color-action),var(--color-action-hover))] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,color-mix(in_srgb,var(--color-white)_18%,transparent),transparent_60%)] opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 disabled:group-hover:opacity-0";
 
 function formatClock(seconds: number): string {
   const safe = Math.max(0, Math.floor(seconds));
@@ -341,7 +341,7 @@ export default function RegisterForm() {
                 type="button"
                 onClick={() => setReveal((value) => !value)}
                 aria-label={reveal ? copy.hidePassword : copy.showPassword}
-                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:text-[var(--color-primary)]"
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] hover:text-[var(--color-primary)]"
               >
                 {reveal ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
@@ -358,8 +358,8 @@ export default function RegisterForm() {
         </form>
       ) : (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerify} noValidate>
-          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px]" />
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_20%,transparent)] bg-[var(--color-action-tint)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px] text-[var(--color-action)]" />
             {copy.otpHint.replace("{target}", otpTarget)}
           </p>
 

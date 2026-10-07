@@ -62,7 +62,7 @@ export default function SidebarAuthButton({
         data-no-translate="true"
         title={`${copy.signedInAs}: ${name}`}
         className={[
-          "group flex shrink-0 items-center gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))] transition duration-300 hover:-translate-y-[2px] hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] hover:shadow-[0_14px_28px_-12px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]",
+          "group flex shrink-0 items-center gap-2.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_18%,transparent)] bg-[var(--color-action-tint)] transition duration-300 hover:-translate-y-[2px] hover:border-[color-mix(in_srgb,var(--color-action)_42%,transparent)] hover:bg-[var(--color-action-tint-strong)] hover:shadow-[0_14px_28px_-14px_color-mix(in_srgb,var(--color-action)_40%,transparent)]",
           compact ? "px-2.5 py-2" : "mt-1 px-2.5 py-2.5",
         ].join(" ")}
       >
@@ -84,10 +84,10 @@ export default function SidebarAuthButton({
       href={LOGIN_PATH}
       data-no-translate="true"
       className={[
-        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] transition duration-300 ease-out",
-        "hover:-translate-y-[2px] hover:border-[color-mix(in_srgb,var(--color-primary)_68%,var(--color-secondary))] hover:shadow-[0_14px_28px_-10px_color-mix(in_srgb,var(--color-primary)_62%,transparent)]",
-        "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-primary)_58%,transparent)]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_85%,var(--color-white))] focus-visible:ring-offset-2",
+        "group relative inline-flex shrink-0 items-center overflow-hidden whitespace-nowrap rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[var(--color-white)] shadow-[0_1px_2px_color-mix(in_srgb,var(--color-action)_14%,transparent)] transition duration-300 ease-out",
+        "hover:-translate-y-[2px] hover:border-[var(--color-action)] hover:shadow-[0_14px_28px_-12px_color-mix(in_srgb,var(--color-action)_42%,transparent)]",
+        "active:translate-y-0 active:shadow-[0_6px_14px_-8px_color-mix(in_srgb,var(--color-action)_40%,transparent)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2",
         compact ? "px-3 py-2" : "mt-1 px-3.5 py-2.5",
       ].join(" ")}
     >
@@ -97,11 +97,11 @@ export default function SidebarAuthButton({
       */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[linear-gradient(115deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_60%,var(--color-secondary)))] opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:scale-x-100 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[linear-gradient(115deg,var(--color-action-tint-strong),var(--color-action-tint))] opacity-0 transition-[transform,opacity] duration-300 ease-out group-hover:scale-x-100 group-hover:opacity-100"
       />
       <span
         className={[
-          "relative z-10 inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-white)]",
+          "relative z-10 inline-flex items-center gap-2 font-semibold text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)]",
           compact ? "text-[13px]" : "text-[13px]",
         ].join(" ")}
       >

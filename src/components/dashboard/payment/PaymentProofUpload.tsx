@@ -160,10 +160,10 @@ export default function PaymentProofUpload({
           )} bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-4 py-5 text-center transition ${PAY_FOCUS} ${
             dragging
               ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-              : ""
+              : "hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
           }`}
         >
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[var(--color-action-tint-strong)] text-[var(--color-action)]">
             <FiUploadCloud size={18} />
           </span>
           <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">

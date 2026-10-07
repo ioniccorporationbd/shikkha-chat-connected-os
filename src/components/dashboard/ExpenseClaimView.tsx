@@ -284,7 +284,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
             >
               <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
                 <FiArrowLeft size={15} />
@@ -320,7 +320,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
             action={
               <a
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-white)]">
                   {copy.signInAgain}
@@ -341,7 +341,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                   setPermissionDenied(false);
                   void load().finally(() => setLoading(false));
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-primary)]"
+                className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-primary)]">
                   {copy.retry}
@@ -362,7 +362,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                   setLoadError("");
                   void load().finally(() => setLoading(false));
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 transition hover:bg-[var(--color-action-hover)]"
               >
                 <span className="text-[13px] font-semibold text-[var(--color-white)]">
                   {copy.retry}
@@ -440,7 +440,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                   type="button"
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-primary)] disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
                 >
                   <span className="inline-flex items-center gap-2 text-[12px] font-semibold text-[var(--color-primary)]">
                     <FiRefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
@@ -530,7 +530,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                               <button
                                 type="button"
                                 onClick={() => void openDetails(claim.name)}
-                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-primary)]"
+                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
                               >
                                 <span className="text-[12px] font-semibold text-[var(--color-primary)]">
                                   {copy.viewDetails}
@@ -643,7 +643,7 @@ function ClaimCard({
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-primary)]"
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
         >
           <span className="text-[12px] font-semibold text-[var(--color-primary)]">
             {copy.viewDetails}
@@ -724,7 +724,7 @@ function DetailsDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.close}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))]"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:bg-[var(--color-action-tint)]"
           >
             <span className="text-[var(--color-primary)]">
               <FiX size={16} />

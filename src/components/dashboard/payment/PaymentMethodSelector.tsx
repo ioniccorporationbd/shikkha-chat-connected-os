@@ -19,13 +19,20 @@ interface PaymentMethodSelectorProps {
  * informational choice (no fake gateway) that opens a "coming soon" state.
  */
 export default function PaymentMethodSelector({ copy, onSelect }: PaymentMethodSelectorProps) {
-  const cardClass = `group flex items-center gap-3.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-4 text-left transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] ${PAY_FOCUS}`;
+  // Same hover / pressed / focus recipe as the manual-method cards so both
+  // steps of the modal feel like one system: light-red tint on hover, denser
+  // tint on press, red border + action ring on focus.
+  const cardClass = `group flex items-center gap-3.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 text-left transition duration-200 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] active:border-[var(--color-action)] active:bg-[var(--color-action-tint-strong)] focus-visible:border-[var(--color-action)] focus-visible:bg-[var(--color-action-tint)] ${PAY_FOCUS}`;
+
+  const iconTile = "grid h-12 w-12 shrink-0 place-items-center rounded-2xl";
+  const arrowClass =
+    "shrink-0 text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--color-action)]";
 
   return (
     <div className="flex flex-col gap-3">
       <button type="button" onClick={() => onSelect("manual")} className={cardClass}>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]">
-          <FiSend size={18} />
+        <span className={`${iconTile} bg-[var(--color-action-tint-strong)] text-[var(--color-action)]`}>
+          <FiSend size={19} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[14px] font-semibold text-[var(--color-primary)]">
@@ -35,12 +42,12 @@ export default function PaymentMethodSelector({ copy, onSelect }: PaymentMethodS
             {copy.manualDesc}
           </span>
         </span>
-        <FiArrowRight size={18} className="shrink-0 text-[var(--color-primary)]" />
+        <FiArrowRight size={18} className={arrowClass} />
       </button>
 
       <button type="button" onClick={() => onSelect("online")} className={cardClass}>
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-          <FiGlobe size={18} />
+        <span className={`${iconTile} bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]`}>
+          <FiGlobe size={19} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
@@ -55,7 +62,7 @@ export default function PaymentMethodSelector({ copy, onSelect }: PaymentMethodS
             {copy.onlineDesc}
           </span>
         </span>
-        <FiArrowRight size={18} className="shrink-0 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]" />
+        <FiArrowRight size={18} className={arrowClass} />
       </button>
     </div>
   );

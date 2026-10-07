@@ -20,6 +20,7 @@ import BankPaymentForm from "./BankPaymentForm";
 import BkashPaymentForm from "./BkashPaymentForm";
 import ManualPaymentSelector from "./ManualPaymentSelector";
 import NagadPaymentForm from "./NagadPaymentForm";
+import PaymentBrandMark from "./PaymentBrandMark";
 import PaymentMethodSelector from "./PaymentMethodSelector";
 import { PAY_FOCUS } from "./PaymentField";
 import RocketPaymentForm from "./RocketPaymentForm";
@@ -112,7 +113,7 @@ export default function MakePaymentModal({
     <button
       type="button"
       onClick={goBack}
-      className={`inline-flex items-center gap-1.5 rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] ${PAY_FOCUS}`}
+      className={`inline-flex items-center gap-1.5 rounded-xl px-2 py-1 transition hover:bg-[var(--color-action-tint)] ${PAY_FOCUS}`}
     >
       <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-primary)]">
         <FiArrowLeft size={14} />
@@ -163,7 +164,7 @@ export default function MakePaymentModal({
 
         {step === "bkash" ? (
           <>
-            <StepHeading title={copy.formTitleBkash} />
+            <StepHeading title={copy.formTitleBkash} icon={<PaymentBrandMark method="bkash" size={40} />} />
             <BkashPaymentForm
               copy={copy}
               language={language}
@@ -175,7 +176,7 @@ export default function MakePaymentModal({
 
         {step === "rocket" ? (
           <>
-            <StepHeading title={copy.formTitleRocket} />
+            <StepHeading title={copy.formTitleRocket} icon={<PaymentBrandMark method="rocket" size={40} />} />
             <RocketPaymentForm
               copy={copy}
               language={language}
@@ -187,7 +188,7 @@ export default function MakePaymentModal({
 
         {step === "nagad" ? (
           <>
-            <StepHeading title={copy.formTitleNagad} />
+            <StepHeading title={copy.formTitleNagad} icon={<PaymentBrandMark method="nagad" size={40} />} />
             <NagadPaymentForm
               copy={copy}
               language={language}
@@ -199,7 +200,7 @@ export default function MakePaymentModal({
 
         {step === "bank" ? (
           <>
-            <StepHeading title={copy.formTitleBank} />
+            <StepHeading title={copy.formTitleBank} icon={<PaymentBrandMark method="bank" size={40} />} />
             <BankPaymentForm
               copy={copy}
               language={language}
@@ -239,7 +240,7 @@ export default function MakePaymentModal({
             <button
               type="button"
               onClick={onClose}
-              className={`inline-flex w-full items-center justify-center rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:opacity-95 ${PAY_FOCUS}`}
+              className={`inline-flex w-full items-center justify-center rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] ${PAY_FOCUS}`}
             >
               <span className="text-[13px] font-semibold text-[var(--color-white)]">
                 {copy.successClose}
@@ -252,16 +253,27 @@ export default function MakePaymentModal({
   );
 }
 
-/** A small in-body heading above a step's content. */
-function StepHeading({ title, subtitle }: { title: string; subtitle?: string }) {
+/** A small in-body heading above a step's content, with an optional mark. */
+function StepHeading({
+  title,
+  subtitle,
+  icon,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <h3 className="text-[14px] font-semibold text-[var(--color-primary)]">{title}</h3>
-      {subtitle ? (
-        <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-          {subtitle}
-        </p>
-      ) : null}
+    <div className="flex items-center gap-3">
+      {icon ? <span className="shrink-0">{icon}</span> : null}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h3 className="text-[14px] font-semibold text-[var(--color-primary)]">{title}</h3>
+        {subtitle ? (
+          <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

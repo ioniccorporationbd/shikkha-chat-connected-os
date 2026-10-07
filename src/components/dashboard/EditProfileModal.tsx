@@ -54,7 +54,7 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 /** Shared input styling; layout here, readable copy carried by the label span. */
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[var(--color-primary)] focus:bg-[var(--color-white)] focus:ring-4 focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)] disabled:cursor-not-allowed";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:bg-[var(--color-white)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-secondary)_35%,transparent)] disabled:cursor-not-allowed";
 
 const LABEL_CLASS =
   "text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]";
@@ -413,7 +413,7 @@ export default function EditProfileModal({
               type="button"
               onClick={() => setStep("form")}
               disabled={verifying}
-              className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
+              className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
             >
               <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.otpBack}</span>
             </button>
@@ -436,7 +436,7 @@ export default function EditProfileModal({
               type="button"
               onClick={close}
               disabled={sending}
-              className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
+              className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
             >
               <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
             </button>
@@ -492,7 +492,7 @@ export default function EditProfileModal({
               type="button"
               onClick={resendOtp}
               disabled={resendIn > 0 || sending}
-              className="rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] disabled:opacity-50"
+              className="rounded-xl px-2 py-1 transition hover:bg-[var(--color-action-tint)] disabled:opacity-50"
             >
               <span className="text-[12px] font-semibold text-[var(--color-primary)]">
                 {resendIn > 0 ? copy.otpResendIn(resendIn) : copy.otpResend}
@@ -543,7 +543,7 @@ export default function EditProfileModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:opacity-60"
                 >
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-primary)]">
                     <FiImage size={12} />
@@ -585,7 +585,7 @@ export default function EditProfileModal({
                   <button
                     type="button"
                     onClick={() => setRemoveStaged(false)}
-                    className="rounded-xl px-2 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
+                    className="rounded-xl px-2 py-1 transition hover:bg-[var(--color-action-tint)]"
                   >
                     <span className="text-[11px] font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
                   </button>

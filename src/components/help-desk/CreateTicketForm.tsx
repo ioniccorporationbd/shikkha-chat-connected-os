@@ -204,7 +204,7 @@ export default function CreateTicketForm({
           <button
             type="button"
             onClick={fillDemo}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-primary)] px-3 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_26%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-primary)] px-3 py-1.5 transition hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
           >
             <FiZap className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
             <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.demoFill}</span>
@@ -282,14 +282,14 @@ export default function CreateTicketForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setCategory(option.id)}
-                    className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] ${
+                    className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
                       selected
-                        ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-secondary)_45%,var(--color-white))]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]"
+                        ? "border-[var(--color-action)] bg-[var(--color-action)]"
+                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:bg-[var(--color-action-tint)]"
                     }`}
                   >
-                    <Icon className="h-4 w-4 flex-none text-[var(--color-primary)]" aria-hidden />
-                    <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.categories[option.id]}</span>
+                    <Icon className={`h-4 w-4 flex-none ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+                    <span className={`text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>{copy.categories[option.id]}</span>
                   </button>
                 );
               })}
@@ -310,7 +310,7 @@ export default function CreateTicketForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setPriority(option)}
-                    className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+                    className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                     style={{
                       borderColor: selected ? tone : `color-mix(in srgb, ${tone} 32%, white)`,
                       backgroundColor: selected ? `color-mix(in srgb, ${tone} 16%, white)` : "white",
@@ -389,13 +389,13 @@ export default function CreateTicketForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setPreferredContact(option)}
-                    className={`flex-1 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] ${
+                    className={`flex-1 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
                       selected
-                        ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-secondary)_45%,var(--color-white))]"
+                        ? "border-[var(--color-action)] bg-[var(--color-action)]"
                         : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)]"
                     }`}
                   >
-                    <span className="text-sm font-semibold text-[var(--color-primary)]">
+                    <span className={`text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
                       {option === "email" ? copy.preferredEmail : copy.preferredMobile}
                     </span>
                   </button>
@@ -428,7 +428,7 @@ export default function CreateTicketForm({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={attachments.length >= MAX_ATTACHMENTS}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-primary)] px-4 py-2.5 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-primary)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
             >
               <FiUpload className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
               <span className="text-sm font-semibold text-[var(--color-primary)]">
@@ -489,14 +489,14 @@ export default function CreateTicketForm({
         <button
           type="button"
           onClick={() => router.push(links.root)}
-          className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[color-mix(in_srgb,var(--color-secondary)_24%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
         >
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)] focus-visible:ring-offset-2"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
         >
           <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
           <span className="text-sm font-semibold text-[var(--color-white)]">

@@ -5,7 +5,7 @@ import { FiFilter, FiRotateCcw, FiSearch, FiSliders, FiX } from "react-icons/fi"
 import type { AmountFilter, ListFilterCopy } from "@/lib/dashboard/list-controls";
 
 const INPUT =
-  "h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
+  "h-10 w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const LABEL =
   "text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 

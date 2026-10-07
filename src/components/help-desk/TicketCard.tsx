@@ -57,7 +57,7 @@ export default function TicketCard({
         </span>
         <Link
           href={links.ticket(ticket.id)}
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]"
+          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
         >
           <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
           <FiArrowRight className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
