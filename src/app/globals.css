@@ -543,6 +543,12 @@ div {
 .sidebar-row.is-active .sidebar-row-index {
   color: color-mix(in srgb, var(--color-white) 80%, transparent);
 }
+/* A dropdown PARENT whose group is open: a soft action tint — never solid red.
+   Only the selected CHILD is solid red, so "open" and "child active" stay two
+   separate visual states. */
+.sidebar-row.is-open {
+  background-color: var(--color-action-tint);
+}
 
 /* =========================================================
    CONNECTED OS GLOBAL LAYOUT

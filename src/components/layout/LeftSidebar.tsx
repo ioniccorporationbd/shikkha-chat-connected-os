@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { FiArrowRight, FiAward, FiBriefcase, FiChevronDown, FiGrid, FiHeadphones, FiHome } from "react-icons/fi";
+import { FiArrowRight, FiAward, FiBriefcase, FiChevronDown, FiCompass, FiGrid, FiHeadphones, FiHome, FiMenu, FiX } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
+import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 type ActiveSectionId =
@@ -118,6 +119,8 @@ const sidebarText = {
     helpDesk: "হেল্প ডেস্ক",
     overview: "সারসংক্ষেপ",
     menu: "মেনু",
+    bannerTitle: "সংযুক্ত শিক্ষা সিস্টেম",
+    bannerSubtitle: "শিক্ষা চ্যাট সংযুক্ত ওএস",
     closeMenu: "মেনু বন্ধ করুন",
     toggleLanguage: "ভাষা পরিবর্তন করুন",
     bangla: "বাংলা",
@@ -171,6 +174,8 @@ const sidebarText = {
     helpDesk: "Help Desk",
     overview: "Overview",
     menu: "Menu",
+    bannerTitle: "Connected Education System",
+    bannerSubtitle: "Shikkha Chat Connected OS",
     closeMenu: "Close menu",
     toggleLanguage: "Change language",
     bangla: "বাংলা",
@@ -423,7 +428,8 @@ function getGroupColor(group: OpenGroup, isMyConnected = false) {
   return colorPrimary;
 }
 
-function getActiveTitle(activeId: ActiveSectionId, currentMenu: MenuGroup[]) {
+function getActiveTitle(activeId: ActiveSectionId | null, currentMenu: MenuGroup[]) {
+  if (activeId === null) return "";
   for (const item of currentMenu) {
     if (getIdFromHref(item.href) === activeId) return item.title;
 
@@ -437,9 +443,10 @@ function getActiveTitle(activeId: ActiveSectionId, currentMenu: MenuGroup[]) {
   return "";
 }
 
-function getActiveGroupTitle(activeId: ActiveSectionId, language: LanguageCode) {
+function getActiveGroupTitle(activeId: ActiveSectionId | null, language: LanguageCode) {
   const text = sidebarText[language];
 
+  if (activeId === null) return text.bannerSubtitle;
   if (isHomeConnectionSection(activeId)) return text.groups.home;
   if (isStudentAchievementSection(activeId)) return text.groups.student;
   if (isOperationalExcellenceSection(activeId)) return text.groups.operational;
@@ -512,12 +519,15 @@ function Logo({ language }: { language: LanguageCode }) {
   );
 }
 
-function MiniOsIcon({ activeId }: { activeId: string }) {
-  const activeType = isStudentAchievementSection(activeId)
-    ? "student"
-    : isOperationalExcellenceSection(activeId)
-      ? "operation"
-      : "home";
+function MiniOsIcon({ activeId }: { activeId: string | null }) {
+  const activeType =
+    activeId === null
+      ? null
+      : isStudentAchievementSection(activeId)
+        ? "student"
+        : isOperationalExcellenceSection(activeId)
+          ? "operation"
+          : "home";
 
   const columns = [
     {
@@ -587,15 +597,26 @@ function ActiveStatusCard({
   currentMenu,
   language,
 }: {
-  activeId: ActiveSectionId;
+  activeId: ActiveSectionId | null;
   currentMenu: MenuGroup[];
   language: LanguageCode;
 }) {
-  const group = getGroupById(activeId);
+  const group = activeId === null ? null : getGroupById(activeId);
   const accentColor = getGroupColor(group, activeId === "my-connected-os");
-  const activeTitle = getActiveTitle(activeId, currentMenu);
+  const activeTitle =
+    activeId === null
+      ? sidebarText[language].bannerTitle
+      : getActiveTitle(activeId, currentMenu);
   const groupTitle = getActiveGroupTitle(activeId, language);
   const text = sidebarText[language];
+  const progressScale =
+    activeId === null
+      ? 0
+      : isHomeConnectionSection(activeId)
+        ? 0.33
+        : isStudentAchievementSection(activeId)
+          ? 0.66
+          : 1;
 
   return (
     <div
@@ -626,13 +647,7 @@ function ActiveStatusCard({
         <div
           className="h-full w-full origin-left rounded-full transition-transform duration-500"
           style={{
-            transform: `scaleX(${
-              isHomeConnectionSection(activeId)
-                ? 0.33
-                : isStudentAchievementSection(activeId)
-                  ? 0.66
-                  : 1
-            })`,
+            transform: `scaleX(${progressScale})`,
             background: "var(--color-action)",
           }}
         />
@@ -670,8 +685,8 @@ function SidebarChildLink({
   );
 }
 
-function LanguageSwitch() {
-  const { language, setLanguage } = useLanguage();
+function LanguageSection() {
+  const { language } = useLanguage();
   const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
   const isBangla = currentLanguage === "bn";
   const text = sidebarText[currentLanguage];
@@ -698,48 +713,19 @@ function LanguageSwitch() {
         </span>
       </div>
 
-      <div
-        role="group"
-        aria-label={text.toggleLanguage}
-        className="group relative h-11 w-full overflow-hidden rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] p-1 transition duration-300 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] sm:h-12"
-      >
-        <span
-          className={[
-            "absolute left-1 top-1 h-9 w-[calc(50%-6px)] rounded-full bg-[var(--color-primary)] shadow-[0_12px_24px_color-mix(in_srgb,var(--color-primary)_28%,transparent)] transition-transform duration-300 ease-out sm:h-10",
-            isBangla ? "translate-x-0" : "translate-x-[calc(100%+4px)]",
-          ].join(" ")}
-          aria-hidden="true"
-        />
+      {/* Exactly the Dashboard account-dropdown control: ONE single toggle,
+          never a separate bespoke segmented switch. */}
+      <DashboardLanguageToggle variant="full" />
 
-        <div className="relative z-10 grid h-full grid-cols-2 gap-[2px] text-[14px] font-semibold leading-[1.2] tracking-[-0.01em]">
-          <button
-            type="button"
-            onClick={() => setLanguage("bn")}
-            aria-pressed={isBangla}
-            className={[
-              "grid place-items-center rounded-full transition duration-300",
-              isBangla
-                ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-action)]",
-            ].join(" ")}
-          >
-            {text.bangla}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setLanguage("en")}
-            aria-pressed={!isBangla}
-            className={[
-              "grid place-items-center rounded-full transition duration-300",
-              !isBangla
-                ? "text-[var(--color-white)]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:text-[var(--color-action)]",
-            ].join(" ")}
-          >
-            {text.english}
-          </button>
-        </div>
+      {/* Help Desk lives in the SAME section as the language control. */}
+      <div className="mt-3 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-3">
+        <Link href="/help-desk" className={sidebarRowClass}>
+          <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
+            <FiHeadphones className={sidebarRowIconClass} />
+            <span className="truncate">{text.helpDesk}</span>
+          </span>
+          <FiArrowRight className="shrink-0 text-[16px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5" />
+        </Link>
       </div>
     </div>
   );
@@ -788,10 +774,8 @@ export default function LeftSidebar() {
     [currentLanguage]
   );
 
-  const [activeId, setActiveId] =
-    useState<ActiveSectionId>("home-connections-panel");
-
-  const [openGroup, setOpenGroup] = useState<OpenGroup>("home");
+  const [activeId, setActiveId] = useState<ActiveSectionId | null>(null);
+  const [openGroup, setOpenGroup] = useState<OpenGroup>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -827,20 +811,74 @@ export default function LeftSidebar() {
       );
   }, []);
 
-  const homeGroupActive = useMemo(
-    () => isHomeConnectionSection(activeId),
-    [activeId]
-  );
+  /* Main-Banner awareness ---------------------------------------------------
+     While the hero (#intro) fills the viewport and no hub section is locked,
+     all three dropdown groups stay closed and no child reads as selected — so
+     a refresh or a reverse scroll back to the banner never leaves a stale open
+     group. This reuses the existing scroll engine: it only ever *clears*
+     state (the engine's connected-os-active-section event owns re-opening a
+     group), and it stands down for a beat after a deliberate navigation so it
+     can never fight a programmatic scroll. */
+  useEffect(() => {
+    const intro = document.getElementById("intro");
+    if (!intro) return;
 
-  const studentGroupActive = useMemo(
-    () => isStudentAchievementSection(activeId),
-    [activeId]
-  );
+    let navGuardUntil = 0;
+    const markNavigation = () => {
+      navGuardUntil = performance.now() + 1200;
+    };
 
-  const operationalGroupActive = useMemo(
-    () => isOperationalExcellenceSection(activeId),
-    [activeId]
-  );
+    let frame = 0;
+    const evaluate = () => {
+      frame = 0;
+      if (performance.now() < navGuardUntil) return;
+
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+
+      // A hub section parked on screen owns the active state — never override it.
+      const anySectionLocked = Array.from(
+        document.querySelectorAll<HTMLElement>(".connected-scroll-section")
+      ).some((section) => {
+        const rect = section.getBoundingClientRect();
+        return rect.top <= 2 && rect.bottom >= viewportHeight - 2;
+      });
+      if (anySectionLocked) return;
+
+      const rect = intro.getBoundingClientRect();
+      const bannerDominant =
+        rect.top <= viewportHeight * 0.4 &&
+        rect.bottom >= viewportHeight * 0.5;
+
+      if (bannerDominant) {
+        setActiveId(null);
+        setOpenGroup(null);
+      }
+    };
+
+    const scheduleEvaluation = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(evaluate);
+    };
+
+    window.addEventListener("scroll", scheduleEvaluation, { passive: true });
+    window.addEventListener("resize", scheduleEvaluation, { passive: true });
+    window.addEventListener("connected-os-scroll-to-section", markNavigation);
+    window.addEventListener("connected-os-sidebar-navigate", markNavigation);
+
+    scheduleEvaluation();
+
+    return () => {
+      window.removeEventListener("scroll", scheduleEvaluation);
+      window.removeEventListener("resize", scheduleEvaluation);
+      window.removeEventListener(
+        "connected-os-scroll-to-section",
+        markNavigation
+      );
+      window.removeEventListener("connected-os-sidebar-navigate", markNavigation);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
     <>
@@ -850,7 +888,7 @@ export default function LeftSidebar() {
         className="sidebar-open-button fixed left-3 top-3 z-[80] grid h-10 w-10 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_32%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] sm:left-4 sm:top-4 sm:h-12 sm:w-12 sm:rounded-2xl"
         aria-label={text.menu}
       >
-        <span className="block h-[2px] w-5 rounded-full bg-current shadow-[0_7px_0_current,0_-7px_0_current]" />
+        <FiMenu aria-hidden size={22} />
       </button>
 
       {/* The sidebar is a collapsed drawer below 1536px (it lives off-canvas at
@@ -899,7 +937,7 @@ export default function LeftSidebar() {
             className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
             aria-label={text.closeMenu}
           >
-            ×
+            <FiX aria-hidden size={18} />
           </button>
 
           <div className="flex flex-col gap-4 pr-9 2xl:pr-0">
@@ -911,27 +949,26 @@ export default function LeftSidebar() {
               <SidebarAuthButton />
             </div>
           </div>
-          <LanguageSwitch />
-
-          {/* Public support centre entry — a real navigation to /help-desk,
-              visible to guests and signed-in users alike since the route is not
-              session-gated. */}
-          <Link href="/help-desk" className={[sidebarRowClass, "mt-4"].join(" ")}>
-            <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
-              <FiHeadphones className={sidebarRowIconClass} />
-              <span className="truncate">{text.helpDesk}</span>
-            </span>
-            <FiArrowRight className="shrink-0 text-[16px] transition-transform duration-300 group-hover:translate-x-0.5" />
-          </Link>
+          <LanguageSection />
 
           <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
-            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3">
-              <p className={`${sidebarTitleTextClass} text-[var(--color-primary)]`}>
-                {text.theK12Os}
-              </p>
+            {/* Dashboard-style inner section header: a rounded, icon-led row. */}
+            <div className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2.5">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-action-tint)] text-[var(--color-action)]">
+                <FiCompass aria-hidden size={17} />
+              </span>
 
-              <MiniOsIcon activeId={activeId} />
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                  {text.menu}
+                </p>
+                <p className={`${sidebarTitleTextClass} truncate text-[var(--color-primary)]`}>
+                  {text.theK12Os}
+                </p>
+              </div>
             </div>
+
+            <MiniOsIcon activeId={activeId} />
 
             <ActiveStatusCard
               activeId={activeId}
@@ -943,16 +980,6 @@ export default function LeftSidebar() {
           <nav className="mt-5 flex flex-col gap-1.5 sm:mt-6">
             {currentMenu.map((item) => {
               const itemId = getIdFromHref(item.href);
-
-              const activeGroup =
-                item.children?.some(
-                  (child) => getIdFromHref(child.href) === activeId
-                ) ||
-                itemId === activeId ||
-                (item.href === "#home-connections-panel" && homeGroupActive) ||
-                (item.href === "#student-achievement" && studentGroupActive) ||
-                (item.href === "#operational-excellence" &&
-                  operationalGroupActive);
 
               const group = item.group ?? null;
               const openState = group ? openGroup === group : false;
@@ -970,7 +997,7 @@ export default function LeftSidebar() {
                       }
                       className={[
                         sidebarRowClass,
-                        activeGroup ? "is-active" : "",
+                        openState ? "is-open" : "",
                       ].join(" ")}
                     >
                       <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
@@ -984,7 +1011,7 @@ export default function LeftSidebar() {
                       <FiChevronDown
                         aria-hidden="true"
                         className={[
-                          "shrink-0 text-[16px] transition-transform duration-300",
+                          "shrink-0 text-[16px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                           openState ? "rotate-180" : "",
                         ].join(" ")}
                       />
@@ -992,7 +1019,7 @@ export default function LeftSidebar() {
 
                     <div
                       className={[
-                        "grid transition-all duration-500",
+                        "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                         openState
                           ? "grid-rows-[1fr] opacity-100"
                           : "grid-rows-[0fr] opacity-0",
