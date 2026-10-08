@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 type SectionKey = "orange" | "green" | "purple";
 
@@ -78,12 +78,15 @@ function selectGroup(group: string) {
   );
 }
 
+/** Shared signature easing — matches the site's --ease-smooth. */
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 const impactVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.94,
-    y: 18,
-    filter: "blur(6px)",
+    scale: 0.95,
+    y: 26,
+    filter: "blur(8px)",
   },
   visible: {
     opacity: 1,
@@ -91,8 +94,9 @@ const impactVariants: Variants = {
     y: 0,
     filter: "blur(0px)",
     transition: {
-      duration: 0.65,
-      ease: [0.22, 1, 0.36, 1],
+      duration: 0.7,
+      ease: EASE,
+      delay: 0.12,
     },
   },
 };
@@ -100,34 +104,62 @@ const impactVariants: Variants = {
 const peopleVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.78,
-    y: 72,
-    filter: "blur(10px)",
+    scale: 0.9,
+    y: 60,
+    filter: "blur(8px)",
   },
   visible: {
     opacity: 1,
-    scale: [0.78, 1.08, 0.98, 1],
-    y: [72, -18, 6, 0],
+    scale: 1,
+    y: 0,
     filter: "blur(0px)",
     transition: {
-      duration: 1.05,
-      ease: [0.22, 1, 0.36, 1],
+      duration: 0.85,
+      ease: EASE,
     },
   },
 };
 
 const floatVariants: Variants = {
   float: {
-    y: [0, -8, 0],
+    y: [0, -9, 0],
     transition: {
-      duration: 4.8,
+      duration: 5.4,
       repeat: Infinity,
       ease: "easeInOut",
     },
   },
 };
 
+/** Text block entrance — a single tasteful stagger. */
+const textContainer: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.09,
+      delayChildren: 0.04,
+    },
+  },
+};
+
+const textItem: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 16,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: EASE,
+    },
+  },
+};
+
 export default function LandingHeroBanner() {
+  const reduce = useReducedMotion();
+
   const [visiblePeople, setVisiblePeople] = useState<VisiblePeople>({
     orange: false,
     green: false,
@@ -137,7 +169,11 @@ export default function LandingHeroBanner() {
   const [pulse, setPulse] = useState<SectionKey | null>(null);
   const [active, setActive] = useState<SectionKey | null>(null);
 
+  // Reveal the three people with a small spotlight pulse, one at a time.
+  // Skipped entirely under `prefers-reduced-motion` (they render shown).
   useEffect(() => {
+    if (reduce) return;
+
     const schedule = (section: SectionKey, delay: number) =>
       window.setTimeout(() => {
         setPulse(section);
@@ -165,7 +201,7 @@ export default function LandingHeroBanner() {
         window.clearTimeout(timer);
       });
     };
-  }, []);
+  }, [reduce]);
 
   // Follow the page's active section so the matching map lights up and the
   // others recede — the three graphics are never a static decoration.
@@ -181,16 +217,21 @@ export default function LandingHeroBanner() {
     return () => window.removeEventListener("connected-os-active-section", handleActive);
   }, []);
 
+  // Reduced motion: keep the heroes fully present instead of animating them in.
+  const shown: VisiblePeople = reduce
+    ? { orange: true, green: true, purple: true }
+    : visiblePeople;
+
   const impactAnimate = (section: SectionKey) =>
     pulse === section
       ? {
           opacity: 1,
-          scale: [1, 1.08, 0.98, 1.02, 1],
-          y: [0, -12, 4, -2, 0],
+          scale: [1, 1.06, 0.99, 1.01, 1],
+          y: [0, -10, 3, -1, 0],
           filter: "blur(0px)",
           transition: {
             duration: 1.1,
-            ease: [0.22, 1, 0.36, 1] as const,
+            ease: EASE,
           },
         }
       : {
@@ -199,12 +240,13 @@ export default function LandingHeroBanner() {
           y: 0,
           filter: "blur(0px)",
           transition: {
-            duration: 0.65,
-            ease: [0.22, 1, 0.36, 1] as const,
+            duration: 0.7,
+            ease: EASE,
           },
         };
 
-  /** Dim everything except the active map, so the state reads at a glance. */
+  // Dim everything except the active graphic. Applied on a wrapper so the CSS
+  // opacity multiplies with framer-motion's inline opacity instead of losing to it.
   const sectionStateClass = (section: SectionKey) =>
     active && active !== section
       ? "opacity-35 saturate-50 transition duration-500"
@@ -226,194 +268,217 @@ export default function LandingHeroBanner() {
     },
   });
 
+  // A subtle lift on the clickable map graphics (CSS so it never fights the
+  // framer-motion transform on the parent).
+  const mapImageClass =
+    "object-contain object-top transition-transform duration-500 [transition-timing-function:var(--ease-smooth)] group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5";
+
   return (
     <section
       id="intro"
       className="relative min-h-[100svh] overflow-hidden bg-[var(--sc-surface)]"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,#b9cec8_1px,transparent_1px)] [background-size:18px_18px] opacity-70" />
+      {/* Refined background — masked blueprint grid over soft brand glows. */}
+      <div className="hero-bg" aria-hidden>
+        <div className="hero-bg__grid" />
 
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[760px] -translate-x-1/2 rounded-full bg-[var(--sc-primary)]/10 blur-[120px]" />
+        <div className="absolute left-1/2 top-[-4%] h-[520px] w-[min(1150px,120vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-secondary)_34%,transparent),transparent)] blur-[100px]" />
 
-      <div className="pointer-events-none absolute -right-20 top-1/4 h-[380px] w-[380px] rounded-full bg-[var(--sc-secondary)]/12 blur-[140px]" />
+        <div className="absolute -left-24 bottom-[-10%] h-[460px] w-[460px] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-accent)_30%,transparent),transparent)] blur-[120px]" />
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--sc-primary)_7%,transparent),transparent_46%)]" />
+        <div className="absolute -right-24 top-[4%] h-[470px] w-[470px] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-secondary-strong)_24%,transparent),transparent)] blur-[130px]" />
+      </div>
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
         <motion.div
-          initial={{
-            opacity: 0,
-            y: -12,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.55,
-          }}
+          variants={textContainer}
+          initial={reduce ? "visible" : "hidden"}
+          animate="visible"
           className="mx-auto text-center"
         >
-          <p className="mb-2.5 inline-flex items-center justify-center gap-3 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--sc-secondary-strong)] md:text-[12px]">
-            <span aria-hidden className="h-px w-6 bg-[var(--sc-secondary)]" />
-            UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE
-            <span aria-hidden className="h-px w-6 bg-[var(--sc-secondary)]" />
-          </p>
+          <motion.p
+            variants={textItem}
+            className="mb-3 inline-flex items-center justify-center gap-2.5 rounded-full border border-[color-mix(in_srgb,var(--color-secondary-strong)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,transparent)] px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-secondary-strong)] backdrop-blur-sm md:text-[11.5px]"
+          >
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--color-action)]" />
+            CONNECT HOME, CLASSROOM &amp; CENTRAL OFFICE
+          </motion.p>
 
-          <h1 className="text-balance text-[32px] font-black leading-[1.06] tracking-[-0.03em] text-[var(--sc-primary)] sm:text-[38px] md:text-[44px] lg:text-[50px]">
+          <motion.h1
+            variants={textItem}
+            className="text-balance text-[34px] font-black leading-[1.04] tracking-[-0.03em] text-[var(--sc-primary)] sm:text-[40px] md:text-[46px] lg:text-[54px]"
+          >
             The K–12 Connected Operating System
-          </h1>
+          </motion.h1>
 
-          <p className="mx-auto mt-4 max-w-[620px] text-[14px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_68%,transparent)] md:text-[16px]">
-            One connected platform for school, family and learning — tap a section to explore it.
-          </p>
+          <motion.p
+            variants={textItem}
+            className="mx-auto mt-4 max-w-[640px] text-pretty text-[15px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_66%,transparent)] md:text-[16.5px]"
+          >
+            Bring your school, families and every learner onto one connected platform — explore the system below.
+          </motion.p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <motion.div
+            variants={textItem}
+            className="mt-6 flex flex-wrap items-center justify-center gap-3"
+          >
             <a className="mk-btn mk-btn--primary" href="#home-connections-content">
               Request a Demo
             </a>
             <a className="mk-btn mk-btn--ghost" href="#home-connections-content">
               Explore Features
             </a>
-          </div>
+          </motion.div>
         </motion.div>
 
         <div className="relative mt-5 flex flex-1 items-center justify-center lg:mt-8">
           <div className="relative h-[560px] w-full max-w-[1420px] md:h-[610px] lg:h-[650px]">
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={impactAnimate("orange")}
-              className={`absolute left-[0%] top-[2%] h-[390px] w-[35%] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[430px] ${sectionStateClass("orange")}`}
-              {...mapButtonProps("orange")}
-            >
-              {isActive("orange") ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--sc-primary)]/8 blur-2xl"
-                />
-              ) : null}
-              <Image
-                src="/Banner-imaes/orange-impact.png"
-                alt="Home Connections"
-                fill
-                sizes="(max-width: 768px) 34vw, 460px"
-                priority
-                className="object-contain object-top"
-              />
-            </motion.div>
-
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.orange ? "visible" : "hidden"}
-              className={`absolute bottom-[5%] left-[1%] h-[350px] w-[28%] md:h-[430px] ${sectionStateClass("orange")}`}
-            >
+            <div className={sectionStateClass("orange")}>
               <motion.div
-                variants={floatVariants}
-                animate={visiblePeople.orange ? "float" : undefined}
-                className="relative h-full w-full"
+                variants={impactVariants}
+                initial={reduce ? false : "hidden"}
+                animate={impactAnimate("orange")}
+                className="group absolute left-[0%] top-[2%] h-[390px] w-[35%] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[430px]"
+                {...mapButtonProps("orange")}
               >
+                {isActive("orange") ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--sc-primary)]/8 blur-2xl"
+                  />
+                ) : null}
                 <Image
-                  src="/Banner-imaes/orange-people.png"
-                  alt="Home Connections people"
+                  src="/Banner-imaes/orange-impact.png"
+                  alt="Home Connections"
                   fill
-                  sizes="(max-width: 768px) 26vw, 340px"
+                  sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  className={mapImageClass}
                 />
               </motion.div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={impactAnimate("green")}
-              className={`absolute left-1/2 top-[2%] h-[360px] w-[34%] -translate-x-1/2 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[395px] ${sectionStateClass("green")}`}
-              {...mapButtonProps("green")}
-            >
-              {isActive("green") ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--color-secondary)]/25 blur-2xl"
-                />
-              ) : null}
-              <Image
-                src="/Banner-imaes/green-impact.png"
-                alt="Student Achievement"
-                fill
-                sizes="(max-width: 768px) 34vw, 460px"
-                priority
-                className="object-contain object-top"
-              />
-            </motion.div>
-
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.green ? "visible" : "hidden"}
-              className={`absolute bottom-[4%] left-1/2 h-[380px] w-[20%] -translate-x-1/2 md:h-[455px] ${sectionStateClass("green")}`}
-            >
+            <div className={sectionStateClass("orange")}>
               <motion.div
-                variants={floatVariants}
-                animate={visiblePeople.green ? "float" : undefined}
-                className="relative h-full w-full"
+                variants={peopleVariants}
+                initial={reduce ? false : "hidden"}
+                animate={shown.orange ? "visible" : "hidden"}
+                className="absolute bottom-[5%] left-[1%] h-[350px] w-[28%] md:h-[430px]"
               >
+                <motion.div
+                  variants={floatVariants}
+                  animate={!reduce && shown.orange ? "float" : undefined}
+                  className="relative h-full w-full"
+                >
+                  <Image
+                    src="/Banner-imaes/orange-people.png"
+                    alt="Home Connections people"
+                    fill
+                    sizes="(max-width: 768px) 26vw, 340px"
+                    priority
+                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
+
+            <div className={sectionStateClass("green")}>
+              <motion.div
+                variants={impactVariants}
+                initial={reduce ? false : "hidden"}
+                animate={impactAnimate("green")}
+                className="group absolute left-1/2 top-[2%] h-[360px] w-[34%] -translate-x-1/2 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[395px]"
+                {...mapButtonProps("green")}
+              >
+                {isActive("green") ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--color-secondary)]/25 blur-2xl"
+                  />
+                ) : null}
                 <Image
-                  src="/Banner-imaes/green-people.png"
-                  alt="Student Achievement person"
+                  src="/Banner-imaes/green-impact.png"
+                  alt="Student Achievement"
                   fill
-                  sizes="(max-width: 768px) 26vw, 340px"
+                  sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  className={mapImageClass}
                 />
               </motion.div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              variants={impactVariants}
-              initial="hidden"
-              animate={impactAnimate("purple")}
-              className={`absolute right-[0%] top-[2%] h-[395px] w-[35%] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[440px] ${sectionStateClass("purple")}`}
-              {...mapButtonProps("purple")}
-            >
-              {isActive("purple") ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--sc-primary)]/8 blur-2xl"
-                />
-              ) : null}
-              <Image
-                src="/Banner-imaes/purple-impact.png"
-                alt="Operational Excellence"
-                fill
-                sizes="(max-width: 768px) 34vw, 460px"
-                priority
-                className="object-contain object-top"
-              />
-            </motion.div>
-
-            <motion.div
-              variants={peopleVariants}
-              initial="hidden"
-              animate={visiblePeople.purple ? "visible" : "hidden"}
-              className={`absolute bottom-[4%] right-[5%] h-[350px] w-[26%] md:h-[430px] ${sectionStateClass("purple")}`}
-            >
+            <div className={sectionStateClass("green")}>
               <motion.div
-                variants={floatVariants}
-                animate={visiblePeople.purple ? "float" : undefined}
-                className="relative h-full w-full"
+                variants={peopleVariants}
+                initial={reduce ? false : "hidden"}
+                animate={shown.green ? "visible" : "hidden"}
+                className="absolute bottom-[4%] left-1/2 h-[380px] w-[20%] -translate-x-1/2 md:h-[455px]"
               >
+                <motion.div
+                  variants={floatVariants}
+                  animate={!reduce && shown.green ? "float" : undefined}
+                  className="relative h-full w-full"
+                >
+                  <Image
+                    src="/Banner-imaes/green-people.png"
+                    alt="Student Achievement person"
+                    fill
+                    sizes="(max-width: 768px) 26vw, 340px"
+                    priority
+                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
+
+            <div className={sectionStateClass("purple")}>
+              <motion.div
+                variants={impactVariants}
+                initial={reduce ? false : "hidden"}
+                animate={impactAnimate("purple")}
+                className="group absolute right-[0%] top-[2%] h-[395px] w-[35%] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-primary)] md:h-[440px]"
+                {...mapButtonProps("purple")}
+              >
+                {isActive("purple") ? (
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-[6%] top-[6%] h-[92%] rounded-[32px] bg-[var(--sc-primary)]/8 blur-2xl"
+                  />
+                ) : null}
                 <Image
-                  src="/Banner-imaes/purple-people.png"
-                  alt="Operational Excellence people"
+                  src="/Banner-imaes/purple-impact.png"
+                  alt="Operational Excellence"
                   fill
-                  sizes="(max-width: 768px) 26vw, 340px"
+                  sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  className={mapImageClass}
                 />
               </motion.div>
-            </motion.div>
+            </div>
+
+            <div className={sectionStateClass("purple")}>
+              <motion.div
+                variants={peopleVariants}
+                initial={reduce ? false : "hidden"}
+                animate={shown.purple ? "visible" : "hidden"}
+                className="absolute bottom-[4%] right-[5%] h-[350px] w-[26%] md:h-[430px]"
+              >
+                <motion.div
+                  variants={floatVariants}
+                  animate={!reduce && shown.purple ? "float" : undefined}
+                  className="relative h-full w-full"
+                >
+                  <Image
+                    src="/Banner-imaes/purple-people.png"
+                    alt="Operational Excellence people"
+                    fill
+                    sizes="(max-width: 768px) 26vw, 340px"
+                    priority
+                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </div>

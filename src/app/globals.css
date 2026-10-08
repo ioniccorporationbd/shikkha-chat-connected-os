@@ -1242,3 +1242,35 @@ html[data-lang="en"] .language-toggle-knob {
 .mk-btn--ghost:hover {
   background: color-mix(in srgb, var(--color-secondary) 16%, #ffffff);
 }
+
+/* =========================================================
+   MAIN BANNER (LandingHeroBanner) — background system
+   Refined brand wash: a masked "blueprint" grid that fades out
+   from the top, over soft mint / accent / deep-green glows.
+   Replaces the old flat dotted grid (visual-only, no layout).
+========================================================= */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-bg__grid {
+  position: absolute;
+  inset: -1px;
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-primary) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-primary) 6%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 68px 68px;
+  -webkit-mask-image: radial-gradient(128% 88% at 50% 0%, #000 16%, transparent 78%);
+  mask-image: radial-gradient(128% 88% at 50% 0%, #000 16%, transparent 78%);
+}

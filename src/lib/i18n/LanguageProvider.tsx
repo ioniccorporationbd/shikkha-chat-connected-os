@@ -22,15 +22,19 @@ type LanguageContextValue = {
 const LANGUAGE_STORAGE_KEY = "shikkha-chat-site-language";
 
 const translations: Record<string, string> = {
+  "CONNECT HOME, CLASSROOM & CENTRAL OFFICE":
+    "বাড়ি, শ্রেণিকক্ষ ও কেন্দ্রীয় অফিসকে যুক্ত করুন",
   "UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE":
-    "বাড়ি, শ্রেণিকক্ষ এবং কেন্দ্রীয় অফিসকে একসাথে যুক্ত করুন",
-  "The K–12 Connected Operating System": "কে–টুয়েলভ সংযুক্ত অপারেটিং সিস্টেম",
+    "বাড়ি, শ্রেণিকক্ষ এবং কেন্দ্রীয় অফিসকে একসাথে যুক্ত করুন",
+  "The K–12 Connected Operating System": "কে–টুয়েলভ সংযুক্ত অপারেটিং সিস্টেম",
   "The K-12 Connected Operating System": "কে–টুয়েলভ সংযুক্ত অপারেটিং সিস্টেম",
   "The K–12 OS": "কে–টুয়েলভ অপারেটিং সিস্টেম",
   "The K-12 OS": "কে–টুয়েলভ অপারেটিং সিস্টেম",
   "The K–12 Operating System": "কে–টুয়েলভ অপারেটিং সিস্টেম",
   "The K-12 Operating System": "কে–টুয়েলভ অপারেটিং সিস্টেম",
 
+  "Bring your school, families and every learner onto one connected platform — explore the system below.":
+    "আপনার স্কুল, পরিবার ও প্রতিটি শিক্ষার্থীকে একটি সংযুক্ত প্ল্যাটফর্মে আনুন — নিচে সিস্টেমটি ঘুরে দেখুন।",
   "One connected platform for school, family and learning — tap a section to explore it.":
     "স্কুল, পরিবার ও শেখার জন্য একটি সংযুক্ত প্ল্যাটফর্ম — ঘুরে দেখতে যেকোনো সেকশনে ট্যাপ করুন।",
 
