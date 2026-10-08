@@ -271,10 +271,12 @@ function ProductTile({
         </p>
       ) : null}
 
-      <span
-        className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-[28px] -translate-x-1/2 origin-center scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
-        style={{ background: themeColor }}
-      />
+      {hcAccent ? null : (
+        <span
+          className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-[28px] -translate-x-1/2 origin-center scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
+          style={{ background: themeColor }}
+        />
+      )}
     </motion.button>
   );
 }

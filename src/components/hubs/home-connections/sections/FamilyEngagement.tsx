@@ -388,7 +388,7 @@ function ProductTile({
             : item.muted
               ? "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
               : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
 
@@ -516,7 +516,7 @@ function DetailPanel({
       </button>
 
       <div className="flex items-start gap-4 pr-10">
-        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-primary)] text-[var(--color-text-inverse)]">
+        <div className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-action)]">
           <div className="text-[31px] leading-none">
             {item.icon ?? <FaUsers />}
           </div>
@@ -548,7 +548,7 @@ function DetailPanel({
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full bg-[var(--color-primary)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-text-inverse)] transition hover:translate-y-[-1px]"
+        className="mt-5 rounded-full bg-[var(--color-action)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-text-inverse)] transition hover:translate-y-[-1px]"
       >
         {openSectionText}
       </button>
@@ -707,13 +707,13 @@ function MobileTabletView({
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
                     : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)]",
-                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+                  "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={[
-                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px] group-hover:bg-[var(--color-action)] group-hover:text-[var(--color-text-inverse)]",
                       active
                         ? "bg-[var(--color-secondary)] text-[var(--color-primary)]"
                         : "bg-[var(--color-primary)] text-[var(--color-text-inverse)]",

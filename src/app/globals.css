@@ -1403,5 +1403,5 @@ html[data-lang="en"] .language-toggle-knob {
 .hc-orbit-tile { background: var(--color-white) !important; color: var(--color-primary) !important; }
 .hc-orbit-tile > span[class*="linear-gradient"],
 .hc-orbit-tile > span[class*="skew-x"] { opacity: 0 !important; }
-.hc-orbit-tile:hover { background: var(--color-action-tint) !important; color: var(--color-primary) !important; }
+.hc-orbit-tile:hover { background: var(--color-action-tint) !important; color: var(--color-action) !important; }
 .hc-orbit-tile .hc-orbit-text, .hc-orbit-tile .hc-orbit-text * { color: currentColor !important; }

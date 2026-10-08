@@ -283,7 +283,7 @@ function ProductTile({
             : item.ghost
               ? "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
               : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-        "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
       ].join(" ")}
     >
 
@@ -416,13 +416,13 @@ function MobileTabletView({
                   active || product.featured
                     ? "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
                     : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)]",
-                  "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
+                  "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={[
-                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px]",
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-[22px] group-hover:bg-[var(--color-action)] group-hover:text-[var(--color-text-inverse)]",
                       active || product.featured
                         ? "bg-[var(--color-secondary)] text-[var(--color-primary)]"
                         : "bg-[var(--color-primary)] text-[var(--color-text-inverse)]",
@@ -592,7 +592,7 @@ export default function StudentInformation() {
                 "border-[1.5px] hc-scene-pill bg-[var(--color-white)]",
                 "px-[28px] text-[14px] font-black leading-[36px] text-[var(--color-primary)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
-                "transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
+                "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
               ].join(" ")}
             >
               {text.title}
