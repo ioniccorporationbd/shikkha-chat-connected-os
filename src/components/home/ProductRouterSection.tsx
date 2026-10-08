@@ -436,10 +436,10 @@ function ProductCard({
       onClick={() => scrollToProduct(product.id)}
       className={[
         "group relative flex h-[124px] flex-col justify-center rounded-[18px] border p-3 text-center",
-        "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
+        "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] text-[var(--color-primary)]",
         "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
-        "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-secondary)]",
-        "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+        "transition duration-300 hover:-translate-y-1 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
+        "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-action)_16%,transparent)]",
         product.featured ? "items-start text-left" : "items-center",
       ].join(" ")}
     >
@@ -457,25 +457,25 @@ function ProductCard({
             onSave();
           }
         }}
-        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition hover:scale-125"
+        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition duration-300 hover:scale-125 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]"
         aria-label="Save product"
       >
         {isSaved ? <FaStar /> : <FaRegStar />}
       </span>
 
       {!product.featured ? (
-        <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110">
+        <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
           {product.icon}
         </div>
       ) : (
-        <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110">
+        <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
           {product.icon}
         </div>
       )}
 
       <h3
         className={[
-          "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)]",
+          "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]",
           product.featured ? "uppercase" : "",
         ].join(" ")}
       >
@@ -533,11 +533,7 @@ export default function ProductRouterSection() {
   }, [tab, groups, savedIds]);
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20">
-      <div className="pointer-events-none absolute inset-0 opacity-0" />
-
-      <div className="pointer-events-none absolute left-1/2 top-12 h-[280px] w-[280px] -translate-x-1/2 rounded-full bg-[var(--color-secondary)] opacity-70 blur-[90px]" />
-
+    <section className="relative min-h-screen bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20">
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
         <div className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
           <button
@@ -546,8 +542,8 @@ export default function ProductRouterSection() {
             className={[
               "flex h-[50px] items-center gap-2 rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-7 sm:text-[17px]",
               tab === "saved"
-                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
             ].join(" ")}
           >
             <FaStar className="text-[17px]" />
@@ -560,8 +556,8 @@ export default function ProductRouterSection() {
             className={[
               "h-[50px] rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-8 sm:text-[17px]",
               tab === "all"
-                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-secondary)]",
+                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
             ].join(" ")}
           >
             {text.allProducts}
@@ -597,8 +593,7 @@ export default function ProductRouterSection() {
 
                 <div className="h-7 w-[4px] bg-[var(--color-primary)]" />
 
-                <div className="relative w-full rounded-[30px] border-[4px] border-[var(--color-primary)] bg-[var(--color-white)] p-3 shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
-                  <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[linear-gradient(180deg,var(--color-white),var(--color-secondary))] opacity-35" />
+                <div className="group/wrap relative w-full rounded-[30px] border-2 border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-3 shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition-colors duration-300 hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))]">
 
                   <div className="relative z-10 grid grid-cols-2 gap-3">
                     {group.products.map((product) => {
