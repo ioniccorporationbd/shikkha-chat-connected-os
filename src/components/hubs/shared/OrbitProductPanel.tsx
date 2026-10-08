@@ -163,11 +163,13 @@ function ProductTile({
   themeColor,
   darkColor,
   titleColor = "var(--color-primary)",
+  hcAccent = false,
 }: {
   item: ProductCard;
   themeColor: string;
   darkColor: string;
   titleColor?: string;
+  hcAccent?: boolean;
 }) {
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
@@ -200,6 +202,7 @@ function ProductTile({
         "will-change-transform [transform-style:preserve-3d]",
         "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 6%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 75%, transparent)]",
         "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 15%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 82%, transparent)]",
+        hcAccent ? "hc-orbit-tile" : "",
       ].join(" ")}
       style={{
         background: item.highlight
@@ -236,8 +239,8 @@ function ProductTile({
 
       {item.icon ? (
         <div
-          className="relative z-10 mb-[8px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110"
-          style={{ color: darkColor }}
+          className={`relative z-10 mb-[8px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110${hcAccent ? " hc-orbit-text" : ""}`}
+          style={{ color: hcAccent ? "currentColor" : darkColor }}
         >
           {item.icon}
         </div>
@@ -248,19 +251,20 @@ function ProductTile({
           "relative z-10 flex min-h-[34px] max-w-[88px] items-center justify-center",
           "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
           "transition-colors duration-300",
+          hcAccent ? "hc-orbit-text" : "",
           isSingleWord
             ? "text-[14px] leading-none"
             : isLongTitle
               ? "text-[11px] leading-[1.08]"
               : "text-[12px] leading-[1.1]",
         ].join(" ")}
-        style={{ color: titleColor }}
+        style={{ color: hcAccent ? "currentColor" : titleColor }}
       >
         {formatCardTitle(item.title)}
       </div>
 
       {item.subtitle ? (
-        <p className="relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90">
+        <p className={`relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
           {item.subtitle}
         </p>
       ) : null}
@@ -370,6 +374,7 @@ export default function OrbitProductPanel({
               "h-[38px] min-w-[224px] rounded-full px-[30px]",
               "text-[14px] font-black leading-[38px] text-[var(--color-primary)] whitespace-nowrap",
               "transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+              isHcAccent ? "hc-orbit-pill" : "",
             ].join(" ")}
             style={{
               background: headingBackground,
@@ -408,6 +413,7 @@ export default function OrbitProductPanel({
                   themeColor={themeColor}
                   darkColor={darkColor}
                   titleColor={cardTitleColor}
+                  hcAccent={isHcAccent}
                 />
               ))}
 

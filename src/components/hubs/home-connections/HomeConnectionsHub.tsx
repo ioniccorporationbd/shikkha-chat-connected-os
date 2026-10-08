@@ -129,7 +129,7 @@ export default function HomeConnectionsHub() {
             duration: 0.38,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className="section-label-badge"
+          className="section-label-badge hc-middle-badge"
         >
           {activeTitle}
         </motion.div>

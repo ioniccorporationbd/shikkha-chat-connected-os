@@ -536,7 +536,7 @@ function CoreTile({
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
-          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
@@ -588,7 +588,7 @@ function CoreTile({
       <div
         className={[
           "relative z-10 flex min-h-[32px] max-w-[86px] items-center justify-center",
-          active ? "text-center tracking-[-0.04em] text-current" : "text-center tracking-[-0.04em] text-[var(--color-action)]",
+          active ? "text-center tracking-[-0.04em] text-current" : "text-center tracking-[-0.04em] text-current",
           isSis ? "font-black" : "font-semibold",
           isSingleWord ? "text-[14px] leading-none" : "text-[11px] leading-[1.08]",
         ].join(" ")}
@@ -653,7 +653,7 @@ function FloatingTile({
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
-          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
@@ -706,7 +706,7 @@ function FloatingTile({
       <div
         className={[
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
-          active ? "font-semibold tracking-[-0.04em] text-current" : "font-semibold tracking-[-0.04em] text-[var(--color-action)]",
+          active ? "font-semibold tracking-[-0.04em] text-current" : "font-semibold tracking-[-0.04em] text-current",
           isSingleWord ? "text-[11px] leading-none" : "text-[10px] leading-[1.05]",
         ].join(" ")}
       >
@@ -805,7 +805,7 @@ function DetailPanel({
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-action)]",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-primary)]",
               isSis ? "font-black" : "font-semibold",
             ].join(" ")}
           >
@@ -1011,7 +1011,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)]",
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -1032,7 +1032,7 @@ function MobileTabletView({
                       {card.label}
                     </p>
 
-                    <h3 className={`mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] ${active ? "text-current" : "text-[var(--color-action)]"}`}>
+                    <h3 className={`mt-1 text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] ${active ? "text-current" : "text-current"}`}>
                       {card.title}
                     </h3>
 
@@ -1148,9 +1148,9 @@ export default function StudentInformationSystem() {
                 onClick={() => setSelectedCapability(coreCards[1])}
                 className={[
                   "h-[42px] min-w-[320px] rounded-full",
-                  "border-[1.5px] border-[color-mix(in_srgb,var(--color-action)_35%,transparent)] bg-[var(--color-white)] px-[44px]",
+                  "border-[1.5px] hc-scene-pill bg-[var(--color-white)] px-[44px]",
                   "text-center text-[13px] font-black uppercase tracking-[0.13em]",
-                  "leading-[36px] text-[var(--color-action)]",
+                  "leading-[36px] text-[var(--color-primary)]",
                   "shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
                   "transition duration-300 hover:scale-[1.025]",
                   "whitespace-nowrap outline-none",
