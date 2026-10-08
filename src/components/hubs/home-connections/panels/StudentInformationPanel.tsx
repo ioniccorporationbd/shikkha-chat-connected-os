@@ -58,6 +58,7 @@ export default function StudentInformationPanel() {
       <div className="home-section-panel">
         <SectionPanel
           id="student-information"
+          variant="dashboard"
           pill={text.pill}
           title={text.title}
           description={text.description}

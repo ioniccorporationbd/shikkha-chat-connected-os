@@ -51,6 +51,7 @@ export default function AttendanceSupportPanel() {
   return (
     <SectionPanel
       id="attendance-support"
+      variant="dashboard"
       pill={text.pill}
       title={text.title}
       description={text.description}

@@ -51,6 +51,7 @@ export default function FamilyEngagementPanel() {
   return (
     <SectionPanel
       id="family-engagement"
+      variant="dashboard"
       pill={text.pill}
       pillStyle="solid"
       title={text.title}

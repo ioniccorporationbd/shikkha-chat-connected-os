@@ -51,6 +51,7 @@ export default function SpecialProgramsPanel() {
   return (
     <SectionPanel
       id="special-programs"
+      variant="dashboard"
       pill={text.pill}
       title={text.title}
       description={text.description}

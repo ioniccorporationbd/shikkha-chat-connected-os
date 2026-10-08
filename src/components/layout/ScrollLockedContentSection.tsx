@@ -15,14 +15,21 @@ function clamp(value: number, min: number, max: number) {
 /* -------------------------------------------------------------------------
  * Middle-section scroll pacing (frontend-only, no backend impact).
  *   WHEEL_SPEED     – multiplier applied to each wheel delta (higher = faster).
- *                     Raised 0.95 → 1.15 so the controlled scroll needs slightly
- *                     less wheel/touchpad movement (still clamped + eased).
+ *                     THIS is the single authoritative homepage scroll-speed
+ *                     control (the locked/pinned scenes that make up the whole
+ *                     Homepage progression). Raised 1.15 → 2.3 so the homepage
+ *                     advances exactly 2× per equivalent wheel/trackpad input,
+ *                     as requested. The multiplier is applied ONCE, and the
+ *                     per-event input is clamped by MAX_WHEEL_DELTA first so the
+ *                     ease/re-base logic still prevents scene skipping and
+ *                     overshoot. Dashboard scrolling is unaffected (this engine
+ *                     is homepage-only).
  *   MAX_WHEEL_DELTA – clamp one event so a fast flick can't jump whole scenes.
  *   SMOOTH_EASE     – per-frame interpolation toward the target scroll.
  *                     Lower = smoother & slower to settle, so the internal
  *                     scenes play out instead of skipping.
  * ----------------------------------------------------------------------- */
-const WHEEL_SPEED = 1.15;
+const WHEEL_SPEED = 2.3;
 const MAX_WHEEL_DELTA = 90;
 const SMOOTH_EASE = 0.26;
 

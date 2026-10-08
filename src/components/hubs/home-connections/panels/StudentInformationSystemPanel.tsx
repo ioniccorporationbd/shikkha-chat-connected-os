@@ -61,6 +61,7 @@ export default function StudentInformationSystemPanel() {
     >
       <SectionPanel
         id="sis"
+        variant="dashboard"
         pill={text.pill}
         pillStyle="solid"
         title={text.title}

@@ -49,6 +49,7 @@ export default function CommunicationsPanel() {
   return (
     <SectionPanel
       id="communications"
+      variant="dashboard"
       pill={text.pill}
       title={text.title}
       description={text.description}

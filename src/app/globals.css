@@ -1066,6 +1066,105 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 /* =========================================================
+   HOME CONNECTIONS — DASHBOARD CARD VARIANT
+   Opt-in only: the shared SectionPanel adds the `.sc-hc-panel`
+   modifier when rendered with `variant="dashboard"`, which is used
+   EXCLUSIVELY by the Home Connections right rail. These rules reuse
+   the Dashboard design language (26px surface, 16% border, deep-green
+   #032521 icon tiles, soft tick rows) and never leak into the Student
+   Achievement / Operational Excellence rails.
+========================================================= */
+
+.sc-hc-panel .sc-hc-card {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, transparent);
+  background: var(--color-white);
+  box-shadow: 0 18px 44px -26px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  padding: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .sc-hc-panel .sc-hc-card {
+    padding: 1.75rem;
+  }
+}
+
+/* Top accent bar — the exact PanelCard treatment from the Dashboard. */
+.sc-hc-panel .sc-hc-card::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary) 35%, var(--color-secondary)) 55%,
+    transparent 100%
+  );
+}
+
+/* Ordinary icon tile — MANDATORY #032521 background, #FFFFFF glyph. */
+.sc-hc-panel .sc-hc-icon-tile {
+  background-color: #032521;
+  color: #ffffff;
+  border: 1px solid color-mix(in srgb, #032521 55%, transparent);
+  box-shadow: 0 12px 26px -14px color-mix(in srgb, #032521 70%, transparent);
+}
+
+/* Capability checklist — dashboard-style tick rows. */
+.sc-hc-panel .sc-hc-checklist {
+  max-width: 560px;
+}
+
+.sc-hc-panel .sc-hc-tick-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-white));
+  padding: 0.6rem 0.85rem;
+  transition:
+    border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sc-hc-panel .sc-hc-tick-row:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-white));
+}
+
+.sc-hc-panel .sc-hc-tick-tile {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  width: 22px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background-color: #032521;
+  color: #ffffff;
+}
+
+.sc-hc-panel .sc-hc-stat {
+  border-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 3%, var(--color-white));
+}
+
+/* The base `a { color: inherit }` reset is unlayered, so it outranks Tailwind's
+   layered `text-[…]` utilities — which left the primary action's label
+   inheriting the dark rail colour instead of white. Pin the primary CTA to
+   #FFFFFF (icon + label inherit this) inside the scoped panel only. */
+.sc-hc-panel a.action-text {
+  color: var(--color-white);
+}
+
+/* =========================================================
    SCROLL-BANNER TEXT ENTRANCE
    Previously one `<style jsx>` block per banner component. styled-jsx
    scopes those rules with a generated `jsx-<hash>` class that only the

@@ -51,6 +51,7 @@ export default function EnrollmentPanel() {
   return (
     <SectionPanel
       id="enrollment"
+      variant="dashboard"
       pill={text.pill}
       title={text.title}
       description={text.description}

@@ -2,7 +2,7 @@
 
 import SectionPanel from "../../shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { LuLayoutGrid } from "react-icons/lu";
+import { LuNetwork } from "react-icons/lu";
 
 type LanguageCode = "bn" | "en";
 
@@ -66,13 +66,14 @@ export default function HomeConnectionsOverviewPanel() {
       <div className="home-section-panel">
         <SectionPanel
           id="home-connections-panel"
+          variant="dashboard"
           pill={text.pill}
           pillStyle="solid"
           title={text.title}
           description={text.description}
           supporting={text.supporting}
           capabilities={text.capabilities}
-          icon={LuLayoutGrid}
+          icon={LuNetwork}
           showButtons={false}
           stats={text.stats}
           quote={text.quote}
