@@ -384,10 +384,10 @@ function ProductTile({
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
           : item.outline
-            ? "border-[3px] border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+            ? "border-[3px] border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
             : item.muted
-              ? "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
-              : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+              ? "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+              : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
@@ -430,7 +430,6 @@ function ProductTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
       {item.icon ? (
         <div className="relative z-10 mb-[7px] text-[25px] leading-none text-current transition duration-300 group-hover:scale-110">
@@ -708,7 +707,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)]",
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -868,7 +867,6 @@ export default function FamilyEngagement() {
           >
             <motion.button
               type="button"
-              onClick={() => scrollRightSidebarTo("home-connections-panel")}
               whileHover={
                 shouldReduceMotion
                   ? undefined

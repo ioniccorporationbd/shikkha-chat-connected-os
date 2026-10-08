@@ -536,7 +536,7 @@ function CoreTile({
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
-          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
       ].join(" ")}
     >
@@ -579,7 +579,6 @@ function CoreTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
       <div className="relative z-10 mb-[8px] text-[27px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
         {item.icon}
@@ -653,7 +652,7 @@ function FloatingTile({
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
-          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
@@ -697,7 +696,6 @@ function FloatingTile({
         />
       ) : null}
 
-      <FaRegStar className="absolute right-[8px] top-[8px] z-10 text-[12px] text-current opacity-80 transition duration-300 group-hover:rotate-12" />
 
       <div className="relative z-10 mb-[7px] text-[26px] leading-none text-current transition-transform duration-300 group-hover:scale-110">
         {item.icon}
@@ -1011,7 +1009,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action)] hover:text-[var(--color-text-inverse)]",
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -1145,7 +1143,6 @@ export default function StudentInformationSystem() {
             <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
               <button
                 type="button"
-                onClick={() => setSelectedCapability(coreCards[1])}
                 className={[
                   "h-[42px] min-w-[320px] rounded-full",
                   "border-[1.5px] hc-scene-pill bg-[var(--color-white)] px-[44px]",

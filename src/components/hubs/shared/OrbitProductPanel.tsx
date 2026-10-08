@@ -232,10 +232,12 @@ function ProductTile({
         }
       />
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[13px] text-[color-mix(in srgb, var(--color-primary) 55%, var(--color-white))] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
-        style={{ color: item.highlight ? darkColor : undefined }}
-      />
+      {hcAccent ? null : (
+        <FaRegStar
+          className="absolute right-[8px] top-[8px] z-10 text-[13px] text-[color-mix(in srgb, var(--color-primary) 55%, var(--color-white))] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
+          style={{ color: item.highlight ? darkColor : undefined }}
+        />
+      )}
 
       {item.icon ? (
         <div
@@ -366,7 +368,7 @@ export default function OrbitProductPanel({
 
           <motion.button
             type="button"
-            onClick={() => scrollRightSidebarTo(activeId)}
+            onClick={isHcAccent ? undefined : () => scrollRightSidebarTo(activeId)}
             whileHover={shouldReduceMotion ? undefined : { y: -3, scale: 1.025 }}
             whileTap={{ scale: 0.96 }}
             className={[

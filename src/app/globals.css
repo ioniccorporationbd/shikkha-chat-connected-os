@@ -1379,8 +1379,11 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 /* ── Home Connections middle customization ────────────────────────────
-   Section-title badge + scene heading pill -> green bg, red on hover.
-   Small cards -> white bg + icon(green) text, red bg + white text on hover. */
+   Section-title badge -> green bg (no hover change).
+   Scene/orbit heading pill -> green bg + white text; hover = light red
+   (--color-action-tint) + dark text, NOT solid red.
+   Small cards -> white bg + icon(green) dark text; hover = light red
+   (--color-action-tint) bg, text/icon stay dark. */
 .hc-middle-badge {
   background: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
@@ -1394,9 +1397,9 @@ html[data-lang="en"] .language-toggle-knob {
   box-shadow: 0 20px 54px color-mix(in srgb, var(--color-primary) 24%, transparent) !important;
 }
 .hc-scene-pill:hover {
-  background: var(--color-action) !important;
-  border-color: var(--color-action) !important;
-  color: #ffffff !important;
+  background: var(--color-action-tint) !important;
+  border-color: color-mix(in srgb, var(--color-action) 40%, transparent) !important;
+  color: var(--color-primary) !important;
 }
 .hc-orbit-pill {
   background: var(--color-primary) !important;
@@ -1404,10 +1407,10 @@ html[data-lang="en"] .language-toggle-knob {
   color: #ffffff !important;
 }
 .hc-orbit-pill:hover {
-  background: var(--color-action) !important;
-  border-color: var(--color-action) !important;
-  color: #ffffff !important;
+  background: var(--color-action-tint) !important;
+  border-color: color-mix(in srgb, var(--color-action) 40%, transparent) !important;
+  color: var(--color-primary) !important;
 }
 .hc-orbit-tile { background: var(--color-white) !important; color: var(--color-primary) !important; }
-.hc-orbit-tile:hover { background: var(--color-action) !important; color: #ffffff !important; }
+.hc-orbit-tile:hover { background: var(--color-action-tint) !important; color: var(--color-primary) !important; }
 .hc-orbit-tile .hc-orbit-text, .hc-orbit-tile .hc-orbit-text * { color: currentColor !important; }
