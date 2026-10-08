@@ -277,20 +277,19 @@ function ProductTile({
         "will-change-transform [transform-style:preserve-3d]",
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         isActive || item.featured
-          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
           : item.outline
             ? "border-[3px] border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_16px_42px_color-mix(in_srgb,var(--color-primary)_13%,transparent)]"
             : item.ghost
-              ? "border border-[var(--color-primary)] bg-[var(--color-secondary-light)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+              ? "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
               : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,var(--color-white),transparent_52%,var(--color-secondary-light))] opacity-45" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[var(--color-white)] opacity-45 blur-[1px]"
+        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-30%" }}
         whileHover={
           shouldReduceMotion
@@ -372,7 +371,7 @@ function FloatingDot({
       aria-hidden="true"
       className={[
         "pointer-events-none absolute rounded-full",
-        "bg-[var(--color-secondary-light)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+        "bg-[var(--color-white)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         className,
       ].join(" ")}
       animate={
@@ -415,7 +414,7 @@ function MobileTabletView({
                 className={[
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active || product.featured
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
+                    ? "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
                     : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
@@ -628,7 +627,6 @@ export default function StudentInformation() {
                 "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,var(--color-white),transparent_48%,var(--color-secondary-light))] opacity-45" />
 
               <motion.span
                 aria-hidden="true"
