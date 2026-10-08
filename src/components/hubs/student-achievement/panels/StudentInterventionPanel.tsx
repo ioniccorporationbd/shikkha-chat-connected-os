@@ -52,6 +52,7 @@ export default function StudentInterventionPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='student-intervention'
       pill={text.pill}
       pillStyle="solid"

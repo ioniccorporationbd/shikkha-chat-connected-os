@@ -52,6 +52,7 @@ export default function ClassroomSolutionsPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='classroom-solutions'
       pill={text.pill}
       pillStyle="solid"

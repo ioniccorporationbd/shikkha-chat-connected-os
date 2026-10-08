@@ -31,11 +31,10 @@ type SectionPanelProps = {
   saveProductText?: string;
   activeProductText?: string;
   /**
-   * Presentation variant. "default" is the shared rail look used by every hub.
+   * Presentation variant. "default" is the shared rail look.
    * "dashboard" opts this panel into the Dashboard card design language
-   * (26px surface, #032521 icon tiles, tick rows) and is used ONLY by the
-   * Home Connections rail — Student Achievement / Operational Excellence keep
-   * the "default" look untouched.
+   * (26px surface, #032521 icon tiles, tick rows). Used by the Home
+   * Connections, Student Achievement and Operational Excellence rails.
    */
   variant?: "default" | "dashboard";
 };

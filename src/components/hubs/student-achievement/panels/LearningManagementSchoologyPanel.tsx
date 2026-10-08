@@ -52,6 +52,7 @@ export default function LearningManagementSchoologyPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='learning-management-schoology'
       pill={text.pill}
       pillStyle="solid"

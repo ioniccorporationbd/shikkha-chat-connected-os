@@ -52,6 +52,7 @@ export default function EducatorSupportPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="educator-support"
       pill={text.pill}
       title={text.title}

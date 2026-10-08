@@ -264,6 +264,17 @@ export default function ScrollLockedContentSection({
     const handleWheel = (event: WheelEvent) => {
       if (!shouldUseLockedDesktopScroll()) return;
 
+      // The left navigation sidebar is an independent scroll area: wheeling
+      // over it must scroll the sidebar and have ZERO connection to the
+      // section scroll engine. Returning early lets the browser scroll it
+      // natively instead of hijacking the wheel for the right rail.
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".connected-sidebar")
+      ) {
+        return;
+      }
+
       const metrics = getSectionMetrics();
       const currentPanel = rightScrollRef.current;
       if (!metrics || !currentPanel) return;
@@ -308,6 +319,15 @@ export default function ScrollLockedContentSection({
 
     const handleTouchMove = (event: TouchEvent) => {
       if (!shouldUseLockedDesktopScroll()) return;
+
+      // Same rule as wheel: a gesture starting inside the sidebar scrolls the
+      // sidebar independently and never drives the section engine.
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".connected-sidebar")
+      ) {
+        return;
+      }
 
       const metrics = getSectionMetrics();
       if (!metrics) return;
@@ -445,7 +465,7 @@ export default function ScrollLockedContentSection({
         <aside className="connected-right-pane bg-[var(--color-white)] shadow-[-18px_0_60px_color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
           <div
             ref={rightScrollRef}
-            className="connected-right-scroll-panel right-scroll-panel no-scrollbar overscroll-contain scroll-auto"
+            className="connected-right-scroll-panel right-scroll-panel no-scrollbar scroll-auto"
           >
             {right}
           </div>

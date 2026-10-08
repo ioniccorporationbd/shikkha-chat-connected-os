@@ -52,6 +52,7 @@ export default function PredictiveEnrollmentPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="predictive-enrollment"
       pill={text.pill}
       title={text.title}

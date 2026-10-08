@@ -52,6 +52,7 @@ export default function CollegeCareerLifeReadinessPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='college-career-life-readiness'
       pill={text.pill}
       pillStyle="solid"

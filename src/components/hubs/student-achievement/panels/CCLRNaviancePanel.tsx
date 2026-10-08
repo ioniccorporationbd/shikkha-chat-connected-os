@@ -52,6 +52,7 @@ export default function CCLRNaviancePanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='cclr-naviance'
       pill={text.pill}
       pillStyle="solid"

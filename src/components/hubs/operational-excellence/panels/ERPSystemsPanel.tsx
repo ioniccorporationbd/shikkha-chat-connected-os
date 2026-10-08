@@ -52,6 +52,7 @@ export default function ERPSystemsPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="erp-systems"
       pill={text.pill}
       title={text.title}

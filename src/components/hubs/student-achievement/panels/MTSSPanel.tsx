@@ -52,6 +52,7 @@ export default function MTSSPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='mtss'
       pill={text.pill}
       pillStyle="solid"

@@ -52,6 +52,7 @@ export default function TalentManagementPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="talent-management"
       pill={text.pill}
       title={text.title}

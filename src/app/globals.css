@@ -432,7 +432,11 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior: contain;
+  /* Intentionally NOT `contain`: when the right rail reaches its end the
+     wheel must flow to the adjacent sibling (next video banner / section).
+     `contain` blocked that chaining and made the section→section transition
+     feel stuck. The JS lock still preventDefaults while the panel can scroll. */
+  overscroll-behavior: auto;
   scroll-behavior: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;

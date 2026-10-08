@@ -52,6 +52,7 @@ export default function AssessmentPerformanceMattersPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='assessment-performance-matters'
       pill={text.pill}
       pillStyle="solid"

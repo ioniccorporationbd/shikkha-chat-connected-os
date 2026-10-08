@@ -52,6 +52,7 @@ export default function ResourcePlanningPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="resource-planning"
       pill={text.pill}
       title={text.title}

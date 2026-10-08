@@ -52,6 +52,7 @@ export default function OperationalExcellenceOverviewPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="operational-excellence"
       pill={text.pill}
       title={text.title}

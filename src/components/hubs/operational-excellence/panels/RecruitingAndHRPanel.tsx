@@ -52,6 +52,7 @@ export default function RecruitingAndHRPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="recruiting-and-hr"
       pill={text.pill}
       title={text.title}

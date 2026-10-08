@@ -52,6 +52,7 @@ export default function FinancialStrategyAllovuePanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id="financial-strategy-allovue"
       pill={text.pill}
       title={text.title}

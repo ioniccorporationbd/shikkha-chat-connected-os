@@ -52,6 +52,7 @@ export default function CurriculumInstructionPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='curriculum-instruction'
       pill={text.pill}
       pillStyle="solid"

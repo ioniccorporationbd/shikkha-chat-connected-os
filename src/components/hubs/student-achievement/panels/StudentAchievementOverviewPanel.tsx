@@ -52,6 +52,7 @@ export default function StudentAchievementOverviewPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='student-achievement'
       pill={text.pill}
       pillStyle="solid"

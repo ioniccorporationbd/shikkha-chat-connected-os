@@ -52,6 +52,7 @@ export default function BehaviorSupportPanel() {
 
   return (
     <SectionPanel
+      variant="dashboard"
       id='behavior-support'
       pill={text.pill}
       pillStyle="solid"
