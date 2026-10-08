@@ -4,6 +4,7 @@ import type { IconType } from "react-icons";
 import { LuCheck } from "react-icons/lu";
 import { motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { useSavedSections } from "@/lib/savedSections";
 
 type Stat = {
   value: string;
@@ -43,10 +44,12 @@ const panelText = {
   bn: {
     productDetails: "বিস্তারিত দেখুন",
     saveProduct: "সংরক্ষণ",
+    savedProduct: "সংরক্ষিত",
   },
   en: {
     productDetails: "View details",
     saveProduct: "Save",
+    savedProduct: "Saved",
   },
 } as const;
 
@@ -76,6 +79,11 @@ export default function SectionPanel({
 
   const detailsLabel = productDetailsText ?? text.productDetails;
   const saveLabel = saveProductText ?? text.saveProduct;
+
+  // Saved / selected state — shared with the bottom "Saved" area so the
+  // right sidebar button and the saved-items list stay in sync.
+  const { isSaved, toggle } = useSavedSections();
+  const saved = isSaved(id);
 
   const enter = reduceMotion
     ? { opacity: 1, y: 0 }
@@ -215,12 +223,16 @@ export default function SectionPanel({
 
           <motion.button
             type="button"
-            className="action-text inline-flex h-[46px] items-center justify-center gap-2.5 rounded-xl border border-[var(--color-border-strong)] bg-transparent px-5 font-bold text-[var(--color-primary)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
+            onClick={() => toggle(id)}
+            aria-pressed={saved}
+            data-saved={saved ? "true" : "false"}
+            aria-label={saved ? text.savedProduct : saveLabel}
+            className="save-section-btn action-text inline-flex h-[46px] items-center justify-center gap-2.5 rounded-xl border px-5 font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)]"
             whileHover={reduceMotion ? undefined : { y: -2 }}
             whileTap={reduceMotion ? undefined : { scale: 0.98 }}
           >
-            <span aria-hidden>☆</span>
-            {saveLabel}
+            <span aria-hidden>{saved ? "★" : "☆"}</span>
+            {saved ? text.savedProduct : saveLabel}
           </motion.button>
         </motion.div>
       ) : null}

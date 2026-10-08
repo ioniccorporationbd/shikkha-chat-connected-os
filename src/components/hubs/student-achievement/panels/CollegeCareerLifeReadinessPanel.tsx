@@ -61,7 +61,6 @@ export default function CollegeCareerLifeReadinessPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuCompass}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

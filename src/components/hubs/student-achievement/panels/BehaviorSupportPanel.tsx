@@ -61,7 +61,6 @@ export default function BehaviorSupportPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuHeartHandshake}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

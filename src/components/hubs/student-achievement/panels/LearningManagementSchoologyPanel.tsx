@@ -61,7 +61,6 @@ export default function LearningManagementSchoologyPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuBookOpen}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

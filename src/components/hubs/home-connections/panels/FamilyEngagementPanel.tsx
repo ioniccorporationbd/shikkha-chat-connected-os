@@ -59,7 +59,6 @@ export default function FamilyEngagementPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuUsers}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

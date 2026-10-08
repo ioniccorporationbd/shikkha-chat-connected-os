@@ -61,7 +61,6 @@ export default function StudentInterventionPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuHandHeart}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

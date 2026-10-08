@@ -1058,6 +1058,76 @@ html[data-lang="en"] .language-toggle-knob {
   line-height: 1.6 !important;
 }
 
+/* =========================================================
+   RIGHT SIDEBAR — REDESIGN (2026-10-08)
+   Scoped to the right-side content area ONLY (`.right-panel-section`
+   inside the rail), so the middle sticky label keeps its own colour.
+
+   Task 1  Section-start pill now inherits the adjacent icon-tile
+           colour (deep green #032521) instead of red.
+   Task 2  "বিস্তারিত দেখুন" / save action labels are bold — the global
+           `button, a { font: inherit }` reset otherwise forces 400.
+   Task 3  Strict 3-level hierarchy: headline (22) > body (17) >
+           detail (14), each a progressively lighter green-grey.
+========================================================= */
+
+/* Task 1 — title pill matches the icon-tile background. */
+.right-panel-section .section-label-badge {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--color-primary) 26%, transparent) !important;
+}
+
+/* Task 2 — action button labels are bold. */
+.right-panel-section a.action-text,
+.right-panel-section button.action-text {
+  font-weight: 700 !important;
+}
+
+/* Task 4 — the save / bookmark control. White by default; flips to the
+   Shikkha red when the section is saved, and stays in sync with the
+   bottom saved-items area through the shared store. */
+.right-panel-section .save-section-btn {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-white);
+  color: var(--color-primary);
+}
+.right-panel-section .save-section-btn:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+.right-panel-section .save-section-btn[data-saved="true"] {
+  border-color: var(--color-action) !important;
+  background-color: var(--color-action) !important;
+  color: var(--color-white) !important;
+  box-shadow: 0 12px 28px -14px color-mix(in srgb, var(--color-action) 60%, transparent);
+}
+.right-panel-section .save-section-btn[data-saved="true"]:hover {
+  background-color: var(--color-action-hover) !important;
+}
+
+/* Task 3 — Level 1: main title. */
+.right-panel-section .section-main-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: var(--color-primary) !important;
+}
+
+/* Task 3 — Level 2: description / subtitle. */
+.right-panel-section .section-description {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  line-height: 1.6 !important;
+  color: color-mix(in srgb, var(--color-primary) 78%, var(--color-black)) !important;
+}
+
+/* Task 3 — Level 3: supporting detail (capabilities, meta). */
+.right-panel-section .capability-text {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  color: color-mix(in srgb, var(--color-primary) 52%, var(--color-black)) !important;
+}
+
 @media (max-width: 767px) {
   .right-panel-section {
     padding-left: 16px;

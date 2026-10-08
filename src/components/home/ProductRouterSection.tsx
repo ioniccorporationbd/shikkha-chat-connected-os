@@ -22,6 +22,11 @@ import {
   MdOutlineMenuBook,
 } from "react-icons/md";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import {
+  SAVED_SECTIONS_EVENT,
+  readSavedSections,
+  toggleSavedSection,
+} from "@/lib/savedSections";
 
 type LanguageCode = "bn" | "en";
 type ProductGroupId =
@@ -67,8 +72,6 @@ type ProductGroup = {
   title: string;
   products: ProductItem[];
 };
-
-const STORAGE_KEY = "connected-os-saved-products";
 
 const colorPrimary = "var(--color-primary)";
 const colorSecondary = "var(--color-secondary)";
@@ -418,19 +421,6 @@ function scrollToProduct(id: string) {
   }
 }
 
-function readSavedIds(): ProductId[] {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = saved ? JSON.parse(saved) : [];
-
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter((item): item is ProductId => typeof item === "string");
-  } catch {
-    return [];
-  }
-}
-
 function ProductCard({
   product,
   isSaved,
@@ -512,19 +502,21 @@ export default function ProductRouterSection() {
   const groups = useMemo(() => getGroups(currentLanguage), [currentLanguage]);
 
   useEffect(() => {
-    setSavedIds(readSavedIds());
+    const sync = () => setSavedIds(readSavedSections() as ProductId[]);
+
+    sync();
+
+    window.addEventListener(SAVED_SECTIONS_EVENT, sync);
+    window.addEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener(SAVED_SECTIONS_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   function toggleSaved(id: ProductId) {
-    setSavedIds((current) => {
-      const next = current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id];
-
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-
-      return next;
-    });
+    setSavedIds(toggleSavedSection(id) as ProductId[]);
   }
 
   const visibleGroups = useMemo(() => {

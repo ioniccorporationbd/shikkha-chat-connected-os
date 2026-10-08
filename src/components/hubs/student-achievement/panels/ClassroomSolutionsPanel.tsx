@@ -61,7 +61,6 @@ export default function ClassroomSolutionsPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuSchool}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

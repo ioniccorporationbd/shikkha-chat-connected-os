@@ -61,7 +61,6 @@ export default function CCLRNaviancePanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuRoute}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

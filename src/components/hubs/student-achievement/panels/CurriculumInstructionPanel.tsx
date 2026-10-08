@@ -61,7 +61,6 @@ export default function CurriculumInstructionPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuLibrary}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

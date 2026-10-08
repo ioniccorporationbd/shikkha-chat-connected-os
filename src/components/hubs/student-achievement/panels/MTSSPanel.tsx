@@ -61,7 +61,6 @@ export default function MTSSPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuLayers}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}

@@ -65,7 +65,6 @@ export default function StudentInformationPanel() {
           supporting={text.supporting}
           capabilities={text.capabilities}
           icon={LuUserRound}
-          showButtons={false}
           stats={panelStats}
           quote={text.quote}
           author={text.author}

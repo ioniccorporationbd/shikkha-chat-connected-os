@@ -65,7 +65,6 @@ export default function FinancialStrategyAllovuePanel() {
       author={text.author}
       role={text.role}
       pillStyle="solid"
-      showButtons={false}
     />
   );
 }

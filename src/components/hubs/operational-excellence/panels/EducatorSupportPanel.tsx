@@ -65,7 +65,6 @@ export default function EducatorSupportPanel() {
       author={text.author}
       role={text.role}
       pillStyle="solid"
-      showButtons={false}
     />
   );
 }

@@ -61,7 +61,6 @@ export default function AssessmentPerformanceMattersPanel() {
       supporting={text.supporting}
       capabilities={text.capabilities}
       icon={LuClipboardCheck}
-      showButtons={false}
       stats={text.stats}
       quote={text.quote}
       author={text.author}
