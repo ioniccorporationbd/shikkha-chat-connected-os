@@ -24,6 +24,8 @@ type OrbitProductPanelProps = {
   themeColor: string;
   darkColor: string;
   glowColor: string;
+  /** Home Connections middle redesign — red headings/cards, white heading pill. */
+  accent?: "hc";
 };
 
 const premiumEase = [0.22, 1, 0.36, 1] as const;
@@ -160,10 +162,12 @@ function ProductTile({
   item,
   themeColor,
   darkColor,
+  titleColor = "var(--color-primary)",
 }: {
   item: ProductCard;
   themeColor: string;
   darkColor: string;
+  titleColor?: string;
 }) {
   const shouldReduceMotion = useReducedMotion();
   const wordCount = item.title.trim().split(/\s+/).length;
@@ -250,6 +254,7 @@ function ProductTile({
               ? "text-[11px] leading-[1.08]"
               : "text-[12px] leading-[1.1]",
         ].join(" ")}
+        style={{ color: titleColor }}
       >
         {formatCardTitle(item.title)}
       </div>
@@ -275,8 +280,21 @@ export default function OrbitProductPanel({
   themeColor,
   darkColor,
   glowColor,
+  accent,
 }: OrbitProductPanelProps) {
   const shouldReduceMotion = useReducedMotion();
+  const isHcAccent = accent === "hc";
+  const headingTextColor = isHcAccent ? "var(--color-action)" : "var(--color-primary)";
+  const cardTitleColor = isHcAccent ? "var(--color-action)" : "var(--color-primary)";
+  const headingBackground = isHcAccent
+    ? "var(--color-white)"
+    : `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}dd 55%, var(--color-white) 100%)`;
+  const headingShadow = isHcAccent
+    ? "0 18px 40px color-mix(in srgb, var(--color-action) 14%, transparent), inset 0 1px 0 color-mix(in srgb, var(--color-white) 70%, transparent)"
+    : `0 18px 40px ${themeColor}55, inset 0 1px 0 color-mix(in srgb, var(--color-white) 45%, transparent)`;
+  const headingBorder = isHcAccent
+    ? "1.5px solid color-mix(in srgb, var(--color-action) 35%, transparent)"
+    : undefined;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
@@ -354,8 +372,10 @@ export default function OrbitProductPanel({
               "transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
             ].join(" ")}
             style={{
-              background: `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}dd 55%, var(--color-white) 100%)`,
-              boxShadow: `0 18px 40px ${themeColor}55, inset 0 1px 0 color-mix(in srgb, var(--color-white) 45%, transparent)`,
+              background: headingBackground,
+              border: headingBorder,
+              boxShadow: headingShadow,
+              color: headingTextColor,
             }}
           >
             {title}
@@ -387,6 +407,7 @@ export default function OrbitProductPanel({
                   item={product}
                   themeColor={themeColor}
                   darkColor={darkColor}
+                  titleColor={cardTitleColor}
                 />
               ))}
 

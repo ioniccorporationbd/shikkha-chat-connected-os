@@ -279,10 +279,10 @@ function ProductTile({
         isActive || item.featured
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_22px_55px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
           : item.outline
-            ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_16px_42px_color-mix(in_srgb,var(--color-primary)_13%,transparent)]"
+            ? "border-[3px] border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_16px_42px_color-mix(in_srgb,var(--color-primary)_13%,transparent)]"
             : item.ghost
               ? "border border-[var(--color-primary)] bg-[var(--color-secondary-light)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
-              : "border border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
+              : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
         "hover:-translate-y-1 hover:shadow-[0_26px_64px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]",
       ].join(" ")}
     >
@@ -340,7 +340,7 @@ function ProductTile({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center font-semibold tracking-[-0.035em] text-current",
+          (isActive || item.featured) ? "text-center font-semibold tracking-[-0.035em] text-current" : "text-center font-semibold tracking-[-0.035em] text-[var(--color-action)]",
           "transition-colors duration-500",
           isSingleWord
             ? "text-[14px] leading-none"
@@ -417,7 +417,7 @@ function MobileTabletView({
                   "group rounded-[22px] border p-4 text-left transition duration-300",
                   active || product.featured
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] shadow-[0_18px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
-                    : "border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)]",
                   "hover:-translate-y-1 hover:shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_18%,transparent)]",
                 ].join(" ")}
               >
@@ -434,7 +434,7 @@ function MobileTabletView({
                   </div>
 
                   <div>
-                    <h3 className="text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] text-current">
+                    <h3 className={`text-[18px] font-semibold leading-[1.08] tracking-[-0.045em] ${(active || product.featured) ? "text-current" : "text-[var(--color-action)]"}`}>
                       {product.title}
                     </h3>
 
@@ -592,8 +592,8 @@ export default function StudentInformation() {
               className={[
                 "absolute left-1/2 top-[-56px] z-20 -translate-x-1/2",
                 "h-[42px] min-w-[220px] rounded-full",
-                "border-[3px] border-[var(--color-primary)] bg-[var(--color-primary)]",
-                "px-[28px] text-[14px] font-semibold leading-[36px] text-[var(--color-text-inverse)]",
+                "border-[1.5px] border-[color-mix(in_srgb,var(--color-action)_35%,transparent)] bg-[var(--color-white)]",
+                "px-[28px] text-[14px] font-black leading-[36px] text-[var(--color-action)]",
                 "whitespace-nowrap shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]",
                 "transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_color-mix(in_srgb,var(--color-primary)_22%,transparent)]",
               ].join(" ")}
