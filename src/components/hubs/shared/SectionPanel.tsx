@@ -53,6 +53,27 @@ const panelText = {
   },
 } as const;
 
+/**
+ * RAIL-03 — reuses the homepage's own section-scroll engine (the exact events
+ * the orbit tiles and the left rail dispatch). On the locked desktop layout it
+ * snaps the product's hub into view and scrolls the right rail to that
+ * product's panel; on smaller widths it scrolls the page to the panel. This
+ * turns every "বিস্তারিত দেখুন" CTA into a real, per-product in-page link.
+ */
+function scrollToSection(id: string) {
+  window.dispatchEvent(
+    new CustomEvent("connected-os-scroll-to-section", {
+      detail: { id },
+    })
+  );
+
+  window.dispatchEvent(
+    new CustomEvent("connected-os-active-section", {
+      detail: { id },
+    })
+  );
+}
+
 export default function SectionPanel({
   id,
   pill,
@@ -212,7 +233,11 @@ export default function SectionPanel({
           transition={{ duration: reduceMotion ? 0 : 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.a
-            href="#"
+            href={`#${id}`}
+            onClick={(event) => {
+              event.preventDefault();
+              scrollToSection(id);
+            }}
             className="action-text inline-flex h-[46px] items-center justify-center gap-2.5 rounded-xl bg-[var(--color-action)] px-5 font-bold text-[var(--color-white)] shadow-[0_12px_28px_-14px_color-mix(in_srgb,var(--color-action)_60%,transparent)] transition-colors hover:bg-[var(--color-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
             whileHover={reduceMotion ? undefined : { y: -2 }}
             whileTap={reduceMotion ? undefined : { scale: 0.98 }}

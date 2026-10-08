@@ -300,7 +300,11 @@ canvas {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-action-ring);
+  /* H-05 — solid action red. The old `--color-action-ring` (action @ 24%)
+     measured ≈1.5:1 on white, far under the WCAG 2.2 3:1 focus-indicator
+     minimum. Solid #e00516 is ≈5:1 on white and ≈3.3:1 on the dark-green rail;
+     the 2px offset keeps it visible on the red action CTAs as well. */
+  outline: 2px solid var(--color-action);
   outline-offset: 2px;
 }
 

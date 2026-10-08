@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import OrbitProductPanel from "@/components/hubs/shared/OrbitProductPanel";
 import {
@@ -190,13 +190,25 @@ function localizeCard<
   };
 }
 
-const products = [
+type OverviewProduct = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon: ReactNode;
+  highlight?: boolean;
+  /** HC-02 — the highlighted card scrolls the rail to `home-connections-panel`
+   *  (the real element id) instead of the non-existent `home-connections`. */
+  targetId?: string;
+};
+
+const products: OverviewProduct[] = [
   {
     id: "home-connections",
     title: "Home Connections",
     subtitle: "Family Connection",
     icon: <MdOutlineAutoAwesome />,
     highlight: true,
+    targetId: "home-connections-panel",
   },
   {
     id: "student-information",

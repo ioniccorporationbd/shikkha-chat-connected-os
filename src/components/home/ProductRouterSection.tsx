@@ -398,6 +398,17 @@ function getGroups(language: LanguageCode): ProductGroup[] {
   }));
 }
 
+/**
+ * SAVEED-01 — the "Home Connections" group button targeted the non-existent
+ * `home-connections` id; its real rail panel is `home-connections-panel`.
+ * The other two groups already match their panel ids, so they pass through.
+ */
+const groupScrollTargets: Record<ProductGroupId, string> = {
+  "home-connections": "home-connections-panel",
+  "student-achievement": "student-achievement",
+  "operational-excellence": "operational-excellence",
+};
+
 function scrollToProduct(id: string) {
   window.dispatchEvent(
     new CustomEvent("connected-os-scroll-to-section", {
@@ -431,63 +442,63 @@ function ProductCard({
   onSave: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => scrollToProduct(product.id)}
-      className={[
-        "group relative flex h-[124px] flex-col justify-center rounded-[18px] border p-3 text-center",
-        "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] text-[var(--color-primary)]",
-        "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
-        "transition duration-300 hover:-translate-y-1 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
-        "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-action)_16%,transparent)]",
-        product.featured ? "items-start text-left" : "items-center",
-      ].join(" ")}
-    >
-      <span
-        role="button"
-        tabIndex={0}
+    // SAVEED-02 — a non-interactive card wrapper holding TWO independent
+    // controls: the navigation button (fills the card) and the save button
+    // (top-right). This removes the invalid <button>-inside-<button> nesting
+    // while keeping the card's exact look, hover and click behaviour.
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={() => scrollToProduct(product.id)}
+        className={[
+          "flex h-[124px] w-full flex-col justify-center rounded-[18px] border p-3 text-center",
+          "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] text-[var(--color-primary)]",
+          "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
+          "transition duration-300 hover:-translate-y-1 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
+          "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-action)_16%,transparent)]",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
+          product.featured ? "items-start text-left" : "items-center",
+        ].join(" ")}
+      >
+        {!product.featured ? (
+          <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
+            {product.icon}
+          </div>
+        ) : (
+          <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
+            {product.icon}
+          </div>
+        )}
+
+        <h3
+          className={[
+            "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]",
+            product.featured ? "uppercase" : "",
+          ].join(" ")}
+        >
+          {product.title}
+        </h3>
+
+        {product.subtitle ? (
+          <p className="mt-1 text-[11px] font-medium leading-none text-[var(--color-black)] opacity-65">
+            {product.subtitle}
+          </p>
+        ) : null}
+      </button>
+
+      <button
+        type="button"
         onClick={(event) => {
           event.stopPropagation();
           onSave();
         }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            event.stopPropagation();
-            onSave();
-          }
-        }}
-        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition duration-300 hover:scale-125 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]"
         aria-label="Save product"
+        aria-pressed={isSaved}
+        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition duration-300 hover:scale-125 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]"
       >
         {isSaved ? <FaStar /> : <FaRegStar />}
-      </span>
-
-      {!product.featured ? (
-        <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
-          {product.icon}
-        </div>
-      ) : (
-        <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
-          {product.icon}
-        </div>
-      )}
-
-      <h3
-        className={[
-          "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]",
-          product.featured ? "uppercase" : "",
-        ].join(" ")}
-      >
-        {product.title}
-      </h3>
-
-      {product.subtitle ? (
-        <p className="mt-1 text-[11px] font-medium leading-none text-[var(--color-black)] opacity-65">
-          {product.subtitle}
-        </p>
-      ) : null}
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -580,7 +591,7 @@ export default function ProductRouterSection() {
               <div key={group.id} className="relative flex flex-col items-center">
                 <button
                   type="button"
-                  onClick={() => scrollToProduct(group.id)}
+                  onClick={() => scrollToProduct(groupScrollTargets[group.id])}
                   className={[
                     "relative z-20 rounded-full border border-[var(--color-action)] px-7 py-3 text-[16px] font-bold",
                     "bg-[var(--color-action)] text-[var(--color-white)]",

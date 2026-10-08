@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
@@ -778,6 +778,42 @@ export default function LeftSidebar() {
   const [openGroup, setOpenGroup] = useState<OpenGroup>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  /* H-01 — the rail is a permanent fixture at ≥1536px and an off-canvas drawer
+     below it. Track that breakpoint so the closed drawer can be made truly
+     non-interactive without ever disabling the always-on desktop rail. */
+  const [isDesktopRail, setIsDesktopRail] = useState(false);
+  const openButtonRef = useRef<HTMLButtonElement | null>(null);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const wasDrawerOpenRef = useRef(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1536px)");
+    const sync = () => setIsDesktopRail(media.matches);
+
+    sync();
+    media.addEventListener("change", sync);
+
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  const drawerHidden = !drawerOpen && !isDesktopRail;
+
+  /* H-01 — when a closed drawer held focus, hand it back to the menu trigger so
+     keyboard users are never dropped onto an inert element. */
+  useEffect(() => {
+    const wasOpen = wasDrawerOpenRef.current;
+    wasDrawerOpenRef.current = drawerOpen;
+
+    if (!wasOpen || drawerOpen || isDesktopRail) return;
+
+    const aside = asideRef.current;
+    const active = document.activeElement;
+    const focusLost =
+      !active || active === document.body || (aside?.contains(active) ?? false);
+
+    if (focusLost) openButtonRef.current?.focus();
+  }, [drawerOpen, isDesktopRail]);
+
   useEffect(() => {
     const handleDrawerClose = () => setDrawerOpen(false);
     window.addEventListener("connected-os-sidebar-navigate", handleDrawerClose);
@@ -883,6 +919,7 @@ export default function LeftSidebar() {
   return (
     <>
       <button
+        ref={openButtonRef}
         type="button"
         onClick={() => setDrawerOpen(true)}
         className="sidebar-open-button fixed left-3 top-3 z-[80] grid h-10 w-10 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_32%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_30%,var(--color-white))] sm:left-4 sm:top-4 sm:h-12 sm:w-12 sm:rounded-2xl"
@@ -914,6 +951,9 @@ export default function LeftSidebar() {
       ) : null}
 
       <aside
+        ref={asideRef}
+        aria-hidden={drawerHidden ? true : undefined}
+        inert={drawerHidden ? true : undefined}
         className={[
           [
             "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen max-w-[calc(100vw-16px)] flex-col overflow-hidden",

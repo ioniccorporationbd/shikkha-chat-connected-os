@@ -15,6 +15,12 @@ type ProductCard = {
   subtitle?: string;
   icon?: ReactNode;
   highlight?: boolean;
+  /**
+   * HC-02 — optional explicit rail-panel target for the tile click. Falls back
+   * to `id`, so SA/OE tiles are unaffected; the HC highlighted card uses it to
+   * reach the real `home-connections-panel` element.
+   */
+  targetId?: string;
 };
 
 type OrbitProductPanelProps = {
@@ -180,7 +186,7 @@ function ProductTile({
     <motion.button
       variants={cardVariants}
       type="button"
-      onClick={() => scrollRightSidebarTo(item.id)}
+      onClick={() => scrollRightSidebarTo(item.targetId ?? item.id)}
       aria-label={`Go to ${item.title}`}
       whileHover={
         shouldReduceMotion
