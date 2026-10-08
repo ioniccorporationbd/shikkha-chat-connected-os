@@ -168,6 +168,9 @@ export default function LandingHeroBanner() {
 
   const [pulse, setPulse] = useState<SectionKey | null>(null);
   const [active, setActive] = useState<SectionKey | null>(null);
+  // While the Main Banner itself fills the viewport no group is "active" — the hero
+  // shows all three graphics. Mirrors the sidebar's #intro rule.
+  const [heroInView, setHeroInView] = useState(true);
 
   // Reveal the three people with a small spotlight pulse, one at a time.
   // Skipped entirely under `prefers-reduced-motion` (they render shown).
@@ -217,6 +220,23 @@ export default function LandingHeroBanner() {
     return () => window.removeEventListener("connected-os-active-section", handleActive);
   }, []);
 
+  // Track whether the Main Banner fills the viewport, so the hero stays neutral there.
+  useEffect(() => {
+    const el = document.getElementById("intro");
+    if (!el || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setHeroInView(entry.isIntersecting && entry.intersectionRatio > 0.6);
+      },
+      { threshold: [0, 0.6, 0.9] }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Reduced motion: keep the heroes fully present instead of animating them in.
   const shown: VisiblePeople = reduce
     ? { orange: true, green: true, purple: true }
@@ -247,12 +267,20 @@ export default function LandingHeroBanner() {
 
   // Dim everything except the active graphic. Applied on a wrapper so the CSS
   // opacity multiplies with framer-motion's inline opacity instead of losing to it.
+  const shownActive = heroInView ? null : active;
+  const isDimmed = (section: SectionKey) => Boolean(shownActive && shownActive !== section);
+
+  // Dim the two non-active groups. Opacity lives on a WRAPPER so it multiplies with
+  // framer-motion's inline opacity. NEVER put a filter-based dim (saturate/grayscale)
+  // on this wrapper: a filter makes it the containing block for absolutely-positioned
+  // descendants and detaches the bottom-anchored people. Desaturation goes on the leaf
+  // <Image> instead.
   const sectionStateClass = (section: SectionKey) =>
-    active && active !== section
-      ? "opacity-35 saturate-50 transition duration-500"
+    isDimmed(section)
+      ? "opacity-35 transition duration-500"
       : "opacity-100 transition duration-500";
 
-  const isActive = (section: SectionKey) => active === section;
+  const isActive = (section: SectionKey) => shownActive === section;
 
   const mapButtonProps = (section: SectionKey) => ({
     role: "button" as const,
@@ -270,8 +298,11 @@ export default function LandingHeroBanner() {
 
   // A subtle lift on the clickable map graphics (CSS so it never fights the
   // framer-motion transform on the parent).
-  const mapImageClass =
-    "object-contain object-top transition-transform duration-500 [transition-timing-function:var(--ease-smooth)] group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5";
+  const mapImageClass = (section: SectionKey) =>
+    `object-contain object-top transition duration-500 [transition-timing-function:var(--ease-smooth)] group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5${isDimmed(section) ? " saturate-[0.45]" : ""}`;
+
+  const peopleImageClass = (section: SectionKey) =>
+    `object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)] transition duration-500${isDimmed(section) ? " saturate-[0.45]" : ""}`;
 
   return (
     <section
@@ -353,7 +384,7 @@ export default function LandingHeroBanner() {
                   fill
                   sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className={mapImageClass}
+                  className={mapImageClass("orange")}
                 />
               </motion.div>
             </div>
@@ -376,7 +407,7 @@ export default function LandingHeroBanner() {
                     fill
                     sizes="(max-width: 768px) 26vw, 340px"
                     priority
-                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                    className={peopleImageClass("orange")}
                   />
                 </motion.div>
               </motion.div>
@@ -402,7 +433,7 @@ export default function LandingHeroBanner() {
                   fill
                   sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className={mapImageClass}
+                  className={mapImageClass("green")}
                 />
               </motion.div>
             </div>
@@ -425,7 +456,7 @@ export default function LandingHeroBanner() {
                     fill
                     sizes="(max-width: 768px) 26vw, 340px"
                     priority
-                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                    className={peopleImageClass("green")}
                   />
                 </motion.div>
               </motion.div>
@@ -451,7 +482,7 @@ export default function LandingHeroBanner() {
                   fill
                   sizes="(max-width: 768px) 34vw, 460px"
                   priority
-                  className={mapImageClass}
+                  className={mapImageClass("purple")}
                 />
               </motion.div>
             </div>
@@ -474,7 +505,7 @@ export default function LandingHeroBanner() {
                     fill
                     sizes="(max-width: 768px) 26vw, 340px"
                     priority
-                    className="object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)]"
+                    className={peopleImageClass("purple")}
                   />
                 </motion.div>
               </motion.div>
