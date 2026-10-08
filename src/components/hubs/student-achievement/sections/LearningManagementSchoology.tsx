@@ -560,21 +560,20 @@ function CoreTile({
       whileTap={{ scale: 0.94 }}
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus-visible:ring-offset-2",
         selected || item.active
-          ? "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_22px_52px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
-          : "border border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_12px_30px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
-        "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_22px_52px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_12px_30px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 66%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_52%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_40%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -609,14 +608,10 @@ function CoreTile({
         />
       ) : null}
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition duration-300 group-hover:rotate-12"
-        style={{ color: darkColor }}
-      />
 
       <div
         className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-300 group-hover:scale-110"
-        style={{ color: item.color }}
+        style={{ color: "currentColor" }}
       >
         {item.icon}
       </div>
@@ -624,7 +619,7 @@ function CoreTile({
       <div
         className={[
           "relative z-10 flex min-h-[32px] max-w-[86px] items-center justify-center",
-          "text-center text-[var(--color-black)] tracking-[-0.04em]",
+          "text-center text-current tracking-[-0.04em]",
           isLearning ? "font-black" : "font-normal",
           isSingleWord
             ? "text-[14px] leading-none"
@@ -685,22 +680,21 @@ function FloatingTile({
       }}
       className={[
         "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_40%,transparent)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus-visible:ring-offset-2",
         active
-          ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
-          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
-        " hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in srgb, var(--color-secondary) 28%, transparent),0_0_0_5px_color-mix(in srgb, var(--color-secondary) 10%, transparent)]"
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_14px_34px_color-mix(in srgb, var(--color-black) 6%, transparent)]",
+        " hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 14%, transparent)]",
         item.positionClass ?? "",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in srgb, var(--color-white) 72%, transparent),color-mix(in srgb, var(--color-white) 0%, transparent)_52%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -735,14 +729,10 @@ function FloatingTile({
         />
       ) : null}
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] text-[var(--color-black)] transition duration-300 group-hover:rotate-12"
-        style={{ color: active ? darkColor : "var(--color-black)" }}
-      />
 
       <div
         className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-300 group-hover:scale-110"
-        style={{ color: active ? darkColor : item.color }}
+        style={{ color: "currentColor" }}
       >
         {item.icon}
       </div>
@@ -750,7 +740,7 @@ function FloatingTile({
       <div
         className={[
           "relative z-10 flex max-w-[86px] items-center justify-center text-center",
-          "font-normal tracking-[-0.04em] text-[var(--color-black)]",
+          "font-normal tracking-[-0.04em] text-current",
           isSingleWord
             ? "text-[11px] leading-none"
             : "text-[10px] leading-[1.05]",
@@ -813,14 +803,14 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[var(--color-secondary)] bg-[var(--color-white)] px-6 py-6",
+        "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-6 py-6",
         "shadow-[0_26px_80px_color-mix(in srgb, var(--color-black) 16%, transparent)]",
       ].join(" ")}
     >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[var(--color-secondary)] bg-[var(--color-white)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
+        className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
         aria-label={interfaceText[currentLanguage].closeDetail}
       >
         <FaXmark />
@@ -828,8 +818,7 @@ function DetailPanel({
 
       <div className="flex items-start gap-4 pr-10">
         <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--color-secondary)] bg-[var(--color-white)]"
-          style={{ color: item.color }}
+          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-action)]"
         >
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
@@ -860,13 +849,12 @@ function DetailPanel({
         {item.description}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[var(--color-secondary)]" />
+      <div className="mt-5 h-px w-full bg-[color-mix(in_srgb,var(--color-primary)_15%,transparent)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
-        style={{ background: darkColor }}
+        className="mt-5 rounded-full bg-[var(--color-action)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
       >
         Open Section
       </button>
@@ -1101,7 +1089,7 @@ export default function LearningManagementSchoology() {
                 type="button"
                 onClick={() => setSelectedCapability(localizedCoreCards[1])}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full px-[44px]",
+                  "h-[40px] min-w-[300px] rounded-full px-[44px] hc-scene-pill",
                   "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
                   "leading-[40px] shadow-[0_16px_34px_color-mix(in srgb, var(--color-primary) 16%, transparent)]",
                   "transition duration-300 hover:scale-[1.025]",
@@ -1125,7 +1113,6 @@ export default function LearningManagementSchoology() {
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in srgb, var(--color-white) 24%, transparent),transparent_35%,color-mix(in srgb, var(--color-secondary) 9%, transparent))]" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] gap-[14px]">
                 <div className="flex flex-col justify-center gap-[10px]">

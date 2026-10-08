@@ -395,21 +395,20 @@ function MiniCard({
       whileTap={{ scale: 0.94 }}
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] focus-visible:ring-offset-2",
         selected
-          ? "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
-          : "border border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_6%,transparent)]",
-        "hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_22px_52px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_6%,transparent)]",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_68%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_40%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -444,15 +443,11 @@ function MiniCard({
         />
       ) : null}
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition duration-300 group-hover:rotate-12"
-        style={{ color: darkColor }}
-      />
 
       {item.icon ? (
         <div
           className="relative z-10 mb-[8px] text-[27px] leading-none transition-transform duration-300 group-hover:scale-110"
-          style={{ color: item.color ?? darkColor }}
+          style={{ color: "currentColor" }}
         >
           {item.icon}
         </div>
@@ -461,7 +456,7 @@ function MiniCard({
       <div
         className={[
           "relative z-10 flex min-h-[30px] max-w-[86px] items-center justify-center",
-          "text-center text-[var(--color-black)] tracking-[-0.04em]",
+          "text-center text-current tracking-[-0.04em]",
           isResourcePlanning ? "font-black" : "font-normal",
           isSingleWord
             ? "text-[14px] leading-none"
@@ -509,18 +504,17 @@ function ActiveResourceCard({
       whileTap={{ scale: 0.94 }}
       className={[
         "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
-        "flex flex-col items-center justify-center text-center outline-none",
-        "border-[3px] border-[var(--color-secondary)] bg-[linear-gradient(180deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
+        "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]",
-        "transition-shadow duration-300 hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_22%,transparent),0_0_0_7px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] transition-shadow duration-300 hover:shadow-[0_32px_84px_color-mix(in_srgb,var(--color-primary)_22%,transparent),0_0_0_7px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[22px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_70%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_6%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -537,7 +531,7 @@ function ActiveResourceCard({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--color-secondary)]/75"
+        className="pointer-events-none absolute inset-[-2px] rounded-[24px] border border-[var(--color-primary)]/75"
         animate={
           shouldReduceMotion
             ? undefined
@@ -553,19 +547,15 @@ function ActiveResourceCard({
         }}
       />
 
-      <FaRegStar
-        className="absolute right-[10px] top-[10px] z-10 text-[13px] transition duration-300 group-hover:rotate-12"
-        style={{ color: darkColor }}
-      />
 
       <div
         className="relative z-10 mb-4 text-[42px] leading-none transition duration-300 group-hover:scale-110"
-        style={{ color: darkColor }}
+        style={{ color: "currentColor" }}
       >
         {item.icon}
       </div>
 
-      <h3 className="relative z-10 max-w-[120px] text-[15px] font-black leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
+      <h3 className="relative z-10 max-w-[120px] text-[15px] font-black leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(t(item.title))}
       </h3>
     </motion.button>
@@ -619,22 +609,21 @@ function FloatingCard({
       }}
       className={[
         "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] focus-visible:ring-offset-2",
         item.positionClass ?? "",
         active
-          ? "border-[3px] border-[var(--color-secondary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
-          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-black)_7%,transparent)]",
-        " hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
+          ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_26%,transparent),0_0_0_5px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-black)_7%,transparent)]",
+        " hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_72%,transparent),transparent_52%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -652,7 +641,7 @@ function FloatingCard({
       {active ? (
         <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-secondary)]/75"
+          className="pointer-events-none absolute inset-[-2px] rounded-[20px] border border-[var(--color-primary)]/75"
           animate={
             shouldReduceMotion
               ? undefined
@@ -669,19 +658,15 @@ function FloatingCard({
         />
       ) : null}
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[12px] transition duration-300 group-hover:rotate-12"
-        style={{ color: active ? darkColor : "var(--color-primary)" }}
-      />
 
       <div
         className="relative z-10 mb-[7px] text-[26px] leading-none transition-transform duration-300 group-hover:scale-110"
-        style={{ color: active ? darkColor : item.color ?? darkColor }}
+        style={{ color: "currentColor" }}
       >
         {item.icon}
       </div>
 
-      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[10px] font-normal leading-[1.05] tracking-[-0.04em] text-[var(--color-black)]">
+      <div className="relative z-10 flex max-w-[84px] items-center justify-center text-center text-[10px] font-normal leading-[1.05] tracking-[-0.04em] text-current">
         {formatTitle(t(item.title))}
       </div>
     </motion.button>
@@ -731,7 +716,7 @@ function DetailPanel({
       className={[
         "absolute bottom-[28px] left-[32px] z-40",
         "w-[470px] overflow-hidden rounded-[24px]",
-        "border border-[var(--color-secondary)] bg-[var(--color-white)] px-6 py-6",
+        "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-6 py-6",
         "shadow-[0_26px_80px_color-mix(in_srgb,var(--color-black)_16%,transparent)]",
       ].join(" ")}
     >
@@ -746,8 +731,7 @@ function DetailPanel({
 
       <div className="flex items-start gap-4 pr-10">
         <div
-          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[var(--color-secondary)] bg-[var(--color-white)]"
-          style={{ color: item.color ?? darkColor }}
+          className="grid h-[64px] w-[64px] shrink-0 place-items-center rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-primary)] text-[var(--color-text-inverse)] hover:bg-[var(--color-action)]"
         >
           <div className="text-[31px] leading-none">{item.icon}</div>
         </div>
@@ -759,7 +743,7 @@ function DetailPanel({
 
           <h3
             className={[
-              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-black)]",
+              "mt-2 text-[30px] leading-[0.95] tracking-[-0.055em] text-[var(--color-primary)]",
               isResourcePlanning ? "font-black" : "font-normal",
             ].join(" ")}
           >
@@ -778,13 +762,12 @@ function DetailPanel({
         {t(item.description)}
       </p>
 
-      <div className="mt-5 h-px w-full bg-[var(--color-secondary)]" />
+      <div className="mt-5 h-px w-full bg-[color-mix(in_srgb,var(--color-primary)_15%,transparent)]" />
 
       <button
         type="button"
         onClick={() => scrollRightSidebarTo(item.id)}
-        className="mt-5 rounded-full px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
-        style={{ background: darkColor }}
+        className="mt-5 rounded-full bg-[var(--color-action)] px-5 py-3 text-[12px] font-normal uppercase tracking-[0.08em] text-[var(--color-white)] transition hover:translate-y-[-1px]"
       >
         {t("Open Section")}
       </button>
@@ -983,7 +966,7 @@ export default function FinancialStrategyAllovue() {
                 type="button"
                 onClick={() => setSelectedCard(centerCards[0])}
                 className={[
-                  "h-[40px] min-w-[300px] rounded-full px-[44px]",
+                  "h-[40px] min-w-[300px] rounded-full px-[44px] hc-scene-pill",
                   "text-center text-[13px] font-normal uppercase tracking-[0.13em]",
                   "leading-[40px] shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
                   "transition duration-300 hover:scale-[1.025]",
@@ -1002,13 +985,12 @@ export default function FinancialStrategyAllovue() {
             <div
               className={[
                 "relative h-[250px] w-[340px]",
-                "rounded-[26px] border-[3px] border-[var(--color-secondary)]/95",
+                "rounded-[26px] border-[3px] border-[var(--color-primary)]/95",
                 "bg-[color-mix(in_srgb,var(--color-white)_20%,transparent)] p-[18px]",
                 "shadow-[0_28px_80px_color-mix(in_srgb,var(--color-black)_9%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-white)_26%,transparent),transparent_35%,color-mix(in_srgb,var(--color-primary)_10%,transparent))]" />
 
               <div className="relative z-10 grid h-full grid-cols-[96px_1fr] items-center gap-[48px]">
                 <MiniCard

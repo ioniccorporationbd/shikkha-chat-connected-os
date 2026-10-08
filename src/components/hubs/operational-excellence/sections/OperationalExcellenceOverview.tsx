@@ -105,6 +105,7 @@ export default function OperationalExcellenceOverview() {
       themeColor="var(--color-secondary)"
       darkColor="var(--color-primary)"
       glowColor="color-mix(in srgb, var(--color-primary) 18%, transparent)"
+      accent="hc"
     />
   );
 }

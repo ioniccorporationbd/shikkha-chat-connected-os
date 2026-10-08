@@ -271,27 +271,26 @@ function ProductTile({ item }: { item: ProductCard }) {
       whileTap={{ scale: 0.94 }}
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "flex flex-col items-center justify-center text-center outline-none text-[var(--color-primary)]",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         isActive
-          ? "bg-[linear-gradient(145deg,var(--color-secondary)_0%,var(--color-secondary)_52%,var(--color-white)_100%)]"
-          : "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-white)_55%,var(--color-secondary)_100%)]",
+          ? "bg-[var(--color-white)]"
+          : "bg-[var(--color-white)]",
         isActive
-          ? "border-[3px] border-[var(--color-secondary)]"
-          : "border border-[var(--color-secondary)] bg-[color-mix(in_srgb,var(--color-white)_55%,transparent)]",
+          ? "border-[3px] border-[var(--color-primary)]"
+          : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)]",
         isActive
           ? "shadow-[0_22px_50px_color-mix(in_srgb,var(--color-primary)_26%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_76%,transparent)]"
           : "shadow-[0_12px_30px_color-mix(in_srgb,var(--color-black)_6%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_75%,transparent)]",
-        "hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_18%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_80%,transparent)]",
-        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_60%,transparent)] focus-visible:ring-offset-2",
+        "hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] hover:shadow-[0_24px_58px_color-mix(in_srgb,var(--color-primary)_18%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_80%,transparent)]",
+        "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] focus-visible:ring-offset-2",
       ].join(" ")}
     >
-      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in_srgb,var(--color-white)_90%,transparent),transparent_34%),linear-gradient(145deg,color-mix(in_srgb,var(--color-white)_48%,transparent),transparent_48%,color-mix(in_srgb,var(--color-primary)_5%,transparent))]" />
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-[color-mix(in_srgb,var(--color-white)_45%,transparent)] blur-[1px]"
+        className="pointer-events-none absolute -left-[65%] top-0 h-full w-[58%] skew-x-[-18deg] bg-transparent opacity-0 blur-[1px]"
         initial={{ x: "-30%" }}
         whileHover={
           shouldReduceMotion
@@ -329,15 +328,11 @@ function ProductTile({ item }: { item: ProductCard }) {
         </>
       ) : null}
 
-      <FaRegStar
-        className="absolute right-[8px] top-[8px] z-10 text-[13px] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
-        style={{ color: isActive ? darkColor : "var(--color-primary)" }}
-      />
 
       {item.icon ? (
         <div
           className="relative z-10 mb-[7px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-[1.15]"
-          style={{ color: isActive ? darkColor : "var(--color-primary)" }}
+          style={{ color: "currentColor" }}
         >
           {item.icon}
         </div>
@@ -352,7 +347,7 @@ function ProductTile({ item }: { item: ProductCard }) {
             ? "text-[14px] leading-none"
             : "text-[12px] leading-[1.08]",
         ].join(" ")}
-        style={{ color: isActive ? "var(--color-black)" : "var(--color-black)" }}
+        style={{ color: "currentColor" }}
       >
         {formatTitle(t(item.title))}
       </div>
@@ -527,13 +522,13 @@ export default function TalentManagement() {
               whileTap={{ scale: 0.96 }}
               className={[
                 "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
-                "h-[38px] min-w-[228px] rounded-full",
-                "bg-[linear-gradient(145deg,var(--color-white)_0%,var(--color-secondary)_100%)]",
+                "h-[38px] min-w-[228px] rounded-full hc-scene-pill",
+                "bg-[var(--color-white)]",
                 "px-[24px] text-[13px] font-black leading-[38px]",
                 "whitespace-nowrap shadow-[0_16px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_85%,transparent)]",
                 "transition-shadow duration-300 hover:shadow-[0_22px_44px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
               ].join(" ")}
-              style={{ color: darkColor }}
+              style={{ color: "currentColor" }}
             >
               {t("Operational Excellence")}
 
@@ -563,13 +558,12 @@ export default function TalentManagement() {
             <div
               className={[
                 "relative h-[430px] w-[224px]",
-                "rounded-[26px] border-[3px] border-[var(--color-secondary)]/90",
+                "rounded-[26px] border-[3px] border-[var(--color-primary)]/90",
                 "bg-[color-mix(in_srgb,var(--color-white)_24%,transparent)] p-[8px]",
                 "shadow-[0_28px_80px_color-mix(in_srgb,var(--color-black)_9%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_78%,transparent)]",
                 "backdrop-blur-[4px]",
               ].join(" ")}
             >
-              <span className="pointer-events-none absolute inset-0 rounded-[23px] bg-[linear-gradient(150deg,color-mix(in_srgb,var(--color-white)_48%,transparent),transparent_48%,color-mix(in_srgb,var(--color-primary)_8%,transparent))]" />
 
               <motion.span
                 aria-hidden="true"
