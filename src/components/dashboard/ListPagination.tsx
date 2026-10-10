@@ -14,9 +14,9 @@ const CONTROL =
  * disabled state. Windowed page numbers keep large page counts tidy (1 2 3 … 12).
  * Pure presentational — the caller owns page state.
  *
- * The former left-hand "rows per page" selector was removed: the panels paginate
- * at one fixed, sensible page size, so the control only added footer clutter
- * without changing anything a customer needed. Pagination itself is untouched.
+ * The left-hand "rows per page" control is a row of side-by-side buttons
+ * (10 · 20 · 50 · 100 · 500 · 1000) — never a dropdown — so the customer can
+ * widen the page size in one click. The active size wears the Shikkha red.
  */
 export default function ListPagination({
   copy,
@@ -26,6 +26,9 @@ export default function ListPagination({
   rangeStart,
   rangeEnd,
   total,
+  rowsPerPage,
+  rowsPerPageOptions,
+  onRowsPerPageChange,
 }: {
   copy: ListPaginationCopy;
   page: number;
@@ -34,6 +37,9 @@ export default function ListPagination({
   rangeStart: number;
   rangeEnd: number;
   total: number;
+  rowsPerPage: number;
+  rowsPerPageOptions: readonly number[];
+  onRowsPerPageChange: (rows: number) => void;
 }) {
   const pages = pageWindow(page, pageCount);
 
@@ -55,6 +61,38 @@ export default function ListPagination({
             {rangeStart}–{rangeEnd} {copy.ofLabel} {total}
           </span>
         ) : null}
+
+        {/* rows-per-page — side-by-side buttons, never a dropdown */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {copy.rowsPerPageShow}
+          </span>
+          <div className="flex items-center gap-1" role="group" aria-label={copy.rowsPerPageShow}>
+            {rowsPerPageOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onRowsPerPageChange(option)}
+                aria-pressed={option === rowsPerPage}
+                className={`${CONTROL} ${
+                  option === rowsPerPage
+                    ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_12px_24px_-14px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
+                    : "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                }`}
+              >
+                <span
+                  className={
+                    option === rowsPerPage
+                      ? "text-[var(--color-white)]"
+                      : "text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]"
+                  }
+                >
+                  {option}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {pageCount > 1 ? (

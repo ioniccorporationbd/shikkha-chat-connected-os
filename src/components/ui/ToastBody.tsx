@@ -17,8 +17,9 @@ const TITLES: Record<"bn" | "en", Record<ToastType, string>> = {
  *   - error   → the Shikkha action red (--color-action)
  *   - warning → the existing warning token
  *   - info    → the brand/neutral treatment (--color-primary)
- * Every toast carries white text and icon. The card is deliberately SHARP
- * (border-radius: 0, §20) with a square icon chip and a sharp close control.
+ * Every toast carries white text and icon. The card follows the project theme's
+ * rounded surface language (rounded-2xl card, rounded icon chip, rounded close
+ * control) so notifications feel native to the rest of the product.
  */
 const SURFACE: Record<ToastType, string> = {
   error: "var(--color-action)",
@@ -58,12 +59,12 @@ export default function ToastBody({
       data-no-translate="true"
       role={type === "error" ? "alert" : "status"}
       aria-live={type === "error" ? "assertive" : "polite"}
-      className="flex w-full items-start gap-3 rounded-none border border-[color-mix(in_srgb,var(--color-white)_22%,transparent)] px-4 py-3 shadow-[0_22px_48px_-22px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+      className="flex w-full items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-white)_22%,transparent)] px-4 py-3 shadow-[0_22px_48px_-22px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
       style={{ background: SURFACE[type] }}
     >
       <span
         aria-hidden
-        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-none bg-[color-mix(in_srgb,var(--color-white)_22%,transparent)] text-[var(--color-white)]"
+        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--color-white)_22%,transparent)] text-[var(--color-white)]"
       >
         <Icon type={type} />
       </span>
@@ -79,7 +80,7 @@ export default function ToastBody({
         type="button"
         onClick={() => closeToast?.()}
         aria-label="Dismiss"
-        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-none text-[color-mix(in_srgb,var(--color-white)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)] hover:text-[var(--color-white)]"
+        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[color-mix(in_srgb,var(--color-white)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)] hover:text-[var(--color-white)]"
       >
         <FiX size={15} />
       </button>

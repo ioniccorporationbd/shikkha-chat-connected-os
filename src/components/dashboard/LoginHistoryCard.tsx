@@ -21,12 +21,14 @@ const MAX_ITEMS = 10;
 const DEFAULT_VISIBLE = 5;
 
 function dotClass(row: DashboardActivityRow): string {
-  if (row.status === "Failed") return "bg-[var(--color-danger)]";
+  // The timeline marks wear the SAME palette as the page's icon chips: the
+  // brand primary green for a normal event and the Shikkha action red for a
+  // failed attempt / deliberate sign-out — so the history reads in-theme
+  // instead of with the muted success/danger tokens.
+  if (row.status === "Failed") return "bg-[var(--color-action)]";
   if (row.status === "Blocked") return "bg-[var(--color-warning)]";
-  // The logout marker uses the Shikkha-red action token so signing out reads as
-  // the deliberate end of a session; sign-in rows keep the neutral success green.
   if (row.event === "logout") return "bg-[var(--color-action)]";
-  return "bg-[var(--color-success)]";
+  return "bg-[var(--color-primary)]";
 }
 
 /**

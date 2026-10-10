@@ -17,8 +17,11 @@ import {
 import { deleteCustomer, fetchCustomerList } from "@/lib/customer/api";
 import { customerManagementCopyFor } from "@/lib/customer/management-messages";
 import type { CustomerListRow } from "@/lib/customer/types";
+import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
+
+import ListPagination from "./ListPagination";
 
 /* ------------------------------------------------------------------ */
 /* Layout tokens (mirrors the Create Customer surface)                 */
@@ -89,6 +92,8 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<{ code: string; message: string } | null>(null);
   const [query, setQuery] = useState("");
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
+  const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<CustomerListRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -140,6 +145,19 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
     () => (rows ?? []).filter((row) => Boolean(row?.name && String(row.name).trim())).length,
     [rows]
   );
+
+  // Client-side paging — every table shows 10 rows by default and the customer
+  // can widen it with the row-of-buttons control in the shared footer.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * rowsPerPage;
+  const pageRows = filtered.slice(pageStart, pageStart + rowsPerPage);
+  const pageCopy = useMemo(() => genericPaginationCopy(language), [language]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, rowsPerPage]);
+
   const cell = (value: string | undefined) => (value && String(value).trim() !== "" ? value : copy.notSet);
 
   const confirmDelete = useCallback(async () => {
@@ -349,13 +367,13 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row, index) => (
+                {pageRows.map((row, index) => (
                   <tr
                     key={row.name}
                     className="border-b border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] last:border-0 hover:bg-[var(--color-action-tint)]"
                   >
                     <td className="px-4 py-3 text-[12.5px] font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
-                      {index + 1}
+                      {pageStart + index + 1}
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1 text-[12px] font-bold tabular-nums text-[var(--color-primary)]">
@@ -411,12 +429,12 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
 
           {/* mobile cards */}
           <div className="flex flex-col gap-3 lg:hidden">
-            {filtered.map((row, index) => (
+            {pageRows.map((row, index) => (
               <section key={row.name} className={CARD}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-2.5">
                     <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[11px] font-bold tabular-nums text-[var(--color-primary)]">
-                      {index + 1}
+                      {pageStart + index + 1}
                     </span>
                     <div className="min-w-0">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
@@ -466,6 +484,22 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
               </section>
             ))}
           </div>
+
+          <ListPagination
+            copy={pageCopy}
+            page={currentPage}
+            pageCount={totalPages}
+            onPageChange={setPage}
+            rangeStart={pageStart + 1}
+            rangeEnd={pageStart + pageRows.length}
+            total={filtered.length}
+            rowsPerPage={rowsPerPage}
+            rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows);
+              setPage(1);
+            }}
+          />
         </>
       )}
 

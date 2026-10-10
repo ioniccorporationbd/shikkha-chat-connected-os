@@ -13,7 +13,6 @@ import {
   FiLayers,
   FiLink,
   FiRotateCcw,
-  FiRotateCw,
   FiUserCheck,
 } from "react-icons/fi";
 
@@ -26,6 +25,7 @@ import {
   matchesQuery,
   type AmountFilter,
   type AppliedFilters,
+  DEFAULT_ROWS_PER_PAGE,
 } from "@/lib/dashboard/list-controls";
 
 import DetailSheet, {
@@ -34,8 +34,6 @@ import DetailSheet, {
 } from "@/components/dashboard/DetailSheet";
 import { ApiError } from "@/lib/api/http";
 import { CLIENT_DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/session";
-import { salesInvoiceSnapshot } from "@/lib/dashboard/snapshot";
-import { runSmartReload } from "@/lib/dashboard/smart-reload";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { fetchInvoiceDetails, fetchInvoices } from "@/lib/service-build/api";
 import { formatAmount, formatDate } from "@/lib/service-build/format";
@@ -87,7 +85,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
 
   const [data, setData] = useState<SalesInvoiceListPayload | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -106,7 +103,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   const [applied, setApplied] = useState<AppliedFilters>(EMPTY_APPLIED);
   const [filterError, setFilterError] = useState("");
 
-  const [rowsPerPage, setRowsPerPage] = useState<number>(ROWS_PER_PAGE_OPTIONS[0]);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
   const [page, setPage] = useState(1);
 
   const load = useCallback(async (): Promise<{ data: SalesInvoiceListPayload | null; error?: unknown }> => {
@@ -146,27 +143,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
       active = false;
     };
   }, [load]);
-
-  // Smart Reload — the exact Overview behaviour, shared via runSmartReload:
-  // snapshot → refetch → unchanged = light refresh / changed = one hard reload.
-  const handleRefresh = useCallback(async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try {
-      await runSmartReload({
-        before: data,
-        refetch: () => load(),
-        snapshot: salesInvoiceSnapshot,
-        copy: {
-          unchanged: copy.reloadNoChanges,
-          changed: copy.reloadChanged,
-          failed: copy.reloadFailed,
-        },
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refreshing, data, load, copy.reloadNoChanges, copy.reloadChanged, copy.reloadFailed]);
 
   const openDetails = useCallback(
     async (name: string) => {
@@ -339,7 +315,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
     setSearchDraft("");
     setApplied(EMPTY_APPLIED);
     setFilterError("");
-    setRowsPerPage(ROWS_PER_PAGE_OPTIONS[0]);
+    setRowsPerPage(DEFAULT_ROWS_PER_PAGE);
     setPage(1);
   }, []);
 
@@ -523,19 +499,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-3 px-1">
                   <h2 className="text-[14px] font-semibold">{copy.listHeading}</h2>
-                  <button
-                    type="button"
-                    onClick={() => void handleRefresh()}
-                    disabled={refreshing}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_28px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:border-[var(--color-action-hover)] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 disabled:opacity-60"
-                  >
-                    <span className={`text-[var(--color-white)] ${refreshing ? "animate-spin" : ""}`}>
-                      <FiRotateCw size={15} />
-                    </span>
-                    <span className="text-[12.5px] font-semibold text-[var(--color-white)]">
-                      {refreshing ? copy.refreshing : copy.refresh}
-                    </span>
-                  </button>
                 </div>
 
                 {filtered.length === 0 ? (
@@ -649,6 +612,12 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                       rangeStart={pageStart + 1}
                       rangeEnd={pageStart + pageRows.length}
                       total={filtered.length}
+                      rowsPerPage={rowsPerPage}
+                      rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                      onRowsPerPageChange={(rows) => {
+                        setRowsPerPage(rows);
+                        setPage(1);
+                      }}
                     />
 
                   </>

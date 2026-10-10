@@ -7,7 +7,13 @@
  * duplicates the other's pagination/filter logic.
  */
 
-export const ROWS_PER_PAGE_OPTIONS = [20, 100, 500, 1000] as const;
+/**
+ * Page-size choices offered to the user as side-by-side buttons under every
+ * list table (never a dropdown). Tables start at DEFAULT_ROWS_PER_PAGE (10)
+ * rows and the buttons let the user widen the view to 20/50/100/500/1000.
+ */
+export const ROWS_PER_PAGE_OPTIONS = [20, 50, 100, 500, 1000] as const;
+export const DEFAULT_ROWS_PER_PAGE = 10;
 export type RowsPerPage = (typeof ROWS_PER_PAGE_OPTIONS)[number];
 
 export type AmountMode = "any" | "exact" | "range";
@@ -85,6 +91,40 @@ export interface ListPaginationCopy {
   pageOf: string;
   paginationRangeLabel: string;
   ofLabel: string;
+}
+
+/**
+ * Generic pagination labels for tables that don't ship their own copy object
+ * (customer management, expense claims, …). Mirrors the payment-entry wording so
+ * every table's footer reads identically in both languages.
+ */
+const GENERIC_PAGINATION_COPY: Record<"bn" | "en", ListPaginationCopy> = {
+  bn: {
+    totalRecordsLabel: "মোট রেকর্ড",
+    rowsPerPageShow: "দেখান",
+    rowsPerPageSuffix: "টি",
+    pagePrev: "আগের",
+    pageNext: "পরের",
+    pageLabel: "পৃষ্ঠা",
+    pageOf: "/",
+    paginationRangeLabel: "দেখানো হচ্ছে",
+    ofLabel: "মোট",
+  },
+  en: {
+    totalRecordsLabel: "Total Records",
+    rowsPerPageShow: "Show",
+    rowsPerPageSuffix: "rows",
+    pagePrev: "Prev",
+    pageNext: "Next",
+    pageLabel: "Page",
+    pageOf: "of",
+    paginationRangeLabel: "Showing",
+    ofLabel: "of",
+  },
+};
+
+export function genericPaginationCopy(language: string): ListPaginationCopy {
+  return language === "en" ? GENERIC_PAGINATION_COPY.en : GENERIC_PAGINATION_COPY.bn;
 }
 
 /**

@@ -23,8 +23,11 @@ import type {
   ExpenseClaimRow,
   ExpenseClaimStatusKey,
 } from "@/lib/expense-claim/types";
+import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
+
+import ListPagination from "./ListPagination";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW =
@@ -139,6 +142,8 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [expired, setExpired] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
+  const [page, setPage] = useState(1);
 
   const [detailName, setDetailName] = useState<string | null>(null);
   const [detail, setDetail] = useState<ExpenseClaimDetails | null>(null);
@@ -236,6 +241,14 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const claims = (data?.claims ?? []).filter((claim) => Boolean(claim?.name));
   const summary = data?.summary;
   const currency = summary?.currency || claims[0]?.currency || "BDT";
+
+  // Client-side paging — the table shows 10 rows by default; the row-of-buttons
+  // control in the shared footer widens it to 20/50/100/500/1000.
+  const totalPages = Math.max(1, Math.ceil(claims.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * rowsPerPage;
+  const pageRows = claims.slice(pageStart, pageStart + rowsPerPage);
+  const pageCopy = genericPaginationCopy(language);
 
   const summaryCards: { key: string; label: string; value: string }[] = summary
     ? [
@@ -498,13 +511,13 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         </tr>
                       </thead>
                       <tbody>
-                        {claims.map((claim, index) => (
+                        {pageRows.map((claim, index) => (
                           <tr
                             key={claim.name}
                             className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
                           >
                             <td className="px-4 py-3 text-[13px] font-medium text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-                              {index + 1}
+                              {pageStart + index + 1}
                             </td>
                             <td className="px-4 py-3 text-[13px] font-semibold">{claim.name}</td>
                             <td className="px-4 py-3 text-[13px]">
@@ -546,11 +559,11 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
 
                   {/* mobile cards */}
                   <div className="flex flex-col gap-3 md:hidden">
-                    {claims.map((claim, index) => (
+                    {pageRows.map((claim, index) => (
                       <ClaimCard
                         key={claim.name}
                         claim={claim}
-                        serial={index + 1}
+                        serial={pageStart + index + 1}
                         copy={copy}
                         language={language}
                         currency={currency}
@@ -558,6 +571,22 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                       />
                     ))}
                   </div>
+
+                  <ListPagination
+                    copy={pageCopy}
+                    page={currentPage}
+                    pageCount={totalPages}
+                    onPageChange={setPage}
+                    rangeStart={pageStart + 1}
+                    rangeEnd={pageStart + pageRows.length}
+                    total={claims.length}
+                    rowsPerPage={rowsPerPage}
+                    rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                    onRowsPerPageChange={(rows) => {
+                      setRowsPerPage(rows);
+                      setPage(1);
+                    }}
+                  />
                 </>
               )}
             </div>
