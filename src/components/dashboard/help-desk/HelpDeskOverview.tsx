@@ -18,6 +18,7 @@ import {
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { isHelpDeskDemoEnabled } from "@/lib/help-desk/demo";
 import { formatDateTime } from "@/lib/help-desk/format";
 import {
@@ -63,6 +64,9 @@ export default function HelpDeskOverview({
       setTickets([]);
     }
   }, []);
+
+  // Shared header reload → refetch this panel (its data lives in local state).
+  useReloadHandler(load);
 
   useEffect(() => {
     let active = true;

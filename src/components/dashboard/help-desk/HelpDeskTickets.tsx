@@ -13,6 +13,7 @@ import { listTickets } from "@/lib/help-desk/service";
 import type { Ticket, TicketFilterState, TicketStatus } from "@/lib/help-desk/types";
 
 import HelpDeskBreadcrumb from "./HelpDeskBreadcrumb";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 
 const STATUS_VALUES: readonly TicketStatus[] = [
   "open",
@@ -77,6 +78,9 @@ export default function HelpDeskTickets({
       setTickets([]);
     }
   }, []);
+
+  // Shared header reload → refetch this panel (its data lives in local state).
+  useReloadHandler(load);
 
   useEffect(() => {
     let active = true;

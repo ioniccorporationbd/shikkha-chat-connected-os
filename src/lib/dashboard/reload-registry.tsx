@@ -47,15 +47,18 @@ export function useReloadRegistry() {
   }, []);
 
   const runAll = useCallback(async () => {
-    await Promise.all(
+    const results = await Promise.all(
       [...handlers.current].map(async (handler) => {
         try {
           await handler();
+          return true;
         } catch {
           /* a single panel failing must not block the others */
+          return false;
         }
       }),
     );
+    return { ok: results.every(Boolean), failed: results.filter((ok) => !ok).length };
   }, []);
 
   const hasHandlers = useCallback(() => handlers.current.size > 0, []);

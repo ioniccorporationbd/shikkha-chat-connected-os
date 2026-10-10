@@ -24,6 +24,7 @@ import { formatDateTime, formatFileSize } from "@/lib/help-desk/format";
 import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { addUserReply, getTicket, reopenTicket, sendSupportReply } from "@/lib/help-desk/service";
 import type { Ticket, TicketStatus } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
@@ -90,6 +91,9 @@ export default function TicketDetails({
       active = false;
     };
   }, [load]);
+
+  // Shared header reload → refetch the open ticket (local state, not React Query).
+  useReloadHandler(load);
 
   const retry = () => {
     setState("loading");

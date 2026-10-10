@@ -109,6 +109,7 @@ export default function DashboardShell({
   const [imageIntent, setImageIntent] = useState<"change-photo" | "remove-photo" | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
+  const [reloading, setReloading] = useState(false);
 
   // The active panel is driven by the URL, not local state: "Create Customer"
   // has its own route inside this shell, so the address bar reflects it and the
@@ -196,35 +197,44 @@ export default function DashboardShell({
   }, [handleSignOut]);
 
   const handleReload = useCallback(async () => {
-    // Refresh the panel that is actually on screen first. Payment Entry, Service
-    // Build, Check-In/Out, Expense Claim and the Customer list keep their data in
-    // local state (not React Query), so a dashboard refetch alone never refreshed
-    // them — that is why the shared reload button looked dead on those pages.
-    // Each of those panels registers its own reload with this button.
-    if (reloadRegistry.hasHandlers()) {
-      await reloadRegistry.runAll();
-      toast.success(copy.reloadNoChanges);
-      return;
-    }
+    if (reloading) return; // one reload at a time — ignore double clicks
+    setReloading(true);
+    try {
+      // Refresh the panel that is actually on screen first. Payment Entry, Service
+      // Build, Check-In/Out, Expense Claim and the Customer list keep their data in
+      // local state (not React Query), so a dashboard refetch alone never refreshed
+      // them — that is why the shared reload button looked dead on those pages.
+      // Each of those panels registers its own reload with this button.
+      if (reloadRegistry.hasHandlers()) {
+        const { ok } = await reloadRegistry.runAll();
+        if (ok) toast.success(copy.reloadNoChanges);
+        else toast.error(copy.reloadFailed);
+        return;
+      }
 
-    // Overview (no panel override) → the Smart reload (shared helper):
-    // snapshot → refetch → compare. Nothing changed → the lightweight query
-    // refresh is enough; something changed → a full browser reload so every
-    // panel resyncs. Runs once per click, so a reload can never loop.
-    await runSmartReload({
-      before: data,
-      refetch: async () => {
-        const result = await refetch();
-        return { data: result.data, error: result.error };
-      },
-      snapshot: dashboardSnapshot,
-      copy: {
-        unchanged: copy.reloadNoChanges,
-        changed: copy.reloadChanged,
-        failed: copy.reloadFailed,
-      },
-    });
-  }, [reloadRegistry, refetch, copy, data]);
+      // Overview (no panel override) → the Smart reload (shared helper):
+      // snapshot → refetch → compare. Nothing changed → the lightweight query
+      // refresh is enough; something changed → a full browser reload so every
+      // panel resyncs. Runs once per click, so a reload can never loop.
+      await runSmartReload({
+        before: data,
+        refetch: async () => {
+          const result = await refetch();
+          return { data: result.data, error: result.error };
+        },
+        snapshot: dashboardSnapshot,
+        copy: {
+          unchanged: copy.reloadNoChanges,
+          changed: copy.reloadChanged,
+          failed: copy.reloadFailed,
+        },
+      });
+    } catch {
+      toast.error(copy.reloadFailed);
+    } finally {
+      setReloading(false);
+    }
+  }, [reloadRegistry, refetch, copy, data, reloading]);
 
   const displayName = user?.full_name || user?.name || "";
   const accountType = (user?.user_type ?? "").trim();
@@ -616,13 +626,13 @@ export default function DashboardShell({
               <button
                 type="button"
                 onClick={handleReload}
-                disabled={isFetching}
+                disabled={isFetching || reloading}
                 aria-label={copy.refresh}
                 title={copy.refresh}
                 className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-action)] bg-[var(--color-action)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-70"
               >
                 <span className="text-[var(--color-white)]">
-                  <FiRefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
+                  <FiRefreshCw size={15} className={isFetching || reloading ? "animate-spin" : undefined} />
                 </span>
               </button>
 
@@ -632,7 +642,7 @@ export default function DashboardShell({
                   displayName={displayName}
                   profile={data?.profile}
                   signingOut={signingOut}
-                  refreshing={isFetching}
+                  refreshing={isFetching || reloading}
                   onSignOut={requestSignOut}
                   onEditProfile={() => setEditOpen(true)}
                   onChangePassword={() => setPasswordOpen(true)}
