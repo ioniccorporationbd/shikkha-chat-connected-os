@@ -971,16 +971,18 @@ export default function LeftSidebar() {
             sidebarPaddingClass,
           ].join(" ")}
         >
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            className="sidebar-close-button absolute right-4 top-4 z-10 grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
-            aria-label={text.closeMenu}
-          >
-            <FiX aria-hidden size={18} />
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(false)}
+              className="sidebar-close-button mb-2 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] text-[18px] text-[var(--color-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-white)]"
+              aria-label={text.closeMenu}
+            >
+              <FiX aria-hidden size={18} />
+            </button>
+          </div>
 
-          <div className="flex flex-col gap-4 pr-9 2xl:pr-0">
+          <div className="flex flex-col gap-4">
             <Logo language={currentLanguage} />
 
             {/* Registration + Login, directly beneath the logo. */}

@@ -692,6 +692,42 @@ div {
   }
 }
 
+/* Reduced motion (desktop): the wheel-hijacking pin engine stands down in JS,
+   so the layout must fall back to the natural, stacked, document-scrolling
+   form — identical to the <=1279px layout. Every scene stays reachable by
+   plain scrolling and no user gesture is ever trapped inside a section. */
+@media (min-width: 1280px) and (prefers-reduced-motion: reduce) {
+  .connected-scroll-section {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .connected-scroll-grid {
+    display: block;
+    height: auto;
+    min-height: auto;
+  }
+
+  .connected-middle-pane {
+    display: none !important;
+  }
+
+  .connected-right-pane {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+    border-left: 0;
+  }
+
+  .connected-right-scroll-panel,
+  .right-scroll-panel {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+}
+
 @media (min-width: 1400px) {
   .connected-scroll-grid {
     grid-template-columns:

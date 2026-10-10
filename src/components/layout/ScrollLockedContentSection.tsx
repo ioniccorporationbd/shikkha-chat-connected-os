@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 type ScrollLockedContentSectionProps = {
   middle: ReactNode;
@@ -40,6 +40,7 @@ export default function ScrollLockedContentSection({
 }: ScrollLockedContentSectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   const touchStartYRef = useRef<number | null>(null);
   const targetScrollRef = useRef(0);
@@ -48,8 +49,15 @@ export default function ScrollLockedContentSection({
   const activeIdRef = useRef<string>("");
   const snapLockRef = useRef(false);
 
+  // Respect prefers-reduced-motion: never hijack native scrolling for these
+  // users. The reduced-motion CSS override collapses the pinned desktop layout
+  // back to the natural stacked one, so every scene stays reachable by plain
+  // scroll and no gesture is ever trapped.
   const shouldUseLockedDesktopScroll = () => {
     if (typeof window === "undefined") return false;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return false;
+    }
     return window.innerWidth >= 1280;
   };
 
@@ -255,6 +263,18 @@ export default function ScrollLockedContentSection({
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(mediaQuery.matches);
+
+    update();
+    mediaQuery.addEventListener("change", update);
+
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
     const panel = rightScrollRef.current;
 
     if (panel) {
@@ -456,6 +476,7 @@ export default function ScrollLockedContentSection({
       id={sectionId}
       className="connected-scroll-section relative scroll-mt-0"
       data-connected-scroll-section="true"
+      data-reduce-motion={reduceMotion ? "true" : undefined}
     >
       <div className="connected-scroll-grid">
         <div className="connected-middle-pane relative">
