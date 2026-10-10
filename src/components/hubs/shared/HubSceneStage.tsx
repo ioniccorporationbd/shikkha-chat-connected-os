@@ -140,7 +140,7 @@ export default function HubSceneStage({
         </motion.div>
       </div>
 
-      <div className="relative z-10 h-screen w-full overflow-hidden">
+      <div className="connected-scene-layer relative z-10 h-screen w-full overflow-hidden">
         {visible.map(({ scene, index }) => (
           <div
             key={scene.id}

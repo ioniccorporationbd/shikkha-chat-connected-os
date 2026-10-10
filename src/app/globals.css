@@ -815,9 +815,18 @@ div {
     min(calc(2 * var(--local) + 0.5), calc(2.5 - 2 * var(--local))),
     1
   );
+  /* Depth envelope — same symmetric shape, a hair wider, so the 3D tilt and
+     scale settle flat just before opacity finishes (adds scene-change depth). */
+  --scene-depth: clamp(
+    0,
+    min(calc(2 * var(--local) + 0.28), calc(2.28 - 2 * var(--local))),
+    1
+  );
   opacity: var(--scene-fade);
-  transform: translate3d(0, calc((0.5 - var(--local)) * 40px), 0)
-    scale(calc(0.972 + 0.028 * var(--scene-fade)));
+  transform: translate3d(0, calc((0.5 - var(--local)) * 56px), 0)
+    scale(calc(0.93 + 0.07 * var(--scene-depth)))
+    rotateX(calc((0.5 - var(--local)) * 6deg));
+  transform-origin: 50% 50%;
   will-change: transform, opacity;
 }
 
@@ -825,30 +834,96 @@ div {
    also continuous and never resets at a boundary. Defaults neutral when the
    engine is off (stacked / reduced-motion). */
 .connected-scene-motion {
-  transform: translate3d(0, calc((0.5 - var(--local, 0.5)) * 18px), 0);
+  transform: translate3d(0, calc((0.5 - var(--local, 0.5)) * 26px), 0);
   will-change: transform;
 }
 
 /* Whole-section background parallax — continuous in `--scroll-progress`, so it
-   never resets when scenes change. */
+   never resets when scenes change. A little horizontal drift is added on top of
+   the vertical so the ambient blobs feel volumetric rather than pure-scroll. */
 .connected-blob-a {
-  transform: translate3d(0, calc((0.5 - var(--scroll-progress, 0.5)) * 120px), 0);
+  transform: translate3d(
+    calc((0.5 - var(--scroll-progress, 0.5)) * 46px),
+    calc((0.5 - var(--scroll-progress, 0.5)) * 120px),
+    0
+  );
 }
 
 .connected-blob-b {
-  transform: translate3d(0, calc((var(--scroll-progress, 0.5) - 0.5) * 150px), 0);
+  transform: translate3d(
+    calc((var(--scroll-progress, 0.5) - 0.5) * 64px),
+    calc((var(--scroll-progress, 0.5) - 0.5) * 150px),
+    0
+  );
+}
+
+/* ── Scroll-synchronised orbit "assemble" (middle HC/SA/OE scenes) ──────────
+   The heading cluster (`.connected-orbit-wrap`) and every individual card
+   (`.connected-card-slot`) derive their enter/leave from the slot's continuous
+   `--local` (0 = just entering → 0.5 = centred hold → 1 = just leaving). The
+   whole panel therefore ASSEMBLES as its scene takes focus and DISASSEMBLES as
+   it leaves — a pure function of scroll position (reversible, deterministic,
+   no per-frame React render). The panel's overall fade is the slot crossfade;
+   these layers add depth + a staggered card run on top. */
+[data-native-scroll="true"] .connected-scene-layer {
+  perspective: 1500px;
+}
+
+[data-native-scroll="true"] .connected-orbit-wrap {
+  --g-in: clamp(0, calc(var(--local) / 0.32), 1);
+  --g-out: clamp(0, calc((1 - var(--local)) / 0.32), 1);
+  --g: min(var(--g-in), var(--g-out));
+  transform: translate3d(0, calc((1 - var(--g)) * 30px + 5px), 0)
+    scale(calc(0.93 + 0.07 * var(--g)));
+  transform-origin: 50% 55%;
+  will-change: transform;
+}
+
+[data-native-scroll="true"] .connected-card-grid {
+  perspective: 1000px;
+}
+
+[data-native-scroll="true"] .connected-card-slot {
+  --card-delay: 0;
+  /* Staggered enter run: card i starts a beat after card i-1… */
+  --ci: clamp(0, calc((var(--local) - 0.04 - var(--card-delay)) / 0.16), 1);
+  /* …and a staggered LEAVE run, so the cluster cascades away (each card eases
+     out a beat before the next) rather than fading as one block. */
+  --co: clamp(0, calc((0.98 - var(--local) - var(--card-delay)) / 0.17), 1);
+  --cr: min(var(--ci), var(--co));
+  opacity: var(--cr);
+  transform: translate3d(0, calc((1 - var(--cr)) * 30px), 0)
+    scale(calc(0.86 + 0.14 * var(--cr)))
+    rotateX(calc((1 - var(--cr)) * 10deg));
+  transform-origin: 50% 62%;
+}
+
+/* Base (engine off: stacked / mobile / reduced-motion) = fully settled. */
+.connected-orbit-wrap {
+  transform: translateY(5px);
+}
+
+.connected-card-slot {
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .connected-scene-slot,
   .connected-scene-motion,
   .connected-blob-a,
-  .connected-blob-b {
+  .connected-blob-b,
+  .connected-orbit-wrap,
+  .connected-card-slot {
     transform: none;
     will-change: auto;
   }
 
   [data-native-scroll="true"] .connected-scene-slot {
+    opacity: 1;
+  }
+
+  .connected-orbit-wrap,
+  .connected-card-slot {
     opacity: 1;
   }
 }

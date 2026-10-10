@@ -1,11 +1,10 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import {
   motion,
   useReducedMotion,
   type Transition,
-  type Variants,
 } from "framer-motion";
 import { FaRegStar } from "react-icons/fa6";
 
@@ -36,49 +35,17 @@ type OrbitProductPanelProps = {
 
 const premiumEase = [0.22, 1, 0.36, 1] as const;
 
-const wrapperVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.9,
-    y: 28,
-    rotateX: 8,
-    filter: "blur(14px)",
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    rotateX: 0,
-    filter: "blur(0px)",
-    transition: {
-      duration: 0.9,
-      ease: premiumEase,
-      staggerChildren: 0.075,
-      delayChildren: 0.16,
-    },
-  },
-};
-
-const cardVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 22,
-    scale: 0.84,
-    rotateX: 10,
-    filter: "blur(8px)",
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    rotateX: 0,
-    filter: "blur(0px)",
-    transition: {
-      duration: 0.58,
-      ease: premiumEase,
-    },
-  },
-};
+/*
+ * NOTE (2026-10-10) — scroll-synchronised "assemble".
+ * The heading cluster + card tiles no longer run a ONE-SHOT framer entrance
+ * (the old `wrapperVariants` / `cardVariants`, now removed). Their enter/leave
+ * is a pure CSS function of the pinned engine's continuous `--local`
+ * (see globals.css: `.connected-orbit-wrap` / `.connected-card-slot`), so the
+ * panel assembles as its scene takes focus and disassembles as it leaves —
+ * reversible, deterministic and free of any per-frame React render. The number
+ * of cards drives the stagger via a per-card `--card-delay`. framer-motion
+ * still owns the hover / tap micro-motion only.
+ */
 
 const floatingTransition: Transition = {
   duration: 4.5,
@@ -184,7 +151,6 @@ function ProductTile({
 
   return (
     <motion.button
-      variants={cardVariants}
       type="button"
       onClick={() => scrollRightSidebarTo(item.targetId ?? item.id)}
       aria-label={`Go to ${item.title}`}
@@ -309,6 +275,10 @@ export default function OrbitProductPanel({
   const headingBorder = isHcAccent
     ? "1.5px solid color-mix(in srgb, var(--color-action) 35%, transparent)"
     : undefined;
+  // Per-card stagger step. Normalised to the card COUNT so the whole cluster
+  // completes its staggered run well before the scene leaves, independent of
+  // how many tiles a panel has (HC 8, SA 10, OE 8). Max delay ≈ 0.16.
+  const cardStep = 0.16 / Math.max(products.length - 1, 1);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
@@ -354,12 +324,7 @@ export default function OrbitProductPanel({
       <FloatingDot className="bottom-[18%] right-[28%] h-[14px] w-[14px]" delay={0.4} themeColor={themeColor} />
 
       <div className="relative z-10 flex h-full w-full items-center justify-center">
-        <motion.div
-          variants={wrapperVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative translate-y-[5px] [transform-style:preserve-3d]"
-        >
+        <div className="connected-orbit-wrap relative [transform-style:preserve-3d]">
           <motion.div
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 blur-[34px]"
@@ -415,22 +380,32 @@ export default function OrbitProductPanel({
               transition={{ duration: 2.8, ease: "easeInOut", repeat: Infinity }}
             />
 
-            <div className="relative z-10 grid grid-cols-2 gap-[8px]">
-              {products.map((product) => (
-                <ProductTile
+            <div className="connected-card-grid relative z-10 grid grid-cols-2 gap-[8px]">
+              {products.map((product, index) => (
+                <div
                   key={product.id}
-                  item={product}
-                  themeColor={themeColor}
-                  darkColor={darkColor}
-                  titleColor={cardTitleColor}
-                  hcAccent={isHcAccent}
-                />
+                  className="connected-card-slot"
+                  style={
+                    {
+                      "--card-i": index,
+                      "--card-delay": index * cardStep,
+                    } as CSSProperties
+                  }
+                >
+                  <ProductTile
+                    item={product}
+                    themeColor={themeColor}
+                    darkColor={darkColor}
+                    titleColor={cardTitleColor}
+                    hcAccent={isHcAccent}
+                  />
+                </div>
               ))}
 
               {products.length % 2 === 1 ? <div className="h-[96px] w-[96px]" /> : null}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
