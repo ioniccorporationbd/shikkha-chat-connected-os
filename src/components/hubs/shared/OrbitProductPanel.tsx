@@ -389,6 +389,9 @@ export default function OrbitProductPanel({
                     {
                       "--card-i": index,
                       "--card-delay": index * cardStep,
+                      // Cards converge from their own column side as they arrive
+                      // (even index = left column, odd = right, in this 2-col grid).
+                      "--wave-x": index % 2 === 0 ? "-16px" : "16px",
                     } as CSSProperties
                   }
                 >

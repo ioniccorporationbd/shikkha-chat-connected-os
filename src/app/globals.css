@@ -823,8 +823,12 @@ div {
      on stage: the outgoing shrinks + sinks to the back and vanishes before the
      incoming rises out of that same spot. Continuous in `--local`, so it stays
      deterministic and fully reversible. */
-  --in: clamp(0, calc((var(--local) + 0.08) / 0.58), 1);
-  --out: clamp(0, calc((var(--local) - 0.58) / 0.42), 1);
+  /* The two ramps are tuned so their VISIBLE windows never overlap: the
+     outgoing reaches --v 0 (fully gone) at exactly the scroll position where
+     the incoming first lifts off --v 0 — so at NO scroll position are two
+     scenes both non-transparent (a hard, provable no-collision guarantee). */
+  --in: clamp(0, calc((var(--local) + 0.04) / 0.44), 1);
+  --out: clamp(0, calc((var(--local) - 0.64) / 0.32), 1);
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   /* PRESENCE ONLY — the section and its background must NOT scale. Scaling the
@@ -840,14 +844,21 @@ div {
    also continuous and never resets at a boundary. Defaults neutral when the
    engine is off (stacked / reduced-motion). */
 .connected-scene-motion {
-  /* The ONE thing that shrinks/grows: the panel CONTENT. A subtle ~10 %
-     (scale 0.90 → 1) so an incoming scene grows out of the back as its
-     predecessor recedes — while the section backdrop never changes size
-     (the slot above is transform-free). Defaults neutral (v = 1) when the
-     engine is off (stacked / mobile / reduced-motion). */
-  transform: translate3d(0, calc((1 - var(--v, 1)) * 12px), 0)
+  /* The ONE element that gives each chapter its depth + flow. Two pure,
+     continuous drivers:
+       • --local (enter → centre → leave) drives a gentle UPWARD travel, so
+         consecutive chapters read as ONE continuous story flowing up past the
+         viewer (content enters from below, settles centre, exits above);
+       • --v (front presence) drives a subtle ~10 % grow (0.90 → 1) so the
+         incoming panel rises out of the back as its predecessor recedes.
+     Both resolve to their neutral state (travel 0, scale 1) when the scene is
+     centred — so a settled scene is ALWAYS perfectly crisp. The section + its
+     background live OUTSIDE this layer and never scale or move. Defaults
+     neutral when the engine is off (stacked / mobile / reduced-motion). */
+  --travel: calc((0.5 - var(--local, 0.5)) * 42px);
+  transform: translate3d(0, var(--travel), 0)
     scale(calc(0.9 + 0.1 * var(--v, 1)));
-  transform-origin: 50% 50%;
+  transform-origin: 50% 58%;
   will-change: transform;
 }
 
@@ -883,14 +894,15 @@ div {
 }
 
 [data-native-scroll="true"] .connected-orbit-wrap {
-  /* Heading cluster eases out of the back with the rest of the scene; a touch
-     narrower than the slot so it settles just ahead of the card run. */
-  --g-in: clamp(0, calc((var(--local) + 0.06) / 0.5), 1);
-  --g-out: clamp(0, calc((1 - var(--local)) / 0.42), 1);
+  /* The heading + card cluster leads the panel: it starts a beat earlier than
+     the cards and settles just ahead of them, so the eye lands on the scene's
+     title first (visual hierarchy). Fade + a light sink only — the ~10 %
+     shrink/grow is owned by the motion layer, so the cluster must not scale
+     again or the values compound. */
+  --g-in: clamp(0, calc((var(--local) + 0.12) / 0.40), 1);
+  --g-out: clamp(0, calc((0.92 - var(--local)) / 0.36), 1);
   --g: clamp(0, min(var(--g-in), var(--g-out)), 1);
-  /* Fade + a light sink only — the ~10 % shrink/grow is owned by the motion
-     layer, so the heading must not scale again (no compounding). */
-  transform: translate3d(0, calc((1 - var(--g)) * 14px + 5px), 0);
+  transform: translate3d(0, calc((1 - var(--g)) * 16px), 0);
   transform-origin: 50% 55%;
   will-change: transform;
 }
@@ -901,18 +913,26 @@ div {
 
 [data-native-scroll="true"] .connected-card-slot {
   --card-delay: 0;
-  /* Staggered ENTER run: card i lifts out of the back a beat after card i-1… */
-  --ci: clamp(0, calc((var(--local) - 0.02 - var(--card-delay)) / 0.18), 1);
+  --wave-x: 0px;
+  /* Staggered ENTER run: card i lifts out of the back + slides in from its own
+     column side a beat after card i-1, converging into the grid… */
+  --ci: clamp(0, calc((var(--local) - 0.08 - var(--card-delay)) / 0.20), 1);
   /* …and a staggered LEAVE run, so the cluster cascades back into the depth
-     (each card recedes a beat before the next) rather than fading as a block. */
-  --co: clamp(0, calc((0.96 - var(--local) - var(--card-delay)) / 0.18), 1);
+     (each card recedes + slides outward a beat before the next) rather than
+     fading as a block. */
+  --co: clamp(0, calc((0.92 - var(--local) - var(--card-delay)) / 0.18), 1);
   --cr: clamp(0, min(var(--ci), var(--co)), 1);
   opacity: var(--cr);
-  /* Staggered run is FADE-ONLY: the cluster's single ~10 % shrink/grow is
-     carried by `.connected-scene-motion`, so each tile must NOT scale/rotate
-     again or the values would compound (~40 %) and re-create the "whole
-     section zooming" feel the user rejected. A light sink keeps the cascade. */
-  transform: translate3d(0, calc((1 - var(--cr)) * 14px), 0);
+  /* Staggered run is FADE + TRAVEL only: the cluster's single ~10 % shrink/grow
+     is carried by `.connected-scene-motion`, so each tile must NOT scale/rotate
+     again or the values would compound (~40 %) and re-create the "whole section
+     zooming" feel the user rejected. Each tile slides in from its column side
+     + below (translate only) and lands flush at settle. */
+  transform: translate3d(
+    calc(var(--wave-x) * (1 - var(--cr))),
+    calc((1 - var(--cr)) * 16px),
+    0
+  );
   transform-origin: 50% 62%;
 }
 
