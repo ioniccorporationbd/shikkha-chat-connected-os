@@ -782,7 +782,9 @@ div {
        remount), so there is no flash and no re-entry animation;
      • the handoff is a DEPTH SWAP, not a stacked crossfade: the outgoing scene
        recedes toward the back and is already gone by the time the incoming
-       rises out of that same spot, so the two are never both clearly on screen.
+       rises out of that same spot, so the two are never both clearly on screen;
+     • the SECTION + its background are transform-free — only the inner content
+       scales (subtly, ~10 %), so the backdrop never appears to zoom.
 
    `--local`: 0 = just entering, 0.5 = centred (readable hold), 1 = just
    leaving, <0 / >1 = a neighbour waiting off-stage.
@@ -825,23 +827,27 @@ div {
   --out: clamp(0, calc((var(--local) - 0.58) / 0.42), 1);
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
+  /* PRESENCE ONLY — the section and its background must NOT scale. Scaling the
+     slot dragged the WHOLE pane (heading + card grid + pane background) toward
+     the viewer, which the user perceived as "the entire section, background
+     included, shrinking". The slot now only crossfades; all shrink/grow lives
+     on the inner content (see `.connected-scene-motion`). */
   opacity: var(--v);
-  /* Recede INTO the depth: shrink, sink toward the handoff point and tilt away
-     as presence drops; the incoming plays this in reverse, rising from back. */
-  transform: translate3d(0, calc((1 - var(--v)) * 64px), 0)
-    scale(calc(0.6 + 0.4 * var(--v)))
-    rotateX(calc((1 - var(--v)) * 9deg));
-  transform-origin: 50% 50%;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 
 /* Secondary, in-scene parallax layer. Driven by the slot's `--local`, so it is
    also continuous and never resets at a boundary. Defaults neutral when the
    engine is off (stacked / reduced-motion). */
 .connected-scene-motion {
-  /* Extra depth sink layered on the slot; defaults neutral (v = 1) when the
-     engine is off (stacked / reduced-motion). */
-  transform: translate3d(0, calc((1 - var(--v, 1)) * 20px), 0);
+  /* The ONE thing that shrinks/grows: the panel CONTENT. A subtle ~10 %
+     (scale 0.90 → 1) so an incoming scene grows out of the back as its
+     predecessor recedes — while the section backdrop never changes size
+     (the slot above is transform-free). Defaults neutral (v = 1) when the
+     engine is off (stacked / mobile / reduced-motion). */
+  transform: translate3d(0, calc((1 - var(--v, 1)) * 12px), 0)
+    scale(calc(0.9 + 0.1 * var(--v, 1)));
+  transform-origin: 50% 50%;
   will-change: transform;
 }
 
@@ -882,8 +888,9 @@ div {
   --g-in: clamp(0, calc((var(--local) + 0.06) / 0.5), 1);
   --g-out: clamp(0, calc((1 - var(--local)) / 0.42), 1);
   --g: clamp(0, min(var(--g-in), var(--g-out)), 1);
-  transform: translate3d(0, calc((1 - var(--g)) * 34px + 5px), 0)
-    scale(calc(0.88 + 0.12 * var(--g)));
+  /* Fade + a light sink only — the ~10 % shrink/grow is owned by the motion
+     layer, so the heading must not scale again (no compounding). */
+  transform: translate3d(0, calc((1 - var(--g)) * 14px + 5px), 0);
   transform-origin: 50% 55%;
   will-change: transform;
 }
@@ -901,12 +908,11 @@ div {
   --co: clamp(0, calc((0.96 - var(--local) - var(--card-delay)) / 0.18), 1);
   --cr: clamp(0, min(var(--ci), var(--co)), 1);
   opacity: var(--cr);
-  /* Strong depth cue: each tile is small + sunk + tilted while it sits at the
-     back and grows flat to full size as it arrives — the reverse on the way
-     out, so the cluster visibly recedes into the distance. */
-  transform: translate3d(0, calc((1 - var(--cr)) * 44px), 0)
-    scale(calc(0.62 + 0.38 * var(--cr)))
-    rotateX(calc((1 - var(--cr)) * 14deg));
+  /* Staggered run is FADE-ONLY: the cluster's single ~10 % shrink/grow is
+     carried by `.connected-scene-motion`, so each tile must NOT scale/rotate
+     again or the values would compound (~40 %) and re-create the "whole
+     section zooming" feel the user rejected. A light sink keeps the cascade. */
+  transform: translate3d(0, calc((1 - var(--cr)) * 14px), 0);
   transform-origin: 50% 62%;
 }
 
