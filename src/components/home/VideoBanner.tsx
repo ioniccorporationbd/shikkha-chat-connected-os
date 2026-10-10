@@ -34,23 +34,36 @@ export type VideoBannerContent = {
 type Props = {
   id: string;
   content: VideoBannerContent;
+  /**
+   * Extra pinned travel for the sticky video stage, expressed in viewport
+   * heights. The section height becomes (1 + hold) × 100svh, so the video stays
+   * pinned for `hold` viewports of native scroll while its copy finishes
+   * animating — reproducing the reference's sticky "hold" before release.
+   * Distinct per banner (the reference does not use one identical pin time).
+   */
+  hold?: number;
 };
 
 /**
  * Full-bleed, scroll-driven video "chapter" banner used three times on the
  * homepage (Home Connections / Student Achievement / Operational Excellence).
  *
- * Layers, back to front: the looping muted video (slow parallax zoom on scroll),
- * brand-tinted gradient washes, a soft scrim for legibility, the section mark
- * (glass index medallion, top-left), the play/pause control (top-right), the
- * floating text block, and a scroll indicator at the bottom.
+ * Layers, back to front: the looping muted video (slow parallax zoom + a fade
+ * on exit), brand-tinted gradient washes, a soft scrim for legibility, the
+ * section mark (glass index medallion, bottom-left), the play/pause control
+ * (top-right), the floating text block, and a scroll indicator at the bottom.
+ *
+ * STICKY HOLD: the section reserves (1 + hold) viewports of scroll; its inner
+ * stage is `position: sticky; top:0; height:100svh`, so it pins to the viewport
+ * while the tall section scrolls past, then releases naturally into the next
+ * section — no blank gap, no sudden jump, and fully reversible.
  *
  * The text does a slow, layered upward drift as the visitor scrolls — the pill,
- * title and description each float up at a slightly different pace for depth,
- * then the block fades as the banner leaves. All motion is disabled under
- * `prefers-reduced-motion`.
+ * title and description each float up at a slightly different pace for depth —
+ * and the block fades out by the time the pin releases. All motion is disabled
+ * under `prefers-reduced-motion`.
  */
-export default function VideoBanner({ id, content }: Props) {
+export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
   const { language } = useLanguage();
 
   const currentLanguage: LanguageCode = language === "en" ? "en" : "bn";
@@ -69,23 +82,54 @@ export default function VideoBanner({ id, content }: Props) {
     offset: ["start start", "end start"],
   });
 
-  // Slow, layered upward drift: each line floats up at its own pace.
-  const pillY = useTransform(scrollYProgress, [0, 0.5, 1], [0, -70, -150]);
-  const titleY = useTransform(scrollYProgress, [0, 0.5, 1], [0, -150, -300]);
-  const descY = useTransform(scrollYProgress, [0, 0.5, 1], [0, -215, -430]);
+  // Fraction of total progress during which the stage is actually pinned.
+  // progress 0 → section top at viewport top; progress 1 → section bottom at
+  // viewport top. The sticky child unpins at progress = hold / (1 + hold), so
+  // the copy animation is mapped to complete right at that release point.
+  const pinned = hold > 0 ? hold / (1 + hold) : 0.999;
 
-  // Hold the copy readable, then let it melt away as the banner leaves.
+  // Slow, layered upward drift: each line floats up at its own pace, finishing
+  // exactly as the pin releases.
+  const pillY = useTransform(
+    scrollYProgress,
+    [0, pinned * 0.55, pinned, 1],
+    [0, -52, -96, -96],
+  );
+  const titleY = useTransform(
+    scrollYProgress,
+    [0, pinned * 0.55, pinned, 1],
+    [0, -110, -210, -210],
+  );
+  const descY = useTransform(
+    scrollYProgress,
+    [0, pinned * 0.55, pinned, 1],
+    [0, -150, -300, -300],
+  );
+
+  // Hold the copy readable, then let it melt away as the pin releases.
   const blockOpacity = useTransform(
     scrollYProgress,
-    [0, 0.4, 0.72, 0.92],
-    [1, 1, 0.7, 0],
+    [0, pinned * 0.6, pinned * 0.85, pinned, 1],
+    [1, 1, 0.55, 0, 0],
   );
   const blockScale = useTransform(
     scrollYProgress,
-    [0, 0.5, 0.92],
-    [1, 0.98, 0.94],
+    [0, pinned * 0.6, pinned, 1],
+    [1, 0.99, 0.94, 0.94],
   );
-  const videoScale = useTransform(scrollYProgress, [0, 1], [1.03, 1.09]);
+
+  // Video keeps a slow parallax zoom through the hold, then fades a touch as the
+  // next section takes over.
+  const videoScale = useTransform(
+    scrollYProgress,
+    [0, pinned, 1],
+    [1.03, 1.075, 1.1],
+  );
+  const videoOpacity = useTransform(
+    scrollYProgress,
+    [0, pinned, 1],
+    [1, 1, 0.9],
+  );
 
   const pillStyle = reduce ? undefined : { y: pillY };
   const titleStyle = reduce ? undefined : { y: titleY };
@@ -93,6 +137,9 @@ export default function VideoBanner({ id, content }: Props) {
   const blockStyle = reduce
     ? undefined
     : { opacity: blockOpacity, scale: blockScale };
+  const videoStyle = reduce
+    ? undefined
+    : { scale: videoScale, opacity: videoOpacity };
 
   const toggleVideo = async () => {
     const video = videoRef.current;
@@ -118,12 +165,13 @@ export default function VideoBanner({ id, content }: Props) {
       id={id}
       lang={currentLanguage}
       className="relative overflow-visible bg-white"
+      style={hold > 0 ? { height: `calc(100svh + ${hold * 100}svh)` } : undefined}
     >
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-[var(--color-primary)]">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <motion.video
             ref={videoRef}
-            style={reduce ? undefined : { scale: videoScale }}
+            style={videoStyle}
             className="h-full w-full object-cover brightness-[1.04]"
             src={content.videoSrc}
             autoPlay

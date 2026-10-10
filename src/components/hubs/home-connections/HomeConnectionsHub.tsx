@@ -106,8 +106,8 @@ export default function HomeConnectionsHub() {
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[var(--color-white)]">
 
-      <div className="pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
-      <div className="pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[105px]" />
+      <div className="connected-blob-a pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
+      <div className="connected-blob-b pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[105px]" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-60 blur-[85px]" />
 
       <div className="pointer-events-none absolute left-8 top-8 z-30 hidden lg:block">
@@ -158,7 +158,9 @@ export default function HomeConnectionsHub() {
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex h-full w-full items-center justify-center"
           >
-            {ActiveComponent}
+            <div className="connected-scene-motion flex h-full w-full items-center justify-center">
+              {ActiveComponent}
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

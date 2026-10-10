@@ -13,6 +13,16 @@ function clamp(value: number, min: number, max: number) {
 }
 
 /*
+ * Per-scene scroll distance, in CSS pixels, measured from the reference
+ * (PowerSchool Connected OS). Its scene blocks are content-height driven and
+ * sit ~1600px apart on average (measured from label-block offsets in the
+ * archived snapshot). Allocating this much pinned travel per scene is what
+ * reproduces the reference's slower scroll rhythm and longer visual hold.
+ * This single constant is the knob for the whole pinned progression.
+ */
+const SCENE_PITCH_PX = 1600;
+
+/*
  * -------------------------------------------------------------------------
  * NATIVE SCROLL ENGINE (homepage-only — no backend impact).
  *
@@ -23,13 +33,19 @@ function clamp(value: number, min: number, max: number) {
  *
  * This engine now:
  *   • Lets the document scroll natively (no preventDefault anywhere).
- *   • Renders each hub as a TALL section (sceneCount × 100svh) whose inner
- *     `.connected-scroll-grid` is `position: sticky; top:0; height:100svh`
- *     (set in globals.css) — the pinned visual stage.
+ *   • Renders each hub as a TALL section (sceneCount × SCENE_PITCH_PX + 100svh)
+ *     whose inner `.connected-scroll-grid` is `position: sticky; top:0;
+ *     height:100svh` (set in globals.css) — the pinned visual stage. Because
+ *     the section is (sceneCount × 1600px) taller than one viewport, the stage
+ *     stays pinned for exactly that many pixels of native scroll.
  *   • Derives the active scene from actual document scroll progress:
  *       progress = clamp((scrollY - sectionTop) / (sectionHeight - viewportH), 0, 1)
  *       index    = clamp(floor(progress * sceneCount), 0, sceneCount - 1)
  *     so forward scrolling advances and reverse scrolling restores scenes.
+ *   • Publishes the continuous, intra-scene progress (0..1) as the `--scene-p`
+ *     CSS variable on the pinned grid each frame, so descendant scenes can
+ *     interpolate smooth scroll-driven motion (parallax / drift / scale)
+ *     WITHOUT a React re-render per frame.
  *   • Keeps the right rail in sync by scrolling IT to the active panel
  *     (the rail is overflow:hidden on desktop, so it never traps the wheel —
  *     gestures over it fall through to the document).
@@ -45,6 +61,7 @@ export default function ScrollLockedContentSection({
 }: ScrollLockedContentSectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
 
   const [reduceMotion, setReduceMotion] = useState(false);
   const [isNativeDesktop, setIsNativeDesktop] = useState(false);
@@ -78,7 +95,8 @@ export default function ScrollLockedContentSection({
     );
   };
 
-  // Map the current document scroll position to a scene index (0..n-1).
+  // Map the current document scroll position to a scene index (0..n-1) plus
+  // the overall 0..1 progress through the pinned section.
   const computeIndexFromScroll = () => {
     const section = sectionRef.current;
     const n = sceneIdsRef.current.length;
@@ -141,7 +159,15 @@ export default function ScrollLockedContentSection({
     rafRef.current = null;
     if (!isNativeRef.current) return;
 
-    const { index } = computeIndexFromScroll();
+    const { index, progress } = computeIndexFromScroll();
+    const n = sceneIdsRef.current.length || 1;
+
+    // Continuous progress *within* the active scene (0..1). Published as a CSS
+    // variable on the pinned grid so descendant scenes interpolate smooth,
+    // reversible motion without re-rendering React every frame.
+    const sceneProgress = clamp(progress * n - index, 0, 1);
+    gridRef.current?.style.setProperty("--scene-p", sceneProgress.toFixed(4));
+
     applyScene(index);
   };
 
@@ -179,7 +205,12 @@ export default function ScrollLockedContentSection({
     const section = sectionRef.current;
     isNativeRef.current = isNativeDesktop;
 
-    if (!isNativeDesktop || !section) return;
+    if (!isNativeDesktop || !section) {
+      // Stand down: clear the published progress so stacked/mobile layouts
+      // render at the neutral (centered) state.
+      gridRef.current?.style.removeProperty("--scene-p");
+      return;
+    }
 
     const ids = getSceneIds();
     sceneIdsRef.current = ids;
@@ -237,7 +268,7 @@ export default function ScrollLockedContentSection({
 
   const trailingHeight =
     isNativeDesktop && sceneCount > 1
-      ? { height: `${sceneCount * 100}svh` }
+      ? { height: `calc(${sceneCount * SCENE_PITCH_PX}px + 100svh)` }
       : undefined;
 
   return (
@@ -251,7 +282,7 @@ export default function ScrollLockedContentSection({
       data-reduce-motion={reduceMotion ? "true" : undefined}
       style={trailingHeight}
     >
-      <div className="connected-scroll-grid">
+      <div ref={gridRef} className="connected-scroll-grid">
         <div className="connected-middle-pane relative">
           {middle}
         </div>

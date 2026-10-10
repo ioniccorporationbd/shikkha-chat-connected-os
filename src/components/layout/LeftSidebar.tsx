@@ -67,7 +67,7 @@ const GROUP_ICONS: Record<string, IconType> = {
 };
 
 const sidebarWidthClass =
-  "w-[min(88vw,300px)] sm:w-[310px] xl:w-[320px] 2xl:w-[340px]";
+  "w-[min(88vw,300px)] sm:w-[310px] xl:w-[300px] 2xl:w-[300px]";
 
 const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
 

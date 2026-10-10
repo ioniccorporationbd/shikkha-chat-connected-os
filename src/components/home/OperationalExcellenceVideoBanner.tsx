@@ -31,5 +31,7 @@ const content: VideoBannerContent = {
 };
 
 export default function OperationalExcellenceVideoBanner() {
-  return <VideoBanner id="operational-excellence-video" content={content} />;
+  return (
+    <VideoBanner id="operational-excellence-video" content={content} hold={0.9} />
+  );
 }

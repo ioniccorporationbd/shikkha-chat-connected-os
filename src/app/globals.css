@@ -495,7 +495,9 @@ div {
 
 @media (min-width: 1536px) {
   .site-content-shell {
-    padding-left: 340px;
+    /* Matches .connected-sidebar's 2xl width (300px) so the content shell is
+       offset by exactly the rail width — equal left/right branding spacing. */
+    padding-left: 300px;
   }
 }
 
@@ -756,6 +758,41 @@ div {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(540px, 35vw);
+  }
+}
+
+/* =========================================================
+   CONTINUOUS SCROLL-DRIVEN SCENE MOTION (native engine)
+   `--scene-p` (0..1 through the active scene) is published on the pinned
+   `.connected-scroll-grid` every animation frame; descendants interpolate
+   GPU-friendly transforms from it with NO React re-render. At rest (engine
+   off / reduced motion) it defaults to 0.5 → neutral transform.
+========================================================= */
+
+.connected-scene-motion {
+  transform: translate3d(0, calc((0.5 - var(--scene-p, 0.5)) * 48px), 0)
+    scale(
+      calc(
+        1 - max(0.5 - var(--scene-p, 0.5), var(--scene-p, 0.5) - 0.5) * 0.05
+      )
+    );
+  will-change: transform;
+}
+
+.connected-blob-a {
+  transform: translate3d(0, calc((0.5 - var(--scene-p, 0.5)) * 90px), 0);
+}
+
+.connected-blob-b {
+  transform: translate3d(0, calc((var(--scene-p, 0.5) - 0.5) * 120px), 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connected-scene-motion,
+  .connected-blob-a,
+  .connected-blob-b {
+    transform: none;
+    will-change: auto;
   }
 }
 

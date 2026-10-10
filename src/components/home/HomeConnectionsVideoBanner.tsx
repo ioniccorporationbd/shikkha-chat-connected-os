@@ -32,5 +32,5 @@ const content: VideoBannerContent = {
 };
 
 export default function HomeConnectionsVideoBanner() {
-  return <VideoBanner id="connect" content={content} />;
+  return <VideoBanner id="connect" content={content} hold={1.0} />;
 }

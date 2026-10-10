@@ -32,5 +32,7 @@ const content: VideoBannerContent = {
 };
 
 export default function StudentAchievementVideoBanner() {
-  return <VideoBanner id="student-achievement-video" content={content} />;
+  return (
+    <VideoBanner id="student-achievement-video" content={content} hold={1.1} />
+  );
 }
