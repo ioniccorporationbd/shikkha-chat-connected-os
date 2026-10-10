@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
 import {
   FaRegCircleQuestion,
   FaRegStar,
@@ -432,6 +433,9 @@ function scrollToProduct(id: string) {
   }
 }
 
+/** Shared signature easing — matches the site's --ease-smooth (see LandingHeroBanner). */
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 function ProductCard({
   product,
   isSaved,
@@ -512,6 +516,96 @@ export default function ProductRouterSection() {
 
   const groups = useMemo(() => getGroups(currentLanguage), [currentLanguage]);
 
+  const shouldReduceMotion = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  // Subtle per-column scroll drift so the router joins the homepage's
+  // scroll-synchronised motion system (reversible; a SEPARATE element from the
+  // reveal transform so the two never fight for `y`).
+  const colDriftA = useTransform(scrollYProgress, [0, 1], [26, -26]);
+  const colDriftB = useTransform(scrollYProgress, [0, 1], [10, -10]);
+  const colDriftC = useTransform(scrollYProgress, [0, 1], [34, -34]);
+  const colDrift = [colDriftA, colDriftB, colDriftC];
+
+  const reveal = useMemo(() => {
+    const stagger = (step: number): Variants => ({
+      hidden: {},
+      show: {
+        transition: {
+          staggerChildren: shouldReduceMotion ? 0 : step,
+          delayChildren: shouldReduceMotion ? 0 : 0.04,
+        },
+      },
+    });
+    const up: Variants = shouldReduceMotion
+      ? { hidden: { opacity: 0, y: 0 }, show: { opacity: 1, y: 0, transition: { duration: 0.25 } } }
+      : {
+          hidden: { opacity: 0, y: 44 },
+          show: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.65, ease: EASE, staggerChildren: 0.06, delayChildren: 0.04 },
+          },
+        };
+    const card: Variants = shouldReduceMotion
+      ? { hidden: { opacity: 0, y: 0 }, show: { opacity: 1, y: 0, transition: { duration: 0.25 } } }
+      : {
+          hidden: { opacity: 0, y: 18 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+        };
+    const head: Variants = shouldReduceMotion
+      ? { hidden: { opacity: 0, y: 0 }, show: { opacity: 1, y: 0, transition: { duration: 0.25 } } }
+      : {
+          hidden: { opacity: 0, y: 24 },
+          show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+        };
+    return { container: stagger(0.09), grid: stagger(0.09), up, card, head };
+  }, [shouldReduceMotion]);
+
+  // Scroll-driven reveal. We deliberately avoid `whileInView` (IntersectionObserver)
+  // so the router joins the homepage's native scroll system and stays testable /
+  // deterministic: a passive, rAF-throttled listener flips the variant state ONCE
+  // the section is meaningfully on-screen (no reset on reverse scroll).
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (shouldReduceMotion) {
+      setRevealed(true);
+      return;
+    }
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight || 1;
+        const shownTop = Math.max(r.top, 0);
+        const shownBottom = Math.min(r.bottom, vh);
+        const ratio = Math.max(0, shownBottom - shownTop) / Math.max(1, Math.min(r.height, vh));
+        if (ratio > 0.16) {
+          setRevealed(true);
+          window.removeEventListener("scroll", onScroll);
+          window.removeEventListener("resize", onScroll);
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [shouldReduceMotion]);
+
   useEffect(() => {
     const sync = () => setSavedIds(readSavedSections() as ProductId[]);
 
@@ -544,9 +638,21 @@ export default function ProductRouterSection() {
   }, [tab, groups, savedIds]);
 
   return (
-    <section className="relative min-h-screen bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="relative min-h-screen bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20"
+    >
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
-        <div className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
+        <motion.div
+          variants={reveal.container}
+          initial={shouldReduceMotion ? "show" : "hidden"}
+          animate={revealed ? "show" : "hidden"}
+          className="flex w-full flex-col items-center"
+        >
+        <motion.div
+          variants={reveal.head}
+          className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+        >
           <button
             type="button"
             onClick={() => setTab("saved")}
@@ -573,10 +679,13 @@ export default function ProductRouterSection() {
           >
             {text.allProducts}
           </button>
-        </div>
+        </motion.div>
 
         {visibleGroups.length === 0 ? (
-          <div className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] px-8 py-8 text-center shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
+          <motion.div
+            variants={reveal.head}
+            className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] px-8 py-8 text-center shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+          >
             <h3 className="text-2xl font-bold text-[var(--color-primary)]">
               {text.noSavedTitle}
             </h3>
@@ -584,11 +693,19 @@ export default function ProductRouterSection() {
             <p className="mt-2 text-[15px] font-medium text-[var(--color-black)] opacity-70">
               {text.noSavedDescription}
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="grid w-full grid-cols-1 items-start gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {visibleGroups.map((group) => (
-              <div key={group.id} className="relative flex flex-col items-center">
+          <motion.div
+            variants={reveal.grid}
+            className="grid w-full grid-cols-1 items-start gap-8 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {visibleGroups.map((group, index) => (
+              <motion.div
+                key={group.id}
+                style={{ y: shouldReduceMotion ? 0 : colDrift[index % colDrift.length] }}
+                className="relative flex flex-col items-center"
+              >
+                <motion.div variants={reveal.up} className="flex w-full flex-col items-center">
                 <button
                   type="button"
                   onClick={() => scrollToProduct(groupScrollTargets[group.id])}
@@ -611,21 +728,24 @@ export default function ProductRouterSection() {
                       const isSaved = savedIds.includes(product.id);
 
                       return (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          isSaved={isSaved}
-                          onSave={() => toggleSaved(product.id)}
-                        />
+                        <motion.div key={product.id} variants={reveal.card}>
+                          <ProductCard
+                            product={product}
+                            isSaved={isSaved}
+                            onSave={() => toggleSaved(product.id)}
+                          />
+                        </motion.div>
                       );
                     })}
                   </div>
                 </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ))}
 
-          </div>
+          </motion.div>
         )}
+        </motion.div>
       </div>
     </section>
   );
