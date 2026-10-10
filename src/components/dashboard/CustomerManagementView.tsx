@@ -18,6 +18,7 @@ import { deleteCustomer, fetchCustomerList } from "@/lib/customer/api";
 import { customerManagementCopyFor } from "@/lib/customer/management-messages";
 import type { CustomerListRow } from "@/lib/customer/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
@@ -118,6 +119,10 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
     },
     [language, copy.loadFailed]
   );
+
+  // The shell's shared reload button drives this list too (local state).
+  const reloadList = useCallback(() => loadList("refresh"), [loadList]);
+  useReloadHandler(reloadList);
 
   useEffect(() => {
     // Kick the async load off the effect's synchronous path (keeps the body free

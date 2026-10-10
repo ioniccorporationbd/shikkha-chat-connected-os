@@ -27,6 +27,7 @@ import {
   type AppliedFilters,
   DEFAULT_ROWS_PER_PAGE,
 } from "@/lib/dashboard/list-controls";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 
 import { useRouter } from "next/navigation";
 
@@ -122,6 +123,10 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
       active = false;
     };
   }, [load]);
+
+  // Register with the shell's shared reload button — this panel keeps its data
+  // in local state, so a dashboard refetch alone would never refresh it.
+  useReloadHandler(load);
 
   const openDetails = useCallback(
     async (name: string) => {

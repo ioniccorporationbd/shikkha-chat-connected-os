@@ -143,28 +143,42 @@
   --font-bangla: "Noto Serif Bengali";
 
   /* =========================================================
+     GLOBAL 3-TIER TEXT SCALE  (project-wide · 2026-10-10)
+       Tier 1 · Title     — largest  · 100% colour
+       Tier 2 · Subtitle  — middle   ·  80% colour
+       Tier 3 · Text      — smallest ·  60% colour
+     Every text element in the UI resolves to one of these sizes.
+  ========================================================= */
+  --text-title-size: 20px;
+  --text-subtitle-size: 16px;
+  --text-text-size: 12px;
+  --text-title-color: var(--color-primary);
+  --text-subtitle-color: color-mix(in srgb, var(--color-primary) 80%, transparent);
+  --text-text-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+
+  /* =========================================================
      GLOBAL RIGHT-SIDEBAR TEXT SIZES
   ========================================================= */
 
-  --right-active-product-size: 13px;
-  --right-product-pill-size: 16px;
-  --right-main-title-size: 18px;
-  --right-description-size: 16px;
-  --right-stat-value-size: 18px;
-  --right-stat-label-size: 13px;
-  --right-quote-size: 16px;
-  --right-author-size: 13px;
-  --right-author-role-size: 13px;
-  --right-logo-size: 16px;
+  --right-active-product-size: var(--text-text-size);
+  --right-product-pill-size: var(--text-text-size);
+  --right-main-title-size: var(--text-title-size);
+  --right-description-size: var(--text-subtitle-size);
+  --right-stat-value-size: var(--text-title-size);
+  --right-stat-label-size: var(--text-text-size);
+  --right-quote-size: var(--text-subtitle-size);
+  --right-author-size: var(--text-text-size);
+  --right-author-role-size: var(--text-text-size);
+  --right-logo-size: var(--text-subtitle-size);
 
   /* Additional interface text */
-  --right-action-size: 13px;
-  --right-interface-icon-size: 13px;
+  --right-action-size: var(--text-text-size);
+  --right-interface-icon-size: var(--text-text-size);
 
   /* Video banner text */
-  --video-pill-size: 13px;
-  --video-title-size: 18px;
-  --video-description-size: 16px;
+  --video-pill-size: var(--text-text-size);
+  --video-title-size: var(--text-title-size);
+  --video-description-size: var(--text-subtitle-size);
 
   /* =========================================================
      BACKWARD COMPATIBILITY FOR OLD --sc-* COMPONENTS
@@ -863,7 +877,7 @@ html[data-lang="en"] .language-toggle-knob {
   .connected-right-scroll-panel,
   .right-scroll-panel
 ) :where(span, a, button, label, li, small) {
-  font-size: 13px !important;
+  font-size: var(--text-text-size) !important;
   line-height: 1.5;
 }
 
@@ -873,7 +887,7 @@ html[data-lang="en"] .language-toggle-knob {
   .connected-right-scroll-panel,
   .right-scroll-panel
 ) p {
-  font-size: 16px !important;
+  font-size: var(--text-subtitle-size) !important;
   line-height: 1.7;
 }
 
@@ -883,7 +897,7 @@ html[data-lang="en"] .language-toggle-knob {
   .connected-right-scroll-panel,
   .right-scroll-panel
 ) :where(h1, h2, h3, h4, h5, h6) {
-  font-size: 18px !important;
+  font-size: var(--text-title-size) !important;
   line-height: 1.3;
 }
 
@@ -894,15 +908,15 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* Video banners can also render outside a nested panel wrapper. */
 .video-banner-pill-text {
-  font-size: 13px !important;
+  font-size: var(--text-text-size) !important;
   line-height: 1.5 !important;
 }
 .video-banner-title-text {
-  font-size: 18px !important;
+  font-size: var(--text-title-size) !important;
   line-height: 1.32 !important;
 }
 .video-banner-description-text {
-  font-size: 16px !important;
+  font-size: var(--text-subtitle-size) !important;
   line-height: 1.68 !important;
 }
 
@@ -1001,19 +1015,19 @@ html[data-lang="en"] .language-toggle-knob {
 /* Exact right-side type hierarchy */
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 :is(.active-product-text, .stat-label-text, .author-name-text, .author-role-text, .action-text, .interface-icon-text, .video-banner-pill-text) {
-  font-size: 13px !important;
+  font-size: var(--text-text-size) !important;
   line-height: 1.5 !important;
 }
 
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 :is(.section-description, .quote-text, .video-banner-description-text) {
-  font-size: 16px !important;
+  font-size: var(--text-subtitle-size) !important;
   line-height: 1.72 !important;
 }
 
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 :is(.stat-value-text, .video-banner-title-text) {
-  font-size: 18px !important;
+  font-size: var(--text-title-size) !important;
   line-height: 1.32 !important;
 }
 
@@ -1021,7 +1035,7 @@ html[data-lang="en"] .language-toggle-knob {
    Was 16px, which made the kicker compete with body copy; 13px reads as a label. */
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 .product-pill-text {
-  font-size: 13px !important;
+  font-size: var(--text-text-size) !important;
   line-height: 1.45 !important;
   letter-spacing: 0.08em !important;
   font-weight: 700 !important;
@@ -1050,7 +1064,7 @@ html[data-lang="en"] .language-toggle-knob {
    so the card hierarchy is eyebrow (13) < body (16) < headline (22). */
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 .section-main-title {
-  font-size: 22px !important;
+  font-size: var(--text-title-size) !important;
   line-height: 1.28 !important;
 }
 
@@ -1058,7 +1072,7 @@ html[data-lang="en"] .language-toggle-knob {
    scannable without competing with the 22px headline. */
 :where(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel, .right-panel-section)
 .capability-text {
-  font-size: 15px !important;
+  font-size: var(--text-text-size) !important;
   line-height: 1.6 !important;
 }
 
@@ -1111,14 +1125,14 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* Task 3 — Level 1: main title. */
 .right-panel-section .section-main-title {
-  font-size: 22px !important;
+  font-size: var(--text-title-size) !important;
   font-weight: 800 !important;
   color: var(--color-primary) !important;
 }
 
 /* Task 3 — Level 2: description / subtitle. */
 .right-panel-section .section-description {
-  font-size: 17px !important;
+  font-size: var(--text-subtitle-size) !important;
   font-weight: 600 !important;
   line-height: 1.6 !important;
   color: color-mix(in srgb, var(--color-primary) 78%, var(--color-black)) !important;
@@ -1126,7 +1140,7 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* Task 3 — Level 3: supporting detail (capabilities, meta). */
 .right-panel-section .capability-text {
-  font-size: 14px !important;
+  font-size: var(--text-text-size) !important;
   font-weight: 500 !important;
   line-height: 1.6 !important;
   color: color-mix(in srgb, var(--color-primary) 52%, var(--color-black)) !important;
@@ -1479,3 +1493,100 @@ html[data-lang="en"] .language-toggle-knob {
 .hc-orbit-tile > span[class*="skew-x"] { opacity: 0 !important; }
 .hc-orbit-tile:hover { background: var(--color-action-tint) !important; color: var(--color-action) !important; }
 .hc-orbit-tile .hc-orbit-text, .hc-orbit-tile .hc-orbit-text * { color: currentColor !important; }
+
+
+/* =========================================================
+   GLOBAL 3-TIER TEXT ENFORCEMENT  (project-wide · 2026-10-10)
+   ─────────────────────────────────────────────────────────
+   The whole UI now shares ONE hierarchy. Every ad-hoc text size
+   (arbitrary `text-[Npx]` and Tailwind `text-*`) collapses into
+   three tiers, matching the :root tokens above:
+
+     Tier 1  Title     -> var(--text-title-size)     (20px)
+     Tier 2  Subtitle  -> var(--text-subtitle-size)  (16px)
+     Tier 3  Text      -> var(--text-text-size)      (12px)
+
+   Display type (>= 25px — hero headline, big stat numbers) is
+   intentionally left untouched. Retune the three :root tokens to
+   resize the entire UI at once.
+========================================================= */
+
+/* Tier 3 · Text — every small/label size. */
+:is(
+  [class*="text-[8px]"], [class*="text-[9px]"], [class*="text-[10px]"],
+  [class*="text-[10.5px]"], [class*="text-[11px]"], [class*="text-[11.5px]"],
+  [class*="text-[12px]"], [class*="text-[12.5px]"], [class*="text-[13px]"],
+  [class*="text-[13.5px]"], [class*="text-[14px]"]
+) {
+  font-size: var(--text-text-size) !important;
+}
+
+/* Tier 2 · Subtitle — body / description size. */
+:is(
+  [class*="text-[15px]"], [class*="text-[16px]"], [class*="text-[16.5px]"]
+) {
+  font-size: var(--text-subtitle-size) !important;
+}
+
+/* Tier 1 · Title — heading size. */
+:is(
+  [class*="text-[17px]"], [class*="text-[18px]"], [class*="text-[19px]"],
+  [class*="text-[20px]"], [class*="text-[21px]"], [class*="text-[22px]"],
+  [class*="text-[23px]"], [class*="text-[24px]"]
+) {
+  font-size: var(--text-title-size) !important;
+}
+
+/* Named Tailwind sizes collapse into the same three tiers. */
+:is(.text-xs, .text-sm) { font-size: var(--text-text-size) !important; }
+:is(.text-md, .text-base) { font-size: var(--text-subtitle-size) !important; }
+:is(.text-lg, .text-xl, .text-2xl, .text-3xl) { font-size: var(--text-title-size) !important; }
+
+/* Colour tiers — muted brand-green text collapses to 80% / 60%.
+   (Anchored to `text-[color-mix(` so bordered/pill surfaces that use
+   the same mix for BORDER colour are never recoloured.) */
+:is(
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_40%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_42%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_45%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_48%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_50%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_52%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_54%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_55%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_56%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_58%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_60%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_62%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_64%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_65%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_66%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_68%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_70%"]
+) {
+  color: var(--text-text-color) !important;
+}
+
+:is(
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_72%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_74%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_75%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_78%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_80%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_82%"],
+  [class*="text-[color-mix(in_srgb,var(--color-primary)_85%"]
+) {
+  color: var(--text-subtitle-color) !important;
+}
+
+/* Opt-in semantic tier classes, for new markup. */
+.fs-title { font-size: var(--text-title-size) !important; }
+.fs-subtitle { font-size: var(--text-subtitle-size) !important; }
+.fs-text { font-size: var(--text-text-size) !important; }
+.c-title { color: var(--text-title-color) !important; }
+.c-subtitle { color: var(--text-subtitle-color) !important; }
+.c-text { color: var(--text-text-color) !important; }
+
+.t-title { font-size: var(--text-title-size) !important; color: var(--text-title-color) !important; font-weight: 700; line-height: 1.25; }
+.t-subtitle { font-size: var(--text-subtitle-size) !important; color: var(--text-subtitle-color) !important; font-weight: 600; line-height: 1.5; }
+.t-text { font-size: var(--text-text-size) !important; color: var(--text-text-color) !important; font-weight: 500; line-height: 1.55; }

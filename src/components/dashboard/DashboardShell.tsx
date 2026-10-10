@@ -43,6 +43,7 @@ import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCES
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { ReloadRegistryProvider, useReloadRegistry } from "@/lib/dashboard/reload-registry";
 import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
 import { formatBdMobile } from "@/lib/format/mobile";
@@ -50,6 +51,7 @@ import { NAV_ICONS } from "@/lib/dashboard/icons";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { toast } from "@/lib/ui/toast";
 
 interface DashboardShellProps {
   initialData?: DashboardPayload;
@@ -95,6 +97,9 @@ export default function DashboardShell({
   const pathname = usePathname();
   const resetSession = useAuthStore((state) => state.reset);
   const storeUser = useAuthStore((state) => state.user);
+  // The single reload button drives whichever panel is on screen; local-state
+  // panels register their own refresh here (see reload-registry.tsx).
+  const reloadRegistry = useReloadRegistry();
 
   const [signingOut, setSigningOut] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
@@ -191,10 +196,21 @@ export default function DashboardShell({
   }, [handleSignOut]);
 
   const handleReload = useCallback(async () => {
-    // Smart reload (shared helper): snapshot → refetch → compare. Nothing
-    // changed → a lightweight query refresh is enough; something changed → a
-    // full browser reload so every panel resyncs. Runs once per click, so a
-    // reload can never loop.
+    // Refresh the panel that is actually on screen first. Payment Entry, Service
+    // Build, Check-In/Out, Expense Claim and the Customer list keep their data in
+    // local state (not React Query), so a dashboard refetch alone never refreshed
+    // them — that is why the shared reload button looked dead on those pages.
+    // Each of those panels registers its own reload with this button.
+    if (reloadRegistry.hasHandlers()) {
+      await reloadRegistry.runAll();
+      toast.success(copy.reloadNoChanges);
+      return;
+    }
+
+    // Overview (no panel override) → the Smart reload (shared helper):
+    // snapshot → refetch → compare. Nothing changed → the lightweight query
+    // refresh is enough; something changed → a full browser reload so every
+    // panel resyncs. Runs once per click, so a reload can never loop.
     await runSmartReload({
       before: data,
       refetch: async () => {
@@ -208,7 +224,7 @@ export default function DashboardShell({
         failed: copy.reloadFailed,
       },
     });
-  }, [refetch, copy, data]);
+  }, [reloadRegistry, refetch, copy, data]);
 
   const displayName = user?.full_name || user?.name || "";
   const accountType = (user?.user_type ?? "").trim();
@@ -510,6 +526,7 @@ export default function DashboardShell({
   );
 
   return (
+    <ReloadRegistryProvider value={reloadRegistry.value}>
     <div
       data-no-translate="true"
       className="min-h-screen w-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
@@ -990,5 +1007,6 @@ export default function DashboardShell({
         }}
       />
     </div>
+    </ReloadRegistryProvider>
   );
 }

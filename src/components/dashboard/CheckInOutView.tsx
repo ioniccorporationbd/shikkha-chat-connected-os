@@ -31,6 +31,7 @@ import type {
   CheckinStatus,
   GeoPoint,
 } from "@/lib/checkin/types";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { getDeviceId } from "@/lib/device/deviceId";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
@@ -291,6 +292,15 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
       setRefreshing(false);
     }
   }, [refreshing, loadStatus, loadHistory, requestLocation, copy.refreshed, applied]);
+
+  // Shared header reload → refresh this panel quietly. handleRefresh already
+  // toasts for the panel's OWN button; the shell shows its own toast, so a quiet
+  // refresh here avoids two toasts for one click.
+  const reloadQuiet = useCallback(async () => {
+    await Promise.all([loadStatus(), loadHistory(applied)]);
+    requestLocation();
+  }, [loadStatus, loadHistory, applied, requestLocation]);
+  useReloadHandler(reloadQuiet);
 
   const handlePunch = useCallback(async () => {
     if (!status || punching) return;

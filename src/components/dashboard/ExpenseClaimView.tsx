@@ -24,6 +24,7 @@ import type {
   ExpenseClaimStatusKey,
 } from "@/lib/expense-claim/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
@@ -194,6 +195,10 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
       setRefreshing(false);
     }
   }, [refreshing, load, copy.refreshed]);
+
+  // Shared header reload → refresh quietly (handleRefresh toasts for the panel's
+  // OWN button; the shell shows one toast, so avoid a double toast here).
+  useReloadHandler(load);
 
   const openDetails = useCallback(
     async (name: string) => {
