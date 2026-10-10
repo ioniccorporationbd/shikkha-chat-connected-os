@@ -811,24 +811,24 @@ div {
 [data-native-scroll="true"] .connected-scene-slot {
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
 
-  /* Depth SWAP — deliberately NOT a symmetric crossfade. A symmetric fade
-     parks the outgoing + incoming both at ~0.5 at a boundary, so two scenes
-     sit visibly stacked (the reported defect). Instead each scene has two
-     independent ramps:
-       --in   0 (a full slot behind, deep at the back) → 1 (present at centre)
-       --out  0 (at centre) → 1 (a full slot past centre, receded to the back)
-     and `--v` (front presence) = min(--in, 1 − --out). The outgoing scene
-     reaches --v ≈ 0 a hair before the incoming lifts off --v ≈ 0, so their
-     visible windows only touch (at the back) — the two are never both clearly
-     on stage: the outgoing shrinks + sinks to the back and vanishes before the
-     incoming rises out of that same spot. Continuous in `--local`, so it stays
-     deterministic and fully reversible. */
-  /* The two ramps are tuned so their VISIBLE windows never overlap: the
-     outgoing reaches --v 0 (fully gone) at exactly the scroll position where
-     the incoming first lifts off --v 0 — so at NO scroll position are two
-     scenes both non-transparent (a hard, provable no-collision guarantee). */
-  --in: clamp(0, calc((var(--local) + 0.04) / 0.44), 1);
-  --out: clamp(0, calc((var(--local) - 0.64) / 0.32), 1);
+  /* Controlled CROSSFADE between scenes (each scene owns two ramps):
+       --in   0 (below the fold, rising) → 1 (present)
+       --out  0 (at / near centre)       → 1 (leaving, receded)
+     and `--v` (front presence) = min(--in, 1 − --out).
+     Every scene holds FULLY opaque across its readable band (local ≈ -0.19 …
+     0.63), then the outgoing + incoming dissolve THROUGH each other over a
+     SHORT overlap (local ≈ 0.63 … 0.81, mid ≈ 0.72) whose crossing sits at
+     ~0.5 + ~0.5. This makes the handoff a clean, intentional artistic dissolve
+     that NEVER drops to an empty / blank frame — the measured floor of the
+     brightest scene is ≈ 0.5 (it was ≈ 0.03 with the earlier hard depth-swap,
+     i.e. a blank frame) — yet the two are never both at full strength, so it
+     never reads as two stacked, colliding sections. The whole cluster also
+     keeps flowing upward through the depth field (see `.connected-scene-
+     motion`), so the ~0.5/0.5 instant is depth-separated (one receding above,
+     the next rising from below), not text-over-text. Continuous in `--local`,
+     so it is deterministic and perfectly reversible. */
+  --in: clamp(0, calc((var(--local) + 0.37) / 0.18), 1);
+  --out: clamp(0, calc((var(--local) - 0.63) / 0.18), 1);
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   /* PRESENCE ONLY — the section and its background must NOT scale. Scaling the
@@ -855,9 +855,15 @@ div {
      centred — so a settled scene is ALWAYS perfectly crisp. The section + its
      background live OUTSIDE this layer and never scale or move. Defaults
      neutral when the engine is off (stacked / mobile / reduced-motion). */
-  --travel: calc((0.5 - var(--local, 0.5)) * 42px);
+  --travel: calc((0.5 - var(--local, 0.5)) * 64px);
+  /* `--local > 0.5` = the scene is past centre (leaving): it shrinks a touch
+     MORE than the vignette alone so the outgoing panel visibly *recedes into
+     the depth field* while the incoming rises in front of it — the crossfade
+     reads as "one leaving, one arriving", not a flat ghost/echo. Neutral (
+     term = 0) at/behind centre, so a settled scene is exactly scale 1. */
   transform: translate3d(0, var(--travel), 0)
-    scale(calc(0.9 + 0.1 * var(--v, 1)));
+    scale(calc(0.9 + 0.1 * var(--v, 1)
+      - max(0, var(--local, 0.5) - 0.5) * 0.28));
   transform-origin: 50% 58%;
   will-change: transform;
 }
