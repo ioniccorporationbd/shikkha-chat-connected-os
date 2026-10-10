@@ -762,37 +762,94 @@ div {
 }
 
 /* =========================================================
-   CONTINUOUS SCROLL-DRIVEN SCENE MOTION (native engine)
-   `--scene-p` (0..1 through the active scene) is published on the pinned
-   `.connected-scroll-grid` every animation frame; descendants interpolate
-   GPU-friendly transforms from it with NO React re-render. At rest (engine
-   off / reduced motion) it defaults to 0.5 → neutral transform.
+   CONTINUOUS SCROLL-DRIVEN SCENE MOTION
+   ---------------------------------------------------------
+   The pinned native engine publishes, on `.connected-scroll-grid`, every
+   animation frame:
+     --scroll-progress  0..1 across the WHOLE pinned section
+     --scene-focus      continuous scene position; scene k is centred at k+0.5,
+                        so focus runs 0.5 .. count-0.5
+
+   Each mounted scene lives in a `.connected-scene-slot` carrying its own
+   `--scene-index`. The slot derives opacity + drift from `--scene-focus` alone
+   — a PURE, continuous function of scroll position. Consequences:
+     • the same scroll position always renders the same frame, regardless of
+       direction or speed (deterministic);
+     • crossing a boundary never wraps a value back to 0 (no reset / jump) —
+       this replaced the old `--scene-p` which wrapped 1 -> 0 and snapped the
+       still-mounted outgoing scene's transform;
+     • the active scene + its neighbours stay MOUNTED across a boundary (no
+       remount), so there is no flash and no re-entry animation;
+     • two neighbours meeting at a boundary always sum to full opacity, so the
+       stage is never blank.
+
+   `--local`: 0 = just entering, 0.5 = centred (readable hold), 1 = just
+   leaving, <0 / >1 = a neighbour waiting off-stage.
 ========================================================= */
 
+.connected-scene-slot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.connected-scene-slot.is-active {
+  z-index: 3;
+  pointer-events: auto;
+}
+
+/* Only the pinned native stage runs the scroll-linked crossfade; every other
+   layout (stacked / mobile / reduced-motion) shows the single rendered scene
+   at rest. */
+[data-native-scroll="true"] .connected-scene-slot {
+  --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
+  /* Symmetric crossfade: 1 through the readable middle, 0.5 at each shared
+     boundary (so the two neighbours meeting there always sum to 1 → never a
+     blank frame), and 0 once a scene is a full slot away. */
+  --scene-fade: clamp(
+    0,
+    min(calc(2 * var(--local) + 0.5), calc(2.5 - 2 * var(--local))),
+    1
+  );
+  opacity: var(--scene-fade);
+  transform: translate3d(0, calc((0.5 - var(--local)) * 40px), 0)
+    scale(calc(0.972 + 0.028 * var(--scene-fade)));
+  will-change: transform, opacity;
+}
+
+/* Secondary, in-scene parallax layer. Driven by the slot's `--local`, so it is
+   also continuous and never resets at a boundary. Defaults neutral when the
+   engine is off (stacked / reduced-motion). */
 .connected-scene-motion {
-  transform: translate3d(0, calc((0.5 - var(--scene-p, 0.5)) * 48px), 0)
-    scale(
-      calc(
-        1 - max(0.5 - var(--scene-p, 0.5), var(--scene-p, 0.5) - 0.5) * 0.05
-      )
-    );
+  transform: translate3d(0, calc((0.5 - var(--local, 0.5)) * 18px), 0);
   will-change: transform;
 }
 
+/* Whole-section background parallax — continuous in `--scroll-progress`, so it
+   never resets when scenes change. */
 .connected-blob-a {
-  transform: translate3d(0, calc((0.5 - var(--scene-p, 0.5)) * 90px), 0);
+  transform: translate3d(0, calc((0.5 - var(--scroll-progress, 0.5)) * 120px), 0);
 }
 
 .connected-blob-b {
-  transform: translate3d(0, calc((var(--scene-p, 0.5) - 0.5) * 120px), 0);
+  transform: translate3d(0, calc((var(--scroll-progress, 0.5) - 0.5) * 150px), 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .connected-scene-slot,
   .connected-scene-motion,
   .connected-blob-a,
   .connected-blob-b {
     transform: none;
     will-change: auto;
+  }
+
+  [data-native-scroll="true"] .connected-scene-slot {
+    opacity: 1;
   }
 }
 

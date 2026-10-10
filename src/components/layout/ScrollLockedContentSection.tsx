@@ -26,32 +26,37 @@ const SCENE_PITCH_PX = 1600;
  * -------------------------------------------------------------------------
  * NATIVE SCROLL ENGINE (homepage-only — no backend impact).
  *
- * The old engine hijacked wheel/touch (preventDefault) and drove the right
- * rail's internal scrollTop to advance scenes. That was an artificial scroll
- * trap and diverged from the reference site, which uses ordinary document
- * scrolling with a CSS `position: sticky` visual stage.
+ * The engine lets the document scroll natively (no preventDefault anywhere) and
+ * renders each hub as a TALL section (sceneCount × SCENE_PITCH_PX + 100svh)
+ * whose inner `.connected-scroll-grid` is `position: sticky; top:0;
+ * height:100svh` — the pinned visual stage. Because the section is
+ * (sceneCount × 1600px) taller than one viewport, the stage stays pinned for
+ * exactly that many pixels of native scroll.
  *
- * This engine now:
- *   • Lets the document scroll natively (no preventDefault anywhere).
- *   • Renders each hub as a TALL section (sceneCount × SCENE_PITCH_PX + 100svh)
- *     whose inner `.connected-scroll-grid` is `position: sticky; top:0;
- *     height:100svh` (set in globals.css) — the pinned visual stage. Because
- *     the section is (sceneCount × 1600px) taller than one viewport, the stage
- *     stays pinned for exactly that many pixels of native scroll.
- *   • Derives the active scene from actual document scroll progress:
- *       progress = clamp((scrollY - sectionTop) / (sectionHeight - viewportH), 0, 1)
- *       index    = clamp(floor(progress * sceneCount), 0, sceneCount - 1)
- *     so forward scrolling advances and reverse scrolling restores scenes.
- *   • Publishes the continuous, intra-scene progress (0..1) as the `--scene-p`
- *     CSS variable on the pinned grid each frame, so descendant scenes can
- *     interpolate smooth scroll-driven motion (parallax / drift / scale)
- *     WITHOUT a React re-render per frame.
- *   • Keeps the right rail in sync by scrolling IT to the active panel
- *     (the rail is overflow:hidden on desktop, so it never traps the wheel —
- *     gestures over it fall through to the document).
- *   • Reuses the existing `connected-os-active-section` (out) and
- *     `connected-os-scroll-to-section` (in) events, so HC/SA/OE hubs, the
- *     LeftSidebar and every section CTA keep working unchanged.
+ * Each animation frame it derives two continuous, PURE functions of scroll
+ * position and publishes them as CSS variables on the pinned grid, so
+ * descendant scenes interpolate motion WITHOUT a React re-render per frame:
+ *
+ *   progress = clamp((scrollY - sectionTop) / (sectionHeight - viewportH), 0, 1)
+ *   --scroll-progress = progress                                   (0..1, whole section)
+ *   --scene-focus     = progress * (n - 1) + 0.5                   (0.5 .. n-0.5)
+ *
+ * `--scene-focus` is the KEY improvement over the old `--scene-p`. The old
+ * variable wrapped 1 → 0 at every boundary (`progress*n - floor(progress*n)`),
+ * and because it was published on the SHARED grid while the outgoing scene was
+ * still mounted, the outgoing scene's transform snapped +24px → −24px mid-fade
+ * — the visible "jump / reset" at scene boundaries. `--scene-focus` instead
+ * runs monotonically across the whole section (scene k centred at k + 0.5), so
+ * every scene derives its own local offset from it and NOTHING ever wraps.
+ *
+ * Scene SELECTION (which panel is "active") is derived from the same continuous
+ * value — `index = round(progress * (n - 1))` — so the mounted window and the
+ * right rail flip at exactly the shared boundary. `--scene-p` is still
+ * published for backward compatibility.
+ *
+ * The scene ids/selection/rail wiring reuse the existing
+ * `connected-os-active-section` (out) and `connected-os-scroll-to-section` (in)
+ * events, so the hubs, LeftSidebar and every CTA keep working unchanged.
  * -------------------------------------------------------------------------
  */
 export default function ScrollLockedContentSection({
@@ -71,6 +76,27 @@ export default function ScrollLockedContentSection({
   const activeIdRef = useRef<string>("");
   const rafRef = useRef<number | null>(null);
   const isNativeRef = useRef(false);
+
+  // Cached geometry { documentTop, scrollTravel }. The scroll handler is a hot
+  // path fired dozens of times a second; reading getBoundingClientRect() there
+  // forces a synchronous layout every frame. We measure once on enable + on
+  // resize (and a couple of deferred re-measures while media settles) and then
+  // the per-frame maths is pure arithmetic — no forced layout.
+  const geometryRef = useRef<{ top: number; pinned: number }>({
+    top: 0,
+    pinned: 1,
+  });
+
+  // Right-rail tween. Replaces the old per-boundary
+  // scrollTo({behavior:'smooth'}) which, under rapid scene changes, issued
+  // several competing native smooth-scrolls that fought each other and
+  // oscillated. Here a SINGLE self-owned rAF tween pulls the rail toward the
+  // latest target; a new target simply retargets the same running tween, so
+  // there is never more than one animation and it can never overshoot-storm.
+  const railRef = useRef<{ target: number | null; raf: number | null }>({
+    target: null,
+    raf: null,
+  });
 
   // Ordered scene ids = every [id] in the right rail, in document (visual)
   // order. Verified to be exactly the hub's sectionOrder (8 / 10 / 8).
@@ -95,54 +121,93 @@ export default function ScrollLockedContentSection({
     );
   };
 
-  // Map the current document scroll position to a scene index (0..n-1) plus
-  // the overall 0..1 progress through the pinned section.
-  const computeIndexFromScroll = () => {
+  // Measure the pinned stage's document offset and its total scroll travel.
+  const measureGeometry = () => {
     const section = sectionRef.current;
-    const n = sceneIdsRef.current.length;
-    if (!section || n === 0) return { index: 0, progress: 0 };
+    if (!section) return;
 
-    const rect = section.getBoundingClientRect();
     const viewportHeight =
       window.innerHeight || document.documentElement.clientHeight;
     const scrollY = window.scrollY || document.documentElement.scrollTop;
-    const sectionTop = scrollY + rect.top;
-    const pinned = Math.max(1, section.offsetHeight - viewportHeight);
-    const progress = clamp((scrollY - sectionTop) / pinned, 0, 1);
-    const index = n > 1 ? clamp(Math.floor(progress * n), 0, n - 1) : 0;
 
-    return { index, progress };
+    geometryRef.current = {
+      top: scrollY + section.getBoundingClientRect().top,
+      pinned: Math.max(1, section.offsetHeight - viewportHeight),
+    };
   };
 
-  // Keep the right rail showing the active scene's panel. The rail is
-  // overflow:hidden on desktop, so this is a programmatic scroll only — the
-  // wheel never gets trapped inside it.
-  const syncRailTo = (index: number, behavior: ScrollBehavior = "smooth") => {
+  // PURE read of the current 0..1 progress through the pinned section, using
+  // the cached geometry (no layout read).
+  const computeProgress = () => {
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const { top, pinned } = geometryRef.current;
+    return clamp((scrollY - top) / pinned, 0, 1);
+  };
+
+  // --- right-rail tween ------------------------------------------------------
+  const computeRailTarget = (index: number) => {
     const panel = rightScrollRef.current;
     const id = sceneIdsRef.current[index];
-    if (!panel || !id) return;
+    if (!panel || !id) return null;
 
     const target = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
-    if (!target) return;
+    if (!target) return null;
 
     const panelRect = panel.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     const offsetTop = panel.scrollTop + (targetRect.top - panelRect.top);
     const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-    const desired = clamp(
+
+    return clamp(
       offsetTop - (panel.clientHeight - targetRect.height) / 2,
       0,
       maxScroll
     );
-
-    try {
-      panel.scrollTo({ top: desired, behavior });
-    } catch {
-      panel.scrollTop = desired;
-    }
   };
 
-  const applyScene = (index: number, behavior?: ScrollBehavior) => {
+  const tickRail = () => {
+    const panel = rightScrollRef.current;
+    const state = railRef.current;
+    if (!panel || state.target == null) {
+      state.raf = null;
+      return;
+    }
+
+    const diff = state.target - panel.scrollTop;
+    if (Math.abs(diff) < 0.6) {
+      panel.scrollTop = state.target;
+      state.raf = null;
+      return;
+    }
+
+    // Exponential ease-out — critically stable, never overshoots, and a new
+    // target just changes where "home" is (the running tween retargets).
+    panel.scrollTop += diff * 0.16;
+    state.raf = requestAnimationFrame(tickRail);
+  };
+
+  const syncRailTo = (index: number, immediate = false) => {
+    const target = computeRailTarget(index);
+    if (target == null) return;
+
+    const state = railRef.current;
+    state.target = target;
+
+    if (immediate) {
+      const panel = rightScrollRef.current;
+      if (panel) panel.scrollTop = target;
+      if (state.raf != null) {
+        cancelAnimationFrame(state.raf);
+        state.raf = null;
+      }
+      return;
+    }
+
+    if (state.raf == null) state.raf = requestAnimationFrame(tickRail);
+  };
+  // ---------------------------------------------------------------------------
+
+  const applyScene = (index: number, immediate = false) => {
     const ids = sceneIdsRef.current;
     if (!ids.length) return;
 
@@ -151,7 +216,7 @@ export default function ScrollLockedContentSection({
 
     if (id !== activeIdRef.current) {
       dispatchActiveSection(id);
-      syncRailTo(safeIndex, behavior);
+      syncRailTo(safeIndex, immediate);
     }
   };
 
@@ -159,15 +224,31 @@ export default function ScrollLockedContentSection({
     rafRef.current = null;
     if (!isNativeRef.current) return;
 
-    const { index, progress } = computeIndexFromScroll();
-    const n = sceneIdsRef.current.length || 1;
+    const n = sceneIdsRef.current.length;
+    if (n === 0) return;
 
-    // Continuous progress *within* the active scene (0..1). Published as a CSS
-    // variable on the pinned grid so descendant scenes interpolate smooth,
-    // reversible motion without re-rendering React every frame.
-    const sceneProgress = clamp(progress * n - index, 0, 1);
-    gridRef.current?.style.setProperty("--scene-p", sceneProgress.toFixed(4));
+    const progress = computeProgress();
+    const grid = gridRef.current;
 
+    if (grid) {
+      // 0..1 across the WHOLE pinned section (continuous, reversible).
+      grid.style.setProperty("--scroll-progress", progress.toFixed(4));
+
+      // Continuous scene position. Scene k is centred at k + 0.5, so focus
+      // runs 0.5 .. n-0.5 and every scene derives its own `--local` from it.
+      // Pure function of scroll position → identical forward and reverse and
+      // NEVER wrapped back to 0 at a boundary (this is the reset fix).
+      const focus = progress * (n - 1) + 0.5;
+      grid.style.setProperty("--scene-focus", focus.toFixed(4));
+
+      // Legacy intra-scene 0..1, kept for any other consumer of `--scene-p`.
+      const legacy = clamp(progress * n - Math.floor(progress * n), 0, 1);
+      grid.style.setProperty("--scene-p", legacy.toFixed(4));
+    }
+
+    // Nearest scene centre — matches `--scene-focus` so the mounted window and
+    // the right rail both flip at exactly the same shared boundary.
+    const index = clamp(Math.round(progress * (n - 1)), 0, n - 1);
     applyScene(index);
   };
 
@@ -208,7 +289,16 @@ export default function ScrollLockedContentSection({
     if (!isNativeDesktop || !section) {
       // Stand down: clear the published progress so stacked/mobile layouts
       // render at the neutral (centered) state.
-      gridRef.current?.style.removeProperty("--scene-p");
+      const grid = gridRef.current;
+      grid?.style.removeProperty("--scene-p");
+      grid?.style.removeProperty("--scroll-progress");
+      grid?.style.removeProperty("--scene-focus");
+
+      const rail = railRef.current;
+      if (rail.raf != null) {
+        cancelAnimationFrame(rail.raf);
+        rail.raf = null;
+      }
       return;
     }
 
@@ -217,6 +307,12 @@ export default function ScrollLockedContentSection({
     setSceneCount(ids.length);
 
     const handleScroll = () => scheduleUpdate();
+    const handleResize = () => {
+      // Layout above the section (or the viewport itself) may have changed:
+      // re-measure geometry, then re-derive everything.
+      measureGeometry();
+      scheduleUpdate();
+    };
 
     const handleScrollToSection = (event: Event) => {
       const id = (event as CustomEvent<{ id?: string }>).detail?.id;
@@ -226,39 +322,55 @@ export default function ScrollLockedContentSection({
       const index = currentIds.indexOf(id);
       if (index < 0) return;
 
-      const viewportHeight =
-        window.innerHeight || document.documentElement.clientHeight;
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const sectionTop = scrollY + section.getBoundingClientRect().top;
-      const pinned = Math.max(1, section.offsetHeight - viewportHeight);
       const n = currentIds.length;
-      // floor(progress * n) === index for progress = index / (n - 1).
+      measureGeometry();
+      const { top, pinned } = geometryRef.current;
+      // round(progress * (n - 1)) === index for progress = index / (n - 1).
       const progress = n > 1 ? index / (n - 1) : 0;
-      const targetY = sectionTop + progress * pinned + 2;
+      const targetY = top + progress * pinned + 2;
 
       window.scrollTo({ top: targetY, behavior: "smooth" });
       applyScene(index);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("load", handleResize);
     window.addEventListener(
       "connected-os-scroll-to-section",
       handleScrollToSection
     );
 
-    // Initial sync so a refresh mid-page (or deep scroll restoration) lands on
-    // the correct scene instead of leaving a stale one.
-    update();
+    // Measure now and once the tall section has actually committed its height
+    // (the inline height depends on sceneCount state). Media (posters, fonts)
+    // can nudge layout, so re-measure a couple of times cheaply and again when
+    // assets finish loading — after that the per-frame path never measures.
+    measureGeometry();
+    const settleRaf = requestAnimationFrame(() => {
+      measureGeometry();
+      update();
+    });
+    const settleTimer1 = window.setTimeout(handleResize, 300);
+    const settleTimer2 = window.setTimeout(handleResize, 1000);
 
     return () => {
+      cancelAnimationFrame(settleRaf);
+      window.clearTimeout(settleTimer1);
+      window.clearTimeout(settleTimer2);
+
       if (rafRef.current != null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      const rail = railRef.current;
+      if (rail.raf != null) {
+        cancelAnimationFrame(rail.raf);
+        rail.raf = null;
+      }
 
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("load", handleResize);
       window.removeEventListener(
         "connected-os-scroll-to-section",
         handleScrollToSection

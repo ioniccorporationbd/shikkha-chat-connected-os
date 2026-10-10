@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import type { ReactNode } from "react";
+
+import HubSceneStage, {
+  type HubScene,
+} from "@/components/hubs/shared/HubSceneStage";
 
 import HomeConnections from "@/components/hubs/home-connections/sections/HomeConnectionsOverview";
 import StudentInformation from "@/components/hubs/home-connections/sections/StudentInformation";
@@ -12,158 +15,29 @@ import FamilyEngagement from "@/components/hubs/home-connections/sections/Family
 import Communications from "@/components/hubs/home-connections/sections/Communications";
 import AttendanceSupport from "@/components/hubs/home-connections/sections/AttendanceSupport";
 
-type ActiveSectionId =
-  | "home-connections-panel"
-  | "student-information"
-  | "sis"
-  | "enrollment"
-  | "special-programs"
-  | "family-engagement"
-  | "communications"
-  | "attendance-support";
-
-const defaultActiveSection: ActiveSectionId = "home-connections-panel";
-
-const sectionOrder: ActiveSectionId[] = [
-  "home-connections-panel",
-  "student-information",
-  "sis",
-  "enrollment",
-  "special-programs",
-  "family-engagement",
-  "communications",
-  "attendance-support",
+// Scene order MUST match the right rail: sceneIds are read from the rail's
+// [id] elements in document order (8 panels for this hub).
+const scenes: HubScene[] = [
+  { id: "home-connections-panel", title: "Home Connections", node: <HomeConnections /> },
+  { id: "student-information", title: "Student Information", node: <StudentInformation /> },
+  { id: "sis", title: "SIS", node: <SIS /> },
+  { id: "enrollment", title: "Enrollment", node: <Enrollment /> },
+  { id: "special-programs", title: "Special Programs", node: <SpecialPrograms /> },
+  { id: "family-engagement", title: "Family Engagement", node: <FamilyEngagement /> },
+  { id: "communications", title: "Communications", node: <Communications /> },
+  { id: "attendance-support", title: "Attendance Support", node: <AttendanceSupport /> },
 ];
 
-const sectionTitles: Record<ActiveSectionId, string> = {
-  "home-connections-panel": "Home Connections",
-  "student-information": "Student Information",
-  sis: "SIS",
-  enrollment: "Enrollment",
-  "special-programs": "Special Programs",
-  "family-engagement": "Family Engagement",
-  communications: "Communications",
-  "attendance-support": "Attendance Support",
-};
+const defaultActiveSection = "home-connections-panel";
 
-const sectionComponents: Record<ActiveSectionId, ReactNode> = {
-  "home-connections-panel": <HomeConnections />,
-  "student-information": <StudentInformation />,
-  sis: <SIS />,
-  enrollment: <Enrollment />,
-  "special-programs": <SpecialPrograms />,
-  "family-engagement": <FamilyEngagement />,
-  communications: <Communications />,
-  "attendance-support": <AttendanceSupport />,
-};
-
-function isValidSectionId(id: string): id is ActiveSectionId {
-  return sectionOrder.includes(id as ActiveSectionId);
-}
-
-export default function HomeConnectionsHub() {
-  const [activeSection, setActiveSection] =
-    useState<ActiveSectionId>(defaultActiveSection);
-
-  useEffect(() => {
-    const handleActiveSection = (event: Event) => {
-      const customEvent = event as CustomEvent<{ id?: string }>;
-      const id = customEvent.detail?.id;
-
-      if (!id || !isValidSectionId(id)) return;
-
-      setActiveSection((current) => {
-        if (current === id) return current;
-        return id;
-      });
-    };
-
-    window.addEventListener(
-      "connected-os-active-section",
-      handleActiveSection
-    );
-
-    window.dispatchEvent(
-      new CustomEvent("connected-os-active-section", {
-        detail: { id: defaultActiveSection },
-      })
-    );
-
-    return () => {
-      window.removeEventListener(
-        "connected-os-active-section",
-        handleActiveSection
-      );
-    };
-  }, []);
-
-  const activeTitle = useMemo(() => {
-    return sectionTitles[activeSection];
-  }, [activeSection]);
-
-  const ActiveComponent = sectionComponents[activeSection];
-
+// Home Connections is the first hub on the page; it emits its default active
+// id on mount (unchanged behaviour) so the left rail opens the HC group.
+export default function HomeConnectionsHub(): ReactNode {
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[var(--color-white)]">
-
-      <div className="connected-blob-a pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
-      <div className="connected-blob-b pointer-events-none absolute bottom-[14%] right-[12%] h-[340px] w-[340px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[105px]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--color-white)] opacity-60 blur-[85px]" />
-
-      <div className="pointer-events-none absolute left-8 top-8 z-30 hidden lg:block">
-        <motion.div
-          key={activeTitle}
-          initial={{
-            opacity: 0,
-            y: -8,
-            scale: 0.96,
-            filter: "blur(6px)",
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            filter: "blur(0px)",
-          }}
-          transition={{
-            duration: 0.38,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="section-label-badge hc-middle-badge"
-        >
-          {activeTitle}
-        </motion.div>
-      </div>
-
-      <div className="relative z-10 h-screen w-full overflow-hidden">
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={activeSection}
-            initial={{
-              opacity: 0,
-              y: 18,
-              scale: 0.985,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: -12,
-              scale: 0.99,
-              transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
-            }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex h-full w-full items-center justify-center"
-          >
-            <div className="connected-scene-motion flex h-full w-full items-center justify-center">
-              {ActiveComponent}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </section>
+    <HubSceneStage
+      scenes={scenes}
+      defaultActiveId={defaultActiveSection}
+      emitDefaultOnMount
+    />
   );
 }
