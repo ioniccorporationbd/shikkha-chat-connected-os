@@ -8,7 +8,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <>
       <LeftSidebar />
-      <div className="site-content-shell min-h-screen min-w-0 overflow-x-hidden">
+      <div className="site-content-shell min-h-screen min-w-0 overflow-x-clip">
         {children}
       </div>
     </>

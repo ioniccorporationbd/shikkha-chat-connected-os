@@ -12,27 +12,32 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-/* -------------------------------------------------------------------------
- * Middle-section scroll pacing (frontend-only, no backend impact).
- *   WHEEL_SPEED     – multiplier applied to each wheel delta (higher = faster).
- *                     THIS is the single authoritative homepage scroll-speed
- *                     control (the locked/pinned scenes that make up the whole
- *                     Homepage progression). Raised 1.15 → 2.3 so the homepage
- *                     advances exactly 2× per equivalent wheel/trackpad input,
- *                     as requested. The multiplier is applied ONCE, and the
- *                     per-event input is clamped by MAX_WHEEL_DELTA first so the
- *                     ease/re-base logic still prevents scene skipping and
- *                     overshoot. Dashboard scrolling is unaffected (this engine
- *                     is homepage-only).
- *   MAX_WHEEL_DELTA – clamp one event so a fast flick can't jump whole scenes.
- *   SMOOTH_EASE     – per-frame interpolation toward the target scroll.
- *                     Lower = smoother & slower to settle, so the internal
- *                     scenes play out instead of skipping.
- * ----------------------------------------------------------------------- */
-const WHEEL_SPEED = 2.3;
-const MAX_WHEEL_DELTA = 90;
-const SMOOTH_EASE = 0.26;
-
+/*
+ * -------------------------------------------------------------------------
+ * NATIVE SCROLL ENGINE (homepage-only — no backend impact).
+ *
+ * The old engine hijacked wheel/touch (preventDefault) and drove the right
+ * rail's internal scrollTop to advance scenes. That was an artificial scroll
+ * trap and diverged from the reference site, which uses ordinary document
+ * scrolling with a CSS `position: sticky` visual stage.
+ *
+ * This engine now:
+ *   • Lets the document scroll natively (no preventDefault anywhere).
+ *   • Renders each hub as a TALL section (sceneCount × 100svh) whose inner
+ *     `.connected-scroll-grid` is `position: sticky; top:0; height:100svh`
+ *     (set in globals.css) — the pinned visual stage.
+ *   • Derives the active scene from actual document scroll progress:
+ *       progress = clamp((scrollY - sectionTop) / (sectionHeight - viewportH), 0, 1)
+ *       index    = clamp(floor(progress * sceneCount), 0, sceneCount - 1)
+ *     so forward scrolling advances and reverse scrolling restores scenes.
+ *   • Keeps the right rail in sync by scrolling IT to the active panel
+ *     (the rail is overflow:hidden on desktop, so it never traps the wheel —
+ *     gestures over it fall through to the document).
+ *   • Reuses the existing `connected-os-active-section` (out) and
+ *     `connected-os-scroll-to-section` (in) events, so HC/SA/OE hubs, the
+ *     LeftSidebar and every section CTA keep working unchanged.
+ * -------------------------------------------------------------------------
+ */
 export default function ScrollLockedContentSection({
   middle,
   right,
@@ -40,44 +45,29 @@ export default function ScrollLockedContentSection({
 }: ScrollLockedContentSectionProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
+
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [isNativeDesktop, setIsNativeDesktop] = useState(false);
+  const [sceneCount, setSceneCount] = useState(0);
 
-  const touchStartYRef = useRef<number | null>(null);
-  const targetScrollRef = useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
-  const isProgrammaticScrollRef = useRef(false);
+  const sceneIdsRef = useRef<string[]>([]);
   const activeIdRef = useRef<string>("");
-  const snapLockRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const isNativeRef = useRef(false);
 
-  // Respect prefers-reduced-motion: never hijack native scrolling for these
-  // users. The reduced-motion CSS override collapses the pinned desktop layout
-  // back to the natural stacked one, so every scene stays reachable by plain
-  // scroll and no gesture is ever trapped.
-  const shouldUseLockedDesktopScroll = () => {
-    if (typeof window === "undefined") return false;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return false;
-    }
-    return window.innerWidth >= 1280;
-  };
-
-  const getRightSectionIds = () => {
+  // Ordered scene ids = every [id] in the right rail, in document (visual)
+  // order. Verified to be exactly the hub's sectionOrder (8 / 10 / 8).
+  const getSceneIds = () => {
     const panel = rightScrollRef.current;
-    if (!panel) return [];
+    if (!panel) return [] as string[];
 
     return Array.from(panel.querySelectorAll<HTMLElement>("[id]"))
       .map((element) => element.id)
       .filter(Boolean);
   };
 
-  const hasRightSection = (id: string) => {
-    const panel = rightScrollRef.current;
-    if (!panel) return false;
-    return Boolean(panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`));
-  };
-
   const dispatchActiveSection = (id: string) => {
-    if (activeIdRef.current === id) return;
+    if (!id || activeIdRef.current === id) return;
 
     activeIdRef.current = id;
 
@@ -88,387 +78,167 @@ export default function ScrollLockedContentSection({
     );
   };
 
-  const getSectionMetrics = () => {
+  // Map the current document scroll position to a scene index (0..n-1).
+  const computeIndexFromScroll = () => {
     const section = sectionRef.current;
-    if (!section) return null;
+    const n = sceneIdsRef.current.length;
+    if (!section || n === 0) return { index: 0, progress: 0 };
 
     const rect = section.getBoundingClientRect();
     const viewportHeight =
       window.innerHeight || document.documentElement.clientHeight;
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const sectionTop = scrollY + rect.top;
+    const pinned = Math.max(1, section.offsetHeight - viewportHeight);
+    const progress = clamp((scrollY - sectionTop) / pinned, 0, 1);
+    const index = n > 1 ? clamp(Math.floor(progress * n), 0, n - 1) : 0;
 
-    return { section, rect, viewportHeight };
+    return { index, progress };
   };
 
-  const isSectionLockedInView = () => {
-    const metrics = getSectionMetrics();
-    if (!metrics) return false;
-
-    const { rect, viewportHeight } = metrics;
-    return rect.top <= 2 && rect.bottom >= viewportHeight - 2;
-  };
-
-  const isSectionNearViewport = () => {
-    const metrics = getSectionMetrics();
-    if (!metrics) return false;
-
-    const { rect, viewportHeight } = metrics;
-    return rect.top < viewportHeight * 0.72 && rect.bottom > viewportHeight * 0.28;
-  };
-
-  const snapSectionToTop = () => {
-    const section = sectionRef.current;
-    if (!section || snapLockRef.current) return;
-
-    snapLockRef.current = true;
-
-    section.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-
-    window.setTimeout(() => {
-      snapLockRef.current = false;
-      syncActiveSection();
-    }, 480);
-  };
-
-  const syncActiveSection = () => {
+  // Keep the right rail showing the active scene's panel. The rail is
+  // overflow:hidden on desktop, so this is a programmatic scroll only — the
+  // wheel never gets trapped inside it.
+  const syncRailTo = (index: number, behavior: ScrollBehavior = "smooth") => {
     const panel = rightScrollRef.current;
-    if (!panel) return;
-
-    const ids = getRightSectionIds();
-    if (!ids.length) return;
-
-    // Measure against the panel viewport via getBoundingClientRect rather than
-    // offsetTop: offsetTop is offsetParent-relative and reads 0 for panels whose
-    // wrapper is positioned, which mis-mapped the active scene at the top.
-    const panelRect = panel.getBoundingClientRect();
-    const panelCenter = panelRect.top + panel.clientHeight / 2;
-
-    let activeId = ids[0];
-    let closestDistance = Number.POSITIVE_INFINITY;
-
-    ids.forEach((id) => {
-      const element = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
-      if (!element) return;
-
-      const elementRect = element.getBoundingClientRect();
-      const elementCenter = elementRect.top + elementRect.height / 2;
-      const distance = Math.abs(panelCenter - elementCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        activeId = id;
-      }
-    });
-
-    dispatchActiveSection(activeId);
-  };
-
-  const stopSmoothScroll = () => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-  };
-
-  const smoothScrollToTarget = (targetValue: number) => {
-    const panel = rightScrollRef.current;
-    if (!panel) return false;
-
-    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-    const target = clamp(targetValue, 0, maxScroll);
-
-    targetScrollRef.current = target;
-
-    stopSmoothScroll();
-
-    const EASE = SMOOTH_EASE;
-
-    const animate = () => {
-      const currentPanel = rightScrollRef.current;
-      if (!currentPanel) return;
-
-      const current = currentPanel.scrollTop;
-      const targetScroll = targetScrollRef.current;
-      const distance = targetScroll - current;
-
-      if (Math.abs(distance) < 0.6) {
-        currentPanel.scrollTop = targetScroll;
-        animationFrameRef.current = null;
-        isProgrammaticScrollRef.current = false;
-        syncActiveSection();
-        return;
-      }
-
-      isProgrammaticScrollRef.current = true;
-      currentPanel.scrollTop = current + distance * EASE;
-      syncActiveSection();
-
-      animationFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animate);
-    return true;
-  };
-
-  const scrollRightPanelBy = (deltaY: number) => {
-    const panel = rightScrollRef.current;
-    if (!panel) return false;
-
-    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-    const currentScroll = panel.scrollTop;
-
-    const scrollingDown = deltaY > 0;
-    const scrollingUp = deltaY < 0;
-
-    const canScrollDown = currentScroll < maxScroll - 1;
-    const canScrollUp = currentScroll > 1;
-
-    if ((scrollingDown && !canScrollDown) || (scrollingUp && !canScrollUp)) {
-      return false;
-    }
-
-    const clampedDelta = clamp(deltaY, -MAX_WHEEL_DELTA, MAX_WHEEL_DELTA);
-
-    // Re-base on the *rendered* position (never the still-pending target) so a
-    // fast flick accumulates toward a single controlled step instead of a
-    // runaway target that completes the section instantly and skips scenes.
-    const nextScroll = clamp(
-      currentScroll + clampedDelta * WHEEL_SPEED,
-      0,
-      maxScroll
-    );
-
-    if (Math.abs(nextScroll - currentScroll) < 0.2) return false;
-
-    smoothScrollToTarget(nextScroll);
-    return true;
-  };
-
-  const scrollRightPanelTo = (id: string) => {
-    const panel = rightScrollRef.current;
-    if (!panel) return;
+    const id = sceneIdsRef.current[index];
+    if (!panel || !id) return;
 
     const target = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
     if (!target) return;
 
-    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
     const panelRect = panel.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
-    const targetTopInContent = panel.scrollTop + (targetRect.top - panelRect.top);
+    const offsetTop = panel.scrollTop + (targetRect.top - panelRect.top);
+    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
+    const desired = clamp(
+      offsetTop - (panel.clientHeight - targetRect.height) / 2,
+      0,
+      maxScroll
+    );
 
-    smoothScrollToTarget(clamp(targetTopInContent, 0, maxScroll));
-    dispatchActiveSection(id);
+    try {
+      panel.scrollTo({ top: desired, behavior });
+    } catch {
+      panel.scrollTop = desired;
+    }
   };
 
+  const applyScene = (index: number, behavior?: ScrollBehavior) => {
+    const ids = sceneIdsRef.current;
+    if (!ids.length) return;
+
+    const safeIndex = clamp(index, 0, ids.length - 1);
+    const id = ids[safeIndex];
+
+    if (id !== activeIdRef.current) {
+      dispatchActiveSection(id);
+      syncRailTo(safeIndex, behavior);
+    }
+  };
+
+  const update = () => {
+    rafRef.current = null;
+    if (!isNativeRef.current) return;
+
+    const { index } = computeIndexFromScroll();
+    applyScene(index);
+  };
+
+  const scheduleUpdate = () => {
+    if (rafRef.current != null) return;
+    rafRef.current = requestAnimationFrame(update);
+  };
+
+  // Track reduced-motion + viewport class. The pin engine only ever runs on
+  // wide, non-reduced-motion viewports; every smaller / reduced case keeps the
+  // natural stacked document layout (all scenes reachable, nothing trapped).
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduceMotion(mediaQuery.matches);
 
-    update();
-    mediaQuery.addEventListener("change", update);
+    const evaluate = () => {
+      const reduce = mediaQuery.matches;
+      setReduceMotion(reduce);
+      setIsNativeDesktop(!reduce && window.innerWidth >= 1280);
+    };
 
-    return () => mediaQuery.removeEventListener("change", update);
+    evaluate();
+    mediaQuery.addEventListener("change", evaluate);
+    window.addEventListener("resize", evaluate);
+
+    return () => {
+      mediaQuery.removeEventListener("change", evaluate);
+      window.removeEventListener("resize", evaluate);
+    };
   }, []);
 
+  // Native scroll wiring (only when the pinned desktop layout is active).
   useEffect(() => {
-    const panel = rightScrollRef.current;
+    const section = sectionRef.current;
+    isNativeRef.current = isNativeDesktop;
 
-    if (panel) {
-      targetScrollRef.current = panel.scrollTop;
-    }
+    if (!isNativeDesktop || !section) return;
 
-    const handleWheel = (event: WheelEvent) => {
-      if (!shouldUseLockedDesktopScroll()) return;
+    const ids = getSceneIds();
+    sceneIdsRef.current = ids;
+    setSceneCount(ids.length);
 
-      // The left navigation sidebar is an independent scroll area: wheeling
-      // over it must scroll the sidebar and have ZERO connection to the
-      // section scroll engine. Returning early lets the browser scroll it
-      // natively instead of hijacking the wheel for the right rail.
-      if (
-        event.target instanceof Element &&
-        event.target.closest(".connected-sidebar")
-      ) {
-        return;
-      }
-
-      const metrics = getSectionMetrics();
-      const currentPanel = rightScrollRef.current;
-      if (!metrics || !currentPanel) return;
-
-      const { rect, viewportHeight } = metrics;
-      const sectionIsNear = isSectionNearViewport();
-      const sectionIsLocked = isSectionLockedInView();
-      const scrollingDown = event.deltaY > 0;
-      const scrollingUp = event.deltaY < 0;
-
-      const enteringFromTop =
-        scrollingDown && rect.top > 2 && rect.top < viewportHeight * 0.72;
-      const enteringFromBottom =
-        scrollingUp && rect.top < -2 && rect.bottom > viewportHeight * 0.28;
-
-      if (!sectionIsLocked && sectionIsNear && (enteringFromTop || enteringFromBottom)) {
-        event.preventDefault();
-        snapSectionToTop();
-        return;
-      }
-
-      if (!sectionIsLocked) return;
-
-      const maxScroll = Math.max(
-        0,
-        currentPanel.scrollHeight - currentPanel.clientHeight
-      );
-      const currentScroll = currentPanel.scrollTop;
-
-      const canScrollDown = currentScroll < maxScroll - 1;
-      const canScrollUp = currentScroll > 1;
-
-      if ((scrollingDown && canScrollDown) || (scrollingUp && canScrollUp)) {
-        event.preventDefault();
-        scrollRightPanelBy(event.deltaY);
-      }
-    };
-
-    const handleTouchStart = (event: TouchEvent) => {
-      touchStartYRef.current = event.touches[0]?.clientY ?? null;
-    };
-
-    const handleTouchMove = (event: TouchEvent) => {
-      if (!shouldUseLockedDesktopScroll()) return;
-
-      // Same rule as wheel: a gesture starting inside the sidebar scrolls the
-      // sidebar independently and never drives the section engine.
-      if (
-        event.target instanceof Element &&
-        event.target.closest(".connected-sidebar")
-      ) {
-        return;
-      }
-
-      const metrics = getSectionMetrics();
-      if (!metrics) return;
-      if (touchStartYRef.current === null) return;
-
-      const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
-      const deltaY = touchStartYRef.current - currentY;
-
-      touchStartYRef.current = currentY;
-
-      if (Math.abs(deltaY) < 1) return;
-
-      const { rect, viewportHeight } = metrics;
-      const scrollingDown = deltaY > 0;
-      const scrollingUp = deltaY < 0;
-      const sectionIsLocked = isSectionLockedInView();
-      const sectionIsNear = isSectionNearViewport();
-
-      const enteringFromTop =
-        scrollingDown && rect.top > 2 && rect.top < viewportHeight * 0.72;
-      const enteringFromBottom =
-        scrollingUp && rect.top < -2 && rect.bottom > viewportHeight * 0.28;
-
-      if (!sectionIsLocked && sectionIsNear && (enteringFromTop || enteringFromBottom)) {
-        event.preventDefault();
-        snapSectionToTop();
-        return;
-      }
-
-      if (!sectionIsLocked) return;
-
-      const didScroll = scrollRightPanelBy(deltaY);
-
-      if (didScroll) {
-        event.preventDefault();
-      }
-    };
+    const handleScroll = () => scheduleUpdate();
 
     const handleScrollToSection = (event: Event) => {
-      const customEvent = event as CustomEvent<{ id?: string }>;
-      const id = customEvent.detail?.id;
-
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
       if (!id) return;
 
-      if (!shouldUseLockedDesktopScroll()) {
-        const pageTarget = document.getElementById(id);
+      const currentIds = sceneIdsRef.current;
+      const index = currentIds.indexOf(id);
+      if (index < 0) return;
 
-        if (pageTarget) {
-          pageTarget.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-          dispatchActiveSection(id);
-        }
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const sectionTop = scrollY + section.getBoundingClientRect().top;
+      const pinned = Math.max(1, section.offsetHeight - viewportHeight);
+      const n = currentIds.length;
+      // floor(progress * n) === index for progress = index / (n - 1).
+      const progress = n > 1 ? index / (n - 1) : 0;
+      const targetY = sectionTop + progress * pinned + 2;
 
-        return;
-      }
-
-      if (!hasRightSection(id)) return;
-
-      const section = sectionRef.current;
-
-      if (section) {
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
-
-      window.setTimeout(() => {
-        scrollRightPanelTo(id);
-      }, 150);
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+      applyScene(index);
     };
 
-    const handlePanelScroll = () => {
-      const currentPanel = rightScrollRef.current;
-      if (!currentPanel) return;
-
-      if (!isProgrammaticScrollRef.current) {
-        targetScrollRef.current = currentPanel.scrollTop;
-      }
-
-      syncActiveSection();
-    };
-
-    const handleWindowScroll = () => {
-      if (isSectionLockedInView()) {
-        syncActiveSection();
-      }
-    };
-
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
     window.addEventListener(
       "connected-os-scroll-to-section",
       handleScrollToSection
     );
 
-    panel?.addEventListener("scroll", handlePanelScroll, { passive: true });
-
-    if (isSectionLockedInView()) {
-      syncActiveSection();
-    }
+    // Initial sync so a refresh mid-page (or deep scroll restoration) lands on
+    // the correct scene instead of leaving a stale one.
+    update();
 
     return () => {
-      stopSmoothScroll();
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
 
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("scroll", handleWindowScroll);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
       window.removeEventListener(
         "connected-os-scroll-to-section",
         handleScrollToSection
       );
-
-      panel?.removeEventListener("scroll", handlePanelScroll);
     };
-  }, []);
+  }, [isNativeDesktop]);
+
+  const trailingHeight =
+    isNativeDesktop && sceneCount > 1
+      ? { height: `${sceneCount * 100}svh` }
+      : undefined;
 
   return (
     <section
@@ -476,7 +246,10 @@ export default function ScrollLockedContentSection({
       id={sectionId}
       className="connected-scroll-section relative scroll-mt-0"
       data-connected-scroll-section="true"
+      data-native-scroll={isNativeDesktop ? "true" : undefined}
+      data-scene-count={sceneCount || undefined}
       data-reduce-motion={reduceMotion ? "true" : undefined}
+      style={trailingHeight}
     >
       <div className="connected-scroll-grid">
         <div className="connected-middle-pane relative">

@@ -450,10 +450,10 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Intentionally NOT `contain`: when the right rail reaches its end the
-     wheel must flow to the adjacent sibling (next video banner / section).
-     `contain` blocked that chaining and made the section→section transition
-     feel stuck. The JS lock still preventDefaults while the panel can scroll. */
+  /* Intentionally NOT `contain`, and no overscroll chaining to trap: with the
+     native-scroll engine the rail is only scrolled programmatically (and is
+     overflow:hidden on desktop), so wheel/touch gestures always reach the
+     document instead of being consumed here. */
   overscroll-behavior: auto;
   scroll-behavior: auto;
   scrollbar-width: none;
@@ -653,15 +653,23 @@ div {
 
 @media (min-width: 1280px) {
   .connected-scroll-section {
-    height: 100vh;
-    height: 100svh;
-    overflow: hidden;
+    /* Height is set inline per scene count (sceneCount × 100svh) so the sticky
+       stage below has real scroll distance to pin against. overflow must stay
+       visible, otherwise this element becomes the scroll container and
+       position: sticky on the grid would never engage. */
+    min-height: 100svh;
+    overflow: visible;
   }
 
   .connected-scroll-grid {
+    /* The pinned visual stage: sticks to the top of the viewport while the tall
+       section scrolls past, then releases naturally into the next section. */
+    position: sticky;
+    top: 0;
     height: 100vh;
     height: 100svh;
     min-height: 0;
+    overflow: hidden;
     grid-template-columns:
       minmax(0, 1fr)
       minmax(360px, 34vw);
@@ -687,8 +695,10 @@ div {
   .connected-right-scroll-panel {
     height: 100%;
     min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
+    /* overflow:hidden (not auto): the rail is driven programmatically to the
+       active scene, and gestures over it must propagate to the document
+       instead of being consumed by an inner scroller (no scroll trap). */
+    overflow: hidden;
   }
 }
 
@@ -705,8 +715,10 @@ div {
 
   .connected-scroll-grid {
     display: block;
+    position: static;
     height: auto;
     min-height: auto;
+    overflow: visible;
   }
 
   .connected-middle-pane {
