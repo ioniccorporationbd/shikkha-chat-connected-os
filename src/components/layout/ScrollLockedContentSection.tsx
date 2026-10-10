@@ -23,6 +23,21 @@ function clamp(value: number, min: number, max: number) {
 const SCENE_PITCH_PX = 1600;
 
 /*
+ * Auto-scroll "settle to scene" — once the user STOPS scrolling, glide the rest
+ * of the way to the nearest scene CENTRE so the panel always settles fully crisp
+ * (opacity 1, scale 1) instead of resting half-faded / fractionally scaled
+ * (which the user reads as "blurry"). Direction-aware with a small commit
+ * threshold: a nudge past SNAP_COMMIT of a slot in your scroll DIRECTION
+ * advances to the next scene (so a SMALL scroll completes the whole move),
+ * while a shorter nudge settles back. Only runs on the pinned desktop engine
+ * (never stacked / mobile / reduced-motion), and never while the browser is
+ * mid programmatic scroll, so it cannot fight the user or oscillate.
+ */
+const SNAP_SETTLE_MS = 150;
+const SNAP_COMMIT = 0.2;
+const SNAP_EPS = 0.02;
+
+/*
  * -------------------------------------------------------------------------
  * NATIVE SCROLL ENGINE (homepage-only — no backend impact).
  *
@@ -96,6 +111,13 @@ export default function ScrollLockedContentSection({
   const railRef = useRef<{ target: number | null; raf: number | null }>({
     target: null,
     raf: null,
+  });
+
+  // Scene auto-snap state. `lastProgress` remembers where the last gesture /
+  // snap settled so the direction of the NEXT nudge can be inferred.
+  const snapRef = useRef<{ timer: number | null; lastProgress: number }>({
+    timer: null,
+    lastProgress: 0,
   });
 
   // Ordered scene ids = every [id] in the right rail, in document (visual)
@@ -257,6 +279,52 @@ export default function ScrollLockedContentSection({
     rafRef.current = requestAnimationFrame(update);
   };
 
+  // Glide to the nearest scene centre once scrolling has settled, so the panel
+  // is never left half-faded / fractionally scaled (the "blurry" rest state).
+  const runSnap = () => {
+    const snap = snapRef.current;
+    snap.timer = null;
+    if (!isNativeRef.current) return;
+
+    const n = sceneIdsRef.current.length;
+    if (n < 2) return;
+
+    const progress = computeProgress();
+    const scenePos = progress * (n - 1);
+    const lower = Math.floor(scenePos + 1e-6);
+    const t = scenePos - lower;
+    const movingDown = progress >= snap.lastProgress;
+
+    // Commit to the next scene in the direction of travel once past
+    // SNAP_COMMIT of the slot; otherwise settle back to the current one.
+    let target: number;
+    if (movingDown) {
+      target = lower + (t >= SNAP_COMMIT ? 1 : 0);
+    } else {
+      target = lower + (t > 1 - SNAP_COMMIT ? 1 : 0);
+    }
+    target = clamp(target, 0, n - 1);
+
+    if (Math.abs(scenePos - target) < SNAP_EPS) {
+      snap.lastProgress = progress;
+      return;
+    }
+
+    const { top, pinned } = geometryRef.current;
+    const targetProgress = target / (n - 1);
+    const targetY = Math.round(top + targetProgress * pinned + 2);
+
+    snap.lastProgress = targetProgress;
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+    applyScene(target);
+  };
+
+  const scheduleSnap = () => {
+    const snap = snapRef.current;
+    if (snap.timer != null) window.clearTimeout(snap.timer);
+    snap.timer = window.setTimeout(runSnap, SNAP_SETTLE_MS);
+  };
+
   // Track reduced-motion + viewport class. The pin engine only ever runs on
   // wide, non-reduced-motion viewports; every smaller / reduced case keeps the
   // natural stacked document layout (all scenes reachable, nothing trapped).
@@ -299,6 +367,11 @@ export default function ScrollLockedContentSection({
         cancelAnimationFrame(rail.raf);
         rail.raf = null;
       }
+      const snap = snapRef.current;
+      if (snap.timer != null) {
+        window.clearTimeout(snap.timer);
+        snap.timer = null;
+      }
       return;
     }
 
@@ -306,7 +379,10 @@ export default function ScrollLockedContentSection({
     sceneIdsRef.current = ids;
     setSceneCount(ids.length);
 
-    const handleScroll = () => scheduleUpdate();
+    const handleScroll = () => {
+      scheduleUpdate();
+      scheduleSnap();
+    };
     const handleResize = () => {
       // Layout above the section (or the viewport itself) may have changed:
       // re-measure geometry, then re-derive everything.
@@ -348,6 +424,7 @@ export default function ScrollLockedContentSection({
     measureGeometry();
     const settleRaf = requestAnimationFrame(() => {
       measureGeometry();
+      snapRef.current.lastProgress = computeProgress();
       update();
     });
     const settleTimer1 = window.setTimeout(handleResize, 300);
@@ -357,6 +434,12 @@ export default function ScrollLockedContentSection({
       cancelAnimationFrame(settleRaf);
       window.clearTimeout(settleTimer1);
       window.clearTimeout(settleTimer2);
+
+      const snapState = snapRef.current;
+      if (snapState.timer != null) {
+        window.clearTimeout(snapState.timer);
+        snapState.timer = null;
+      }
 
       if (rafRef.current != null) {
         cancelAnimationFrame(rafRef.current);
