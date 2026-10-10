@@ -780,8 +780,9 @@ div {
        still-mounted outgoing scene's transform;
      • the active scene + its neighbours stay MOUNTED across a boundary (no
        remount), so there is no flash and no re-entry animation;
-     • two neighbours meeting at a boundary always sum to full opacity, so the
-       stage is never blank.
+     • the handoff is a DEPTH SWAP, not a stacked crossfade: the outgoing scene
+       recedes toward the back and is already gone by the time the incoming
+       rises out of that same spot, so the two are never both clearly on screen.
 
    `--local`: 0 = just entering, 0.5 = centred (readable hold), 1 = just
    leaving, <0 / >1 = a neighbour waiting off-stage.
@@ -807,25 +808,29 @@ div {
    at rest. */
 [data-native-scroll="true"] .connected-scene-slot {
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
-  /* Symmetric crossfade: 1 through the readable middle, 0.5 at each shared
-     boundary (so the two neighbours meeting there always sum to 1 → never a
-     blank frame), and 0 once a scene is a full slot away. */
-  --scene-fade: clamp(
-    0,
-    min(calc(2 * var(--local) + 0.5), calc(2.5 - 2 * var(--local))),
-    1
-  );
-  /* Depth envelope — same symmetric shape, a hair wider, so the 3D tilt and
-     scale settle flat just before opacity finishes (adds scene-change depth). */
-  --scene-depth: clamp(
-    0,
-    min(calc(2 * var(--local) + 0.28), calc(2.28 - 2 * var(--local))),
-    1
-  );
-  opacity: var(--scene-fade);
-  transform: translate3d(0, calc((0.5 - var(--local)) * 56px), 0)
-    scale(calc(0.93 + 0.07 * var(--scene-depth)))
-    rotateX(calc((0.5 - var(--local)) * 6deg));
+
+  /* Depth SWAP — deliberately NOT a symmetric crossfade. A symmetric fade
+     parks the outgoing + incoming both at ~0.5 at a boundary, so two scenes
+     sit visibly stacked (the reported defect). Instead each scene has two
+     independent ramps:
+       --in   0 (a full slot behind, deep at the back) → 1 (present at centre)
+       --out  0 (at centre) → 1 (a full slot past centre, receded to the back)
+     and `--v` (front presence) = min(--in, 1 − --out). The outgoing scene
+     reaches --v ≈ 0 a hair before the incoming lifts off --v ≈ 0, so their
+     visible windows only touch (at the back) — the two are never both clearly
+     on stage: the outgoing shrinks + sinks to the back and vanishes before the
+     incoming rises out of that same spot. Continuous in `--local`, so it stays
+     deterministic and fully reversible. */
+  --in: clamp(0, calc((var(--local) + 0.08) / 0.58), 1);
+  --out: clamp(0, calc((var(--local) - 0.58) / 0.42), 1);
+  --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
+
+  opacity: var(--v);
+  /* Recede INTO the depth: shrink, sink toward the handoff point and tilt away
+     as presence drops; the incoming plays this in reverse, rising from back. */
+  transform: translate3d(0, calc((1 - var(--v)) * 64px), 0)
+    scale(calc(0.6 + 0.4 * var(--v)))
+    rotateX(calc((1 - var(--v)) * 9deg));
   transform-origin: 50% 50%;
   will-change: transform, opacity;
 }
@@ -834,7 +839,9 @@ div {
    also continuous and never resets at a boundary. Defaults neutral when the
    engine is off (stacked / reduced-motion). */
 .connected-scene-motion {
-  transform: translate3d(0, calc((0.5 - var(--local, 0.5)) * 26px), 0);
+  /* Extra depth sink layered on the slot; defaults neutral (v = 1) when the
+     engine is off (stacked / reduced-motion). */
+  transform: translate3d(0, calc((1 - var(--v, 1)) * 20px), 0);
   will-change: transform;
 }
 
@@ -870,11 +877,13 @@ div {
 }
 
 [data-native-scroll="true"] .connected-orbit-wrap {
-  --g-in: clamp(0, calc(var(--local) / 0.32), 1);
-  --g-out: clamp(0, calc((1 - var(--local)) / 0.32), 1);
-  --g: min(var(--g-in), var(--g-out));
-  transform: translate3d(0, calc((1 - var(--g)) * 30px + 5px), 0)
-    scale(calc(0.93 + 0.07 * var(--g)));
+  /* Heading cluster eases out of the back with the rest of the scene; a touch
+     narrower than the slot so it settles just ahead of the card run. */
+  --g-in: clamp(0, calc((var(--local) + 0.06) / 0.5), 1);
+  --g-out: clamp(0, calc((1 - var(--local)) / 0.42), 1);
+  --g: clamp(0, min(var(--g-in), var(--g-out)), 1);
+  transform: translate3d(0, calc((1 - var(--g)) * 34px + 5px), 0)
+    scale(calc(0.88 + 0.12 * var(--g)));
   transform-origin: 50% 55%;
   will-change: transform;
 }
@@ -885,16 +894,19 @@ div {
 
 [data-native-scroll="true"] .connected-card-slot {
   --card-delay: 0;
-  /* Staggered enter run: card i starts a beat after card i-1… */
-  --ci: clamp(0, calc((var(--local) - 0.04 - var(--card-delay)) / 0.16), 1);
-  /* …and a staggered LEAVE run, so the cluster cascades away (each card eases
-     out a beat before the next) rather than fading as one block. */
-  --co: clamp(0, calc((0.98 - var(--local) - var(--card-delay)) / 0.17), 1);
-  --cr: min(var(--ci), var(--co));
+  /* Staggered ENTER run: card i lifts out of the back a beat after card i-1… */
+  --ci: clamp(0, calc((var(--local) - 0.02 - var(--card-delay)) / 0.18), 1);
+  /* …and a staggered LEAVE run, so the cluster cascades back into the depth
+     (each card recedes a beat before the next) rather than fading as a block. */
+  --co: clamp(0, calc((0.96 - var(--local) - var(--card-delay)) / 0.18), 1);
+  --cr: clamp(0, min(var(--ci), var(--co)), 1);
   opacity: var(--cr);
-  transform: translate3d(0, calc((1 - var(--cr)) * 30px), 0)
-    scale(calc(0.86 + 0.14 * var(--cr)))
-    rotateX(calc((1 - var(--cr)) * 10deg));
+  /* Strong depth cue: each tile is small + sunk + tilted while it sits at the
+     back and grows flat to full size as it arrives — the reverse on the way
+     out, so the cluster visibly recedes into the distance. */
+  transform: translate3d(0, calc((1 - var(--cr)) * 44px), 0)
+    scale(calc(0.62 + 0.38 * var(--cr)))
+    rotateX(calc((1 - var(--cr)) * 14deg));
   transform-origin: 50% 62%;
 }
 

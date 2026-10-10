@@ -45,8 +45,9 @@ type HubSceneStageProps = {
  *     or speed (deterministic);
  *   • a boundary never remounts the outgoing scene (no flash, no re-entry
  *     animation);
- *   • two neighbours meeting at a boundary always sum to full opacity, so the
- *     stage is never blank;
+ *   • the handoff is a DEPTH SWAP: the outgoing scene recedes toward the back
+ *     and is already gone by the time the incoming rises out of that same
+ *     spot, so the two are never stacked on top of each other;
  *   • crossing the boundary never wraps a value back to 0 (no reset / no jump).
  *
  * The engine still owns scene SELECTION (it dispatches `connected-os-active-section`
