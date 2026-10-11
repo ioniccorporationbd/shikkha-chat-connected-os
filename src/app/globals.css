@@ -833,13 +833,36 @@ div {
      functions of `--local`, so the handoff is deterministic and reversible,
      and the scene container NEVER scales, moves or gains depth (opacity is the
      only transition channel). */
-  --in: clamp(0, calc((var(--local) + 0.04) / 0.08), 1);
-  --out: clamp(0, calc((var(--local) - 0.96) / 0.08), 1);
+  /* GHOST-FREE staggered handoff, driven by THIS scene's registry entry —
+     MiddleSceneStage stamps --sa-in-a/b + --sa-out-a/b onto each slot, so every
+     scene keeps its own arrival/departure window:
+         --in   0 (rising, not yet present) -> 1 (present)
+         --out  0 (at rest)                 -> 1 (leaving)
+     presence `--v` = min(--in, 1 - --out). The outgoing scene reaches 0 across
+     its exit window and the incoming only leaves 0 across its enter window, so
+     readable text from two scenes never overlaps — a short neutral beat at the
+     shared boundary instead of a double-exposure. Pure function of `--local`,
+     so the handoff is deterministic and fully reversible. */
+  --in: clamp(
+    0,
+    calc(
+      (var(--local) - var(--sa-in-a, 0.02)) /
+        (var(--sa-in-b, 0.18) - var(--sa-in-a, 0.02))
+    ),
+    1
+  );
+  --out: clamp(
+    0,
+    calc(
+      (var(--local) - var(--sa-out-a, 0.82)) /
+        (var(--sa-out-b, 0.98) - var(--sa-out-a, 0.82))
+    ),
+    1
+  );
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   /* PRESENCE ONLY. The scene container is stable: no scale, no translate, no
-     depth. Opacity is the single transition channel so the stage can never
-     appear to zoom. */
+     depth, so the stage can never appear to zoom. */
   opacity: var(--v);
   will-change: opacity;
 }
@@ -885,33 +908,38 @@ div {
 [data-native-scroll="true"] .connected-orbit-wrap {
   /* The heading + card cluster leads the panel: it starts a beat earlier than
      the cards and settles just ahead of them, so the eye lands on the scene's
-     title first (visual hierarchy). Fade + a light sink only — the ~10 %
-     shrink/grow is owned by the motion layer, so the cluster must not scale
-     again or the values compound. */
-  --g-in: clamp(0, calc((var(--local) + 0.12) / 0.40), 1);
-  --g-out: clamp(0, calc((0.92 - var(--local)) / 0.36), 1);
+     title first (visual hierarchy). Fade + a DIRECTIONAL sink only — the entry
+     direction comes from this scene's registry (--sa-dir-x / --sa-dir-y) and the
+     cluster never scales (that would compound with the card run). */
+  --g-in: clamp(0, calc((var(--local) + 0.10) / 0.34), 1);
+  --g-out: clamp(0, calc((0.90 - var(--local)) / 0.26), 1);
   --g: clamp(0, min(var(--g-in), var(--g-out)), 1);
-  transform: translate3d(0, calc((1 - var(--g)) * 16px), 0);
+  transform: translate3d(
+    calc((1 - var(--g)) * var(--sa-dir-x, 0px)),
+    calc((1 - var(--g)) * var(--sa-dir-y, 16px)),
+    0
+  );
   transform-origin: 50% 55%;
   will-change: transform;
 }
 
 [data-native-scroll="true"] .connected-card-slot {
-  --card-delay: 0;
+  /* Per-card stagger step comes from THIS scene's registry (--sa-card-step), so
+     a hub can tune its own card rhythm without touching the shared panel. */
+  --card-delay: calc(var(--card-i, 0) * var(--sa-card-step, 0.022));
   --wave-x: 0px;
   /* Staggered ENTER run: card i lifts out of the back + slides in from its own
      column side a beat after card i-1, converging into the grid… */
-  --ci: clamp(0, calc((var(--local) - 0.08 - var(--card-delay)) / 0.20), 1);
+  --ci: clamp(0, calc((var(--local) - 0.06 - var(--card-delay)) / 0.20), 1);
   /* …and a staggered LEAVE run, so the cluster cascades back into the depth
      (each card recedes + slides outward a beat before the next) rather than
      fading as a block. */
-  --co: clamp(0, calc((0.92 - var(--local) - var(--card-delay)) / 0.18), 1);
+  --co: clamp(0, calc((0.88 - var(--local) - var(--card-delay)) / 0.18), 1);
   --cr: clamp(0, min(var(--ci), var(--co)), 1);
   opacity: var(--cr);
-  /* Staggered run is FADE + TRAVEL only: the cluster's single ~10 % shrink/grow
-     is carried by `.connected-scene-motion`, so each tile must NOT scale/rotate
-     again or the values would compound (~40 %) and re-create the "whole section
-     zooming" feel the user rejected. Each tile slides in from its column side
+  /* Staggered run is FADE + TRAVEL only: each tile must NOT scale/rotate again
+     or the values would compound (~40 %) and re-create the "whole section
+     zooming" feel that was rejected. Each tile slides in from its column side
      + below (translate only) and lands flush at settle. */
   transform: translate3d(
     calc(var(--wave-x) * (1 - var(--cr))),
@@ -948,6 +976,162 @@ div {
   .connected-orbit-wrap,
   .connected-card-slot {
     opacity: 1;
+  }
+}
+
+/* =========================================================
+   RIGHT-SIDEBAR TIMELINE (stationary key-point reader)
+   ---------------------------------------------------------
+   The rail container is STATIONARY — it never zooms, crossfades or translates.
+   Each `.right-panel-section` shows one key-point section at a time through a
+   GHOST-FREE staggered handoff driven by the SAME `--scene-focus` the middle
+   uses, so the two panes can never desync. `.rsv-track` is the key-point
+   progress timeline (active marker highlighted; click to jump).
+========================================================= */
+
+.rsv-shell {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Timeline is a desktop-pinned affordance only. */
+.rsv-track {
+  display: none;
+}
+
+.rsv-panels {
+  position: relative;
+  min-width: 0;
+}
+
+/* The middle-scene title leads its card cluster by a beat (registry
+   --sa-title-lead). Opacity only — the pill keeps its own translateX centring. */
+[data-native-scroll="true"] .connected-orbit-wrap .orbit-scene-title {
+  --t-in: clamp(0, calc((var(--local) + 0.16) / 0.34), 1);
+  --t-out: clamp(0, calc((0.98 - var(--local)) / 0.30), 1);
+  opacity: clamp(0, min(var(--t-in), var(--t-out)), 1);
+}
+
+@media (min-width: 1280px) {
+  [data-native-scroll="true"] .rsv-shell {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  [data-native-scroll="true"] .rsv-track {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 100%;
+    padding: 18px 0;
+    border-right: 1px solid var(--color-border-soft);
+  }
+
+  [data-native-scroll="true"] .rsv-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40px;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+    transition: color 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-native-scroll="true"] .rsv-marker-line {
+    width: 2px;
+    height: 26px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.5;
+    transition:
+      opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-native-scroll="true"] .rsv-marker-dot {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+    border-radius: 9999px;
+    background: currentColor;
+    transform: scale(0.85);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-native-scroll="true"] .rsv-marker:hover {
+    color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+
+  [data-native-scroll="true"] .rsv-marker.is-active {
+    color: var(--color-action);
+  }
+
+  [data-native-scroll="true"] .rsv-marker.is-active .rsv-marker-line {
+    opacity: 1;
+  }
+
+  [data-native-scroll="true"] .rsv-marker.is-active .rsv-marker-dot {
+    transform: scale(1.35);
+  }
+
+  /* While pinned, the rail column is NOT an independent scroller: wheel /
+     trackpad input over it advances the SAME timeline as the page. `overflow:
+     clip` (not hidden) keeps the absolutely-stacked sections clipped WITHOUT
+     making this a scroll container, so a taller active section chains its wheel
+     straight through to the document — the user is never trapped. */
+  [data-native-scroll="true"] .rsv-panels {
+    height: 100%;
+    min-height: 0;
+    overflow: clip;
+    overscroll-behavior: auto;
+  }
+
+  /* One section at a time, absolutely stacked; ghost-free handoff off
+     --rail-index (stamped by the engine), driven by `--scene-focus`. */
+  [data-native-scroll="true"] .rsv-panels .right-panel-section {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    overflow: hidden;
+    --r-local: calc(var(--scene-focus, 0.5) - var(--rail-index, 0));
+    --r-in: clamp(
+      0,
+      calc(
+        (var(--r-local) - var(--sa-in-a, 0.02)) /
+          (var(--sa-in-b, 0.18) - var(--sa-in-a, 0.02))
+      ),
+      1
+    );
+    --r-out: clamp(
+      0,
+      calc(
+        (var(--r-local) - var(--sa-out-a, 0.82)) /
+          (var(--sa-out-b, 0.98) - var(--sa-out-a, 0.82))
+      ),
+      1
+    );
+    --r-v: clamp(0, min(var(--r-in), calc(1 - var(--r-out))), 1);
+    opacity: var(--r-v) !important;
+    transform: translateY(calc((1 - var(--r-in)) * 18px)) !important;
+    will-change: opacity, transform;
+  }
+
+  /* The active section may scroll internally if its content is taller than the
+     rail — nothing is ever clipped, and its end chains into the page (no trap). */
+  [data-native-scroll="true"] .rsv-panels .right-panel-section.is-active {
+    overflow-y: auto;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

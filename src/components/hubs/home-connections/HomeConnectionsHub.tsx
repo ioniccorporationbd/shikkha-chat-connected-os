@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 
-import HubSceneStage, {
+import MiddleSceneStage, {
   type HubScene,
-} from "@/components/hubs/shared/HubSceneStage";
+} from "@/components/hubs/shared/MiddleSceneStage";
 
 import HomeConnections from "@/components/hubs/home-connections/sections/HomeConnectionsOverview";
 import StudentInformation from "@/components/hubs/home-connections/sections/StudentInformation";
@@ -34,7 +34,7 @@ const defaultActiveSection = "home-connections-panel";
 // id on mount (unchanged behaviour) so the left rail opens the HC group.
 export default function HomeConnectionsHub(): ReactNode {
   return (
-    <HubSceneStage
+    <MiddleSceneStage
       scenes={scenes}
       defaultActiveId={defaultActiveSection}
       emitDefaultOnMount

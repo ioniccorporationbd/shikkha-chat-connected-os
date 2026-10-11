@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 
-import HubSceneStage, {
+import MiddleSceneStage, {
   type HubScene,
-} from "@/components/hubs/shared/HubSceneStage";
+} from "@/components/hubs/shared/MiddleSceneStage";
 
 import StudentAchievementOverview from "@/components/hubs/student-achievement/sections/StudentAchievementOverview";
 import ClassroomSolutions from "@/components/hubs/student-achievement/sections/ClassroomSolutions";
@@ -34,5 +34,5 @@ const scenes: HubScene[] = [
 const defaultActiveSection = "student-achievement";
 
 export default function StudentAchievementHub(): ReactNode {
-  return <HubSceneStage scenes={scenes} defaultActiveId={defaultActiveSection} />;
+  return <MiddleSceneStage scenes={scenes} defaultActiveId={defaultActiveSection} />;
 }

@@ -8,7 +8,7 @@ import ProductRouterSection from "@/components/home/ProductRouterSection";
 import HomeConnectionsSidePanels from "@/components/hubs/home-connections/HomeConnectionsSidePanels";
 import StudentAchievementSidePanels from "@/components/hubs/student-achievement/StudentAchievementSidePanels";
 import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
-import ScrollLockedContentSection from "@/components/layout/ScrollLockedContentSection";
+import MiddleSectionController from "@/components/layout/MiddleSectionController";
 import StudentAchievementVideoBanner from "@/components/home/StudentAchievementVideoBanner";
 import SiteFooter from "@/components/home/SiteFooter";
 
@@ -19,7 +19,7 @@ export default function Page() {
 
       <HomeConnectionsVideoBanner />
 
-      <ScrollLockedContentSection
+      <MiddleSectionController
         sectionId="home-connections-content"
         middle={<HomeConnectionsHub />}
         right={<HomeConnectionsSidePanels />}
@@ -27,7 +27,7 @@ export default function Page() {
 
       <StudentAchievementVideoBanner />
 
-      <ScrollLockedContentSection
+      <MiddleSectionController
         sectionId="student-achievement-content"
         middle={<StudentAchievementHub />}
         right={<StudentAchievementSidePanels />}
@@ -35,7 +35,7 @@ export default function Page() {
 
       <OperationalExcellenceVideoBanner />
 
-      <ScrollLockedContentSection
+      <MiddleSectionController
         sectionId="operational-excellence-content"
         middle={<OperationalExcellenceHub />}
         right={<OperationalExcellenceSidePanels />}

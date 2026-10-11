@@ -276,11 +276,6 @@ export default function OrbitProductPanel({
   const headingBorder = isHcAccent
     ? "1.5px solid color-mix(in srgb, var(--color-action) 35%, transparent)"
     : undefined;
-  // Per-card stagger step. Normalised to the card COUNT so the whole cluster
-  // completes its staggered run well before the scene leaves, independent of
-  // how many tiles a panel has (HC 8, SA 10, OE 8). Max delay ≈ 0.16.
-  const cardStep = 0.16 / Math.max(products.length - 1, 1);
-
   return (
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
 
@@ -377,7 +372,9 @@ export default function OrbitProductPanel({
                   style={
                     {
                       "--card-i": index,
-                      "--card-delay": index * cardStep,
+                      // Card stagger step is owned by the scene registry
+                      // (--sa-card-step) and applied in globals.css, so each hub
+                      // can tune its own rhythm without editing this panel.
                       // Cards converge from their own column side as they arrive
                       // (even index = left column, odd = right, in this 2-col grid).
                       "--wave-x": index % 2 === 0 ? "-16px" : "16px",

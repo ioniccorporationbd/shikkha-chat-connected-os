@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 
-import HubSceneStage, {
+import MiddleSceneStage, {
   type HubScene,
-} from "@/components/hubs/shared/HubSceneStage";
+} from "@/components/hubs/shared/MiddleSceneStage";
 
 import OperationalExcellenceOverview from "@/components/hubs/operational-excellence/sections/OperationalExcellenceOverview";
 import ResourcePlanning from "@/components/hubs/operational-excellence/sections/ResourcePlanning";
@@ -30,5 +30,5 @@ const scenes: HubScene[] = [
 const defaultActiveSection = "operational-excellence";
 
 export default function OperationalExcellenceHub(): ReactNode {
-  return <HubSceneStage scenes={scenes} defaultActiveId={defaultActiveSection} />;
+  return <MiddleSceneStage scenes={scenes} defaultActiveId={defaultActiveSection} />;
 }

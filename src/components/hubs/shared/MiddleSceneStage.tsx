@@ -9,68 +9,52 @@ import {
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+import { getSceneAnimation } from "@/lib/connected-os/sceneAnimationRegistry";
+
 export type HubScene = {
   id: string;
   title: string;
   node: ReactNode;
 };
 
-type HubSceneStageProps = {
+type MiddleSceneStageProps = {
   scenes: HubScene[];
   defaultActiveId: string;
-  /** Emit the default active id on mount (preserves the Home Connections
-   *  hub's original behaviour; SA/OE rely on the engine's own first dispatch). */
+  /** Emit the default active id on mount (Home Connections relies on this). */
   emitDefaultOnMount?: boolean;
 };
 
 /*
  * -------------------------------------------------------------------------
- * SCROLL-SYNCHRONISED MIDDLE STAGE (shared by the HC / SA / OE hubs).
+ * MIDDLE SCENE STAGE (shared by the HC / SA / OE hubs — REBUILT).
  *
- * Previously each hub rendered ONLY the active scene inside a keyed
- * <AnimatePresence> whose enter/exit were fixed-duration tweens (0.55s / 0.35s).
- * That produced three real defects:
- *   1. a visible jump at every scene boundary, because the shared `--scene-p`
- *      variable wrapped 1 → 0 and the still-mounted outgoing scene's transform
- *      snapped back;
- *   2. forward/reverse asymmetry (a tween does not care about scroll position);
- *   3. mount/unmount churn — the outgoing scene was a DIFFERENT React element
- *      from the incoming one, so nothing was continuous.
+ * The stage keeps the ACTIVE scene plus its two immediate neighbours mounted
+ * so nothing ever remounts at a boundary. Each mounted slot is stamped with
+ * its own entry from `sceneAnimationRegistry` (direction, ramps, title lead,
+ * card stagger) and lets its opacity + drift be a PURE function of the
+ * engine's continuous `--scene-focus` — see globals.css `.connected-scene-slot`.
  *
- * This stage instead keeps the ACTIVE scene and its two immediate neighbours
- * mounted and lets their opacity + drift be a PURE function of the engine's
- * continuous `--scene-focus` (see globals.css `.connected-scene-slot`). Because
- * it is a pure function of scroll position:
+ * Because every value is a pure function of scroll position:
  *   • the same scroll position yields the same frame regardless of direction
- *     or speed (deterministic);
- *   • a boundary never remounts the outgoing scene (no flash, no re-entry
- *     animation);
- *   • the handoff is a controlled, DEPTH-FREE opacity crossfade centred on the
- *     shared boundary — the outgoing scene fades as the incoming fades in over
- *     a short (~256px) overlap that never drops to a blank frame and never
- *     stacks two scenes at full strength (opacity is the only transition
- *     channel; the scene container never scales, moves or gains depth);
- *   • crossing the boundary never wraps a value back to 0 (no reset / no jump).
+ *     or speed (deterministic, reversible);
+ *   • a boundary never remounts the outgoing scene (no flash, no re-entry);
+ *   • the handoff is GHOST-FREE: the outgoing scene fades fully OUT before the
+ *     incoming fades IN, so readable text from two scenes never overlaps;
+ *   • no scale, perspective or scene-wide translate — opacity + a small,
+ *     per-element drift only, so the stage can never appear to zoom.
  *
- * The engine still owns scene SELECTION (it dispatches `connected-os-active-section`
- * exactly as before); this stage only decides which scenes to keep mounted and
- * lets CSS interpolate the transition. On stacked / mobile / reduced-motion
- * layouts it renders a single scene and the CSS motion is inert.
- *
- * A11Y: only the ACTIVE slot is interactive. The two mounted neighbours are
- * `inert` + `aria-hidden`, so their buttons/links are neither tab-focusable nor
- * announced by a screen reader while they are off-stage (previously they kept
- * `pointer-events:none` only, which still left them keyboard-reachable).
+ * A11Y: only the ACTIVE slot is interactive; the two off-stage neighbours are
+ * `inert` + `aria-hidden`, so their controls are neither tab-focusable nor
+ * announced while they are off-stage.
  * -------------------------------------------------------------------------
  */
-export default function HubSceneStage({
+export default function MiddleSceneStage({
   scenes,
   defaultActiveId,
   emitDefaultOnMount = false,
-}: HubSceneStageProps) {
-  // Mirror the engine's pin gate (>=1280 and not reduced-motion) so the stage
-  // renders one scene in the stacked layout and the 3-scene window only where
-  // the pinned engine is actually driving scroll progress.
+}: MiddleSceneStageProps) {
+  // Mirror the engine's pin gate (>=1280 and not reduced-motion): stacked /
+  // reduced layouts render a single scene, the pinned stage renders a window.
   const [isNative, setIsNative] = useState(false);
   const [activeId, setActiveId] = useState(defaultActiveId);
   const reduce = useReducedMotion();
@@ -121,8 +105,8 @@ export default function HubSceneStage({
 
   const activeTitle = scenes[activeIndex]?.title ?? "";
 
-  // On the pinned stage keep the active scene + its immediate neighbours
-  // mounted (no remount at a boundary). Everywhere else, a single scene.
+  // Pinned stage: active scene + immediate neighbours stay mounted. Everywhere
+  // else: a single scene.
   const visible = useMemo(() => {
     if (!isNative) return [{ scene: scenes[activeIndex], index: activeIndex }];
 
@@ -151,14 +135,28 @@ export default function HubSceneStage({
 
       <div className="connected-scene-layer relative z-10 h-screen w-full overflow-hidden">
         {visible.map(({ scene, index }) => {
+          const anim = getSceneAnimation(scene.id);
           const isActive = !isNative || index === activeIndex;
           const offStage = isNative && !isActive;
+
+          const slotStyle = {
+            "--scene-index": index,
+            "--sa-dir-x": `${anim.dirX}px`,
+            "--sa-dir-y": `${anim.dirY}px`,
+            "--sa-in-a": anim.enter[0],
+            "--sa-in-b": anim.enter[1],
+            "--sa-out-a": anim.exit[0],
+            "--sa-out-b": anim.exit[1],
+            "--sa-title-lead": anim.titleLead,
+            "--sa-card-step": anim.cardStep,
+          } as CSSProperties;
 
           return (
             <div
               key={scene.id}
               className={"connected-scene-slot" + (isActive ? " is-active" : "")}
-              style={{ "--scene-index": index } as CSSProperties}
+              data-scene-family={anim.family}
+              style={slotStyle}
               aria-hidden={offStage ? true : undefined}
               inert={offStage ? true : undefined}
             >
