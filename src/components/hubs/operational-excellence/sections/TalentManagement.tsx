@@ -161,14 +161,12 @@ const cardVariants: Variants = {
     y: 24,
     scale: 0.86,
     rotateX: 10,
-    filter: "blur(12px)",
   },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
     rotateX: 0,
-    filter: "blur(0px)",
     transition: {
       duration: 0.65,
       ease: premiumEase,
@@ -182,14 +180,12 @@ const diagramInnerVariants: Variants = {
     y: 34,
     scale: 0.9,
     rotateX: 8,
-    filter: "blur(14px)",
   },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
     rotateX: 0,
-    filter: "blur(0px)",
     transition: {
       duration: 0.9,
       ease: premiumEase,
@@ -598,7 +594,6 @@ export default function TalentManagement() {
             y: "-50%",
             scale: 0.7,
             rotate: -2,
-            filter: "blur(16px)",
           }}
           animate={{
             opacity: isSeparated ? 1 : 0,
@@ -608,7 +603,6 @@ export default function TalentManagement() {
               : "-50%",
             scale: imageSettled ? [1, 1.065, 0.982, 1] : isSeparated ? 1 : 0.7,
             rotate: imageSettled ? [0, 1.4, -0.8, 0] : isSeparated ? 0 : -2,
-            filter: isSeparated ? "blur(0px)" : "blur(16px)",
           }}
           transition={{
             opacity: {

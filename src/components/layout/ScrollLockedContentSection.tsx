@@ -23,21 +23,6 @@ function clamp(value: number, min: number, max: number) {
 const SCENE_PITCH_PX = 1600;
 
 /*
- * Auto-scroll "settle to scene" — once the user STOPS scrolling, glide the rest
- * of the way to the nearest scene CENTRE so the panel always settles fully crisp
- * (opacity 1, scale 1) instead of resting half-faded / fractionally scaled
- * (which the user reads as "blurry"). Direction-aware with a small commit
- * threshold: a nudge past SNAP_COMMIT of a slot in your scroll DIRECTION
- * advances to the next scene (so a SMALL scroll completes the whole move),
- * while a shorter nudge settles back. Only runs on the pinned desktop engine
- * (never stacked / mobile / reduced-motion), and never while the browser is
- * mid programmatic scroll, so it cannot fight the user or oscillate.
- */
-const SNAP_SETTLE_MS = 150;
-const SNAP_COMMIT = 0.2;
-const SNAP_EPS = 0.02;
-
-/*
  * -------------------------------------------------------------------------
  * NATIVE SCROLL ENGINE (homepage-only — no backend impact).
  *
@@ -56,18 +41,21 @@ const SNAP_EPS = 0.02;
  *   --scroll-progress = progress                                   (0..1, whole section)
  *   --scene-focus     = progress * (n - 1) + 0.5                   (0.5 .. n-0.5)
  *
- * `--scene-focus` is the KEY improvement over the old `--scene-p`. The old
- * variable wrapped 1 → 0 at every boundary (`progress*n - floor(progress*n)`),
- * and because it was published on the SHARED grid while the outgoing scene was
- * still mounted, the outgoing scene's transform snapped +24px → −24px mid-fade
- * — the visible "jump / reset" at scene boundaries. `--scene-focus` instead
- * runs monotonically across the whole section (scene k centred at k + 0.5), so
- * every scene derives its own local offset from it and NOTHING ever wraps.
+ * `--scene-focus` runs monotonically across the whole section (scene k centred
+ * at k + 0.5), so every scene derives its own local offset from it and NOTHING
+ * ever wraps back to 0 at a boundary (no reset / jump).
  *
  * Scene SELECTION (which panel is "active") is derived from the same continuous
- * value — `index = round(progress * (n - 1))` — so the mounted window and the
- * right rail flip at exactly the shared boundary. `--scene-p` is still
- * published for backward compatibility.
+ * value — `index = round(progress * (n - 1))` — so the mounted window flips at
+ * exactly the shared boundary. `--scene-p` is still published for backward
+ * compatibility.
+ *
+ * SCROLLING IS ENTIRELY USER-CONTROLLED. The engine never snaps, never
+ * repositions after a gesture, and never runs a background settle. The ONLY
+ * programmatic scroll is an explicit `connected-os-scroll-to-section` request
+ * (a user click on a nav item / CTA), and even that is a plain one-shot native
+ * `scrollTo({behavior:"smooth"})` — never an automatic glide. When the user
+ * stops scrolling the page stays exactly where it is.
  *
  * The scene ids/selection/rail wiring reuse the existing
  * `connected-os-active-section` (out) and `connected-os-scroll-to-section` (in)
@@ -100,24 +88,6 @@ export default function ScrollLockedContentSection({
   const geometryRef = useRef<{ top: number; pinned: number }>({
     top: 0,
     pinned: 1,
-  });
-
-  // Right-rail tween. Replaces the old per-boundary
-  // scrollTo({behavior:'smooth'}) which, under rapid scene changes, issued
-  // several competing native smooth-scrolls that fought each other and
-  // oscillated. Here a SINGLE self-owned rAF tween pulls the rail toward the
-  // latest target; a new target simply retargets the same running tween, so
-  // there is never more than one animation and it can never overshoot-storm.
-  const railRef = useRef<{ target: number | null; raf: number | null }>({
-    target: null,
-    raf: null,
-  });
-
-  // Scene auto-snap state. `lastProgress` remembers where the last gesture /
-  // snap settled so the direction of the NEXT nudge can be inferred.
-  const snapRef = useRef<{ timer: number | null; lastProgress: number }>({
-    timer: null,
-    lastProgress: 0,
   });
 
   // Ordered scene ids = every [id] in the right rail, in document (visual)
@@ -166,80 +136,15 @@ export default function ScrollLockedContentSection({
     return clamp((scrollY - top) / pinned, 0, 1);
   };
 
-  // --- right-rail tween ------------------------------------------------------
-  const computeRailTarget = (index: number) => {
-    const panel = rightScrollRef.current;
-    const id = sceneIdsRef.current[index];
-    if (!panel || !id) return null;
-
-    const target = panel.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
-    if (!target) return null;
-
-    const panelRect = panel.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const offsetTop = panel.scrollTop + (targetRect.top - panelRect.top);
-    const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
-
-    return clamp(
-      offsetTop - (panel.clientHeight - targetRect.height) / 2,
-      0,
-      maxScroll
-    );
-  };
-
-  const tickRail = () => {
-    const panel = rightScrollRef.current;
-    const state = railRef.current;
-    if (!panel || state.target == null) {
-      state.raf = null;
-      return;
-    }
-
-    const diff = state.target - panel.scrollTop;
-    if (Math.abs(diff) < 0.6) {
-      panel.scrollTop = state.target;
-      state.raf = null;
-      return;
-    }
-
-    // Exponential ease-out — critically stable, never overshoots, and a new
-    // target just changes where "home" is (the running tween retargets).
-    panel.scrollTop += diff * 0.16;
-    state.raf = requestAnimationFrame(tickRail);
-  };
-
-  const syncRailTo = (index: number, immediate = false) => {
-    const target = computeRailTarget(index);
-    if (target == null) return;
-
-    const state = railRef.current;
-    state.target = target;
-
-    if (immediate) {
-      const panel = rightScrollRef.current;
-      if (panel) panel.scrollTop = target;
-      if (state.raf != null) {
-        cancelAnimationFrame(state.raf);
-        state.raf = null;
-      }
-      return;
-    }
-
-    if (state.raf == null) state.raf = requestAnimationFrame(tickRail);
-  };
-  // ---------------------------------------------------------------------------
-
-  const applyScene = (index: number, immediate = false) => {
+  // Selection only: reflect the nearest scene as "active". There is no rail
+  // tween and no snapping — the right rail stays exactly where the user left
+  // it, so scrolling is fully user-controlled.
+  const applyScene = (index: number) => {
     const ids = sceneIdsRef.current;
     if (!ids.length) return;
 
     const safeIndex = clamp(index, 0, ids.length - 1);
-    const id = ids[safeIndex];
-
-    if (id !== activeIdRef.current) {
-      dispatchActiveSection(id);
-      syncRailTo(safeIndex, immediate);
-    }
+    dispatchActiveSection(ids[safeIndex]);
   };
 
   const update = () => {
@@ -268,8 +173,8 @@ export default function ScrollLockedContentSection({
       grid.style.setProperty("--scene-p", legacy.toFixed(4));
     }
 
-    // Nearest scene centre — matches `--scene-focus` so the mounted window and
-    // the right rail both flip at exactly the same shared boundary.
+    // Nearest scene centre — matches `--scene-focus` so the mounted window
+    // flips at exactly the same shared boundary. Selection only; no snap.
     const index = clamp(Math.round(progress * (n - 1)), 0, n - 1);
     applyScene(index);
   };
@@ -277,52 +182,6 @@ export default function ScrollLockedContentSection({
   const scheduleUpdate = () => {
     if (rafRef.current != null) return;
     rafRef.current = requestAnimationFrame(update);
-  };
-
-  // Glide to the nearest scene centre once scrolling has settled, so the panel
-  // is never left half-faded / fractionally scaled (the "blurry" rest state).
-  const runSnap = () => {
-    const snap = snapRef.current;
-    snap.timer = null;
-    if (!isNativeRef.current) return;
-
-    const n = sceneIdsRef.current.length;
-    if (n < 2) return;
-
-    const progress = computeProgress();
-    const scenePos = progress * (n - 1);
-    const lower = Math.floor(scenePos + 1e-6);
-    const t = scenePos - lower;
-    const movingDown = progress >= snap.lastProgress;
-
-    // Commit to the next scene in the direction of travel once past
-    // SNAP_COMMIT of the slot; otherwise settle back to the current one.
-    let target: number;
-    if (movingDown) {
-      target = lower + (t >= SNAP_COMMIT ? 1 : 0);
-    } else {
-      target = lower + (t > 1 - SNAP_COMMIT ? 1 : 0);
-    }
-    target = clamp(target, 0, n - 1);
-
-    if (Math.abs(scenePos - target) < SNAP_EPS) {
-      snap.lastProgress = progress;
-      return;
-    }
-
-    const { top, pinned } = geometryRef.current;
-    const targetProgress = target / (n - 1);
-    const targetY = Math.round(top + targetProgress * pinned + 2);
-
-    snap.lastProgress = targetProgress;
-    window.scrollTo({ top: targetY, behavior: "smooth" });
-    applyScene(target);
-  };
-
-  const scheduleSnap = () => {
-    const snap = snapRef.current;
-    if (snap.timer != null) window.clearTimeout(snap.timer);
-    snap.timer = window.setTimeout(runSnap, SNAP_SETTLE_MS);
   };
 
   // Track reduced-motion + viewport class. The pin engine only ever runs on
@@ -361,17 +220,6 @@ export default function ScrollLockedContentSection({
       grid?.style.removeProperty("--scene-p");
       grid?.style.removeProperty("--scroll-progress");
       grid?.style.removeProperty("--scene-focus");
-
-      const rail = railRef.current;
-      if (rail.raf != null) {
-        cancelAnimationFrame(rail.raf);
-        rail.raf = null;
-      }
-      const snap = snapRef.current;
-      if (snap.timer != null) {
-        window.clearTimeout(snap.timer);
-        snap.timer = null;
-      }
       return;
     }
 
@@ -381,7 +229,6 @@ export default function ScrollLockedContentSection({
 
     const handleScroll = () => {
       scheduleUpdate();
-      scheduleSnap();
     };
     const handleResize = () => {
       // Layout above the section (or the viewport itself) may have changed:
@@ -390,6 +237,9 @@ export default function ScrollLockedContentSection({
       scheduleUpdate();
     };
 
+    // Explicit, intentional user navigation only (a nav item / CTA click).
+    // This is the ONE place the engine ever scrolls, and it is a plain one-shot
+    // native scroll — never a background auto-settle or snap.
     const handleScrollToSection = (event: Event) => {
       const id = (event as CustomEvent<{ id?: string }>).detail?.id;
       if (!id) return;
@@ -424,7 +274,6 @@ export default function ScrollLockedContentSection({
     measureGeometry();
     const settleRaf = requestAnimationFrame(() => {
       measureGeometry();
-      snapRef.current.lastProgress = computeProgress();
       update();
     });
     const settleTimer1 = window.setTimeout(handleResize, 300);
@@ -435,20 +284,9 @@ export default function ScrollLockedContentSection({
       window.clearTimeout(settleTimer1);
       window.clearTimeout(settleTimer2);
 
-      const snapState = snapRef.current;
-      if (snapState.timer != null) {
-        window.clearTimeout(snapState.timer);
-        snapState.timer = null;
-      }
-
       if (rafRef.current != null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
-      }
-      const rail = railRef.current;
-      if (rail.raf != null) {
-        cancelAnimationFrame(rail.raf);
-        rail.raf = null;
       }
 
       window.removeEventListener("scroll", handleScroll);
@@ -485,7 +323,7 @@ export default function ScrollLockedContentSection({
         <aside className="connected-right-pane bg-[var(--color-white)] shadow-[-18px_0_60px_color-mix(in_srgb,var(--color-primary)_6%,transparent)]">
           <div
             ref={rightScrollRef}
-            className="connected-right-scroll-panel right-scroll-panel no-scrollbar scroll-auto"
+            className="connected-right-scroll-panel right-scroll-panel scroll-auto"
           >
             {right}
           </div>

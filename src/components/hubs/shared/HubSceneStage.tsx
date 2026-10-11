@@ -45,9 +45,11 @@ type HubSceneStageProps = {
  *     or speed (deterministic);
  *   • a boundary never remounts the outgoing scene (no flash, no re-entry
  *     animation);
- *   • the handoff is a DEPTH SWAP: the outgoing scene recedes toward the back
- *     and is already gone by the time the incoming rises out of that same
- *     spot, so the two are never stacked on top of each other;
+ *   • the handoff is a controlled, DEPTH-FREE opacity crossfade centred on the
+ *     shared boundary — the outgoing scene fades as the incoming fades in over
+ *     a short (~256px) overlap that never drops to a blank frame and never
+ *     stacks two scenes at full strength (opacity is the only transition
+ *     channel; the scene container never scales, moves or gains depth);
  *   • crossing the boundary never wraps a value back to 0 (no reset / no jump).
  *
  * The engine still owns scene SELECTION (it dispatches `connected-os-active-section`
@@ -138,8 +140,8 @@ export default function HubSceneStage({
       <div className="pointer-events-none absolute left-8 top-8 z-30 hidden lg:block">
         <motion.div
           key={activeTitle}
-          initial={reduce ? { opacity: 1 } : { opacity: 0, y: -8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          initial={reduce ? { opacity: 1 } : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduce ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
           className="section-label-badge hc-middle-badge"
         >

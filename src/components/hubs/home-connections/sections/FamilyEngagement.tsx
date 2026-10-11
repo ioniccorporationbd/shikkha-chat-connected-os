@@ -253,13 +253,11 @@ const wrapperVariants: Variants = {
     opacity: 0,
     y: 24,
     scale: 0.96,
-    filter: "blur(10px)",
   },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    filter: "blur(0px)",
     transition: {
       duration: 0.78,
       ease: premiumEase,
@@ -274,13 +272,11 @@ const cardVariants: Variants = {
     opacity: 0,
     y: 18,
     scale: 0.9,
-    filter: "blur(7px)",
   },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    filter: "blur(0px)",
     transition: {
       duration: 0.52,
       ease: premiumEase,
@@ -479,21 +475,18 @@ function DetailPanel({
         x: -36,
         y: 18,
         scale: 0.96,
-        filter: "blur(10px)",
       }}
       animate={{
         opacity: 1,
         x: 0,
         y: 0,
         scale: 1,
-        filter: "blur(0px)",
       }}
       exit={{
         opacity: 0,
         x: -28,
         y: 18,
         scale: 0.96,
-        filter: "blur(8px)",
       }}
       transition={{
         duration: 0.42,
@@ -924,7 +917,6 @@ export default function FamilyEngagement() {
             y: "-50%",
             scale: 0.74,
             rotate: -2,
-            filter: "blur(16px)",
           }}
           animate={{
             opacity: isSeparated ? 1 : 0,
@@ -938,7 +930,6 @@ export default function FamilyEngagement() {
                 ? 1
                 : 0.74,
             rotate: imageSettled ? [0, 1.2, -0.7, 0] : isSeparated ? 0 : -2,
-            filter: isSeparated ? "blur(0px)" : "blur(16px)",
           }}
           transition={{
             opacity: {

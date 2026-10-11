@@ -697,10 +697,15 @@ div {
   .connected-right-scroll-panel {
     height: 100%;
     min-height: 0;
-    /* overflow:hidden (not auto): the rail is driven programmatically to the
-       active scene, and gestures over it must propagate to the document
-       instead of being consumed by an inner scroller (no scroll trap). */
-    overflow: hidden;
+    /* The rail is NO LONGER driven programmatically. It is a normal,
+       independently-scrollable column: it starts at the top and only moves
+       when the user directly scrolls over it. `overscroll-behavior: contain`
+       keeps that inner scroll from chaining into the page, so the two scroll
+       axes stay genuinely independent (no scroll trap on the page itself). */
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -780,11 +785,14 @@ div {
        still-mounted outgoing scene's transform;
      • the active scene + its neighbours stay MOUNTED across a boundary (no
        remount), so there is no flash and no re-entry animation;
-     • the handoff is a DEPTH SWAP, not a stacked crossfade: the outgoing scene
-       recedes toward the back and is already gone by the time the incoming
-       rises out of that same spot, so the two are never both clearly on screen;
-     • the SECTION + its background are transform-free — only the inner content
-       scales (subtly, ~10 %), so the backdrop never appears to zoom.
+     • the handoff is a controlled, DEPTH-FREE opacity crossfade centred on the
+       shared boundary: the outgoing scene fades out as the incoming fades in,
+       with a short (~256px) overlap that never drops to a blank frame and never
+       stacks two scenes at full strength (no ghost text);
+     • the scene container is STABLE — scale: 1, translateZ: 0, no perspective
+       and no scene-wide translate at all times, so the backdrop never zooms.
+       Only individual headings, cards and illustrations carry subtle
+       scroll-linked motion (see `.connected-orbit-wrap` / `.connected-card-slot`).
 
    `--local`: 0 = just entering, 0.5 = centred (readable hold), 1 = just
    leaving, <0 / >1 = a neighbour waiting off-stage.
@@ -811,61 +819,40 @@ div {
 [data-native-scroll="true"] .connected-scene-slot {
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
 
-  /* Controlled CROSSFADE between scenes (each scene owns two ramps):
-       --in   0 (below the fold, rising) → 1 (present)
-       --out  0 (at / near centre)       → 1 (leaving, receded)
-     and `--v` (front presence) = min(--in, 1 − --out).
-     Every scene holds FULLY opaque across its readable band (local ≈ -0.19 …
-     0.63), then the outgoing + incoming dissolve THROUGH each other over a
-     SHORT overlap (local ≈ 0.63 … 0.81, mid ≈ 0.72) whose crossing sits at
-     ~0.5 + ~0.5. This makes the handoff a clean, intentional artistic dissolve
-     that NEVER drops to an empty / blank frame — the measured floor of the
-     brightest scene is ≈ 0.5 (it was ≈ 0.03 with the earlier hard depth-swap,
-     i.e. a blank frame) — yet the two are never both at full strength, so it
-     never reads as two stacked, colliding sections. The whole cluster also
-     keeps flowing upward through the depth field (see `.connected-scene-
-     motion`), so the ~0.5/0.5 instant is depth-separated (one receding above,
-     the next rising from below), not text-over-text. Continuous in `--local`,
-     so it is deterministic and perfectly reversible. */
-  --in: clamp(0, calc((var(--local) + 0.37) / 0.18), 1);
-  --out: clamp(0, calc((var(--local) - 0.63) / 0.18), 1);
+  /* Controlled, DEPTH-FREE crossfade between scenes (each scene owns two ramps):
+       --in   0 (rising, not yet present) → 1 (present)
+       --out  0 (at / before centre)      → 1 (leaving)
+     and `--v` (presence) = min(--in, 1 − --out).
+     Scene k is centred at local = 0.5. It holds FULLY opaque across its
+     readable band (local ≈ 0.04 … 0.96) and the outgoing + incoming scenes
+     dissolve through each other over a SHORT, boundary-centred overlap
+     (local ≈ 0.96 … 1.04 ≈ 128px of scroll) whose crossing sits at ~0.5 + ~0.5.
+     The overlap never drops to an empty / blank frame (measured floor of the
+     brightest scene ≈ 0.5) yet never puts two scenes at full strength at once,
+     so it never reads as ghost text at high opacity. Both ramps are pure
+     functions of `--local`, so the handoff is deterministic and reversible,
+     and the scene container NEVER scales, moves or gains depth (opacity is the
+     only transition channel). */
+  --in: clamp(0, calc((var(--local) + 0.04) / 0.08), 1);
+  --out: clamp(0, calc((var(--local) - 0.96) / 0.08), 1);
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
-  /* PRESENCE ONLY — the section and its background must NOT scale. Scaling the
-     slot dragged the WHOLE pane (heading + card grid + pane background) toward
-     the viewer, which the user perceived as "the entire section, background
-     included, shrinking". The slot now only crossfades; all shrink/grow lives
-     on the inner content (see `.connected-scene-motion`). */
+  /* PRESENCE ONLY. The scene container is stable: no scale, no translate, no
+     depth. Opacity is the single transition channel so the stage can never
+     appear to zoom. */
   opacity: var(--v);
   will-change: opacity;
 }
 
-/* Secondary, in-scene parallax layer. Driven by the slot's `--local`, so it is
-   also continuous and never resets at a boundary. Defaults neutral when the
-   engine is off (stacked / reduced-motion). */
+/* Scene content container. The main content stage must stay STABLE: the scene
+   container never scales, never translates and never gains depth (scale: 1,
+   translateZ: 0, no perspective at all times). All per-element reveal motion
+   lives on the inner heading cluster + cards (see `.connected-orbit-wrap` /
+   `.connected-card-slot`), never on this wrapper. Kept as an explicit neutral
+   layer so a single, well-named element owns the "scene container" contract. */
 .connected-scene-motion {
-  /* The ONE element that gives each chapter its depth + flow. Two pure,
-     continuous drivers:
-       • --local (enter → centre → leave) drives a gentle UPWARD travel, so
-         consecutive chapters read as ONE continuous story flowing up past the
-         viewer (content enters from below, settles centre, exits above);
-       • --v (front presence) drives a subtle ~10 % grow (0.90 → 1) so the
-         incoming panel rises out of the back as its predecessor recedes.
-     Both resolve to their neutral state (travel 0, scale 1) when the scene is
-     centred — so a settled scene is ALWAYS perfectly crisp. The section + its
-     background live OUTSIDE this layer and never scale or move. Defaults
-     neutral when the engine is off (stacked / mobile / reduced-motion). */
-  --travel: calc((0.5 - var(--local, 0.5)) * 64px);
-  /* `--local > 0.5` = the scene is past centre (leaving): it shrinks a touch
-     MORE than the vignette alone so the outgoing panel visibly *recedes into
-     the depth field* while the incoming rises in front of it — the crossfade
-     reads as "one leaving, one arriving", not a flat ghost/echo. Neutral (
-     term = 0) at/behind centre, so a settled scene is exactly scale 1. */
-  transform: translate3d(0, var(--travel), 0)
-    scale(calc(0.9 + 0.1 * var(--v, 1)
-      - max(0, var(--local, 0.5) - 0.5) * 0.28));
-  transform-origin: 50% 58%;
-  will-change: transform;
+  transform: none;
+  will-change: auto;
 }
 
 /* Whole-section background parallax — continuous in `--scroll-progress`, so it
@@ -895,10 +882,6 @@ div {
    it leaves — a pure function of scroll position (reversible, deterministic,
    no per-frame React render). The panel's overall fade is the slot crossfade;
    these layers add depth + a staggered card run on top. */
-[data-native-scroll="true"] .connected-scene-layer {
-  perspective: 1500px;
-}
-
 [data-native-scroll="true"] .connected-orbit-wrap {
   /* The heading + card cluster leads the panel: it starts a beat earlier than
      the cards and settles just ahead of them, so the eye lands on the scene's
@@ -911,10 +894,6 @@ div {
   transform: translate3d(0, calc((1 - var(--g)) * 16px), 0);
   transform-origin: 50% 55%;
   will-change: transform;
-}
-
-[data-native-scroll="true"] .connected-card-grid {
-  perspective: 1000px;
 }
 
 [data-native-scroll="true"] .connected-card-slot {
@@ -936,7 +915,7 @@ div {
      + below (translate only) and lands flush at settle. */
   transform: translate3d(
     calc(var(--wave-x) * (1 - var(--cr))),
-    calc((1 - var(--cr)) * 16px),
+    calc((1 - var(--cr)) * 12px),
     0
   );
   transform-origin: 50% 62%;

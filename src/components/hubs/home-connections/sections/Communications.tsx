@@ -186,13 +186,9 @@ const connectorPaths: Record<CardId, ConnectorPath> = {
 const pageVariants: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.96,
-    filter: "blur(10px)",
   },
   visible: {
     opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
     transition: {
       duration: 0.78,
       ease: premiumEase,
@@ -206,14 +202,10 @@ const itemVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 22,
-    scale: 0.88,
-    filter: "blur(8px)",
   },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    filter: "blur(0px)",
     transition: {
       duration: 0.55,
       ease: premiumEase,
@@ -509,21 +501,18 @@ function DetailPanel({
         x: -36,
         y: 18,
         scale: 0.96,
-        filter: "blur(10px)",
       }}
       animate={{
         opacity: 1,
         x: 0,
         y: 0,
         scale: 1,
-        filter: "blur(0px)",
       }}
       exit={{
         opacity: 0,
         x: -28,
         y: 18,
         scale: 0.96,
-        filter: "blur(8px)",
       }}
       transition={{
         duration: 0.42,
