@@ -51,7 +51,23 @@ const brandGlow = "color-mix(in srgb, var(--color-primary) 14%, transparent)";
 const brandGlowStrong =
   "color-mix(in srgb, var(--color-primary) 18%, transparent)";
 
-const sectionText = {
+type SectionCardText = {
+  title: string;
+  subtitle?: string;
+  label: string;
+  description: string;
+};
+
+type SpecialProgramsText = {
+  sectionTitle: string;
+  openSection: string;
+  closeDetail: string;
+  fallbackLabel: string;
+  tapHint: string;
+  cards: Record<CardId, SectionCardText>;
+};
+
+const sectionText: Record<LanguageCode, SpecialProgramsText> = {
   bn: {
     sectionTitle: "বিশেষ কার্যক্রম",
     openSection: "সেকশন খুলুন",
@@ -146,7 +162,7 @@ const sectionText = {
       },
     },
   },
-} as const;
+};
 
 const centerBase = [
   {
@@ -929,10 +945,7 @@ export default function SpecialPrograms() {
       centerBase.map((card) => ({
         ...card,
         title: text.cards[card.id].title,
-        subtitle:
-          "subtitle" in text.cards[card.id]
-            ? text.cards[card.id].subtitle
-            : undefined,
+        subtitle: text.cards[card.id].subtitle,
         label: text.cards[card.id].label,
         description: text.cards[card.id].description,
       })),
@@ -944,10 +957,7 @@ export default function SpecialPrograms() {
       floatingBase.map((card) => ({
         ...card,
         title: text.cards[card.id].title,
-        subtitle:
-          "subtitle" in text.cards[card.id]
-            ? text.cards[card.id].subtitle
-            : undefined,
+        subtitle: text.cards[card.id].subtitle,
         label: text.cards[card.id].label,
         description: text.cards[card.id].description,
       })),

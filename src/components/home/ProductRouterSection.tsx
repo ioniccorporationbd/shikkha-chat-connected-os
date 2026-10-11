@@ -79,7 +79,22 @@ const colorSecondary = "var(--color-secondary)";
 const colorWhite = "var(--color-white)";
 const colorBlack = "var(--color-black)";
 
-const textContent = {
+type RouterProductText = {
+  title: string;
+  subtitle?: string;
+};
+
+type RouterText = {
+  saved: string;
+  allProducts: string;
+  noSavedTitle: string;
+  noSavedDescription: string;
+  saveProduct: string;
+  groups: Record<ProductGroupId, string>;
+  products: Record<ProductId, RouterProductText>;
+};
+
+const textContent: Record<LanguageCode, RouterText> = {
   bn: {
     saved: "সংরক্ষিত",
     allProducts: "সব পণ্য",
@@ -258,7 +273,7 @@ const textContent = {
       },
     },
   },
-} as const;
+};
 
 const productBase: Record<
   ProductGroupId,
