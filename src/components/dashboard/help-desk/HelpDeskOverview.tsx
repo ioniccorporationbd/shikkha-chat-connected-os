@@ -84,7 +84,7 @@ export default function HelpDeskOverview({
     void load();
   };
 
-  const list = tickets ?? [];
+  const list = useMemo(() => tickets ?? [], [tickets]);
   const summary = useMemo(() => summariseTickets(list), [list]);
   const unseen = useMemo(() => unseenSupportIds(list), [list]);
   const recent = useMemo(() => sortTicketsSmart(list).slice(0, 4), [list]);

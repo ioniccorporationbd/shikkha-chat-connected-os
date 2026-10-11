@@ -35,7 +35,6 @@ type ProductCard = {
 const rightImage = "/images/student-information-family.png";
 
 const themeColor = "var(--color-secondary)";
-const darkColor = "var(--color-primary)";
 const glowColor = "color-mix(in srgb, var(--color-primary) 18%, transparent)";
 
 type LanguageCode = "bn" | "en";

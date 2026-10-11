@@ -40,6 +40,20 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.powerschool.com" },
     ],
   },
+  // Baseline security hardening. No strict CSP here (the marketing site relies
+  // on inline styles and media from several origins); these two headers are safe
+  // and never break rendering, scripts or iframe embedding.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

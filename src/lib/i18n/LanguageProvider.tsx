@@ -317,7 +317,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const stored = readStoredLanguage();
 
     if (stored && stored !== language) {
-      setLanguageState(stored);
+      // Deferred a microtask so adopting the stored value after hydration is
+      // not a synchronous setState-in-effect (React 19 / set-state-in-effect).
+      queueMicrotask(() => setLanguageState(stored));
     }
     // Mount-only on purpose: re-running this on every language change would
     // fight the toggle and the localStorage write in `setLanguage`.

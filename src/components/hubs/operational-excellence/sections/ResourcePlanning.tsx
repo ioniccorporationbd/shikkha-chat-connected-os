@@ -98,7 +98,6 @@ type ProductCard = {
 const rightImage = "/images/student-information-family.png";
 
 const themeColor = "var(--color-secondary)";
-const darkColor = "var(--color-primary)";
 const glowColor = "color-mix(in_srgb,var(--color-primary)_18%,transparent)";
 
 const products: ProductCard[] = [
@@ -364,7 +363,6 @@ function FloatingDot({
   className: string;
   delay?: number;
 }) {
-  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
 
   return (

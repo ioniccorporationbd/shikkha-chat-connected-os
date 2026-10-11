@@ -160,7 +160,10 @@ export default function CustomerManagementView({ onBack, onNew, onEdit, onEmptie
   const pageCopy = useMemo(() => genericPaginationCopy(language), [language]);
 
   useEffect(() => {
-    setPage(1);
+    // Reset to page 1 whenever the search query or page size changes. Deferred
+    // as a microtask so it is not a synchronous setState-in-effect (React 19 /
+    // eslint react-hooks/set-state-in-effect) — same pattern as loadList below.
+    queueMicrotask(() => setPage(1));
   }, [query, rowsPerPage]);
 
   const cell = (value: string | undefined) => (value && String(value).trim() !== "" ? value : copy.notSet);

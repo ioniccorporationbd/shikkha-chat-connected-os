@@ -59,7 +59,6 @@ export default function DashboardModal({
   useEffect(() => {
     if (!open) return;
 
-    const panel = panelRef.current;
     previouslyFocused.current = (document.activeElement as HTMLElement) ?? null;
 
     function handleKeyDown(event: KeyboardEvent) {

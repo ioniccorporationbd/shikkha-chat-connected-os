@@ -362,7 +362,6 @@ const floatingCards: CardItem[] = [
   },
 ];
 
-const allCards = [...centerCards, ...floatingCards];
 
 const connectorPaths: Record<string, ConnectorPath> = {
   "student-achievement": {
@@ -613,7 +612,6 @@ function MiniCard({
 
 function ActiveCurriculumCard({
   item,
-  selected,
   onSelect,
 }: {
   item: CardItem;

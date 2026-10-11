@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
@@ -76,6 +76,33 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [isPaused, setIsPaused] = useState(false);
+  // The three homepage chapters point at externally-hosted MP4s; when a source
+  // fails to load (missing file / wrong content-type / offline host) the <video>
+  // never paints and its control would be a dead button — so track the failure
+  // and drop the play/pause affordance in favour of the branded gradient stage.
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  // The media `error` event can fire *before* React hydrates (an ORB-blocked or
+  // missing host errors during the initial load), so the declarative onError
+  // handler may never run. Detect the failed state on mount as well, and keep a
+  // listener for late errors / successful loads so the control tracks reality.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const markFailed = () => setVideoFailed(true);
+    const markOk = () => setVideoFailed(false);
+
+    // NETWORK_NO_SOURCE (3) or a populated MediaError both mean "will never play".
+    if (video.error || video.networkState === 3) markFailed();
+
+    video.addEventListener("error", markFailed);
+    video.addEventListener("loadeddata", markOk);
+    return () => {
+      video.removeEventListener("error", markFailed);
+      video.removeEventListener("loadeddata", markOk);
+    };
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -144,7 +171,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
   const toggleVideo = async () => {
     const video = videoRef.current;
 
-    if (!video) return;
+    if (!video || videoFailed) return;
 
     try {
       if (video.paused) {
@@ -179,6 +206,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
             loop
             playsInline
             preload="metadata"
+            onError={() => setVideoFailed(true)}
           />
         </div>
 
@@ -213,19 +241,21 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleVideo}
-          aria-label={isPaused ? text.playVideo : text.pauseVideo}
-          title={isPaused ? text.playVideo : text.pauseVideo}
-          className="absolute right-5 top-5 z-40 flex h-[54px] w-[54px] items-center justify-center rounded-full border border-white/60 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-md transition duration-300 hover:scale-105 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:right-10 lg:top-8"
-        >
-          {isPaused ? (
-            <FaPlay className="text-[22px]" aria-hidden="true" />
-          ) : (
-            <FaPause className="text-[22px]" aria-hidden="true" />
-          )}
-        </button>
+        {!videoFailed && (
+          <button
+            type="button"
+            onClick={toggleVideo}
+            aria-label={isPaused ? text.playVideo : text.pauseVideo}
+            title={isPaused ? text.playVideo : text.pauseVideo}
+            className="absolute right-5 top-5 z-40 flex h-[54px] w-[54px] items-center justify-center rounded-full border border-white/60 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-md transition duration-300 hover:scale-105 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:right-10 lg:top-8"
+          >
+            {isPaused ? (
+              <FaPlay className="text-[22px]" aria-hidden="true" />
+            ) : (
+              <FaPause className="text-[22px]" aria-hidden="true" />
+            )}
+          </button>
+        )}
 
         <div className="absolute inset-0 z-30 flex h-[100svh] items-center justify-center px-6">
           <motion.div

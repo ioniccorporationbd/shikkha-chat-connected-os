@@ -377,7 +377,6 @@ const floatingCards: DetailCard[] = [
   },
 ];
 
-const allCards = [...coreCards, ...floatingCards];
 
 const connectorPaths: Record<string, ConnectorPath> = {
   "student-achievement": {

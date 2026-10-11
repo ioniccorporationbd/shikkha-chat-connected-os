@@ -320,7 +320,7 @@ export default function LandingHeroBanner() {
         <div className="absolute -right-24 top-[4%] h-[470px] w-[470px] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-secondary-strong)_24%,transparent),transparent)] blur-[130px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-16 md:px-7 lg:px-10 lg:pt-7">
         <motion.div
           variants={textContainer}
           initial={reduce ? "visible" : "hidden"}

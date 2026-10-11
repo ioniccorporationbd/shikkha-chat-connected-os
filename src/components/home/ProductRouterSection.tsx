@@ -74,10 +74,6 @@ type ProductGroup = {
   products: ProductItem[];
 };
 
-const colorPrimary = "var(--color-primary)";
-const colorSecondary = "var(--color-secondary)";
-const colorWhite = "var(--color-white)";
-const colorBlack = "var(--color-black)";
 
 type RouterProductText = {
   title: string;
@@ -591,7 +587,9 @@ export default function ProductRouterSection() {
     const el = sectionRef.current;
     if (!el) return;
     if (shouldReduceMotion) {
-      setRevealed(true);
+      // Reduced-motion users skip the scroll-driven reveal: show it at once.
+      // Set in a microtask so it is not a synchronous setState-in-effect.
+      queueMicrotask(() => setRevealed(true));
       return;
     }
     let raf = 0;

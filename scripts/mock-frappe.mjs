@@ -1730,7 +1730,7 @@ const server = createServer(async (request, response) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     pendingRegistrations.set(email, { code, attempts: 0, expires: Date.now() + 300_000 });
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] OTP ${email} = ${code}`);
 
     ok(response, {
@@ -1824,7 +1824,7 @@ const server = createServer(async (request, response) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     pendingLoginOtps.set(email, { code, attempts: 0, expires: Date.now() + 300_000 });
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] LOGIN OTP ${email} = ${code}`);
 
     const smsOk = process.env.MOCK_SMS_FAIL !== "1";
@@ -1923,7 +1923,7 @@ const server = createServer(async (request, response) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     pendingResetOtps.set(found.email, { code, attempts: 0, channel, expires: Date.now() + 300_000 });
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] RESET OTP ${found.email} = ${code}`);
 
     ok(response, {
@@ -1979,7 +1979,7 @@ const server = createServer(async (request, response) => {
     const newPassword = String(Math.floor(100000 + Math.random() * 900000));
     found.account.password = newPassword;
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] RESET PASSWORD ${found.email} = ${newPassword}`);
 
     ok(response, {
@@ -2054,7 +2054,7 @@ const server = createServer(async (request, response) => {
 
     pendingProfileOtps.set(email, { code, attempts: 0, values, expires: Date.now() + 10 * 60 * 1000 });
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] PROFILE OTP ${email} = ${code}`);
 
     ok(response, {
@@ -2399,7 +2399,7 @@ const server = createServer(async (request, response) => {
     createdCustomers.set(name.toLowerCase(), record);
     createdCustomers.set(docName.toLowerCase(), record);
 
-    // eslint-disable-next-line no-console
+     
     console.log(`[mock-frappe] CUSTOMER CREATED ${docName} (${name}) by ${email}`);
 
     ok(response, record);
@@ -3266,6 +3266,6 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  // eslint-disable-next-line no-console
+   
   console.log(`mock-frappe listening on http://127.0.0.1:${PORT}`);
 });

@@ -420,7 +420,6 @@ function MiniCard({
 
 function ActiveSpecialProgramsCard({
   item,
-  selected,
   onSelect,
 }: {
   item: CardItem;

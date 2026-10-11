@@ -463,7 +463,6 @@ function MiniCard({
 
 function ActivePredictiveCard({
   item,
-  selected,
   onSelect,
 }: {
   item: CardItem;
@@ -765,7 +764,6 @@ function DetailPanel({
 }
 
 function ConnectorLine({ selectedId }: { selectedId: string }) {
-  const t = useSectionText();
   const shouldReduceMotion = useReducedMotion();
   const path = connectorPaths[selectedId];
 

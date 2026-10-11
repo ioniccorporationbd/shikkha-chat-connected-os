@@ -5,10 +5,8 @@ import { FaRegCircleQuestion, FaRegStar, FaUsers } from "react-icons/fa6";
 import {
   MdOutlineAnalytics,
   MdOutlineAutoAwesome,
-  MdOutlineFavoriteBorder,
   MdOutlineGridView,
   MdOutlineHub,
-  MdOutlineMenuBook,
   MdOutlinePsychology,
 } from "react-icons/md";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
