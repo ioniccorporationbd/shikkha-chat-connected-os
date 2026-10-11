@@ -388,6 +388,35 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
   display: none;
 }
 
+/* =========================================================
+   HIDE VISIBLE SCROLLBARS — page · left nav · right rail
+   The three panes that showed a scrollbar now render bar-less
+   while staying fully scrollable (wheel / keyboard / touch).
+   Only the bar chrome is removed; scrolling behaviour — incl.
+   the right rail's own scroll chaining into the middle-section
+   timeline — is unchanged.
+========================================================= */
+html,
+body,
+.connected-right-scroll-panel,
+.rsv-panels,
+.right-scroll-panel,
+.right-panel-section {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge / IE */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.connected-right-scroll-panel::-webkit-scrollbar,
+.rsv-panels::-webkit-scrollbar,
+.right-scroll-panel::-webkit-scrollbar,
+.right-panel-section::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .thin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color:
