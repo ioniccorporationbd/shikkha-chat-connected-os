@@ -48,7 +48,7 @@ const premiumEase = [0.22, 1, 0.36, 1] as const;
  */
 
 const floatingTransition: Transition = {
-  duration: 4.5,
+  duration: 6.5,
   ease: "easeInOut",
   repeat: Infinity,
   repeatType: "mirror",
@@ -118,9 +118,9 @@ function FloatingDot({
         shouldReduceMotion
           ? undefined
           : {
-              y: [-10, 10],
-              x: [-4, 4],
-              opacity: [0.5, 1, 0.5],
+              y: [-6.5, 6.5],
+              x: [-3, 3],
+              opacity: [0.4, 0.9, 0.4],
             }
       }
       transition={{
@@ -161,12 +161,12 @@ function ProductTile({
               y: -4,
               scale: 1.025,
               transition: {
-                duration: 0.3,
+                duration: 0.24,
                 ease: premiumEase,
               },
             }
       }
-      whileTap={{ scale: 0.94 }}
+      whileTap={{ scale: 0.96 }}
       className={[
         "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
@@ -283,18 +283,9 @@ export default function OrbitProductPanel({
   return (
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
 
-      <motion.div
+      <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 blur-[78px]"
-        animate={
-          shouldReduceMotion
-            ? undefined
-            : {
-                scale: [1, 1.06, 1],
-                opacity: [0.7, 1, 0.7],
-              }
-        }
-        transition={{ duration: 5, ease: "easeInOut", repeat: Infinity }}
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 opacity-90 blur-[78px]"
       />
 
       <motion.div
@@ -305,11 +296,11 @@ export default function OrbitProductPanel({
           shouldReduceMotion
             ? undefined
             : {
-                scale: [1, 1.13, 1],
-                opacity: [0.45, 0.85, 0.45],
+                scale: [1, 1.08, 1],
+                opacity: [0.4, 0.68, 0.4],
               }
         }
-        transition={{ duration: 4.4, ease: "easeInOut", repeat: Infinity }}
+        transition={{ duration: 6.5, ease: "easeInOut", repeat: Infinity }}
       />
 
       <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[var(--color-secondary)]/10 blur-[82px]" />
@@ -325,24 +316,23 @@ export default function OrbitProductPanel({
 
       <div className="relative z-10 flex h-full w-full items-center justify-center">
         <div className="connected-orbit-wrap relative [transform-style:preserve-3d]">
-          <motion.div
+          <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 blur-[34px]"
-            animate={
-              shouldReduceMotion
-                ? undefined
-                : {
-                    opacity: [0.45, 0.8, 0.45],
-                    scale: [1, 1.035, 1],
-                  }
-            }
-            transition={{ duration: 3.6, ease: "easeInOut", repeat: Infinity }}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 opacity-60 blur-[34px]"
           />
 
           <motion.button
             type="button"
             onClick={isHcAccent ? undefined : () => scrollRightSidebarTo(activeId)}
-            whileHover={shouldReduceMotion ? undefined : { y: -3, scale: 1.025 }}
+            whileHover={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    y: -3,
+                    scale: 1.025,
+                    transition: { duration: 0.24, ease: premiumEase },
+                  }
+            }
             whileTap={{ scale: 0.96 }}
             className={[
               "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
@@ -372,12 +362,10 @@ export default function OrbitProductPanel({
           >
             <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in srgb, var(--color-white) 24%, transparent),transparent_35%,color-mix(in srgb, var(--color-secondary) 8%, transparent))]" />
 
-            <motion.span
+            <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-[-3px] rounded-[29px] border"
+              className="pointer-events-none absolute inset-[-3px] rounded-[29px] border opacity-60"
               style={{ borderColor: `${themeColor}66` }}
-              animate={shouldReduceMotion ? undefined : { opacity: [0.35, 0.85, 0.35] }}
-              transition={{ duration: 2.8, ease: "easeInOut", repeat: Infinity }}
             />
 
             <div className="connected-card-grid relative z-10 grid grid-cols-2 gap-[8px]">

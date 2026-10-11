@@ -7,7 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 export type HubScene = {
   id: string;
@@ -54,6 +54,11 @@ type HubSceneStageProps = {
  * exactly as before); this stage only decides which scenes to keep mounted and
  * lets CSS interpolate the transition. On stacked / mobile / reduced-motion
  * layouts it renders a single scene and the CSS motion is inert.
+ *
+ * A11Y: only the ACTIVE slot is interactive. The two mounted neighbours are
+ * `inert` + `aria-hidden`, so their buttons/links are neither tab-focusable nor
+ * announced by a screen reader while they are off-stage (previously they kept
+ * `pointer-events:none` only, which still left them keyboard-reachable).
  * -------------------------------------------------------------------------
  */
 export default function HubSceneStage({
@@ -66,6 +71,7 @@ export default function HubSceneStage({
   // the pinned engine is actually driving scroll progress.
   const [isNative, setIsNative] = useState(false);
   const [activeId, setActiveId] = useState(defaultActiveId);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -132,9 +138,9 @@ export default function HubSceneStage({
       <div className="pointer-events-none absolute left-8 top-8 z-30 hidden lg:block">
         <motion.div
           key={activeTitle}
-          initial={{ opacity: 0, y: -8, scale: 0.96, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-          transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+          initial={reduce ? { opacity: 1 } : { opacity: 0, y: -8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: reduce ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
           className="section-label-badge hc-middle-badge"
         >
           {activeTitle}
@@ -142,20 +148,24 @@ export default function HubSceneStage({
       </div>
 
       <div className="connected-scene-layer relative z-10 h-screen w-full overflow-hidden">
-        {visible.map(({ scene, index }) => (
-          <div
-            key={scene.id}
-            className={
-              "connected-scene-slot" +
-              (!isNative || index === activeIndex ? " is-active" : "")
-            }
-            style={{ "--scene-index": index } as CSSProperties}
-          >
-            <div className="connected-scene-motion flex h-full w-full items-center justify-center">
-              {scene.node}
+        {visible.map(({ scene, index }) => {
+          const isActive = !isNative || index === activeIndex;
+          const offStage = isNative && !isActive;
+
+          return (
+            <div
+              key={scene.id}
+              className={"connected-scene-slot" + (isActive ? " is-active" : "")}
+              style={{ "--scene-index": index } as CSSProperties}
+              aria-hidden={offStage ? true : undefined}
+              inert={offStage ? true : undefined}
+            >
+              <div className="connected-scene-motion flex h-full w-full items-center justify-center">
+                {scene.node}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
