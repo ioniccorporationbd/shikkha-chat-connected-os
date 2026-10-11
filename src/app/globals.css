@@ -825,20 +825,23 @@ div {
        --out  0 (at / before centre)      → 1 (leaving)
      and `--v` (presence) = min(--in, 1 − --out).
      Scene k is centred at local = 0.5. It holds FULLY opaque across its
-     readable band (local ≈ 0.08 … 0.92) and the outgoing + incoming scenes
+     readable band (local ≈ 0.10 … 0.90) and the outgoing + incoming scenes
      dissolve through each other over a boundary-centred overlap
-     (local ≈ 0.92 … 1.08 ≈ 256px of scroll) whose crossing sits at ~0.5 + ~0.5.
-     Each ramp is passed through a smoothstep ease (`t²·(3 − 2t)`), so the
+     (local ≈ 0.90 … 1.10 ≈ 320px of scroll) whose crossing sits at ~0.5 + ~0.5.
+     Each ramp is passed through a smootherstep ease (`6t⁵ − 15t⁴ + 10t³`, zero
+     1st+2nd derivative at the ends → gentler than smoothstep), so the
      handoff eases IN and OUT — it starts gently, swaps decisively through the
      middle and settles softly — while the overlap never drops to an empty /
      blank frame (floor ≈ 0.5) and never puts two scenes at full strength at
      once. Both ramps stay pure functions of `--local`, remain deterministic and
      reversible, and still sum to exactly 1. The scene container NEVER scales,
      moves or gains depth (opacity is the only transition channel). */
-  --t-in: clamp(0, calc((var(--local) + 0.08) / 0.16), 1);
-  --t-out: clamp(0, calc((var(--local) - 0.92) / 0.16), 1);
-  --in: calc(var(--t-in) * var(--t-in) * (3 - 2 * var(--t-in)));
-  --out: calc(var(--t-out) * var(--t-out) * (3 - 2 * var(--t-out)));
+  --t-in: clamp(0, calc((var(--local) + 0.10) / 0.20), 1);
+  --t-out: clamp(0, calc((var(--local) - 0.90) / 0.20), 1);
+  /* smootherstep (Perlin) — zero 1st AND 2nd derivative at both ends, so the
+     handoff eases in/out more gently than plain smoothstep. Pure fn of --local. */
+  --in: calc(var(--t-in) * var(--t-in) * var(--t-in) * (var(--t-in) * (var(--t-in) * 6 - 15) + 10));
+  --out: calc(var(--t-out) * var(--t-out) * var(--t-out) * (var(--t-out) * (var(--t-out) * 6 - 15) + 10));
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   /* PRESENCE ONLY. The scene container is stable: no scale, no translate, no
@@ -885,10 +888,12 @@ div {
   /* Same eased, complementary presence ramp as `.connected-scene-slot`, so the
      right pane and the middle stage change in lockstep. */
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
-  --t-in: clamp(0, calc((var(--local) + 0.08) / 0.16), 1);
-  --t-out: clamp(0, calc((var(--local) - 0.92) / 0.16), 1);
-  --in: calc(var(--t-in) * var(--t-in) * (3 - 2 * var(--t-in)));
-  --out: calc(var(--t-out) * var(--t-out) * (3 - 2 * var(--t-out)));
+  --t-in: clamp(0, calc((var(--local) + 0.10) / 0.20), 1);
+  --t-out: clamp(0, calc((var(--local) - 0.90) / 0.20), 1);
+  /* smootherstep (Perlin) — zero 1st AND 2nd derivative at both ends, so the
+     handoff eases in/out more gently than plain smoothstep. Pure fn of --local. */
+  --in: calc(var(--t-in) * var(--t-in) * var(--t-in) * (var(--t-in) * (var(--t-in) * 6 - 15) + 10));
+  --out: calc(var(--t-out) * var(--t-out) * var(--t-out) * (var(--t-out) * (var(--t-out) * 6 - 15) + 10));
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   opacity: var(--v);
