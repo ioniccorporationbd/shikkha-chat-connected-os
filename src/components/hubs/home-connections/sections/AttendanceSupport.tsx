@@ -309,7 +309,7 @@ function FloatingCard({
   const isSingleWord = wordCount === 1;
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={itemVariants}
       type="button"
       onClick={onClick}
@@ -426,7 +426,7 @@ function ActiveAttendanceCard({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={itemVariants}
       type="button"
       onClick={() => {
@@ -914,7 +914,7 @@ export default function AttendanceSupport() {
         </AnimatePresence>
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-          <motion.div variants={itemVariants} className="relative">
+          <motion.div variants={itemVariants} className="relative" data-scene-reveal="main">
             <div className="absolute left-1/2 top-[-66px] z-20 -translate-x-1/2">
               <button
                 type="button"

@@ -351,7 +351,7 @@ function ProductTile({
   const active = selected || isActive;
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={cardVariants}
       type="button"
       onClick={() => {
@@ -852,7 +852,7 @@ export default function FamilyEngagement() {
           className="absolute left-1/2 top-1/2 z-30"
         >
           <motion.div
-            variants={wrapperVariants}
+            variants={wrapperVariants} data-scene-reveal="main"
             initial="hidden"
             animate="visible"
             className="relative shrink-0 translate-y-[4px]"

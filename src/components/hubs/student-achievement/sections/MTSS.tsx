@@ -515,7 +515,7 @@ function MiniCard({
   const isMtss = item.id === "mtss";
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={itemVariants}
       type="button"
       onClick={() => {
@@ -623,7 +623,7 @@ function ActiveMtssCard({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={itemVariants}
       type="button"
       onClick={() => {
@@ -717,7 +717,7 @@ function FloatingCard({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={itemVariants}
       type="button"
       onClick={onClick}
@@ -1112,7 +1112,7 @@ export default function MTSS() {
         </AnimatePresence>
 
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-          <motion.div variants={itemVariants} className="relative">
+          <motion.div variants={itemVariants} className="relative" data-scene-reveal="main">
             <div className="absolute left-1/2 top-[-64px] z-20 -translate-x-1/2">
               <button
                 type="button"

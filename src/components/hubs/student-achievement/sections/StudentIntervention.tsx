@@ -386,7 +386,7 @@ function ProductTile({ item }: { item: ProductCard }) {
   const isActive = item.id === "student-intervention";
 
   return (
-    <motion.button
+    <motion.button data-scene-reveal="secondary"
       variants={cardVariants}
       type="button"
       onClick={() => scrollRightSidebarTo(item.id)}
@@ -624,7 +624,7 @@ export default function StudentIntervention() {
           className="absolute left-1/2 top-1/2 z-20"
         >
           <motion.div
-            variants={diagramInnerVariants}
+            variants={diagramInnerVariants} data-scene-reveal="main"
             initial="hidden"
             animate="visible"
             className="relative shrink-0"

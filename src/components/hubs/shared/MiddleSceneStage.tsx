@@ -2,7 +2,9 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -115,6 +117,26 @@ export default function MiddleSceneStage({
       .map((index) => ({ scene: scenes[index], index }));
   }, [isNative, activeIndex, scenes]);
 
+  const layerRef = useRef<HTMLDivElement>(null);
+
+  // Sequential card reveal: stamp each secondary card with its DOM-order index
+  // so globals.css can stagger them (main card first, then one-by-one). Runs
+  // before paint, whenever the mounted window / active scene changes, so the
+  // stagger delay is correct the moment a scene flips to `.is-active`.
+  useLayoutEffect(() => {
+    if (!isNative) return;
+    const layer = layerRef.current;
+    if (!layer) return;
+
+    layer
+      .querySelectorAll<HTMLElement>(".connected-scene-slot")
+      .forEach((slot) => {
+        slot
+          .querySelectorAll<HTMLElement>('[data-scene-reveal="secondary"]')
+          .forEach((el, i) => el.style.setProperty("--reveal-i", String(i)));
+      });
+  }, [isNative, activeIndex, visible]);
+
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[var(--color-white)]">
       <div className="connected-blob-a pointer-events-none absolute left-[14%] top-[16%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)] opacity-60 blur-[90px]" />
@@ -133,7 +155,7 @@ export default function MiddleSceneStage({
         </motion.div>
       </div>
 
-      <div className="connected-scene-layer relative z-10 h-screen w-full overflow-hidden">
+      <div ref={layerRef} className="connected-scene-layer relative z-10 h-screen w-full overflow-hidden">
         {visible.map(({ scene, index }) => {
           const anim = getSceneAnimation(scene.id);
           const isActive = !isNative || index === activeIndex;

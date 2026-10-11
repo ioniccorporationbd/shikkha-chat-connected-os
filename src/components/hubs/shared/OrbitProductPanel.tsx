@@ -311,7 +311,7 @@ export default function OrbitProductPanel({
       <FloatingDot className="bottom-[18%] right-[28%] h-[14px] w-[14px]" delay={0.4} themeColor={themeColor} />
 
       <div className="relative z-10 flex h-full w-full items-center justify-center">
-        <div className="connected-orbit-wrap relative [transform-style:preserve-3d]">
+        <div className="connected-orbit-wrap relative [transform-style:preserve-3d]" data-scene-reveal="main">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 opacity-60 blur-[34px]"
@@ -369,6 +369,7 @@ export default function OrbitProductPanel({
                 <div
                   key={product.id}
                   className="connected-card-slot"
+                  data-scene-reveal="secondary"
                   style={
                     {
                       "--card-i": index,
