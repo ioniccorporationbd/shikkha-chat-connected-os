@@ -45,11 +45,21 @@ export const FAMILY_RAMPS: Record<
   SceneFamily,
   { enter: SceneRamp; exit: SceneRamp }
 > = {
-  overview: { enter: [0.02, 0.18], exit: [0.82, 0.98] },
-  information: { enter: [0.02, 0.18], exit: [0.82, 0.98] },
-  process: { enter: [0.02, 0.2], exit: [0.8, 0.98] },
-  diagram: { enter: [0.03, 0.19], exit: [0.81, 0.98] },
-  detail: { enter: [0.04, 0.2], exit: [0.8, 0.98] },
+  // GHOST-FREE handoff with a LOW-DIM neutral beat. The exit window [0.92, 1.02]
+  // and the enter window [-0.02, 0.08] overlap by only 0.04 across the shared
+  // boundary, so at the crossing BOTH adjacent scenes sit at ~0.2 opacity — far
+  // below the readable threshold (two scenes are never legible together ⇒ no
+  // ghosting / collision) yet strictly above 0 (the stage never fully blanks,
+  // so there is no flicker). The readable band (local 0.08 … 0.92) is fully
+  // opaque and wide. The scene lift (globals.css) makes the outgoing rise away
+  // as the incoming rises in from below, so the beat reads as motion. Families
+  // differ by direction + stagger; the window is shared so the handoff is
+  // balanced for every adjacent pair. Pure function of `--local` ⇒ reversible.
+  overview: { enter: [-0.02, 0.08], exit: [0.92, 1.02] },
+  information: { enter: [-0.02, 0.08], exit: [0.92, 1.02] },
+  process: { enter: [-0.02, 0.08], exit: [0.92, 1.02] },
+  diagram: { enter: [-0.02, 0.08], exit: [0.92, 1.02] },
+  detail: { enter: [-0.02, 0.08], exit: [0.92, 1.02] },
 };
 
 type SceneSeed = {
