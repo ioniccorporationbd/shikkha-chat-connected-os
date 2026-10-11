@@ -1798,10 +1798,14 @@ html[data-lang="en"] .language-toggle-knob {
   font-size: var(--text-title-size) !important;
 }
 
-/* Named Tailwind sizes collapse into the same three tiers. */
+/* Named Tailwind sizes — kept as an ORDERED scale (never one flat size) so a
+   larger heading utility still reads as a larger heading. */
 :is(.text-xs, .text-sm) { font-size: var(--text-text-size) !important; }
 :is(.text-md, .text-base) { font-size: var(--text-subtitle-size) !important; }
-:is(.text-lg, .text-xl, .text-2xl, .text-3xl) { font-size: var(--text-title-size) !important; }
+:is(.text-lg) { font-size: var(--text-title-size) !important; }
+:is(.text-xl) { font-size: calc(var(--text-title-size) * 1.15) !important; }
+:is(.text-2xl) { font-size: calc(var(--text-title-size) * 1.35) !important; }
+:is(.text-3xl) { font-size: calc(var(--text-title-size) * 1.6) !important; }
 
 /* Colour tiers — muted brand-green text collapses to 80% / 60%.
    (Anchored to `text-[color-mix(` so bordered/pill surfaces that use
@@ -1851,3 +1855,108 @@ html[data-lang="en"] .language-toggle-knob {
 .t-title { font-size: var(--text-title-size) !important; color: var(--text-title-color) !important; font-weight: 700; line-height: 1.25; }
 .t-subtitle { font-size: var(--text-subtitle-size) !important; color: var(--text-subtitle-color) !important; font-weight: 600; line-height: 1.5; }
 .t-text { font-size: var(--text-text-size) !important; color: var(--text-text-color) !important; font-weight: 500; line-height: 1.55; }
+
+/* =========================================================
+   MIDDLE-SCENE TYPOGRAPHY — SEMANTIC SCALE  (2026-10-11)
+   ---------------------------------------------------------
+   The project-wide 3-tier collapse above is right for the dense
+   dashboard chrome, but inside the pinned scene stage it flattened
+   every compact card so its TITLE and its SUBTITLE both landed on
+   the 12px "text" tier — the card hierarchy was lost.
+
+   This SCOPED layer restores a real, ordered compact-card hierarchy
+   WITHOUT changing any surface outside the scene stage:
+
+     major scene heading (orbit pill) ..  16px / 800
+     compact card heading  .............  15px / 600
+     card body / subtitle ..............  12px (unchanged global tier)
+
+   It is deliberately scoped with `:where(.connected-scene-layer)` so
+   the equal-specificity selector still beats the flat global tier by
+   source order, yet only ever matches the middle scenes.
+
+   Opt-in semantic tokens (size + EXPLICIT opaque colour, so perceived
+   strength is predictable over gradients — never alpha on the
+   container, which would bleed the backdrop through the glyphs):
+
+     .scene-title   100%  · .scene-subtitle 80% · .scene-description 60%
+     .card-title          · .card-subtitle       · .card-description
+========================================================= */
+
+/* Scoped compact-card heading lift — middle scenes only. Any card heading
+   authored at 14–15.5px (the common `text-[14px]` / `text-[15px]` title)
+   regains a real heading size instead of collapsing to 12px. Sub-14px
+   copy (subtitles, captions, labels) keeps the global 12px text tier, so
+   the title now clearly outranks the subtitle again. */
+:where(.connected-scene-layer) :is(
+  [class*="text-[14px]"], [class*="text-[14.5px]"],
+  [class*="text-[15px]"], [class*="text-[15.5px]"]
+) {
+  font-size: 15px !important;
+}
+
+/* Compact scene heading (the orbit pill above each overview card grid).
+   Declared AFTER the scoped tier above so it wins for the pill element,
+   which also carries a `text-[14px]` utility. */
+.orbit-scene-title {
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.15 !important;
+}
+
+/* Semantic heading scale — major scene headings (big, expressive). */
+.scene-title {
+  font-size: clamp(1.5rem, 1.3rem + 0.9vw, 1.875rem) !important;   /* 24 → 30px */
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: var(--color-primary) !important;
+}
+.scene-subtitle {
+  font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.5rem) !important; /* 19 → 24px */
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  color: color-mix(in srgb, var(--color-primary) 80%, var(--color-white)) !important;
+}
+.scene-description {
+  font-size: clamp(1rem, 0.92rem + 0.35vw, 1.125rem) !important;   /* 16 → 18px */
+  font-weight: 450 !important;
+  line-height: 1.6 !important;
+  color: color-mix(in srgb, var(--color-primary) 60%, var(--color-white)) !important;
+}
+
+/* Semantic card scale — compact card headings (tighter, quieter). */
+.card-title {
+  font-size: clamp(0.875rem, 0.83rem + 0.2vw, 0.9375rem) !important; /* 14 → 15px */
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+}
+.card-subtitle {
+  font-size: 0.6875rem !important; /* 11px */
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+.card-description {
+  font-size: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem) !important; /* 12 → 13px */
+  font-weight: 400 !important;
+  line-height: 1.55 !important;
+}
+
+/* Orbit-tile component classes (shared OrbitProductPanel). The tile packs an
+   icon + a 1–2 line title + an optional subtitle into 96×96px, so the title
+   and subtitle need their OWN scale rather than the flattened 12px tier. */
+.card-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+}
+.card-title-compact {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.08 !important;
+}
+.card-subtitle {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+}

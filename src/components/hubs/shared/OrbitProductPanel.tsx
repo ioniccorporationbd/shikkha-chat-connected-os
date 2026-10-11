@@ -231,6 +231,7 @@ function ProductTile({
             : isLongTitle
               ? "text-[11px] leading-[1.08]"
               : "text-[12px] leading-[1.1]",
+          isLongTitle ? "card-title-compact" : "card-title",
         ].join(" ")}
         style={{ color: hcAccent ? "currentColor" : titleColor }}
       >
@@ -238,7 +239,7 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className={`relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
+        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
           {item.subtitle}
         </p>
       ) : null}
@@ -337,7 +338,7 @@ export default function OrbitProductPanel({
             className={[
               "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
               "h-[38px] min-w-[224px] rounded-full px-[30px]",
-              "text-[14px] font-black leading-[38px] text-[var(--color-primary)] whitespace-nowrap",
+              "text-[14px] font-black leading-[38px] text-[var(--color-primary)] whitespace-nowrap orbit-scene-title",
               "transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
               isHcAccent ? "hc-orbit-pill" : "",
             ].join(" ")}
