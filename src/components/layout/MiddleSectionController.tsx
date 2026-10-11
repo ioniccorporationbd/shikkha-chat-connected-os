@@ -19,12 +19,22 @@ import RightSidebarScrollViewport, {
   type RailSection,
 } from "@/components/layout/RightSidebarScrollViewport";
 import { getSceneAnimation } from "@/lib/connected-os/sceneAnimationRegistry";
+import {
+  animateScrollTo,
+  type ScrollAnimationHandle,
+} from "@/lib/connected-os/smoothScrollTo";
 
 type MiddleSectionControllerProps = {
   middle: ReactNode;
   right: ReactNode;
   sectionId?: string;
 };
+
+// User-initiated section transitions: ≈4 s of travel per linked section, capped
+// so a long first→last jump stays comfortable. Wheel / trackpad / touch input is
+// NEVER animated — it stays 100 % native, so the user is never blocked or trapped.
+const NAV_BASE_MS = 4000;
+const NAV_MAX_MS = 8000;
 
 /*
  * =========================================================================
@@ -83,6 +93,8 @@ export default function MiddleSectionController({
   const activeIdxRef = useRef<number>(-1);
   const rafRef = useRef<number | null>(null);
   const isNativeRef = useRef(false);
+  // Handle for a running user-initiated section transition (≈4 s eased scroll).
+  const scrollAnimRef = useRef<ScrollAnimationHandle | null>(null);
 
   // Cached geometry { top, pinned }. The scroll handler is a hot path, so it is
   // pure arithmetic over this cache — never a getBoundingClientRect() per frame.
@@ -274,6 +286,8 @@ export default function MiddleSectionController({
       activeIdxRef.current = -1;
       activeIdRef.current = "";
       releaseRail();
+      scrollAnimRef.current?.cancel();
+      scrollAnimRef.current = null;
       return;
     }
 
@@ -287,7 +301,10 @@ export default function MiddleSectionController({
     };
 
     // Explicit, intentional user navigation only (nav item / CTA / rail marker).
-    // The ONE place the engine ever scrolls — a plain one-shot native scroll.
+    // The ONE place the engine ever scrolls — an interruptible eased transition
+    // targeting ≈4 s per linked section. It is NEVER triggered by wheel / trackpad
+    // / touch, and any real gesture cancels it mid-flight, so user input is never
+    // blocked and there is no snap, settle or scroll trap afterwards.
     const handleScrollToSection = (event: Event) => {
       const id = (event as CustomEvent<{ id?: string }>).detail?.id;
       if (!id) return;
@@ -300,7 +317,15 @@ export default function MiddleSectionController({
       const { top, pinned } = geometryRef.current;
       const targetY = top + progressForIndex(index, n) * pinned + 2;
 
-      window.scrollTo({ top: targetY, behavior: "smooth" });
+      // ≈4 s of travel per section hop; capped so first→last stays comfortable.
+      const fromIndex = activeIndexOf(computeProgress(), n);
+      const hops = Math.max(1, Math.abs(index - fromIndex));
+      const duration = Math.min(NAV_MAX_MS, hops * NAV_BASE_MS);
+
+      scrollAnimRef.current?.cancel();
+      scrollAnimRef.current = animateScrollTo(targetY, duration, {
+        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -324,6 +349,10 @@ export default function MiddleSectionController({
       cancelAnimationFrame(settleRaf);
       window.clearTimeout(settleTimer1);
       window.clearTimeout(settleTimer2);
+
+      // Abort any in-flight user-initiated transition when the mode flips/unmounts.
+      scrollAnimRef.current?.cancel();
+      scrollAnimRef.current = null;
 
       if (rafRef.current != null) {
         cancelAnimationFrame(rafRef.current);
