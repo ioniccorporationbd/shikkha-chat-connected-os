@@ -9,38 +9,54 @@ import BehaviorSupport from "@/components/hubs/student-achievement/panels/Behavi
 import CollegeCareerLifeReadiness from "@/components/hubs/student-achievement/panels/CollegeCareerLifeReadinessPanel";
 import CCLRNaviance from "@/components/hubs/student-achievement/panels/CCLRNaviancePanel";
 
+/*
+ * Each section's key-point panel is wrapped in a `.right-panel-slot` so the
+ * pinned desktop stage can crossfade the rail to the active section without any
+ * auto-scroll (see HomeConnectionsSidePanels for the full note). Every other
+ * layout keeps the plain stacked panels.
+ */
 export default function StudentAchievementSidePanels() {
   return (
     <div className="min-h-full">
-      {/* 1 */}
-      <StudentAchievementOverview />
+      <div className="right-panel-slot">
+        <StudentAchievementOverview />
+      </div>
 
-      {/* 2 */}
-      <ClassroomSolutions />
+      <div className="right-panel-slot">
+        <ClassroomSolutions />
+      </div>
 
-      {/* 3 */}
-      <LearningManagementSchoology />
+      <div className="right-panel-slot">
+        <LearningManagementSchoology />
+      </div>
 
-      {/* 4 */}
-      <AssessmentPerformanceMatters />
+      <div className="right-panel-slot">
+        <AssessmentPerformanceMatters />
+      </div>
 
-      {/* 5 */}
-      <CurriculumInstruction />
+      <div className="right-panel-slot">
+        <CurriculumInstruction />
+      </div>
 
-      {/* 6 */}
-      <StudentIntervention />
+      <div className="right-panel-slot">
+        <StudentIntervention />
+      </div>
 
-      {/* 7 */}
-      <MTSS />
+      <div className="right-panel-slot">
+        <MTSS />
+      </div>
 
-      {/* 8 */}
-      <BehaviorSupport />
+      <div className="right-panel-slot">
+        <BehaviorSupport />
+      </div>
 
-      {/* 9 */}
-      <CollegeCareerLifeReadiness />
+      <div className="right-panel-slot">
+        <CollegeCareerLifeReadiness />
+      </div>
 
-      {/* 10 */}
-      <CCLRNaviance />
+      <div className="right-panel-slot">
+        <CCLRNaviance />
+      </div>
     </div>
   );
 }

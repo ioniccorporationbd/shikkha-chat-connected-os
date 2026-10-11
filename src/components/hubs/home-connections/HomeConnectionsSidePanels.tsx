@@ -7,32 +7,49 @@ import FamilyEngagement from "@/components/hubs/home-connections/panels/FamilyEn
 import Communications from "@/components/hubs/home-connections/panels/CommunicationsPanel";
 import AttendanceSupport from "@/components/hubs/home-connections/panels/AttendanceSupportPanel";
 
+/*
+ * Each section's key-point panel is wrapped in a `.right-panel-slot`.
+ * On the pinned desktop stage these slots are stacked in place and crossfade to
+ * the active section (driven by `--scene-focus`), so the right side stays put
+ * and simply changes to the current section's key points as you scroll — with
+ * no auto-scroll and no snapping. In every other layout (stacked / mobile /
+ * reduced-motion) the wrapper is a plain block, so the panels stack exactly as
+ * before.
+ */
 export default function HomeConnectionsSidePanels() {
   return (
     <div className="min-h-full">
-      {/* 1 */}
-      <HomeComponents />
+      <div className="right-panel-slot">
+        <HomeComponents />
+      </div>
 
-      {/* 2 */}
-      <StudentInformation />
+      <div className="right-panel-slot">
+        <StudentInformation />
+      </div>
 
-      {/* 3 */}
-      <SIS />
+      <div className="right-panel-slot">
+        <SIS />
+      </div>
 
-      {/* 4 */}
-      <Enrollment />
+      <div className="right-panel-slot">
+        <Enrollment />
+      </div>
 
-      {/* 5 */}
-      <SpecialPrograms />
+      <div className="right-panel-slot">
+        <SpecialPrograms />
+      </div>
 
-      {/* 6 */}
-      <FamilyEngagement />
+      <div className="right-panel-slot">
+        <FamilyEngagement />
+      </div>
 
-      {/* 7 */}
-      <Communications />
+      <div className="right-panel-slot">
+        <Communications />
+      </div>
 
-      {/* 8 */}
-      <AttendanceSupport />
+      <div className="right-panel-slot">
+        <AttendanceSupport />
+      </div>
     </div>
   );
 }

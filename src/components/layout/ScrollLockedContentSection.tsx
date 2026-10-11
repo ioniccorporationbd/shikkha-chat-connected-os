@@ -145,6 +145,17 @@ export default function ScrollLockedContentSection({
 
     const safeIndex = clamp(index, 0, ids.length - 1);
     dispatchActiveSection(ids[safeIndex]);
+
+    // Keep the right-rail crossfade stack legible: only the active section's
+    // key-point panel is interactive. The others stay faded out and inert, so a
+    // click can never land on an invisible panel. Purely class toggling — the
+    // rail is still never scrolled or repositioned programmatically.
+    const rail = rightScrollRef.current;
+    if (rail) {
+      rail
+        .querySelectorAll<HTMLElement>(".right-panel-slot")
+        .forEach((slot, i) => slot.classList.toggle("is-active", i === safeIndex));
+    }
   };
 
   const update = () => {

@@ -7,32 +7,46 @@ import TalentManagement from "@/components/hubs/operational-excellence/panels/Ta
 import RecruitingAndHR from "@/components/hubs/operational-excellence/panels/RecruitingAndHRPanel";
 import EducatorSupport from "@/components/hubs/operational-excellence/panels/EducatorSupportPanel";
 
+/*
+ * Each section's key-point panel is wrapped in a `.right-panel-slot` so the
+ * pinned desktop stage can crossfade the rail to the active section without any
+ * auto-scroll (see HomeConnectionsSidePanels for the full note). Every other
+ * layout keeps the plain stacked panels.
+ */
 export default function OperationalExcellenceSidePanels() {
   return (
     <div className="min-h-full">
-      {/* 1 */}
-      <OperationalExcellenceOverview />
+      <div className="right-panel-slot">
+        <OperationalExcellenceOverview />
+      </div>
 
-      {/* 2 */}
-      <ResourcePlanning />
+      <div className="right-panel-slot">
+        <ResourcePlanning />
+      </div>
 
-      {/* 3 */}
-      <FinancialStrategyAllovue />
+      <div className="right-panel-slot">
+        <FinancialStrategyAllovue />
+      </div>
 
-      {/* 4 */}
-      <ERPSystems />
+      <div className="right-panel-slot">
+        <ERPSystems />
+      </div>
 
-      {/* 5 */}
-      <PredictiveEnrollment />
+      <div className="right-panel-slot">
+        <PredictiveEnrollment />
+      </div>
 
-      {/* 6 */}
-      <TalentManagement />
+      <div className="right-panel-slot">
+        <TalentManagement />
+      </div>
 
-      {/* 7 */}
-      <RecruitingAndHR />
+      <div className="right-panel-slot">
+        <RecruitingAndHR />
+      </div>
 
-      {/* 8 */}
-      <EducatorSupport />
+      <div className="right-panel-slot">
+        <EducatorSupport />
+      </div>
     </div>
   );
 }

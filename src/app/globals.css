@@ -819,22 +819,26 @@ div {
 [data-native-scroll="true"] .connected-scene-slot {
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
 
-  /* Controlled, DEPTH-FREE crossfade between scenes (each scene owns two ramps):
+  /* Controlled, DEPTH-FREE, EASED crossfade between scenes (each scene owns two
+     ramps):
        --in   0 (rising, not yet present) → 1 (present)
        --out  0 (at / before centre)      → 1 (leaving)
      and `--v` (presence) = min(--in, 1 − --out).
      Scene k is centred at local = 0.5. It holds FULLY opaque across its
-     readable band (local ≈ 0.04 … 0.96) and the outgoing + incoming scenes
-     dissolve through each other over a SHORT, boundary-centred overlap
-     (local ≈ 0.96 … 1.04 ≈ 128px of scroll) whose crossing sits at ~0.5 + ~0.5.
-     The overlap never drops to an empty / blank frame (measured floor of the
-     brightest scene ≈ 0.5) yet never puts two scenes at full strength at once,
-     so it never reads as ghost text at high opacity. Both ramps are pure
-     functions of `--local`, so the handoff is deterministic and reversible,
-     and the scene container NEVER scales, moves or gains depth (opacity is the
-     only transition channel). */
-  --in: clamp(0, calc((var(--local) + 0.04) / 0.08), 1);
-  --out: clamp(0, calc((var(--local) - 0.96) / 0.08), 1);
+     readable band (local ≈ 0.08 … 0.92) and the outgoing + incoming scenes
+     dissolve through each other over a boundary-centred overlap
+     (local ≈ 0.92 … 1.08 ≈ 256px of scroll) whose crossing sits at ~0.5 + ~0.5.
+     Each ramp is passed through a smoothstep ease (`t²·(3 − 2t)`), so the
+     handoff eases IN and OUT — it starts gently, swaps decisively through the
+     middle and settles softly — while the overlap never drops to an empty /
+     blank frame (floor ≈ 0.5) and never puts two scenes at full strength at
+     once. Both ramps stay pure functions of `--local`, remain deterministic and
+     reversible, and still sum to exactly 1. The scene container NEVER scales,
+     moves or gains depth (opacity is the only transition channel). */
+  --t-in: clamp(0, calc((var(--local) + 0.08) / 0.16), 1);
+  --t-out: clamp(0, calc((var(--local) - 0.92) / 0.16), 1);
+  --in: calc(var(--t-in) * var(--t-in) * (3 - 2 * var(--t-in)));
+  --out: calc(var(--t-out) * var(--t-out) * (3 - 2 * var(--t-out)));
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   /* PRESENCE ONLY. The scene container is stable: no scale, no translate, no
@@ -843,6 +847,73 @@ div {
   opacity: var(--v);
   will-change: opacity;
 }
+
+/* ── STABLE RIGHT-RAIL CROSSFADE ──────────────────────────────────────────
+   On the pinned desktop stage the right rail is NOT an independent scroller
+   driven by the page — it stays exactly put while the page scrolls, and the
+   panels themselves crossfade to the ACTIVE SECTION, driven by the SAME
+   authoritative `--scene-focus` the middle stage uses. So the right side shows
+   the current section's key points and changes smoothly as you scroll, with:
+     • no automatic scrolling inside the rail,
+     • no programmatic repositioning / jumping,
+     • the rail container itself never animating.
+   Each section's key-point panel is wrapped in a `.right-panel-slot` (see the
+   *SidePanels components); the slots are stacked in place and dissolve through
+   each other with the exact same eased, complementary ramp as the scenes, so
+   the two panes change TOGETHER and sum to 1 (never blank, never a full-strength
+   double exposure). Tall panels may still scroll, but only when the user
+   directly interacts with the rail. */
+[data-native-scroll="true"] .connected-right-scroll-panel {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+[data-native-scroll="true"] .connected-right-scroll-panel > .min-h-full {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+[data-native-scroll="true"] .right-panel-slot {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  /* Same eased, complementary presence ramp as `.connected-scene-slot`, so the
+     right pane and the middle stage change in lockstep. */
+  --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
+  --t-in: clamp(0, calc((var(--local) + 0.08) / 0.16), 1);
+  --t-out: clamp(0, calc((var(--local) - 0.92) / 0.16), 1);
+  --in: calc(var(--t-in) * var(--t-in) * (3 - 2 * var(--t-in)));
+  --out: calc(var(--t-out) * var(--t-out) * (3 - 2 * var(--t-out)));
+  --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
+
+  opacity: var(--v);
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* Only the active section's key-point panel is interactive (the rest are faded
+   out and inert, so a click can never land on an invisible panel). */
+[data-native-scroll="true"] .right-panel-slot.is-active {
+  pointer-events: auto;
+}
+
+/* Fixed scene order: rail order === scene order (verified), so a plain
+   nth-child maps each slot to its scene index with no JS bookkeeping. */
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(1) { --scene-index: 0; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(2) { --scene-index: 1; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(3) { --scene-index: 2; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(4) { --scene-index: 3; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(5) { --scene-index: 4; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(6) { --scene-index: 5; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(7) { --scene-index: 6; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(8) { --scene-index: 7; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(9) { --scene-index: 8; }
+[data-native-scroll="true"] .connected-right-scroll-panel .right-panel-slot:nth-child(10) { --scene-index: 9; }
 
 /* Scene content container. The main content stage must stay STABLE: the scene
    container never scales, never translates and never gains depth (scale: 1,
