@@ -9,12 +9,17 @@ import HomeConnectionsSidePanels from "@/components/hubs/home-connections/HomeCo
 import StudentAchievementSidePanels from "@/components/hubs/student-achievement/StudentAchievementSidePanels";
 import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
 import MiddleSectionController from "@/components/layout/MiddleSectionController";
+import ConnectedOsHashSync from "@/components/layout/ConnectedOsHashSync";
 import StudentAchievementVideoBanner from "@/components/home/StudentAchievementVideoBanner";
 import SiteFooter from "@/components/home/SiteFooter";
 
 export default function Page() {
   return (
     <>
+      {/* Reference-parity: mirror the active section into the URL hash and
+          honour deep links (`/#sis`). Renders nothing; owns no scroll. */}
+      <ConnectedOsHashSync />
+
       <LandingHeroBanner />
 
       <HomeConnectionsVideoBanner />
