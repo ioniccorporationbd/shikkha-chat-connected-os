@@ -851,21 +851,24 @@ div {
   will-change: opacity;
 }
 
-/* ── STABLE RIGHT-RAIL CROSSFADE ──────────────────────────────────────────
+/* ── STABLE RIGHT-RAIL: GHOST-FREE STAGGERED HANDOFF ──────────────────────
    On the pinned desktop stage the right rail is NOT an independent scroller
    driven by the page — it stays exactly put while the page scrolls, and the
-   panels themselves crossfade to the ACTIVE SECTION, driven by the SAME
-   authoritative `--scene-focus` the middle stage uses. So the right side shows
-   the current section's key points and changes smoothly as you scroll, with:
+   panels hand off to the ACTIVE SECTION, driven by the SAME authoritative
+   `--scene-focus` the middle stage uses. So the right side shows the current
+   section's key points and changes smoothly as you scroll, with:
      • no automatic scrolling inside the rail,
      • no programmatic repositioning / jumping,
      • the rail container itself never animating.
    Each section's key-point panel is wrapped in a `.right-panel-slot` (see the
-   *SidePanels components); the slots are stacked in place and dissolve through
-   each other with the exact same eased, complementary ramp as the scenes, so
-   the two panes change TOGETHER and sum to 1 (never blank, never a full-strength
-   double exposure). Tall panels may still scroll, but only when the user
-   directly interacts with the rail. */
+   *SidePanels components); the slots are stacked in place and run a STAGGERED
+   handoff: the outgoing panel fades ALL THE WAY OUT *before* the incoming panel
+   starts to fade IN, with a short neutral band between them. Two panels are
+   therefore NEVER readable at the same time — no ghost / double text. The rail's
+   own surface stays put throughout, so the sidebar never looks structurally
+   empty. The band derives purely from `--scene-focus` (no timers), so it is
+   deterministic and identical forward and reverse. Tall panels may still
+   scroll, but only when the user directly interacts with the rail. */
 [data-native-scroll="true"] .connected-right-scroll-panel {
   overflow: hidden;
   overscroll-behavior: contain;
@@ -885,15 +888,20 @@ div {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 
-  /* Same eased, complementary presence ramp as `.connected-scene-slot`, so the
-     right pane and the middle stage change in lockstep. */
+  /* GHOST-FREE STAGGERED HANDOFF (pure fn of `--local`):
+       --out → 1 as the slot LEAVES (local 0.88 → 1.00),
+       --in  → 1 as the slot ARRIVES (local 0.02 → 0.18).
+     `--out` completes at local 1.00 and `--in` only starts at local 0.02, so a
+     short neutral band (local 1.00 … 1.02, ~32px of scroll) separates them: the
+     outgoing panel is FULLY gone before the incoming one appears, so two panels
+     are never readable together (no ghost text). Each phase is eased with
+     smootherstep (`6t⁵−15t⁴+10t³`, zero 1st+2nd derivative at the ends) → the
+     handoff eases in and out gently. Reversible: identical going up and down. */
   --local: calc(var(--scene-focus, 0.5) - var(--scene-index, 0));
-  --t-in: clamp(0, calc((var(--local) + 0.10) / 0.20), 1);
-  --t-out: clamp(0, calc((var(--local) - 0.90) / 0.20), 1);
-  /* smootherstep (Perlin) — zero 1st AND 2nd derivative at both ends, so the
-     handoff eases in/out more gently than plain smoothstep. Pure fn of --local. */
-  --in: calc(var(--t-in) * var(--t-in) * var(--t-in) * (var(--t-in) * (var(--t-in) * 6 - 15) + 10));
-  --out: calc(var(--t-out) * var(--t-out) * var(--t-out) * (var(--t-out) * (var(--t-out) * 6 - 15) + 10));
+  --u-out: clamp(0, calc((var(--local) - 0.88) / 0.12), 1);
+  --u-in: clamp(0, calc((var(--local) - 0.02) / 0.16), 1);
+  --out: calc(var(--u-out) * var(--u-out) * var(--u-out) * (var(--u-out) * (var(--u-out) * 6 - 15) + 10));
+  --in: calc(var(--u-in) * var(--u-in) * var(--u-in) * (var(--u-in) * (var(--u-in) * 6 - 15) + 10));
   --v: clamp(0, min(var(--in), calc(1 - var(--out))), 1);
 
   opacity: var(--v);

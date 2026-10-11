@@ -146,15 +146,46 @@ export default function ScrollLockedContentSection({
     const safeIndex = clamp(index, 0, ids.length - 1);
     dispatchActiveSection(ids[safeIndex]);
 
-    // Keep the right-rail crossfade stack legible: only the active section's
-    // key-point panel is interactive. The others stay faded out and inert, so a
-    // click can never land on an invisible panel. Purely class toggling — the
-    // rail is still never scrolled or repositioned programmatically.
+    // Keep the right-rail handoff legible AND accessible: only the active
+    // section's key-point panel is visible + interactive; every other panel is
+    // fully hidden, inert and aria-hidden, so a click, Tab or screen-reader
+    // virtual cursor can never land on an invisible panel. Purely attribute
+    // toggling — the rail is still never scrolled or repositioned
+    // programmatically, so scrolling stays fully user-controlled.
     const rail = rightScrollRef.current;
     if (rail) {
-      rail
-        .querySelectorAll<HTMLElement>(".right-panel-slot")
-        .forEach((slot, i) => slot.classList.toggle("is-active", i === safeIndex));
+      const slots = rail.querySelectorAll<HTMLElement>(".right-panel-slot");
+      const activeSlot = slots[safeIndex];
+
+      // Capture focus BEFORE toggling inert: making a slot inert immediately
+      // moves focus out of it (to <body>), so we must read the current target
+      // first to know whether we are about to lose it.
+      const focused = document.activeElement as HTMLElement | null;
+      const hadFocus = !!focused && rail.contains(focused);
+      const focusStaysActive =
+        !!focused && !!activeSlot && activeSlot.contains(focused);
+
+      slots.forEach((slot, i) => {
+        const active = i === safeIndex;
+        slot.classList.toggle("is-active", active);
+        if (active) {
+          slot.removeAttribute("inert");
+          slot.removeAttribute("aria-hidden");
+        } else {
+          slot.setAttribute("inert", "");
+          slot.setAttribute("aria-hidden", "true");
+        }
+      });
+
+      // Prevent focus loss: if focus currently sits inside a panel that just
+      // went inert, move it onto the newly active panel (made programmatically
+      // focusable) so keyboard / screen-reader users keep their place instead of
+      // dropping to <body>. Done only in that case, so plain scrolling never
+      // steals focus. preventScroll → the rail is never scrolled by this.
+      if (hadFocus && !focusStaysActive && activeSlot) {
+        activeSlot.setAttribute("tabindex", "-1");
+        activeSlot.focus({ preventScroll: true });
+      }
     }
   };
 
@@ -226,11 +257,22 @@ export default function ScrollLockedContentSection({
 
     if (!isNativeDesktop || !section) {
       // Stand down: clear the published progress so stacked/mobile layouts
-      // render at the neutral (centered) state.
+      // render at the neutral (centered) state, and release the rail's a11y
+      // gating so every panel is focusable/interactive again in the stacked
+      // (mobile / reduced-motion) layout exactly as before.
       const grid = gridRef.current;
       grid?.style.removeProperty("--scene-p");
       grid?.style.removeProperty("--scroll-progress");
       grid?.style.removeProperty("--scene-focus");
+
+      rightScrollRef.current
+        ?.querySelectorAll<HTMLElement>(".right-panel-slot")
+        .forEach((slot) => {
+          slot.classList.remove("is-active");
+          slot.removeAttribute("inert");
+          slot.removeAttribute("aria-hidden");
+          slot.removeAttribute("tabindex");
+        });
       return;
     }
 
