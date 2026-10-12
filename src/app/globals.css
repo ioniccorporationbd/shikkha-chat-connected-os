@@ -655,30 +655,39 @@ div {
 
 @media (min-width: 1280px) {
   .connected-scroll-section {
-    /* Height is set inline per scene count (sceneCount × 100svh) so the sticky
-       stage below has real scroll distance to pin against. overflow must stay
-       visible, otherwise this element becomes the scroll container and
-       position: sticky on the grid would never engage. */
-    min-height: 100svh;
+    /* Normal document block: exactly as tall as its content. Nothing here is
+       pinned to the viewport as a whole, so the page scrolls like any ordinary
+       website — no wheel hijack, no snapping, no "stuck then jump". */
+    min-height: 0;
     overflow: visible;
   }
 
   .connected-scroll-grid {
-    /* The pinned visual stage: sticks to the top of the viewport while the tall
-       section scrolls past, then releases naturally into the next section. */
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    height: 100svh;
+    /* Two columns in NORMAL flow — no sticky stage, no fixed viewport height.
+       The right rail (key-point panels) simply stacks and scrolls with the
+       page. `align-items: start` lets the sticky middle cell below release at
+       the section boundary instead of stretching to the full row height. */
+    display: grid;
+    position: static;
+    top: auto;
+    height: auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
+    align-items: start;
     grid-template-columns:
       minmax(0, 1fr)
       minmax(360px, 34vw);
   }
 
   .connected-middle-pane {
+    /* The orbit stage keeps its own column with a light, self-releasing sticky
+       so the visual is not lost while the rail scrolls past it — a common,
+       non-jarring pattern (like a docs sidebar) that never pins the section as
+       a whole and always releases at the section boundary. */
     display: block;
+    position: sticky;
+    top: 0;
+    align-self: start;
     height: 100vh;
     height: 100svh;
     overflow: hidden;
@@ -687,25 +696,19 @@ div {
   }
 
   .connected-right-pane {
-    height: 100vh;
-    height: 100svh;
+    height: auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
     border-left: 1px solid var(--color-border-soft);
   }
 
   .connected-right-scroll-panel {
-    height: 100%;
+    /* The rail is a normal stacked column now: it grows to its content and
+       scrolls WITH the page — no inner scroll box, no trapping, no chaining
+       concerns. */
+    height: auto;
     min-height: 0;
-    /* The rail is NO LONGER driven programmatically. It is a normal,
-       independently-scrollable column: it starts at the top and only moves
-       when the user directly scrolls over it. `overscroll-behavior: contain`
-       keeps that inner scroll from chaining into the page, so the two scroll
-       axes stay genuinely independent (no scroll trap on the page itself). */
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
   }
 }
 

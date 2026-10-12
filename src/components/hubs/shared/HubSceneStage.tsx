@@ -71,24 +71,13 @@ export default function HubSceneStage({
   // Mirror the engine's pin gate (>=1280 and not reduced-motion) so the stage
   // renders one scene in the stacked layout and the 3-scene window only where
   // the pinned engine is actually driving scroll progress.
-  const [isNative, setIsNative] = useState(false);
   const [activeId, setActiveId] = useState(defaultActiveId);
   const reduce = useReducedMotion();
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const evaluate = () =>
-      setIsNative(!mediaQuery.matches && window.innerWidth >= 1280);
-
-    evaluate();
-    mediaQuery.addEventListener("change", evaluate);
-    window.addEventListener("resize", evaluate);
-
-    return () => {
-      mediaQuery.removeEventListener("change", evaluate);
-      window.removeEventListener("resize", evaluate);
-    };
-  }, []);
+  // The homepage no longer pins a scroll-linked 3-scene window, so the middle
+  // stage always renders the single active scene. `activeId` is still driven by
+  // the `connected-os-active-section` sync in ScrollLockedContentSection.
+  const isNative = false;
 
   useEffect(() => {
     const handleActiveSection = (event: Event) => {
