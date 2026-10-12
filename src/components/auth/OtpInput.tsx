@@ -177,9 +177,9 @@ export default function OtpInput({
               ? "border-[var(--color-danger-strong)] bg-[var(--color-white)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-danger-strong)_30%,transparent)]"
               : `${
                   c
-                    ? "border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] bg-[var(--color-action-tint)]"
+                    ? "border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] bg-[var(--color-primary-soft)]"
                     : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)]"
-                } focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]`
+                } focus:border-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_24%,transparent)]`
           }`}
         />
       ))}

@@ -6,15 +6,15 @@ import Image from "next/image";
  * placement, size and spacing stay identical across all of them. Uses the
  * existing brand asset — no new artwork.
  *
- * Premium Shikkha-red lockup: the logo sits on a soft red-tinted plate with a
- * faint inner white ring and a low red shadow, so the mark reads as the fixed
+ * Neutral premium lockup: the logo sits on a soft ink-tinted plate with a
+ * faint inner white ring and a low ink shadow, so the mark reads as the fixed
  * brand anchor of the card. Centered, proportional and responsive down to
  * small phones.
  */
 export default function AuthBrand({ subtitle }: { subtitle?: string }) {
   return (
     <div className="flex flex-col items-center gap-2.5 text-center">
-      <span className="relative inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_16%,transparent)] bg-[var(--color-action-tint)] px-4 py-2.5 shadow-[0_12px_28px_-20px_color-mix(in_srgb,var(--color-action)_60%,transparent)]">
+      <span className="relative inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-primary-soft)] px-4 py-2.5 shadow-[0_12px_28px_-20px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
         <Image
           src="/images/logo.png"
           alt="Shikkha Chat"

@@ -37,7 +37,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
-  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]";
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] py-3 pl-11 pr-4 text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] hover:border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)] focus:border-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--color-primary)_24%,transparent)]";
 
 const FIELD_WRAPPER_CLASS = "relative block text-[14px]";
 
@@ -358,8 +358,8 @@ export default function RegisterForm() {
         </form>
       ) : (
         <form className="mt-5 flex flex-col gap-4" onSubmit={handleVerify} noValidate>
-          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_20%,transparent)] bg-[var(--color-action-tint)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
-            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px] text-[var(--color-action)]" />
+          <p className="flex items-start gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-primary-soft)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)]">
+            <FiMail aria-hidden className="mt-0.5 shrink-0 text-[14px] text-[var(--color-primary)]" />
             {copy.otpHint.replace("{target}", otpTarget)}
           </p>
 
