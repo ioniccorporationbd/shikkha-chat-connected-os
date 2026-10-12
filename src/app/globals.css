@@ -495,9 +495,12 @@ div {
 
 @media (min-width: 1536px) {
   .site-content-shell {
-    /* Matches .connected-sidebar's 2xl width (300px) so the content shell is
-       offset by exactly the rail width — equal left/right branding spacing. */
-    padding-left: 300px;
+    /* Matches .connected-sidebar's 2xl width (252px) so the content shell is
+       offset by exactly the rail width. 252px = the logo's own rendered width
+       (~211px at the 84px 2xl height) + the rail's 20px side padding each way,
+       so the logo sits with equal space on its left and right instead of the
+       dead space the old 300px rail left on the right. */
+    padding-left: 252px;
   }
 }
 
