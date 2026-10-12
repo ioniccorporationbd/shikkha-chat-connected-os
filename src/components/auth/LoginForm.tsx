@@ -462,7 +462,7 @@ export default function LoginForm() {
               onClick={openForgot}
               className="rounded-xl px-1.5 py-1 transition hover:bg-[var(--color-primary-soft)]"
             >
-              <span className="text-[12px] font-medium text-[var(--color-action)] underline-offset-4 hover:underline">
+              <span className="text-[12px] font-medium text-[var(--color-primary)] underline-offset-4 hover:underline">
                 {copy.forgotPassword}
               </span>
             </button>

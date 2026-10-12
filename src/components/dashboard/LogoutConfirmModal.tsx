@@ -49,7 +49,7 @@ export default function LogoutConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-5 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-5 py-2.5 transition hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
           >
             <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.no}</span>
           </button>
@@ -57,7 +57,7 @@ export default function LogoutConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={signingOut}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
           >
             <span className="text-[var(--color-white)]">
               <FiLogOut size={15} aria-hidden />
@@ -70,7 +70,7 @@ export default function LogoutConfirmModal({
       }
     >
       <div className="flex flex-col items-center gap-5 px-2 pb-1 pt-2 text-center">
-        <span className="grid h-[72px] w-[72px] place-items-center rounded-[24px] bg-[var(--color-action-tint-strong)] text-[var(--color-action)] shadow-[0_20px_40px_-22px_color-mix(in_srgb,var(--color-action)_75%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--color-action)_22%,transparent)]">
+        <span className="grid h-[72px] w-[72px] place-items-center rounded-[24px] bg-[var(--color-primary-soft)] text-[var(--color-primary)] shadow-[0_20px_40px_-22px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--color-primary)_22%,transparent)]">
           <FiLogOut size={30} />
         </span>
         <p className="max-w-[34ch] text-[14px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_74%,transparent)]">
