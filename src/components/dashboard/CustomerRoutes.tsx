@@ -21,7 +21,6 @@ interface CustomerRoutesProps {
  *   <path>            -> the create form when the user has no customers yet,
  *                        otherwise the Customer Management list
  *   <path>/new        -> the create form
- *   <path>/<name>/edit-> the edit form for one owned customer
  *
  * Sub-routes are real URLs (address bar changes, Back works) — the shell only
  * mounts this container; the decision is made here from the pathname.
@@ -33,12 +32,9 @@ export default function CustomerRoutes({ path, onExit }: CustomerRoutesProps) {
 
   const suffix = pathname.startsWith(path) ? pathname.slice(path.length) : "";
   const isNew = suffix === "/new";
-  const editMatch = suffix.match(/^\/(.+)\/edit$/);
-  const editName = editMatch ? decodeURIComponent(editMatch[1]) : "";
 
   const goToList = () => router.push(path);
   const goNew = () => router.push(`${path}/new`);
-  const goEdit = (name: string) => router.push(`${path}/${encodeURIComponent(name)}/edit`);
 
   // Base-path decision only: 0 customers -> the create form; otherwise the list.
   // Latched once so creating the first customer does not swap the success card
@@ -46,7 +42,7 @@ export default function CustomerRoutes({ path, onExit }: CustomerRoutesProps) {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (isNew || editName) return;
+    if (isNew) return;
     let active = true;
     const timer = setTimeout(async () => {
       try {
@@ -60,10 +56,9 @@ export default function CustomerRoutes({ path, onExit }: CustomerRoutesProps) {
       active = false;
       clearTimeout(timer);
     };
-  }, [isNew, editName, language]);
+  }, [isNew, language]);
 
   if (isNew) return <CreateCustomerView onBack={goToList} />;
-  if (editName) return <CreateCustomerView editName={editName} onBack={goToList} />;
 
   if (count === null) {
     return (
@@ -76,11 +71,6 @@ export default function CustomerRoutes({ path, onExit }: CustomerRoutesProps) {
   if (count === 0) return <CreateCustomerView onBack={onExit} />;
 
   return (
-    <CustomerManagementView
-      onBack={onExit}
-      onNew={goNew}
-      onEdit={goEdit}
-      onEmptied={() => setCount(0)}
-    />
+    <CustomerManagementView onBack={onExit} onNew={goNew} />
   );
 }

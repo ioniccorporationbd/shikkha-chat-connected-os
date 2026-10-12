@@ -86,20 +86,3 @@ export interface CustomerListPayload {
   customers: CustomerListRow[];
   verified?: boolean;
 }
-
-/** Prefill for the edit form (from `customer.details`). */
-export interface CustomerDetails {
-  doctype: string;
-  name: string;
-  customer_name?: string;
-  owner?: string;
-  values: Record<string, CustomerFieldValue>;
-  verified?: boolean;
-}
-
-/** `customer.delete` result. */
-export interface CustomerDeleteResult {
-  deleted: boolean;
-  name: string;
-  verified?: boolean;
-}

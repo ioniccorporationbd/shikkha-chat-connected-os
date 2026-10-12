@@ -1,4 +1,4 @@
-/** Bilingual copy for the Customer Management (list / search / edit / delete). */
+/** Bilingual copy for the Customer Management (list / search). */
 
 export interface CustomerManagementCopy {
   heading: string;
@@ -30,26 +30,12 @@ export interface CustomerManagementCopy {
   colMobile: string;
   colEmail: string;
   colCreated: string;
-  colActions: string;
-  edit: string;
-  delete: string;
-  details: string;
-  /** Delete confirmation modal. */
-  deleteTitle: string;
-  deleteBody: (name: string) => string;
-  deleteConfirm: string;
-  deleteCancel: string;
-  deleting: string;
-  /** Toasts. */
-  deleteSuccess: string;
-  deleteBlocked: string;
-  deleteFailed: string;
 }
 
 export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy> = {
   bn: {
     heading: "কাস্টমার ব্যবস্থাপনা",
-    hint: "আপনার তৈরি করা কাস্টমারগুলো এখান থেকে দেখুন, সম্পাদনা করুন বা নতুন কাস্টমার তৈরি করুন।",
+    hint: "আপনার তৈরি করা কাস্টমারগুলো এখান থেকে দেখুন এবং নতুন কাস্টমার তৈরি করুন।",
     countLabel: (count) => `আপনি মোট ${count} জন কাস্টমার তৈরি করেছেন`,
     searchPlaceholder: "আইডি, নাম, মোবাইল বা ইমেইল দিয়ে খুঁজুন…",
     noResults: "আপনার খোঁজার সাথে মিলে এমন কোনো কাস্টমার নেই।",
@@ -75,23 +61,10 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     colMobile: "মোবাইল",
     colEmail: "ইমেইল",
     colCreated: "তৈরির তারিখ",
-    colActions: "কার্যক্রম",
-    edit: "সম্পাদনা",
-    delete: "মুছুন",
-    details: "বিস্তারিত",
-    deleteTitle: "কাস্টমার মুছবেন?",
-    deleteBody: (name) =>
-      `আপনি কি নিশ্চিতভাবে "${name}" কাস্টমারটি মুছে ফেলতে চান? এটি ফেরানো যাবে না।`,
-    deleteConfirm: "হ্যা, মুছে ফেলুন",
-    deleteCancel: "বাতিল",
-    deleting: "মুছে ফেলা হচ্ছে…",
-    deleteSuccess: "কাস্টমার সফলভাবে মুছে ফেলা হয়েছে।",
-    deleteBlocked: "এই কাস্টমারের সাথে লেনদেন যুক্ত আছে, তাই মুছে ফেলা যাচ্ছে না।",
-    deleteFailed: "কাস্টমার মুছে ফেলা যায়নি।",
   },
   en: {
     heading: "Customer Management",
-    hint: "Review the customers you created, edit them, or add a new one.",
+    hint: "Review the customers you created, or add a new one.",
     countLabel: (count) => `You have created ${count} customer${count === 1 ? "" : "s"}`,
     searchPlaceholder: "Search by ID, name, mobile or email…",
     noResults: "No customers match your search.",
@@ -117,19 +90,6 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     colMobile: "Mobile",
     colEmail: "Email",
     colCreated: "Created",
-    colActions: "Actions",
-    edit: "Edit",
-    delete: "Delete",
-    details: "Details",
-    deleteTitle: "Delete this customer?",
-    deleteBody: (name) =>
-      `Are you sure you want to delete the customer "${name}"? This cannot be undone.`,
-    deleteConfirm: "Yes, delete",
-    deleteCancel: "Cancel",
-    deleting: "Deleting…",
-    deleteSuccess: "The customer was deleted successfully.",
-    deleteBlocked: "This customer has linked transactions, so it cannot be deleted.",
-    deleteFailed: "The customer could not be deleted.",
   },
 };
 

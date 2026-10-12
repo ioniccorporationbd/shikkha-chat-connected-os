@@ -1904,7 +1904,9 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* Colour tiers — muted brand-green text collapses to 80% / 60%.
    (Anchored to `text-[color-mix(` so bordered/pill surfaces that use
-   the same mix for BORDER colour are never recoloured.) */
+   the same mix for BORDER colour are never recoloured; form controls are
+   excluded so an input's `placeholder:` variant class never repaints the
+   typed value at 60% opacity — which read as a "blur" on every form.) */
 :is(
   [class*="text-[color-mix(in_srgb,var(--color-primary)_40%"],
   [class*="text-[color-mix(in_srgb,var(--color-primary)_42%"],
@@ -1923,7 +1925,7 @@ html[data-lang="en"] .language-toggle-knob {
   [class*="text-[color-mix(in_srgb,var(--color-primary)_66%"],
   [class*="text-[color-mix(in_srgb,var(--color-primary)_68%"],
   [class*="text-[color-mix(in_srgb,var(--color-primary)_70%"]
-) {
+):not(input):not(textarea):not(select) {
   color: var(--text-text-color) !important;
 }
 
@@ -1935,7 +1937,7 @@ html[data-lang="en"] .language-toggle-knob {
   [class*="text-[color-mix(in_srgb,var(--color-primary)_80%"],
   [class*="text-[color-mix(in_srgb,var(--color-primary)_82%"],
   [class*="text-[color-mix(in_srgb,var(--color-primary)_85%"]
-) {
+):not(input):not(textarea):not(select) {
   color: var(--text-subtitle-color) !important;
 }
 
