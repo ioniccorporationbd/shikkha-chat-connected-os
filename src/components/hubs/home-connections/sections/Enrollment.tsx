@@ -133,7 +133,7 @@ const connectorPaths: Record<CardId, ConnectorPath> = {
     glowColor: brandGlowStrong,
   },
   "connected-intelligence": {
-    d: "M500 360 L610 360 Q630 360 630 340 L630 325 Q630 305 650 305 L900 305",
+    d: "M500 360 L500 360 Q500 380 500 400 L500 610",
     color: brandColor,
     glowColor: brandGlow,
   },
@@ -260,7 +260,7 @@ function MiniCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-24 w-24 overflow-hidden rounded-[18px]",
+        "connected-spot group relative h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -469,14 +469,14 @@ function FloatingCard({
         delay: index * 0.08,
       }}
       className={[
-        "group absolute z-20 h-24 w-24 overflow-hidden rounded-[18px]",
+        "connected-spot group absolute z-20 h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         "focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2",
         item.id === "connected-intelligence"
-          ? "right-[3%] top-[31%]"
-          : "left-1/2 top-[15%] -translate-x-1/2",
+          ? "left-1/2 bottom-[9%] -translate-x-1/2"
+          : "left-1/2 top-[12%] -translate-x-1/2",
         active
           ? "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_24px_60px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
           : "border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",

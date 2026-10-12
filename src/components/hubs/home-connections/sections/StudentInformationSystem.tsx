@@ -537,7 +537,7 @@ function CoreTile({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-24 w-24 overflow-hidden rounded-[18px]",
+        "connected-spot group relative h-24 w-24 overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -652,7 +652,7 @@ function FloatingTile({
         delay: index * 0.08,
       }}
       className={[
-        "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",

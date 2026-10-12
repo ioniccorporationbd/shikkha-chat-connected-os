@@ -181,18 +181,18 @@ const floatingBase = [
     id: "learning-management" as const,
     subtitle: true,
     icon: <MdOutlinePsychology />,
-    positionClass: "right-[5%] top-[14%]",
+    positionClass: "left-[6%] top-[12%]",
   },
   {
     id: "consistent-experience" as const,
     subtitle: true,
     icon: <MdOutlineGridView />,
-    positionClass: "right-[5%] bottom-[14%]",
+    positionClass: "right-[6%] top-[12%]",
   },
   {
     id: "contextual-ai" as const,
     icon: <MdOutlineAutoAwesome />,
-    positionClass: "left-[13%] bottom-[8%]",
+    positionClass: "left-1/2 bottom-[9%] -translate-x-1/2",
   },
 ];
 
@@ -208,17 +208,17 @@ const connectorPaths: Record<CardId, ConnectorPath> = {
     glowColor: brandGlowStrong,
   },
   "learning-management": {
-    d: "M500 360 L610 360 Q630 360 630 340 L630 175 Q630 155 650 155 L900 155",
+    d: "M500 360 L420 360 Q400 360 400 340 L400 125 Q400 105 380 105 L125 105",
     color: brandColor,
     glowColor: brandGlow,
   },
   "consistent-experience": {
-    d: "M500 360 L610 360 Q630 360 630 380 L630 550 Q630 570 650 570 L900 570",
+    d: "M500 360 L610 360 Q630 360 630 340 L630 145 Q630 125 650 125 L900 125",
     color: brandColor,
     glowColor: brandGlow,
   },
   "contextual-ai": {
-    d: "M500 360 L440 360 Q420 360 420 380 L420 625 Q420 645 400 645 L245 645",
+    d: "M500 360 L500 360 Q500 380 500 400 L500 610",
     color: brandColor,
     glowColor: brandGlow,
   },
@@ -346,7 +346,7 @@ function MiniCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -451,7 +451,7 @@ function ActiveSpecialProgramsCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
+        "connected-spot group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
@@ -558,7 +558,7 @@ function FloatingCard({
         delay: index * 0.08,
       }}
       className={[
-        "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",

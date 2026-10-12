@@ -141,17 +141,17 @@ const floatingCardBase = [
   {
     id: "sis" as const,
     icon: <FaUsers />,
-    positionClass: "left-[4%] top-[12%]",
+    positionClass: "left-[6%] top-[12%]",
   },
   {
     id: "consistent-experience" as const,
     icon: <MdOutlineGridView />,
-    positionClass: "right-[5%] top-[14%]",
+    positionClass: "right-[6%] top-[12%]",
   },
   {
     id: "contextual-ai" as const,
     icon: <MdOutlineAutoAwesome />,
-    positionClass: "right-[22%] bottom-[8%]",
+    positionClass: "left-1/2 bottom-[9%] -translate-x-1/2",
   },
 ];
 
@@ -167,7 +167,7 @@ const connectorPaths: Record<CardId, ConnectorPath> = {
     glowColor: brandGlow,
   },
   "contextual-ai": {
-    d: "M500 360 L600 360 Q620 360 620 380 L620 640 Q620 660 640 660 L760 660",
+    d: "M500 360 L500 360 Q500 380 500 400 L500 610",
     color: brandColor,
     glowColor: brandGlow,
   },
@@ -311,7 +311,7 @@ function FloatingCard({
         delay: index * 0.08,
       }}
       className={[
-        "group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group absolute z-20 h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -418,7 +418,7 @@ function ActiveCommunicationsCard({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
+        "connected-spot group relative h-[158px] w-[158px] overflow-hidden rounded-[22px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] text-[var(--color-primary)]",
         "shadow-[0_26px_70px_color-mix(in_srgb,var(--color-primary)_24%,transparent),0_0_0_6px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",

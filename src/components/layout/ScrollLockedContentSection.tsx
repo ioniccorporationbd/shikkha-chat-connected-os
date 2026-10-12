@@ -41,6 +41,7 @@ export default function ScrollLockedContentSection({
   sectionId = "connected-os-content-section",
 }: ScrollLockedContentSectionProps) {
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   // Broadcast the rail panel nearest the viewport centre as the active section.
   // Pure, fully user-controlled document scrolling — no pin, no snap, no
@@ -139,8 +140,69 @@ export default function ScrollLockedContentSection({
       );
   }, []);
 
+  // Interactive layer: one delegated pointer listener drives the cursor-follow
+  // spotlight (.connected-spot) and the card tilt (.connected-tilt). Coordinates
+  // are written straight to CSS custom properties — no React state, no re-render.
+  // Completely inert for reduced-motion users and never touches a card's own
+  // transform (so the scroll-linked assemble + framer micro-motion stay intact).
+  useEffect(() => {
+    const root = sectionRef.current;
+    if (!root) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    let raf: number | null = null;
+    let last: PointerEvent | null = null;
+
+    const paint = () => {
+      raf = null;
+      const e = last;
+      if (!e) return;
+      const from = e.target as Element | null;
+
+      const spot = from?.closest?.(".connected-spot") as HTMLElement | null;
+      if (spot) {
+        const r = spot.getBoundingClientRect();
+        spot.style.setProperty("--spot-mx", `${e.clientX - r.left}px`);
+        spot.style.setProperty("--spot-my", `${e.clientY - r.top}px`);
+      }
+
+      const tilt = from?.closest?.(".connected-tilt") as HTMLElement | null;
+      if (tilt && spot && tilt.contains(spot)) {
+        const r = tilt.getBoundingClientRect();
+        const ry = ((e.clientX - r.left) / r.width - 0.5) * 7;
+        const rx = (0.5 - (e.clientY - r.top) / r.height) * 7;
+        tilt.style.setProperty("--tilt-rx", `${rx.toFixed(2)}deg`);
+        tilt.style.setProperty("--tilt-ry", `${ry.toFixed(2)}deg`);
+      }
+    };
+
+    const onMove = (event: PointerEvent) => {
+      last = event;
+      if (raf == null) raf = requestAnimationFrame(paint);
+    };
+
+    const onOut = (event: PointerEvent) => {
+      const from = event.target as Element | null;
+      const related = event.relatedTarget as Node | null;
+      const tilt = from?.closest?.(".connected-tilt") as HTMLElement | null;
+      if (tilt && (!related || !tilt.contains(related))) {
+        tilt.style.removeProperty("--tilt-rx");
+        tilt.style.removeProperty("--tilt-ry");
+      }
+    };
+
+    root.addEventListener("pointermove", onMove, { passive: true });
+    root.addEventListener("pointerout", onOut, { passive: true });
+    return () => {
+      if (raf != null) cancelAnimationFrame(raf);
+      root.removeEventListener("pointermove", onMove);
+      root.removeEventListener("pointerout", onOut);
+    };
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       id={sectionId}
       className="connected-scroll-section relative scroll-mt-0"
       data-connected-scroll-section="true"

@@ -2026,3 +2026,57 @@ html[data-lang="en"] .language-toggle-knob {
   font-weight: 500 !important;
   line-height: 1 !important;
 }
+
+
+/* =========================================================
+   INTERACTIVE POINTER LAYER  (homepage middle stage)
+   ---------------------------------------------------------
+   ScrollLockedContentSection's single delegated pointermove
+   listener writes cursor coordinates as CSS custom properties;
+   every card tagged .connected-spot then lights a soft, cursor-
+   following spotlight, and every .connected-tilt wrapper leans a
+   few degrees toward the pointer.
+
+   Both effects live on ::after / a plain inner wrapper — never as a
+   transform on the card itself — so the scroll-linked assemble and
+   the framer micro-motion keep working untouched. The spotlight is
+   purely additive on hover; nothing changes at rest. Fully disabled
+   under prefers-reduced-motion.
+========================================================= */
+
+.connected-spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 260ms ease;
+  background: radial-gradient(
+    84px circle at var(--spot-mx, 50%) var(--spot-my, 50%),
+    color-mix(in srgb, var(--color-primary) 22%, transparent),
+    transparent 70%
+  );
+}
+
+.connected-spot:hover::after {
+  opacity: 1;
+}
+
+.connected-tilt {
+  transform: perspective(820px) rotateX(var(--tilt-rx, 0deg))
+    rotateY(var(--tilt-ry, 0deg));
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connected-spot::after {
+    display: none;
+  }
+  .connected-tilt {
+    transform: none;
+  }
+}

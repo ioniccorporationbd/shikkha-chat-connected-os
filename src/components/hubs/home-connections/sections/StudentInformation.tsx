@@ -267,7 +267,7 @@ function ProductTile({
       }
       whileTap={{ scale: 0.94 }}
       className={[
-        "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color,transform] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -617,7 +617,7 @@ export default function StudentInformation() {
 
             <div
               className={[
-                "relative h-[430px] w-[224px]",
+                "relative min-h-[430px] w-[224px]",
                 "rounded-[26px] border-[3px] border-[var(--color-primary)]",
                 "bg-[var(--color-white)] p-[8px]",
                 "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] backdrop-blur-[4px]",
@@ -641,16 +641,12 @@ export default function StudentInformation() {
                 }}
               />
 
-              <div className="relative z-10 grid grid-cols-2 gap-[8px]">
+              <div className="relative z-10 flex flex-wrap items-center justify-center gap-[10px]">
                 {products.map((product) => (
-                  <ProductTile
-                    key={product.id}
-                    item={product}
-                    goToText={text.goTo}
-                  />
+                  <div key={product.id} className="connected-tilt">
+                    <ProductTile item={product} goToText={text.goTo} />
+                  </div>
                 ))}
-
-                <div className="h-[96px] w-[96px]" />
               </div>
             </div>
           </motion.div>

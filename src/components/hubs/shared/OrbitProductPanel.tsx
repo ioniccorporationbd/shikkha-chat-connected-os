@@ -168,7 +168,7 @@ function ProductTile({
       }
       whileTap={{ scale: 0.96 }}
       className={[
-        "group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
+        "connected-spot group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
         "flex flex-col items-center justify-center text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
@@ -357,7 +357,7 @@ export default function OrbitProductPanel({
               "relative w-[224px] rounded-[26px] border-[3px] bg-white/18 p-[8px]",
               "shadow-[0_28px_80px_color-mix(in srgb, var(--color-primary) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
               "backdrop-blur-[4px]",
-              products.length > 8 ? "h-[538px]" : "h-[430px]",
+              "min-h-[430px]",
             ].join(" ")}
             style={{ borderColor: themeColor }}
           >
@@ -369,7 +369,7 @@ export default function OrbitProductPanel({
               style={{ borderColor: `${themeColor}66` }}
             />
 
-            <div className="connected-card-grid relative z-10 grid grid-cols-2 gap-[8px]">
+            <div className="connected-card-grid relative z-10 flex flex-wrap items-center justify-center gap-[10px]">
               {products.map((product, index) => (
                 <div
                   key={product.id}
@@ -384,17 +384,18 @@ export default function OrbitProductPanel({
                     } as CSSProperties
                   }
                 >
-                  <ProductTile
-                    item={product}
-                    themeColor={themeColor}
-                    darkColor={darkColor}
-                    titleColor={cardTitleColor}
-                    hcAccent={isHcAccent}
-                  />
+                  <div className="connected-tilt">
+                    <ProductTile
+                      item={product}
+                      themeColor={themeColor}
+                      darkColor={darkColor}
+                      titleColor={cardTitleColor}
+                      hcAccent={isHcAccent}
+                    />
+                  </div>
                 </div>
               ))}
 
-              {products.length % 2 === 1 ? <div className="h-[96px] w-[96px]" /> : null}
             </div>
           </div>
         </div>
