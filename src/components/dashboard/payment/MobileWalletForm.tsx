@@ -11,6 +11,7 @@ import type { ManualPaymentCopy } from "@/lib/payment-entry/manual-payment/messa
 import type { ManualPaymentSubmitInput } from "@/lib/payment-entry/manual-payment/types";
 import { toast } from "@/lib/ui/toast";
 
+import DashboardDateField from "../DashboardDateField";
 import PaymentField, { PAY_FIELD_CLASS, PAY_FOCUS, payBorder } from "./PaymentField";
 import { amountInput, digitsOnly, todayISO } from "./form-utils";
 
@@ -140,12 +141,11 @@ export default function MobileWalletForm({
         error={errors.date}
         hint={copy.paymentDateHint}
       >
-        <input
+        <DashboardDateField
           id={`${idPrefix}-date`}
-          type="date"
           max={today}
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={setDate}
           className={`${PAY_FIELD_CLASS} ${payBorder(Boolean(errors.date))}`}
         />
       </PaymentField>

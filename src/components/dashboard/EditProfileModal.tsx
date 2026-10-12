@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardDateField from "@/components/dashboard/DashboardDateField";
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -342,10 +343,10 @@ export default function EditProfileModal({
             className={`${FIELD_CLASS} resize-y`}
           />
         ) : isDate ? (
-          <input
-            type="date"
+          <DashboardDateField
             value={value}
-            onChange={(event) => setField(field.fieldname, event.target.value)}
+            onChange={(next) => setField(field.fieldname, next)}
+            ariaLabel={label}
             className={FIELD_CLASS}
           />
         ) : isChoice ? (

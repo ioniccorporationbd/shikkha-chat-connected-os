@@ -4,6 +4,7 @@ import { FiFilter, FiRotateCcw, FiSearch, FiSliders, FiX } from "react-icons/fi"
 
 import type { AmountFilter, ListFilterCopy } from "@/lib/dashboard/list-controls";
 
+import DashboardDateField from "./DashboardDateField";
 import DashboardSelect from "./DashboardSelect";
 
 const INPUT =
@@ -169,22 +170,20 @@ export default function ListFilterBar({
 
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterFromLabel}</span>
-          <input
-            type="date"
+          <DashboardDateField
             value={fromDate}
-            onChange={(event) => onFromDateChange(event.target.value)}
-            aria-label={copy.filterFromLabel}
+            onChange={onFromDateChange}
+            ariaLabel={copy.filterFromLabel}
             className={INPUT}
           />
         </label>
 
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>{copy.filterToLabel}</span>
-          <input
-            type="date"
+          <DashboardDateField
             value={toDate}
-            onChange={(event) => onToDateChange(event.target.value)}
-            aria-label={copy.filterToLabel}
+            onChange={onToDateChange}
+            ariaLabel={copy.filterToLabel}
             className={INPUT}
           />
         </label>

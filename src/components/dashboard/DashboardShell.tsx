@@ -505,7 +505,7 @@ export default function DashboardShell({
     <Link
       href="/"
       onClick={onClick}
-      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-action)_75%,transparent)] active:translate-y-0"
+      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] active:translate-y-0"
     >
       <FiHome aria-hidden size={16} className="shrink-0 text-[var(--color-white)]" />
       <span className="text-[13px] font-black tracking-[-0.01em] text-[var(--color-white)]">
@@ -525,7 +525,7 @@ export default function DashboardShell({
         type="button"
         onClick={requestSignOut}
         disabled={signingOut}
-        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2.5 transition hover:bg-[var(--color-action-hover)] disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-primary)] px-3.5 py-2.5 transition hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
       >
         <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
           <FiLogOut size={16} />
@@ -629,7 +629,7 @@ export default function DashboardShell({
                 disabled={isFetching || reloading}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-action)] bg-[var(--color-action)] transition hover:bg-[var(--color-action-hover)] disabled:opacity-70"
+                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] transition hover:bg-[var(--color-primary-dark)] disabled:opacity-70"
               >
                 <span className="text-[var(--color-white)]">
                   <FiRefreshCw size={15} className={isFetching || reloading ? "animate-spin" : undefined} />

@@ -16,6 +16,7 @@ import {
   FiUserCheck,
 } from "react-icons/fi";
 
+import DashboardDateField from "@/components/dashboard/DashboardDateField";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
 import { useSessionQuery } from "@/lib/auth/queries";
@@ -719,10 +720,10 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                   <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                     {copy.fromLabel}
                   </span>
-                  <input
-                    type="date"
+                  <DashboardDateField
                     value={fromDate}
-                    onChange={(event) => setFromDate(event.target.value)}
+                    onChange={setFromDate}
+                    ariaLabel={copy.fromLabel}
                     className={INPUT}
                   />
                 </label>
@@ -730,10 +731,10 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
                   <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                     {copy.toLabel}
                   </span>
-                  <input
-                    type="date"
+                  <DashboardDateField
                     value={toDate}
-                    onChange={(event) => setToDate(event.target.value)}
+                    onChange={setToDate}
+                    ariaLabel={copy.toLabel}
                     className={INPUT}
                   />
                 </label>
