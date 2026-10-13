@@ -2044,23 +2044,25 @@ html[data-lang="en"] .language-toggle-knob {
   line-height: 1.55 !important;
 }
 
-/* Orbit-tile component classes (shared OrbitProductPanel). The tile packs an
-   icon + a 1–2 line title + an optional subtitle into 96×96px, so the title
-   and subtitle need their OWN scale rather than the flattened 12px tier. */
-.card-title {
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  line-height: 1.1 !important;
-}
+/* Orbit-tile component classes (shared OrbitProductPanel). Every tile is the
+   SAME fixed 96×96px square, so the heading must read identically across the
+   whole grid — ONE consistent size for every card, never a size that depends
+   on how long the title happens to be. (The old 15px/11px length split made
+   neighbouring tiles look mismatched: a short title rendered nearly 40% larger
+   than the long one beside it.) `.card-title-compact` is kept as an alias so
+   both classes resolve to the same single scale. */
+.card-title,
 .card-title-compact {
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  line-height: 1.08 !important;
+  line-height: 1.16 !important;
+  letter-spacing: -0.01em !important;
 }
 .card-subtitle {
   font-size: 10px !important;
   font-weight: 500 !important;
   line-height: 1 !important;
+  letter-spacing: -0.01em !important;
 }
 
 

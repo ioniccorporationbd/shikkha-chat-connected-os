@@ -213,7 +213,7 @@ function ProductTile({
 
       {item.icon ? (
         <div
-          className={`relative z-10 mb-[8px] text-[25px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110${hcAccent ? " hc-orbit-text" : ""}`}
+          className={`relative z-10 mb-[6px] text-[24px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110${hcAccent ? " hc-orbit-text" : ""}`}
           style={{ color: hcAccent ? "currentColor" : darkColor }}
         >
           {item.icon}
@@ -222,7 +222,7 @@ function ProductTile({
 
       <div
         className={[
-          "relative z-10 flex min-h-[34px] max-w-[88px] items-center justify-center",
+          "relative z-10 flex min-h-[44px] max-w-[90px] items-center justify-center",
           "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
           "transition-colors duration-300",
           hcAccent ? "hc-orbit-text" : "",
@@ -239,7 +239,7 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[82px] truncate whitespace-nowrap text-[9px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
+        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[88px] truncate whitespace-nowrap text-[10px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
           {item.subtitle}
         </p>
       ) : null}
