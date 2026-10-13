@@ -56,7 +56,6 @@ type MenuGroup = {
 
 const colorPrimary = "var(--color-primary)";
 const colorSecondary = "var(--color-secondary)";
-const colorWhite = "var(--color-white)";
 
 /** Leading icon for each rail group, so links read as icon + label. */
 const GROUP_ICONS: Record<string, IconType> = {
@@ -519,79 +518,6 @@ function Logo({ language }: { language: LanguageCode }) {
   );
 }
 
-function MiniOsIcon({ activeId }: { activeId: string | null }) {
-  const activeType =
-    activeId === null
-      ? null
-      : isStudentAchievementSection(activeId)
-        ? "student"
-        : isOperationalExcellenceSection(activeId)
-          ? "operation"
-          : "home";
-
-  const columns = [
-    {
-      id: "home",
-      color: colorPrimary,
-      active: activeType === "home",
-    },
-    {
-      id: "student",
-      color: colorSecondary,
-      active: activeType === "student",
-    },
-    {
-      id: "operation",
-      color: colorPrimary,
-      active: activeType === "operation",
-    },
-  ];
-
-  return (
-    <div className="mt-3 flex items-start gap-2">
-      {columns.map((col, index) => (
-        <div key={col.id} className="space-y-1">
-          <span
-            className="block h-1 rounded-full transition-all duration-500"
-            style={{
-              width: index === 1 ? 34 : 28,
-              background: col.active
-                ? col.color
-                : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
-            }}
-          />
-
-          <div
-            className="grid gap-[4px] rounded-lg border-2 p-[4px] transition duration-500"
-            style={{
-              borderColor: col.active
-                ? col.color
-                : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
-              background: col.active
-                ? `color-mix(in srgb, ${col.color} 18%, transparent)`
-                : colorWhite,
-            }}
-          >
-            {Array.from({ length: index === 1 ? 8 : 6 }).map(
-              (_, itemIndex) => (
-                <span
-                  key={itemIndex}
-                  className="h-[10px] w-[10px] rounded-[3px] transition duration-500"
-                  style={{
-                    background: col.active
-                      ? col.color
-                      : "color-mix(in srgb, var(--color-primary) 16%, transparent)",
-                  }}
-                />
-              )
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function ActiveStatusCard({
   activeId,
   currentMenu,
@@ -1009,8 +935,6 @@ export default function LeftSidebar() {
                 </p>
               </div>
             </div>
-
-            <MiniOsIcon activeId={activeId} />
 
             <ActiveStatusCard
               activeId={activeId}
