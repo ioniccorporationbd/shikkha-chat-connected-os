@@ -778,26 +778,17 @@ div {
 }
 
 /* =========================================================
-   RESPONSIVE CONSTELLATION SCALING  (2000px → 300px)
+   CONTENT-DRIVEN CONSTELLATION SIZING
    ---------------------------------------------------------
-   The middle "connected" stage is assembled from fixed-px pieces (a
-   224px frame + 96px tiles). Frozen, it reads tiny on ultra-wide
-   screens and cramped on small ones, so it is not "responsive" in the
-   ordinary sense. Map those two sizes to the viewport with clamp() so
-   the constellation stays proportionate from small laptops up to
-   ultra-wide. The frame geometry is scale-invariant — the connector
-   uses a viewBox and every satellite is placed with percentage anchors
-   — so every hand-tuned position still holds. Below 1280px the middle
-   pane is not rendered, so this only ever affects desktop widths.
+   The middle "connected" stage used to be assembled from fixed-px
+   pieces (a 224px frame + 96px tiles) that clipped longer
+   translated titles. The frame and tiles are now content-driven:
+   the frame hugs its grid (w-fit, no min-height), every tile fills
+   its column (w-full) and grows with its own content (min-h), and
+   over-long titles clamp with an ellipsis. Only the inter-card gap
+   stays viewport-scaled. Below 1280px the middle pane is hidden.
    ========================================================= */
 @media (min-width: 1280px) {
-  .connected-middle-pane [class~="w-[224px]"] {
-    width: clamp(232px, 17vw, 320px);
-  }
-  .connected-middle-pane [class~="h-[96px]"][class~="w-[96px]"] {
-    height: clamp(96px, 6.4vw, 118px);
-    width: clamp(96px, 6.4vw, 118px);
-  }
   .connected-middle-pane .connected-card-grid {
     gap: clamp(10px, 0.7vw, 14px);
   }

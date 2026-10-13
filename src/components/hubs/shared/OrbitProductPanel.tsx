@@ -168,8 +168,8 @@ function ProductTile({
       }
       whileTap={{ scale: 0.96 }}
       className={[
-        "connected-spot group relative h-[96px] w-[96px] overflow-hidden rounded-[18px]",
-        "flex flex-col items-center justify-center text-center outline-none",
+        "connected-spot group relative min-h-[96px] w-full overflow-hidden rounded-[18px]",
+        "flex flex-col items-center justify-center px-[9px] py-[10px] text-center outline-none",
         "transition-[box-shadow,border-color,background-color] duration-500",
         "will-change-transform [transform-style:preserve-3d]",
         "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 6%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 75%, transparent)]",
@@ -222,7 +222,7 @@ function ProductTile({
 
       <div
         className={[
-          "relative z-10 flex min-h-[44px] max-w-[90px] items-center justify-center",
+          "relative z-10 line-clamp-3 min-h-[40px] max-w-[92px] text-center",
           "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
           "transition-colors duration-300",
           hcAccent ? "hc-orbit-text" : "",
@@ -239,7 +239,7 @@ function ProductTile({
       </div>
 
       {item.subtitle ? (
-        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[88px] truncate whitespace-nowrap text-[10px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
+        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[92px] truncate whitespace-nowrap text-[10px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
           {item.subtitle}
         </p>
       ) : null}
@@ -354,10 +354,9 @@ export default function OrbitProductPanel({
 
           <div
             className={[
-              "relative w-[224px] rounded-[26px] border-[3px] bg-white/18 p-[8px]",
+              "relative w-fit rounded-[26px] border-[3px] bg-white/18 p-[8px]",
               "shadow-[0_28px_80px_color-mix(in srgb, var(--color-primary) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
               "backdrop-blur-[4px]",
-              "min-h-[430px]",
             ].join(" ")}
             style={{ borderColor: themeColor }}
           >
@@ -369,7 +368,7 @@ export default function OrbitProductPanel({
               style={{ borderColor: `${themeColor}66` }}
             />
 
-            <div className="connected-card-grid relative z-10 flex flex-wrap items-center justify-center gap-[10px]">
+            <div className="connected-card-grid relative z-10 grid w-fit grid-cols-2 items-center justify-center gap-[10px]">
               {products.map((product, index) => (
                 <div
                   key={product.id}
