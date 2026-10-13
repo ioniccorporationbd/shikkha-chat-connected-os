@@ -67,7 +67,7 @@ const GROUP_ICONS: Record<string, IconType> = {
 };
 
 const sidebarWidthClass =
-  "w-[min(88vw,300px)] sm:w-[310px] xl:w-[300px] 2xl:w-[252px]";
+  "w-[min(88vw,300px)] sm:w-[310px] xl:w-[300px] 2xl:w-[272px]";
 
 const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
 
@@ -75,7 +75,7 @@ const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
    group labels share one calm size, nested links sit a step below, and the
    uppercase eyebrow label is small and light so it reads as a quiet heading
    rather than body copy. */
-const sidebarTitleTextClass = "text-[15px] font-semibold tracking-[-0.02em]";
+const sidebarTitleTextClass = "text-[14px] font-semibold tracking-[-0.02em]";
 
 const sidebarSubtitleTextClass =
   "text-[11px] font-semibold uppercase tracking-[0.14em]";
@@ -505,7 +505,7 @@ function Logo({ language }: { language: LanguageCode }) {
 
   return (
     <Link href="#intro" className="block w-full" aria-label={text.logoHome}>
-      <div className="relative h-[56px] w-full transition duration-300 hover:scale-[1.02] sm:h-[66px] xl:h-[76px] 2xl:h-[84px]">
+      <div className="relative h-[56px] w-full transition duration-300 hover:scale-[1.02] sm:h-[66px] xl:h-[76px] 2xl:h-[92px]">
         <Image
           src="/images/logo.png"
           alt={text.logoHome}

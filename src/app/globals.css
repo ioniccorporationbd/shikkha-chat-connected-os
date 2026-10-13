@@ -495,12 +495,9 @@ div {
 
 @media (min-width: 1536px) {
   .site-content-shell {
-    /* Matches .connected-sidebar's 2xl width (252px) so the content shell is
-       offset by exactly the rail width. 252px = the logo's own rendered width
-       (~211px at the 84px 2xl height) + the rail's 20px side padding each way,
-       so the logo sits with equal space on its left and right instead of the
-       dead space the old 300px rail left on the right. */
-    padding-left: 252px;
+    /* Matches .connected-sidebar's 2xl width (272px, +20px) so the content
+       shell is offset by exactly the rail width. */
+    padding-left: 272px;
   }
 }
 
@@ -513,6 +510,14 @@ div {
   border-radius: 0; /* square site rail — never a rounded dashboard-style shell */
   background: var(--color-primary);
   color: var(--color-text-inverse);
+}
+
+/* Left rail runs one step denser than the global small-text token so every
+   label fits the wider (272px) rail without clipping — including the long
+   "K-12 Operating System" card title that used to truncate. Scoped to the
+   rail so the right pane and the rest of the UI keep the global 12px token. */
+.connected-sidebar {
+  --text-text-size: 11px;
 }
 
 .connected-sidebar.is-open {
@@ -679,7 +684,7 @@ div {
     align-items: start;
     grid-template-columns:
       minmax(0, 1fr)
-      minmax(360px, 34vw);
+      minmax(340px, calc(34vw - 20px));
   }
 
   .connected-middle-pane {
@@ -757,7 +762,7 @@ div {
   .connected-scroll-grid {
     grid-template-columns:
       minmax(0, 1fr)
-      minmax(410px, 36vw);
+      minmax(390px, calc(36vw - 20px));
   }
 }
 
@@ -768,7 +773,7 @@ div {
        comfortable while letting the card column breathe on wider screens. */
     grid-template-columns:
       minmax(0, 1fr)
-      minmax(540px, 35vw);
+      minmax(520px, calc(35vw - 20px));
   }
 }
 
