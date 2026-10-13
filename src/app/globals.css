@@ -1027,7 +1027,7 @@ div {
      + below (translate only) and lands flush at settle. */
   transform: translate3d(
     calc(var(--wave-x) * (1 - var(--cr))),
-    calc((1 - var(--cr)) * 12px),
+    calc((1 - var(--cr)) * 18px),
     0
   );
   transform-origin: 50% 62%;
@@ -1040,6 +1040,50 @@ div {
 
 .connected-card-slot {
   display: block;
+}
+
+/* ── Middle-card ambient animation (2026-10-13) ─────────────────────────────
+   "আরো এনিমেশন": a gentle, GPU-cheap idle layer on every product tile — a soft
+   shimmer that sweeps across on a long per-card stagger, plus a faint icon
+   float. Both live on descendants of `.connected-card-slot`, so they never
+   touch the scroll-linked assemble transform; `--card-i` (set per slot) drives
+   the stagger. Fully disabled under prefers-reduced-motion (block below). */
+@keyframes connected-icon-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-5px) scale(1.09); }
+}
+
+@keyframes connected-tile-glow {
+  0%, 70%, 100% { opacity: 0; }
+  22%           { opacity: 0.6; }
+}
+
+.connected-icon-float {
+  animation: connected-icon-float 4.6s ease-in-out infinite;
+  animation-delay: calc(var(--card-i, 0) * 0.3s);
+}
+
+/* Ambient "alive" highlight for the overview product tiles. These are the clean
+   white high-contrast variant (`.hc-orbit-tile`), which deliberately suppresses
+   gradient/shine <span>s (opacity:0 !important) — so the idle layer must be a
+   pseudo-element, not a gradient span. A soft action-tinted inset ring breathes
+   in on a long per-card stagger, giving the grid a calm wave of life without
+   touching the scroll-linked assemble transform. */
+.connected-spot.hc-orbit-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    130% 95% at 50% 0%,
+    color-mix(in srgb, var(--color-primary) 22%, transparent),
+    transparent 64%
+  );
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 62%, transparent);
+  opacity: 0;
+  animation: connected-tile-glow 5.2s ease-in-out infinite both;
+  animation-delay: calc(var(--card-i, 0) * 0.3s);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1060,6 +1104,16 @@ div {
   .connected-orbit-wrap,
   .connected-card-slot {
     opacity: 1;
+  }
+
+  .connected-icon-float {
+    animation: none;
+    transform: none;
+  }
+
+  .connected-spot.hc-orbit-tile::before {
+    animation: none;
+    opacity: 0;
   }
 }
 

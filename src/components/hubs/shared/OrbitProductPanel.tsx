@@ -92,6 +92,35 @@ function formatCardTitle(title: string) {
   );
 }
 
+/* Tile-level SHORT FORMS (2026-10-13). Overlong translated strings (Bengali runs
+ * ~1.7x the width of the English source) would need 3+ lines in a 92px tile, so
+ * instead of only clipping them we show a compact hand-picked form. Display-only:
+ * the underlying i18n strings (shared with section headings) stay untouched. */
+const TILE_SHORT: Record<string, string> = {
+  "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা": "ERP সিস্টেম",
+  "মূল এন্টারপ্রাইজ রিসোর্স পরিকল্পনা": "ERP কোর",
+  "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি": "কলেজ ও ক্যারিয়ার",
+  "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা": "ক্যারিয়ার নির্দেশনা",
+  "বহুস্তরীয় সহায়তা ব্যবস্থা": "বহুস্তর সহায়তা",
+  "College, Career & Life Readiness": "College & Career",
+  "College, Career and Life Readiness": "College & Career",
+  "Career and Life Readiness Guidance": "Career Guidance",
+  "Curriculum & Instruction": "Curriculum",
+  "Curriculum and Instruction": "Curriculum",
+};
+
+/* Lookup is NFC-normalised on BOTH sides: the i18n sources mix precomposed
+ * (য় = U+09DF) and decomposed (য + ় = U+09AF U+09BC) nukta forms — different
+ * code points, identical glyph. Normalising makes the map form-agnostic. */
+const TILE_SHORT_NFC: Record<string, string> = Object.fromEntries(
+  Object.entries(TILE_SHORT).map(([k, v]) => [k.normalize("NFC"), v]),
+);
+
+function shortForm(text?: string): string | undefined {
+  if (!text) return text;
+  return TILE_SHORT_NFC[text.normalize("NFC")] ?? text;
+}
+
 function FloatingDot({
   className,
   delay = 0,
@@ -145,9 +174,11 @@ function ProductTile({
   hcAccent?: boolean;
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const wordCount = item.title.trim().split(/\s+/).length;
+  const displayTitle = shortForm(item.title) ?? item.title;
+  const displaySubtitle = shortForm(item.subtitle);
+  const wordCount = displayTitle.trim().split(/\s+/).length;
   const isSingleWord = wordCount === 1;
-  const isLongTitle = item.title.length > 16;
+  const isLongTitle = displayTitle.length > 16;
 
   return (
     <motion.button
@@ -158,8 +189,8 @@ function ProductTile({
         shouldReduceMotion
           ? undefined
           : {
-              y: -4,
-              scale: 1.025,
+              y: -6,
+              scale: 1.04,
               transition: {
                 duration: 0.24,
                 ease: premiumEase,
@@ -216,13 +247,13 @@ function ProductTile({
           className={`relative z-10 mb-[6px] text-[24px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110${hcAccent ? " hc-orbit-text" : ""}`}
           style={{ color: hcAccent ? "currentColor" : darkColor }}
         >
-          {item.icon}
+          <span className="connected-icon-float inline-block">{item.icon}</span>
         </div>
       ) : null}
 
       <div
         className={[
-          "relative z-10 line-clamp-3 min-h-[40px] max-w-[92px] text-center",
+          "relative z-10 line-clamp-2 min-h-[30px] max-w-[92px] text-center",
           "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
           "transition-colors duration-300",
           hcAccent ? "hc-orbit-text" : "",
@@ -235,12 +266,12 @@ function ProductTile({
         ].join(" ")}
         style={{ color: hcAccent ? "currentColor" : titleColor }}
       >
-        {formatCardTitle(item.title)}
+        {formatCardTitle(displayTitle)}
       </div>
 
-      {item.subtitle ? (
-        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[92px] truncate whitespace-nowrap text-[10px] font-normal leading-none text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
-          {item.subtitle}
+      {displaySubtitle ? (
+        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[92px] line-clamp-2 text-[10px] font-normal leading-[1.2] text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
+          {displaySubtitle}
         </p>
       ) : null}
 
@@ -379,7 +410,7 @@ export default function OrbitProductPanel({
                       "--card-delay": index * cardStep,
                       // Cards converge from their own column side as they arrive
                       // (even index = left column, odd = right, in this 2-col grid).
-                      "--wave-x": index % 2 === 0 ? "-16px" : "16px",
+                      "--wave-x": index % 2 === 0 ? "-22px" : "22px",
                     } as CSSProperties
                   }
                 >
