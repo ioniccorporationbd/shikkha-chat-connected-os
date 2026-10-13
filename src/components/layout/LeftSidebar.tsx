@@ -7,6 +7,7 @@ import type { IconType } from "react-icons";
 import { FiArrowRight, FiAward, FiBriefcase, FiChevronDown, FiCompass, FiGrid, FiHeadphones, FiHome, FiMenu, FiX } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
+import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
 import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
@@ -911,11 +912,11 @@ export default function LeftSidebar() {
           <div className="flex flex-col gap-4">
             <Logo language={currentLanguage} />
 
-            {/* Registration + Login, directly beneath the logo. */}
-            <div className="flex flex-wrap items-center gap-2">
-              <SidebarRegisterButton />
-              <SidebarAuthButton />
-            </div>
+            {/* Account actions (Log In / Registration / Dashboard) — a stacked
+                section directly beneath the logo, styled like the buttons in
+                the dashboard rail. Logged in → only Dashboard; logged out →
+                Log In + Registration. */}
+            <SidebarAccountSection />
           </div>
           <LanguageSection />
 
