@@ -106,7 +106,7 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_12%,transpar
 const CARD_SHADOW =
   "shadow-[0_18px_44px_-34px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 const ROW =
-  "group flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]";
+  "group flex w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left transition-colors duration-200 hover:text-[var(--color-action)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]";
 const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
 type FlatFeature = { readonly feature: ShowcaseFeature };
@@ -309,7 +309,7 @@ export default function FeatureShowcase() {
     <section
       data-no-translate="true"
       aria-label={SHOWCASE_TEXT.heading[language]}
-      className={`mt-4 overflow-hidden rounded-2xl border bg-[var(--color-white)] p-3.5 backdrop-blur-md ${CARD_BORDER} ${CARD_SHADOW}`}
+      className={`mt-4 shrink-0 overflow-hidden rounded-2xl border bg-[var(--color-white)] p-3.5 text-[var(--color-primary)] backdrop-blur-md ${CARD_BORDER} ${CARD_SHADOW}`}
     >
       <header className="flex items-start gap-3">
         <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-secondary)_38%,var(--color-white))] text-[17px] text-[var(--color-primary)]">

@@ -922,6 +922,14 @@ export default function LeftSidebar() {
           </div>
           <LanguageSection />
 
+          {/* Customer-facing Shikkha Chat Apps feature catalog (15 categories /
+              87 features). Mounted here — directly under the account + language
+              block — so it is visible the moment the homepage sidebar opens,
+              while the site navigation below stays fully intact. Route values
+              are informational only (no links to nonexistent Connected OS
+              pages); see src/lib/feature-showcase.ts for the route policy. */}
+          <FeatureShowcase />
+
           <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
             {/* Dashboard-style inner section header: a rounded, icon-led row. */}
             <div className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2.5">
@@ -1050,8 +1058,6 @@ export default function LeftSidebar() {
               );
             })}
           </nav>
-
-          <FeatureShowcase />
 
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             <Link
