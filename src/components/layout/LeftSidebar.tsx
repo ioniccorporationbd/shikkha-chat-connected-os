@@ -922,14 +922,6 @@ export default function LeftSidebar() {
           </div>
           <LanguageSection />
 
-          {/* Customer-facing Shikkha Chat Apps feature catalog (15 categories /
-              87 features). Mounted here — directly under the account + language
-              block — so it is visible the moment the homepage sidebar opens,
-              while the site navigation below stays fully intact. Route values
-              are informational only (no links to nonexistent Connected OS
-              pages); see src/lib/feature-showcase.ts for the route policy. */}
-          <FeatureShowcase />
-
           <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
             {/* Dashboard-style inner section header: a rounded, icon-led row. */}
             <div className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2.5">
@@ -954,110 +946,16 @@ export default function LeftSidebar() {
             />
           </div>
 
-          <nav className="mt-5 flex flex-col gap-1.5 sm:mt-6">
-            {currentMenu.map((item) => {
-              const itemId = getIdFromHref(item.href);
-
-              const group = item.group ?? null;
-              const openState = group ? openGroup === group : false;
-
-              if (item.children && group) {
-                return (
-                  <div key={item.title}>
-                    <button
-                      type="button"
-                      aria-expanded={openState}
-                      onClick={() =>
-                        setOpenGroup((current) =>
-                          current === group ? null : group
-                        )
-                      }
-                      className={[
-                        sidebarRowClass,
-                        openState ? "is-open" : "",
-                      ].join(" ")}
-                    >
-                      <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
-                        {(() => {
-                          const GroupIcon = GROUP_ICONS[group ?? ""] ?? FiGrid;
-                          return <GroupIcon className={sidebarRowIconClass} />;
-                        })()}
-                        <span className="truncate">{item.title}</span>
-                      </span>
-
-                      <FiChevronDown
-                        aria-hidden="true"
-                        className={[
-                          "shrink-0 text-[16px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                          openState ? "rotate-180" : "",
-                        ].join(" ")}
-                      />
-                    </button>
-
-                    <div
-                      className={[
-                        "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                        openState
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0",
-                      ].join(" ")}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="mt-1.5 ml-3 space-y-1 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5">
-                          {item.href === "#home-connections-panel" ? (
-                            <SidebarChildLink
-                              child={{
-                                title: text.overview,
-                                href: "#home-connections-panel",
-                              }}
-                              active={activeId === "home-connections-panel"}
-                              index={1}
-                            />
-                          ) : null}
-
-                          {item.children.map((child, childIndex) => {
-                            const childId = getIdFromHref(child.href);
-                            const active = activeId === childId;
-                            const number =
-                              item.href === "#home-connections-panel"
-                                ? childIndex + 2
-                                : childIndex + 1;
-
-                            return (
-                              <SidebarChildLink
-                                key={child.href}
-                                child={child}
-                                active={active}
-                                index={number}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              const active = activeId === itemId;
-
-              return (
-                <SidebarLink
-                  key={item.href}
-                  title={item.title}
-                  href={item.href}
-                  active={active}
-                  icon={GROUP_ICONS.myOs}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setOpenGroup(null);
-                    handleSidebarNavigate(itemId);
-                    setDrawerOpen(false);
-                  }}
-                />
-              );
-            })}
-          </nav>
+          {/* Native rail nav, now driven by the complete Shikkha Chat Apps
+              route catalog (15 categories / 87 features). This REPLACES the
+              old homepage section links (Home Connections / Student Achievement
+              / Operational Excellence / My Connected System): every category is
+              a native dropdown and every feature a native numbered child row, so
+              the catalog reads exactly like the rail's own navigation language.
+              The site-nav groups are intentionally removed per an explicit
+              request; route values stay informational only (no links to
+              nonexistent Connected OS pages) — see src/lib/feature-showcase.ts. */}
+          <FeatureShowcase />
 
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             <Link
