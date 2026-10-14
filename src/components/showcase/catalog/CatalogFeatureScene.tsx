@@ -39,9 +39,13 @@ function scrollToPanel(id: string) {
 export default function CatalogFeatureScene({
   category,
   feature,
+  variant = 0,
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
+  /** Card-position format (0–7) for this main section, so the sibling cards
+   *  are arranged differently section by section. Card design is unchanged. */
+  variant?: number;
 }) {
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
@@ -84,7 +88,7 @@ export default function CatalogFeatureScene({
               className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-white)_24%,transparent),transparent_35%,color-mix(in_srgb,var(--color-secondary)_8%,transparent))]"
             />
 
-            <div className="connected-card-grid relative z-10 grid w-fit grid-cols-2 items-center justify-center gap-[clamp(10px,0.7vw,14px)]">
+            <div className={`connected-card-grid cf-layout-${((variant % 8) + 8) % 8} relative z-10 w-fit`}>
               {tiles.map((tile, index) => {
                 const Icon = SHOWCASE_ICONS[tile.icon];
                 const tileId = catalogFeaturePanelId(category.id, tile.id);

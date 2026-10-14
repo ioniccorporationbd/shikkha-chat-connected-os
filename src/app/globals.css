@@ -2225,3 +2225,102 @@ html[data-lang="en"] .language-toggle-knob {
     animation: none;
   }
 }
+
+/* =========================================================
+   PER-SECTION CATALOG CARD POSITION FORMATS
+   =========================================================
+   The card DESIGN is untouched — only the ARRANGEMENT of the
+   middle-scene sibling cards differs from one main section to the
+   next, so each section reads with its own card layout (grouped /
+   wide / diagonal / scattered / arc …) exactly like the earlier
+   Connected OS middle sections did.
+
+   The format class is applied to `.connected-card-grid`. Per-card
+   offsets use `margin` (NOT `transform`) so they compose with the
+   reveal keyframe, which owns `transform`; margins also grow the
+   grid tracks, so scattered cards never overflow the bordered
+   cluster. Selectors carry the extra `.cf-layout-*` class (2-class
+   specificity) so they also beat the `@media (min-width:1280px)`
+   gap rule further up the file. */
+
+.connected-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  justify-content: center;
+}
+
+/* 0 — PAIRS: two even columns, tight (grouped) */
+.connected-card-grid.cf-layout-0 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* 1 — TRIO: three across (grouped, wide) */
+.connected-card-grid.cf-layout-1 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* 2 — ARC: three across, the centre cards ride higher (organic) */
+.connected-card-grid.cf-layout-2 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+.connected-card-grid.cf-layout-2 > *:nth-child(3n + 2) {
+  margin-bottom: 48px;
+}
+
+/* 3 — LOOSE: two columns pushed well apart (spread) */
+.connected-card-grid.cf-layout-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 62px;
+  row-gap: 38px;
+}
+
+/* 4 — DIAGONAL: two columns, the left one steps down (scattered) */
+.connected-card-grid.cf-layout-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.connected-card-grid.cf-layout-4 > *:nth-child(odd) {
+  margin-top: 44px;
+}
+
+/* 5 — ZIGZAG: two columns, the right one steps down (scattered) */
+.connected-card-grid.cf-layout-5 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.connected-card-grid.cf-layout-5 > *:nth-child(even) {
+  margin-top: 44px;
+}
+
+/* 6 — SCATTER: two columns with loose per-card offsets (scattered) */
+.connected-card-grid.cf-layout-6 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 44px;
+  row-gap: 30px;
+}
+.connected-card-grid.cf-layout-6 > *:nth-child(4n + 1) {
+  margin-left: -22px;
+  margin-top: 8px;
+}
+.connected-card-grid.cf-layout-6 > *:nth-child(4n + 2) {
+  margin-left: 30px;
+  margin-top: 40px;
+}
+.connected-card-grid.cf-layout-6 > *:nth-child(4n + 3) {
+  margin-left: 24px;
+  margin-top: -6px;
+}
+.connected-card-grid.cf-layout-6 > *:nth-child(4n + 4) {
+  margin-left: -16px;
+  margin-top: 30px;
+}
+
+/* 7 — CASCADE: two columns, every other row indented (staircase) */
+.connected-card-grid.cf-layout-7 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  row-gap: 22px;
+}
+.connected-card-grid.cf-layout-7 > *:nth-child(4n + 3),
+.connected-card-grid.cf-layout-7 > *:nth-child(4n + 4) {
+  margin-left: 44px;
+}

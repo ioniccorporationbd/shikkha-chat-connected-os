@@ -31,13 +31,28 @@ import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
  * -------------------------------------------------------------------------
  */
 export default function CatalogMainSections() {
+  // Card-position format per main section. The 8 arrangements rotate across
+  // the sections that actually hold enough sibling cards to *display* a
+  // layout, so every format shows up somewhere on the page; single-feature
+  // sections keep the base arrangement (one lone card can't show one).
+  let layoutCursor = 0;
+  const layoutBySection = FEATURE_SHOWCASE.map((category) =>
+    category.features.length - 1 >= 3 ? layoutCursor++ % 8 : 0,
+  );
+
   return (
     <>
       {FEATURE_SHOWCASE.map((category, index) => {
         const scenes: HubScene[] = category.features.map((feature) => ({
           id: catalogFeaturePanelId(category.id, feature.id),
           title: feature.title.bn,
-          node: <CatalogFeatureScene category={category} feature={feature} />,
+          node: (
+            <CatalogFeatureScene
+              category={category}
+              feature={feature}
+              variant={layoutBySection[index]}
+            />
+          ),
         }));
 
         return (
