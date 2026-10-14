@@ -125,7 +125,16 @@ export default function ScrollLockedContentSection({
         ) ?? document.getElementById(id);
       if (!target) return;
 
-      const top = target.getBoundingClientRect().top + window.scrollY - 88;
+      const rect = target.getBoundingClientRect();
+      // Centre the target panel. The sync engine marks whichever panel sits at
+      // the viewport centre as active, so centring here keeps the clicked link,
+      // the middle scene and the highlighted rail row in lock-step (a top-offset
+      // scroll would leave a neighbouring panel at the centre and mark it).
+      const top =
+        rect.top +
+        window.scrollY +
+        rect.height / 2 -
+        (window.innerHeight || 0) / 2;
       window.scrollTo({ top, behavior: "smooth" });
     };
 

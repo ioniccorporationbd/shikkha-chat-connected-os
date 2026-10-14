@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
+import {
+  catalogSectionId,
+  parseCatalogFeaturePanelId,
+} from "@/components/showcase/catalog/sceneGroups";
 
 type SectionKey = "orange" | "green" | "purple";
 
@@ -17,9 +22,12 @@ const SECTION_GROUP: Record<SectionKey, string> = {
 
 /** The section that a map click scrolls to, and the group each id belongs to. */
 const GROUP_ANCHOR: Record<string, string> = {
-  home: "home-connections-panel",
-  student: "student-achievement",
-  operational: "operational-excellence",
+  // The homepage is now one video-bannered main section per catalog category;
+  // the hero's three graphics point at the first category of each legacy group
+  // (Home / Student / Operational).
+  home: catalogSectionId(FEATURE_SHOWCASE[0].id),
+  student: catalogSectionId(FEATURE_SHOWCASE[5].id),
+  operational: catalogSectionId(FEATURE_SHOWCASE[10].id),
 };
 
 const HOME_SECTION_IDS = [
@@ -59,6 +67,20 @@ const OPERATIONAL_SECTION_IDS = [
 
 /** Map an active section id to the hero graphic it belongs to. */
 function sectionKeyForId(id: string): SectionKey | null {
+  // Catalog sections: map a feature panel id to the legacy group its category
+  // belongs to (0-4 → home, 5-9 → student, 10-14 → operational).
+  const parsed = parseCatalogFeaturePanelId(id);
+  if (parsed) {
+    const index = FEATURE_SHOWCASE.findIndex(
+      (category) => category.id === parsed.categoryId,
+    );
+    if (index >= 0) {
+      if (index < 5) return "orange";
+      if (index < 10) return "green";
+      return "purple";
+    }
+  }
+
   if (STUDENT_SECTION_IDS.includes(id)) return "green";
   if (OPERATIONAL_SECTION_IDS.includes(id)) return "purple";
   if (HOME_SECTION_IDS.includes(id)) return "orange";

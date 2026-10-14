@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -13,6 +13,11 @@ import {
 } from "@/lib/feature-showcase";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
+import {
+  catalogFeaturePanelId,
+  catalogSectionId,
+  parseCatalogFeaturePanelId,
+} from "./catalog/sceneGroups";
 
 /* -------------------------------------------------------------------------
    Native rail nav language — these class strings are IDENTICAL to the rows
@@ -38,12 +43,34 @@ const SUBLIST =
 const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
 /**
+ * Click a rail row → go to that section on the page. Fires the exact three
+ * events the Connected OS scroll engine + the left rail already speak:
+ *   • `connected-os-sidebar-navigate`  — closes the mobile drawer
+ *   • `connected-os-scroll-to-section` — scrolls the page to the target
+ *   • `connected-os-active-section`    — marks the target as active
+ */
+function navigateToSection(id: string) {
+  window.dispatchEvent(new CustomEvent("connected-os-sidebar-navigate"));
+  window.dispatchEvent(
+    new CustomEvent("connected-os-scroll-to-section", { detail: { id } }),
+  );
+  window.dispatchEvent(
+    new CustomEvent("connected-os-active-section", { detail: { id } }),
+  );
+}
+
+/**
  * The Complete Shikkha Chat Apps route catalog, rendered in the homepage rail's
  * OWN navigation language (15 category dropdowns / 87 numbered feature rows).
- * It deliberately REPLACES the old site-section links. Route values are kept
- * informational only — no feature links to a nonexistent Connected OS page, so
- * no entry 404s; tapping a feature reveals its description, source route, who
- * it is for and status inline (see `feature-showcase.ts` for the route policy).
+ *
+ * Following the old rail behaviour, clicking a dropdown link NAVIGATES to that
+ * section: a category header scrolls to the category's video-bannered main
+ * section, and a feature link scrolls to that feature's own middle + right
+ * section. Scrolling the page also drives the rail back — the active section
+ * opens its category and highlights the matching feature row.
+ *
+ * Route values stay informational only — no feature links to a nonexistent
+ * Connected OS page, so no entry 404s.
  */
 export default function FeatureShowcase() {
   const { language: rawLanguage } = useLanguage();
@@ -53,6 +80,29 @@ export default function FeatureShowcase() {
     FEATURE_SHOWCASE[0]?.id ?? null,
   );
   const [openFeature, setOpenFeature] = useState<string | null>(null);
+  const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+
+  // Follow the page: when the scroll-sync engine reports a catalog section as
+  // the active one, open its category and highlight the feature row.
+  useEffect(() => {
+    const handleActiveSection = (event: Event) => {
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+
+      const parsed = parseCatalogFeaturePanelId(id);
+      if (!parsed) return;
+
+      setActiveFeatureId(parsed.featureId);
+      setOpenCategory(parsed.categoryId);
+    };
+
+    window.addEventListener("connected-os-active-section", handleActiveSection);
+    return () =>
+      window.removeEventListener(
+        "connected-os-active-section",
+        handleActiveSection,
+      );
+  }, []);
 
   return (
     <nav
@@ -64,6 +114,9 @@ export default function FeatureShowcase() {
         const isOpen = openCategory === category.id;
         const CategoryIcon = SHOWCASE_ICONS[category.icon];
         const panelId = `showcase-panel-${category.id}`;
+        const categoryHoldsActive = category.features.some(
+          (feature) => feature.id === activeFeatureId,
+        );
 
         return (
           <div key={category.id}>
@@ -72,10 +125,17 @@ export default function FeatureShowcase() {
               aria-expanded={isOpen}
               aria-controls={panelId}
               onClick={() => {
-                setOpenCategory(isOpen ? null : category.id);
+                const opening = !isOpen;
+                setOpenCategory(opening ? category.id : null);
                 setOpenFeature(null);
+                // Clicking a dropdown navigates to that category's main section.
+                if (opening) navigateToSection(catalogSectionId(category.id));
               }}
-              className={[ROW, isOpen ? "is-open" : ""].join(" ")}
+              className={[
+                ROW,
+                isOpen ? "is-open" : "",
+                !isOpen && categoryHoldsActive ? "is-active" : "",
+              ].join(" ")}
             >
               <span className={[ROW_LABEL, "font-semibold"].join(" ")}>
                 <CategoryIcon className={ROW_ICON} aria-hidden />
@@ -102,6 +162,7 @@ export default function FeatureShowcase() {
                   {category.features.map((feature, index) => {
                     const featureOpen = openFeature === feature.id;
                     const detailId = `showcase-detail-${feature.id}`;
+                    const isActive = activeFeatureId === feature.id;
 
                     return (
                       <div key={feature.id}>
@@ -110,13 +171,19 @@ export default function FeatureShowcase() {
                           aria-expanded={featureOpen}
                           aria-controls={detailId}
                           title={feature.route}
-                          onClick={() =>
-                            setOpenFeature(featureOpen ? null : feature.id)
-                          }
+                          onClick={() => {
+                            setOpenFeature(featureOpen ? null : feature.id);
+                            setOpenCategory(category.id);
+                            setActiveFeatureId(feature.id);
+                            // Clicking a feature link navigates to its section.
+                            navigateToSection(
+                              catalogFeaturePanelId(category.id, feature.id),
+                            );
+                          }}
                           className={[
                             ROW,
                             "py-2",
-                            featureOpen ? "is-open" : "",
+                            featureOpen || isActive ? "is-active" : "",
                           ].join(" ")}
                         >
                           <span className={ROW_LABEL}>

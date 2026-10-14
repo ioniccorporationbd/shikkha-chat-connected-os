@@ -1,15 +1,6 @@
+import CatalogMainSections from "@/components/home/CatalogMainSections";
 import LandingHeroBanner from "@/components/home/LandingHeroBanner";
-import HomeConnectionsVideoBanner from "@/components/home/HomeConnectionsVideoBanner";
-import HomeConnectionsHub from "@/components/hubs/home-connections/HomeConnectionsHub";
-import StudentAchievementHub from "@/components/hubs/student-achievement/StudentAchievementHub";
-import OperationalExcellenceHub from "@/components/hubs/operational-excellence/OperationalExcellenceHub";
-import OperationalExcellenceVideoBanner from "@/components/home/OperationalExcellenceVideoBanner";
 import ProductRouterSection from "@/components/home/ProductRouterSection";
-import HomeConnectionsSidePanels from "@/components/hubs/home-connections/HomeConnectionsSidePanels";
-import StudentAchievementSidePanels from "@/components/hubs/student-achievement/StudentAchievementSidePanels";
-import OperationalExcellenceSidePanels from "@/components/hubs/operational-excellence/OperationalExcellenceSidePanels";
-import ScrollLockedContentSection from "@/components/layout/ScrollLockedContentSection";
-import StudentAchievementVideoBanner from "@/components/home/StudentAchievementVideoBanner";
 import SiteFooter from "@/components/home/SiteFooter";
 
 export default function Page() {
@@ -17,30 +8,12 @@ export default function Page() {
     <>
       <LandingHeroBanner />
 
-      <HomeConnectionsVideoBanner />
+      {/* One video-bannered main section per Shikkha Chat Apps catalog
+          category (15 dropdowns), each holding one sub-section per feature
+          link. The three legacy hub sections are superseded by this. */}
+      <CatalogMainSections />
 
-      <ScrollLockedContentSection
-        sectionId="home-connections-content"
-        middle={<HomeConnectionsHub />}
-        right={<HomeConnectionsSidePanels />}
-      />
-
-      <StudentAchievementVideoBanner />
-
-      <ScrollLockedContentSection
-        sectionId="student-achievement-content"
-        middle={<StudentAchievementHub />}
-        right={<StudentAchievementSidePanels />}
-      />
-
-      <OperationalExcellenceVideoBanner />
-
-      <ScrollLockedContentSection
-        sectionId="operational-excellence-content"
-        middle={<OperationalExcellenceHub />}
-        right={<OperationalExcellenceSidePanels />}
-      />
-      <ProductRouterSection/>
+      <ProductRouterSection />
 
       <SiteFooter />
     </>

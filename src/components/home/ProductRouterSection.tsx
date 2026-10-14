@@ -28,6 +28,8 @@ import {
   readSavedSections,
   toggleSavedSection,
 } from "@/lib/savedSections";
+import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
+import { catalogSectionId } from "@/components/showcase/catalog/sceneGroups";
 
 type LanguageCode = "bn" | "en";
 type ProductGroupId =
@@ -420,9 +422,11 @@ function getGroups(language: LanguageCode): ProductGroup[] {
  * The other two groups already match their panel ids, so they pass through.
  */
 const groupScrollTargets: Record<ProductGroupId, string> = {
-  "home-connections": "home-connections-panel",
-  "student-achievement": "student-achievement",
-  "operational-excellence": "operational-excellence",
+  // The legacy hub panels are gone; each group now targets the first catalog
+  // main section of its legacy group on the rebuilt homepage.
+  "home-connections": catalogSectionId(FEATURE_SHOWCASE[0].id),
+  "student-achievement": catalogSectionId(FEATURE_SHOWCASE[5].id),
+  "operational-excellence": catalogSectionId(FEATURE_SHOWCASE[10].id),
 };
 
 function scrollToProduct(id: string) {
