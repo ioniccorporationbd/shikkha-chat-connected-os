@@ -169,6 +169,8 @@ export const SHOWCASE_TEXT = {
   statusPublic: { bn: "ওপেন পেজ", en: "Open page" },
   statusProtected: { bn: "সুরক্ষিত ড্যাশবোর্ড", en: "Protected dashboard" },
   statusDemo: { bn: "ডেমো", en: "Demo" },
+  sectionAudience: { bn: "বিভাগের ব্যবহারকারী", en: "Section audience" },
+  sectionPosition: { bn: "অবস্থান", en: "Position" },
   infoNote: {
     bn: "এই বৈশিষ্ট্যগুলো Shikkha Chat Apps অ্যাপে চলে; এখানে ক্রেতাদের সুবিধার জন্য তথ্য আকারে দেখানো হয়েছে।",
     en: "These features run in the Shikkha Chat Apps application; shown here as information for customers.",
