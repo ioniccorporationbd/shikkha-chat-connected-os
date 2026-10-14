@@ -582,6 +582,16 @@ div {
   background-color: var(--color-action-tint);
 }
 
+/* ---------------------------------------------------------------------
+   Customer showcase rail ("Explore Shikkha Connected OS")
+   A line of supporting copy under each feature. Declared unlayered so it can
+   derive from `currentColor` — the description stays legible whether its row
+   is idle, hovered (action red) or selected (white on solid red).
+--------------------------------------------------------------------- */
+.showcase-desc {
+  color: color-mix(in srgb, currentColor 68%, transparent);
+}
+
 /* =========================================================
    CONNECTED OS GLOBAL LAYOUT
 ========================================================= */

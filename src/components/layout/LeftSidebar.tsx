@@ -11,6 +11,8 @@ import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
 import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
+import FeatureShowcase from "@/components/showcase/FeatureShowcase";
+
 type ActiveSectionId =
   | "home-connections-panel"
   | "student-information"
@@ -1048,6 +1050,8 @@ export default function LeftSidebar() {
               );
             })}
           </nav>
+
+          <FeatureShowcase />
 
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             <Link
