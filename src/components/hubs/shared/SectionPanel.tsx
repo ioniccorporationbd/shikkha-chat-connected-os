@@ -21,6 +21,19 @@ type SectionPanelProps = {
   supporting?: string;
   /** Short list of key capabilities / operational benefits (2-4 items). */
   capabilities?: readonly string[];
+  /**
+   * Optional structured rows (e.g. a feature catalog), rendered below the
+   * capabilities list in the shared rail type tokens. Additive: panels that
+   * pass nothing render exactly as before.
+   */
+  rows?: readonly {
+    readonly title: string;
+    readonly description?: string;
+    readonly meta?: readonly {
+      readonly label: string;
+      readonly value: string;
+    }[];
+  }[];
   /** Semantic icon for the card, from the shared react-icons/lu family. */
   icon?: IconType;
   stats?: readonly Stat[];
@@ -81,6 +94,7 @@ export default function SectionPanel({
   description,
   supporting,
   capabilities = [],
+  rows = [],
   icon: Icon,
   stats = [],
   quote,
@@ -220,6 +234,52 @@ export default function SectionPanel({
             </motion.li>
           ))}
         </motion.ul>
+      ) : null}
+
+      {/* Optional structured rows — a per-item title + description + meta list
+          (added for the catalog rail). Renders only when `rows` is passed, so
+          every existing panel is untouched. */}
+      {rows.length ? (
+        <motion.div
+          className="mt-6 grid max-w-[560px] gap-3"
+          variants={listVariants}
+          initial={reduceMotion ? false : "hidden"}
+          whileInView="show"
+          viewport={{ once: true, amount: 0.12 }}
+        >
+          {rows.map((row) => (
+            <motion.div
+              key={row.title}
+              variants={itemVariants}
+              className="rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4"
+            >
+              <h3 className="section-description text-[var(--color-primary)]">
+                {row.title}
+              </h3>
+
+              {row.description ? (
+                <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
+                  {row.description}
+                </p>
+              ) : null}
+
+              {row.meta && row.meta.length ? (
+                <dl className="mt-2.5 space-y-1">
+                  {row.meta.map((meta) => (
+                    <div key={meta.label} className="flex gap-2">
+                      <dt className="capability-text shrink-0 font-semibold text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
+                        {meta.label}:
+                      </dt>
+                      <dd className="capability-text min-w-0 break-all text-[var(--color-primary)]">
+                        {meta.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+            </motion.div>
+          ))}
+        </motion.div>
       ) : null}
 
       {/* Actions — the primary action uses the established Shikkha red;

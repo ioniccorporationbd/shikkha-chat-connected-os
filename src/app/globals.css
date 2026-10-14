@@ -2173,3 +2173,55 @@ html[data-lang="en"] .language-toggle-knob {
     transform: none;
   }
 }
+
+/* =========================================================
+   CATALOG MIDDLE-SCENE REVEAL  (Shikkha Chat Apps catalog)
+   ---------------------------------------------------------
+   Each catalog middle scene animates its cards in on mount: the
+   heading pill (the "main" card) settles first, then after a ~1s
+   pause the feature tiles ("secondary" cards) cascade in one-by-one
+   with a small rise + fade, staggered per tile via an inline
+   `animation-delay`. Pure CSS with `animation-fill-mode: both`, so an
+   element is HELD at its start state during the delay — a
+   deterministic function of mount, replayed every time the scroll-sync
+   engine swaps the active category. Fully resolved under
+   prefers-reduced-motion.
+========================================================= */
+
+@keyframes catalog-reveal-pill {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes catalog-reveal-card {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.catalog-reveal-pill {
+  animation: catalog-reveal-pill 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.catalog-reveal-card {
+  animation: catalog-reveal-card 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-reveal-pill,
+  .catalog-reveal-card {
+    animation: none;
+  }
+}

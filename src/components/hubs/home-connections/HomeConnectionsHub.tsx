@@ -5,33 +5,30 @@ import type { ReactNode } from "react";
 import HubSceneStage, {
   type HubScene,
 } from "@/components/hubs/shared/HubSceneStage";
+import CatalogScene from "@/components/showcase/catalog/CatalogScene";
+import {
+  CATALOG_GROUPS,
+  catalogPanelId,
+} from "@/components/showcase/catalog/sceneGroups";
 
-import HomeConnections from "@/components/hubs/home-connections/sections/HomeConnectionsOverview";
-import StudentInformation from "@/components/hubs/home-connections/sections/StudentInformation";
-import SIS from "@/components/hubs/home-connections/sections/StudentInformationSystem";
-import Enrollment from "@/components/hubs/home-connections/sections/Enrollment";
-import SpecialPrograms from "@/components/hubs/home-connections/sections/SpecialPrograms";
-import FamilyEngagement from "@/components/hubs/home-connections/sections/FamilyEngagement";
-import Communications from "@/components/hubs/home-connections/sections/Communications";
-import AttendanceSupport from "@/components/hubs/home-connections/sections/AttendanceSupport";
+/*
+ * Segment 1 of 3 — the middle + right rails are now filled from the Shikkha
+ * Chat Apps catalog (categories 1-5). Scene order MUST stay in lock-step with
+ * the right rail (HomeConnectionsSidePanels): the scroll-sync engine pairs a
+ * scene to its rail panel by the shared `catalog-panel-<id>` element id.
+ *
+ * The middle stage emits its default active id on mount (unchanged behaviour).
+ */
+const group = CATALOG_GROUPS[0];
 
-// Scene order MUST match the right rail: sceneIds are read from the rail's
-// [id] elements in document order (8 panels for this hub).
-const scenes: HubScene[] = [
-  { id: "home-connections-panel", title: "Home Connections", node: <HomeConnections /> },
-  { id: "student-information", title: "Student Information", node: <StudentInformation /> },
-  { id: "sis", title: "SIS", node: <SIS /> },
-  { id: "enrollment", title: "Enrollment", node: <Enrollment /> },
-  { id: "special-programs", title: "Special Programs", node: <SpecialPrograms /> },
-  { id: "family-engagement", title: "Family Engagement", node: <FamilyEngagement /> },
-  { id: "communications", title: "Communications", node: <Communications /> },
-  { id: "attendance-support", title: "Attendance Support", node: <AttendanceSupport /> },
-];
+const scenes: HubScene[] = group.map((category) => ({
+  id: catalogPanelId(category.id),
+  title: category.title.bn,
+  node: <CatalogScene category={category} />,
+}));
 
-const defaultActiveSection = "home-connections-panel";
+const defaultActiveSection = scenes[0].id;
 
-// Home Connections is the first hub on the page; it emits its default active
-// id on mount (unchanged behaviour) so the left rail opens the HC group.
 export default function HomeConnectionsHub(): ReactNode {
   return (
     <HubSceneStage

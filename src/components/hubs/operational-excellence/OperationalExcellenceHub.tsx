@@ -5,29 +5,26 @@ import type { ReactNode } from "react";
 import HubSceneStage, {
   type HubScene,
 } from "@/components/hubs/shared/HubSceneStage";
+import CatalogScene from "@/components/showcase/catalog/CatalogScene";
+import {
+  CATALOG_GROUPS,
+  catalogPanelId,
+} from "@/components/showcase/catalog/sceneGroups";
 
-import OperationalExcellenceOverview from "@/components/hubs/operational-excellence/sections/OperationalExcellenceOverview";
-import ResourcePlanning from "@/components/hubs/operational-excellence/sections/ResourcePlanning";
-import FinancialStrategyAllovue from "@/components/hubs/operational-excellence/sections/FinancialStrategyAllovue";
-import ERPSystems from "@/components/hubs/operational-excellence/sections/ERPSystems";
-import PredictiveEnrollment from "@/components/hubs/operational-excellence/sections/PredictiveEnrollment";
-import TalentManagement from "@/components/hubs/operational-excellence/sections/TalentManagement";
-import RecruitingAndHR from "@/components/hubs/operational-excellence/sections/RecruitingAndHR";
-import EducatorSupport from "@/components/hubs/operational-excellence/sections/EducatorSupport";
+/*
+ * Segment 3 of 3 — the middle + right rails are filled from the Shikkha Chat
+ * Apps catalog (categories 11-15). Scene order MUST stay in lock-step with the
+ * right rail (OperationalExcellenceSidePanels).
+ */
+const group = CATALOG_GROUPS[2];
 
-// Scene order MUST match the right rail (8 panels for this hub).
-const scenes: HubScene[] = [
-  { id: "operational-excellence", title: "Operational Excellence", node: <OperationalExcellenceOverview /> },
-  { id: "resource-planning", title: "Resource Planning", node: <ResourcePlanning /> },
-  { id: "financial-strategy-allovue", title: "Financial Strategy", node: <FinancialStrategyAllovue /> },
-  { id: "erp-systems", title: "ERP Systems", node: <ERPSystems /> },
-  { id: "predictive-enrollment", title: "Predictive Enrollment", node: <PredictiveEnrollment /> },
-  { id: "talent-management", title: "Talent Management", node: <TalentManagement /> },
-  { id: "recruiting-and-hr", title: "Recruiting and HR", node: <RecruitingAndHR /> },
-  { id: "educator-support", title: "Educator Support", node: <EducatorSupport /> },
-];
+const scenes: HubScene[] = group.map((category) => ({
+  id: catalogPanelId(category.id),
+  title: category.title.bn,
+  node: <CatalogScene category={category} />,
+}));
 
-const defaultActiveSection = "operational-excellence";
+const defaultActiveSection = scenes[0].id;
 
 export default function OperationalExcellenceHub(): ReactNode {
   return <HubSceneStage scenes={scenes} defaultActiveId={defaultActiveSection} />;

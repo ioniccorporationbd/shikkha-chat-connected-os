@@ -1,48 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { IconType } from "react-icons";
-import {
-  FiAlertTriangle,
-  FiAward,
-  FiBarChart2,
-  FiBell,
-  FiBook,
-  FiBookOpen,
-  FiBriefcase,
-  FiCalendar,
-  FiCheckCircle,
-  FiChevronDown,
-  FiClipboard,
-  FiClock,
-  FiCpu,
-  FiCreditCard,
-  FiEdit,
-  FiEdit3,
-  FiFilePlus,
-  FiFileText,
-  FiFlag,
-  FiGlobe,
-  FiGrid,
-  FiHeart,
-  FiHelpCircle,
-  FiHome,
-  FiImage,
-  FiInfo,
-  FiLayers,
-  FiList,
-  FiMapPin,
-  FiMessageSquare,
-  FiPhone,
-  FiPieChart,
-  FiShield,
-  FiStar,
-  FiTarget,
-  FiTrendingUp,
-  FiUserCheck,
-  FiUserPlus,
-  FiUsers,
-} from "react-icons/fi";
+import { FiChevronDown } from "react-icons/fi";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
@@ -50,51 +9,10 @@ import {
   SHOWCASE_TEXT,
   showcaseAccessLabel,
   showcaseStatusLabel,
-  type ShowcaseIconKey,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
 
-/** Logical icon key → concrete Feather glyph. */
-const ICONS: Record<ShowcaseIconKey, IconType> = {
-  school: FiBookOpen,
-  sparkles: FiStar,
-  graduation: FiAward,
-  parents: FiHeart,
-  shield: FiShield,
-  landmark: FiFlag,
-  globe: FiGlobe,
-  layout: FiGrid,
-  users: FiUsers,
-  userCheck: FiUserCheck,
-  calendar: FiCalendar,
-  clipboard: FiClipboard,
-  chart: FiBarChart2,
-  book: FiBook,
-  brain: FiCpu,
-  notebook: FiEdit3,
-  quiz: FiHelpCircle,
-  target: FiTarget,
-  messages: FiMessageSquare,
-  insight: FiTrendingUp,
-  shieldAlert: FiAlertTriangle,
-  policy: FiFileText,
-  history: FiClock,
-  building: FiBriefcase,
-  outcome: FiCheckCircle,
-  district: FiMapPin,
-  equity: FiPieChart,
-  enrollment: FiUserPlus,
-  home: FiHome,
-  notice: FiBell,
-  syllabus: FiList,
-  homework: FiEdit,
-  fees: FiCreditCard,
-  gallery: FiImage,
-  facility: FiLayers,
-  contact: FiPhone,
-  admission: FiFilePlus,
-  info: FiInfo,
-};
+import { SHOWCASE_ICONS } from "./catalog/icons";
 
 /* -------------------------------------------------------------------------
    Native rail nav language — these class strings are IDENTICAL to the rows
@@ -144,7 +62,7 @@ export default function FeatureShowcase() {
     >
       {FEATURE_SHOWCASE.map((category) => {
         const isOpen = openCategory === category.id;
-        const CategoryIcon = ICONS[category.icon];
+        const CategoryIcon = SHOWCASE_ICONS[category.icon];
         const panelId = `showcase-panel-${category.id}`;
 
         return (
