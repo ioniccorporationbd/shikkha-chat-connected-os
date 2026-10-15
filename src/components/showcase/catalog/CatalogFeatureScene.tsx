@@ -15,48 +15,43 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  * CATALOG FEATURE MIDDLE SCENE — the CLASSIC Connected-OS middle layout
  * (the 13/10 design language), with the CURRENT card design kept intact.
  *
- *   • A bordered central FRAME (the "room") holds the current feature plus its
- *     first sibling — one of them rendered larger (the featured pair).
- *   • The remaining sibling features sit as mini-cards SCATTERED around the
- *     room — some land inside the section, some just outside the room frame.
- *   • No connector lines. The scattered cards SPAN IN FROM THE RIGHT, one after
- *     another in ANTICLOCKWISE order, staggered so the whole reveal runs for
- *     about one second each time the section scrolls into view.
- *   • The card VISUAL design (icon + title tile) is unchanged from the current
- *     catalog design; only the arrangement + animation follow the 13/10 branch.
- *   • A few sections keep every card inside the room (variant driven) so the
- *     middle rail still reads with per-section variation.
+ *   • A bordered central FRAME (the "room") holds the MAIN (featured) card —
+ *     the biggest card.
+ *   • The section's other features sit as MINI-CARDS on a RING around the room.
+ *     The ring starts at the RIGHT and runs ANTICLOCKWISE (right → top → left →
+ *     bottom), so the cards SPAN IN CIRCULARLY, one after another, over ~1s.
+ *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
+ *     ring card is a MEDIUM size, and every other card is SMALL.
+ *
+ * Section handling by feature count (the few-card sections read deliberately):
+ *   • 1 card  → a single BIG card on its own.
+ *   • 2 cards → BIG card in the middle + one MEDIUM card outside (right).
+ *   • 3 cards → BIG inside + MEDIUM middle + the rest SMALL outside.
+ *   • 4 cards → BIG inside + MEDIUM middle + the rest (two) SMALL outside.
+ *   • 5+      → the full circular ring; a couple of sections keep every card
+ *               inside the room as a grid (per-section variation).
+ *
+ *   • No connector lines. The card VISUAL design is unchanged from the current
+ *     catalog design; only the arrangement + animation change.
  * -------------------------------------------------------------------------
  */
 
-const CARD_W = 118;
-const CARD_H = 100;
+// Card footprints (px). MAIN = biggest; one ring card = MEDIUM; rest = SMALL.
+const BIG = { w: 250, h: 208 };
+const MEDIUM = { w: 152, h: 132 };
+const SMALL = { w: 104, h: 92 };
 
-// Scatter positions (percent of the stage). The room sits at centre; these ring
-// it with a real spread — inner corners plus the four edges — so cards land
-// both inside the section and just outside the room frame.
-const SCATTER: ReadonlyArray<{ x: number; y: number }> = [
-  { x: 14, y: 17 },
-  { x: 86, y: 16 },
-  { x: 10, y: 42 },
-  { x: 90, y: 40 },
-  { x: 16, y: 83 },
-  { x: 84, y: 83 },
-  { x: 50, y: 13 },
-  { x: 50, y: 88 },
-  { x: 31, y: 14 },
-  { x: 69, y: 14 },
-  { x: 28, y: 86 },
-  { x: 72, y: 86 },
-  { x: 9, y: 62 },
-  { x: 91, y: 60 },
-];
+// The secondary ring sits on an ellipse around the central frame, starting at
+// the RIGHT and running anticlockwise (right → top → left → bottom).
+const RING_RX = 36; // % of stage width
+const RING_RY = 38; // % of stage height
+const RING_IN_DIST = 132; // px each ring card travels inward along its radius
 
 // The staggered reveal runs for roughly one second in total.
 const REVEAL_TOTAL_S = 1.0;
 const REVEAL_LEAD_S = 0.08;
 const REVEAL_CARD_S = 0.42;
-const REVEAL_SPAN_S = Math.max(REVEAL_TOTAL_S - REVEAL_LEAD_S - REVEAL_CARD_S, 0.1); // ≈0.5s of stagger span
+const REVEAL_SPAN_S = Math.max(REVEAL_TOTAL_S - REVEAL_LEAD_S - REVEAL_CARD_S, 0.1); // ≈0.5s
 
 function scrollToPanel(id: string) {
   window.dispatchEvent(
@@ -74,8 +69,8 @@ export default function CatalogFeatureScene({
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
-  /** Drives the per-section arrangement (scatter rotation + which sections keep
-   *  every card inside the room). The card design itself is unchanged. */
+  /** Drives the per-section arrangement (which sections keep every card inside
+   *  the room). The card design itself is unchanged. */
   variant?: number;
 }) {
   const { language } = useLanguage();
@@ -85,40 +80,30 @@ export default function CatalogFeatureScene({
   const rootRef = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
 
-  // Reveal the anticlockwise spotting when this section enters the viewport and
-  // replay it on each re-entry. Mirrors the app's own scroll engine (a passive
-  // rAF-throttled scroll listener) which is reliable inside this sticky-scroll
-  // layout where IntersectionObserver proved laggy; the parent variants then
-  // cascade the reveal to the room + scattered cards. Hysteresis prevents flicker.
+  // Reveal the circular spotting when this section enters the viewport and
+  // replay it on each re-entry. A per-frame measurement loop (cheap: one
+  // getBoundingClientRect per scene) reacts within a frame to both scroll AND
+  // post-load layout shifts, which the app's lazy video banners cause — a
+  // scroll-event or IntersectionObserver trigger proved flaky/slow here.
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    let raf: number | null = null;
+    let raf = 0;
     let cur = false;
-    const measure = () => {
-      raf = null;
+    const tick = () => {
       const r = el.getBoundingClientRect();
       const vh = window.innerHeight || 0;
       const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
       const ratio = visible / Math.max(r.height, 1);
-      const next = ratio >= 0.4 ? true : ratio < 0.15 ? false : cur;
+      const next = ratio >= 0.25 ? true : ratio < 0.1 ? false : cur;
       if (next !== cur) {
         cur = next;
         setShown(next);
       }
+      raf = requestAnimationFrame(tick);
     };
-    const schedule = () => {
-      if (raf != null) return;
-      raf = requestAnimationFrame(measure);
-    };
-    measure();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule, { passive: true });
-    return () => {
-      if (raf != null) cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const panelId = catalogFeaturePanelId(category.id, feature.id);
@@ -128,33 +113,24 @@ export default function CatalogFeatureScene({
   );
 
   const v = ((variant % 6) + 6) % 6;
-  const allInside = v === 2 || v === 5; // a few sections keep every card inside
-  const shift = (variant * 3) % SCATTER.length;
+  const total = category.features.length;
+  // A couple of the busier sections keep every card inside the room (grid).
+  const allInside = total > 4 && (v === 2 || v === 5);
 
-  // The room keeps the featured pair (hero + first sibling); the rest scatter.
-  const insideCards = siblings.length ? [feature, siblings[0]] : [feature];
-  const scattered = siblings.slice(1);
-
-  const points = useMemo(
-    () => scattered.map((_, i) => SCATTER[(i + shift) % SCATTER.length]),
-    [scattered, shift],
-  );
-
-  // Each scattered card, tagged with its ANTICLOCKWISE rank around the room
-  // (angle from the centre, 0° = right/east, increasing counter-clockwise).
-  const cards = useMemo(() => {
-    const arr = scattered.map((item, i) => {
-      const p = points[i];
-      const angle = Math.atan2(50 - p.y, p.x - 50);
-      return { item, p, angle };
+  // The ring = the section's other features, laid out on an ellipse that starts
+  // at the RIGHT (i = 0, the MEDIUM card) and walks ANTICLOCKWISE from there.
+  const ring = useMemo(() => {
+    const items = allInside ? [] : siblings;
+    const n = items.length;
+    return items.map((item, i) => {
+      const ang = n ? (i / n) * Math.PI * 2 : 0; // 0 = right, + = anticlockwise (up)
+      const x = 50 + RING_RX * Math.cos(ang);
+      const y = 50 - RING_RY * Math.sin(ang);
+      return { item, i, ang, x, y };
     });
-    const order = [...arr].sort((a, b) => a.angle - b.angle);
-    const rank = new Map<string, number>();
-    order.forEach((c, idx) => rank.set(c.item.id, idx));
-    return arr.map((c) => ({ ...c, rank: rank.get(c.item.id) ?? 0 }));
-  }, [scattered, points]);
+  }, [allInside, siblings]);
 
-  const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(cards.length, 1);
+  const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(ring.length, 1);
 
   const pageVariants: Variants = { hidden: {}, visible: {} };
   const roomVariants: Variants = {
@@ -165,16 +141,20 @@ export default function CatalogFeatureScene({
       transition: { duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE, delay: 0 },
     },
   };
-  // Scattered cards span in from the RIGHT, sequentially in anticlockwise order.
-  const cardVariants = (rank: number): Variants => ({
-    hidden: reduce ? { opacity: 1, x: 0 } : { opacity: 0, x: 96 },
+  // Ring cards converge INWARD along their own radius, staggered anticlockwise
+  // from the right — the cycle is circular (right → left).
+  const ringVariants = (i: number, ang: number): Variants => ({
+    hidden: reduce
+      ? { opacity: 1, x: 0, y: 0 }
+      : { opacity: 0, x: Math.cos(ang) * RING_IN_DIST, y: -Math.sin(ang) * RING_IN_DIST },
     visible: {
       opacity: 1,
       x: 0,
+      y: 0,
       transition: {
         duration: reduce ? 0 : REVEAL_CARD_S,
         ease: PREMIUM_EASE,
-        delay: reduce ? 0 : REVEAL_LEAD_S + rank * step,
+        delay: reduce ? 0 : REVEAL_LEAD_S + i * step,
       },
     },
   });
@@ -192,7 +172,7 @@ export default function CatalogFeatureScene({
   });
 
   const HeroIcon = SHOWCASE_ICONS[feature.icon];
-  const roomTiles = allInside ? [feature, ...siblings] : insideCards;
+  const roomTiles = allInside ? [feature, ...siblings] : [];
 
   return (
     <div
@@ -218,7 +198,7 @@ export default function CatalogFeatureScene({
         animate={shown ? "visible" : "hidden"}
         className="relative h-full w-full"
       >
-        {/* Central room — the featured pair (bordered frame + title pill). */}
+        {/* Central room — the MAIN (featured) card, the biggest card. */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={roomVariants} className="relative">
             <div className="absolute left-1/2 top-[-54px] z-20 -translate-x-1/2">
@@ -228,11 +208,8 @@ export default function CatalogFeatureScene({
             </div>
 
             <div
-              className={[
-                "cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[14px]",
-                "shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]",
-                allInside ? "h-[352px] w-[470px]" : "h-[232px] w-[368px]",
-              ].join(" ")}
+              className="cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[18px] shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
+              style={allInside ? undefined : { width: BIG.w + 36, height: BIG.h + 36 }}
             >
               {allInside ? (
                 <div className="grid h-full w-full grid-cols-3 content-center gap-x-2.5 gap-y-2">
@@ -258,75 +235,47 @@ export default function CatalogFeatureScene({
                   })}
                 </div>
               ) : (
-                <div
-                  className={
-                    "grid h-full w-full items-stretch gap-3 " +
-                    (insideCards.length > 1 ? "grid-cols-[124px_1fr]" : "grid-cols-1")
-                  }
+                <button
+                  type="button"
+                  onClick={() => scrollToPanel(panelId)}
+                  aria-label={feature.title[lang]}
+                  className="cf-room-tile group relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
                 >
-                  {insideCards.length > 1 ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        scrollToPanel(
-                          catalogFeaturePanelId(category.id, insideCards[1].id),
-                        )
-                      }
-                      aria-label={insideCards[1].title[lang]}
-                      className="cf-room-tile group flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-[16px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_7%,var(--color-white))] px-2 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))]"
-                    >
-                      <span className="text-[24px] leading-none text-[var(--color-primary)]">
-                        {(() => {
-                          const Icon = SHOWCASE_ICONS[insideCards[1].icon];
-                          return <Icon />;
-                        })()}
-                      </span>
-                      <span className="card-title line-clamp-3">
-                        {insideCards[1].title[lang]}
-                      </span>
-                    </button>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => scrollToPanel(panelId)}
-                    aria-label={feature.title[lang]}
-                    className="cf-room-tile group relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-3 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
-                  >
-                    <span className="text-[44px] leading-none text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
-                      {HeroIcon ? <HeroIcon /> : null}
-                    </span>
-                    <span className="card-title max-w-[210px] text-center">
-                      {feature.title[lang]}
-                    </span>
-                    <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
-                      {category.title[lang]}
-                    </span>
-                  </button>
-                </div>
+                  <span className="text-[46px] leading-none text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
+                    {HeroIcon ? <HeroIcon /> : null}
+                  </span>
+                  <span className="card-title max-w-[210px] text-center">
+                    {feature.title[lang]}
+                  </span>
+                  <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
+                    {category.title[lang]}
+                  </span>
+                </button>
               )}
             </div>
           </motion.div>
         </div>
 
-        {/* Scattered sibling feature mini-cards — span in from the right, one
-            after another in anticlockwise order (current tile design). */}
+        {/* Ring of the section's other features — a MEDIUM card first (at the
+            right), then the SMALL cards, spanning in circularly anticlockwise. */}
         {!allInside
-          ? cards.map(({ item, p, rank }) => {
+          ? ring.map(({ item, i, ang, x, y }) => {
               const Icon = SHOWCASE_ICONS[item.icon];
               const tileId = catalogFeaturePanelId(category.id, item.id);
+              const size = i === 0 ? MEDIUM : SMALL;
+              const isMedium = i === 0;
 
               return (
                 <motion.div
                   key={item.id}
-                  variants={cardVariants(rank)}
+                  variants={ringVariants(i, ang)}
                   className="cf-scatter-card absolute z-20"
                   style={{
-                    left: `${p.x}%`,
-                    top: `${p.y}%`,
-                    marginLeft: -CARD_W / 2,
-                    marginTop: -CARD_H / 2,
-                    width: CARD_W,
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    marginLeft: -size.w / 2,
+                    marginTop: -size.h / 2,
+                    width: size.w,
                   }}
                 >
                   <button
@@ -334,12 +283,21 @@ export default function CatalogFeatureScene({
                     onClick={() => scrollToPanel(tileId)}
                     aria-label={item.title[lang]}
                     title={item.title[lang]}
-                    className="connected-spot hc-orbit-tile group relative flex min-h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[9px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+                    style={{ height: size.h }}
+                    className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
                   >
-                    <span className="connected-icon-float mb-[6px] text-[24px] leading-none text-[var(--color-primary)]">
+                    <span
+                      className={`connected-icon-float mb-[6px] leading-none text-[var(--color-primary)] ${
+                        isMedium ? "text-[30px]" : "text-[22px]"
+                      }`}
+                    >
                       <Icon />
                     </span>
-                    <span className="card-title line-clamp-2 min-h-[30px] max-w-[100px] text-center font-normal">
+                    <span
+                      className={`card-title line-clamp-2 text-center font-normal ${
+                        isMedium ? "max-w-[132px]" : "max-w-[96px]"
+                      }`}
+                    >
                       {item.title[lang]}
                     </span>
                   </button>
