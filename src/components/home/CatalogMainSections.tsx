@@ -31,14 +31,6 @@ import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
  * -------------------------------------------------------------------------
  */
 export default function CatalogMainSections() {
-  // Orbit start angle per main section. The 8 rotations fan out across the
-  // sections that hold enough sibling cards to actually orbit the hub, so no
-  // two neighbours read identically; a lone feature just fills the hub.
-  let layoutCursor = 0;
-  const variantBySection = FEATURE_SHOWCASE.map((category) =>
-    category.features.length - 1 >= 1 ? layoutCursor++ % 8 : 0,
-  );
-
   return (
     <>
       {FEATURE_SHOWCASE.map((category, index) => {
@@ -49,7 +41,6 @@ export default function CatalogMainSections() {
             <CatalogFeatureScene
               category={category}
               feature={feature}
-              variant={variantBySection[index]}
               index={index}
               featureIndex={featureIndex}
             />

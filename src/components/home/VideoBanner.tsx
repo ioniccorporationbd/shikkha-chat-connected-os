@@ -206,10 +206,6 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
             className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-white/20 text-[15px] font-black tabular-nums text-white shadow-[0_16px_38px_rgba(0,0,0,0.20)] backdrop-blur-md"
           >
             {index}
-            <span
-              aria-hidden="true"
-              className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-[var(--color-action)] ring-2 ring-white/70"
-            />
           </span>
         </div>
 
@@ -236,10 +232,6 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
               style={pillStyle}
               className="mb-6 inline-flex items-center justify-center gap-2.5 rounded-full border border-white/60 bg-white/25 px-5 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md md:text-[13px]"
             >
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-1.5 rounded-full bg-[var(--color-action)]"
-              />
               {text.pill}
             </motion.span>
 

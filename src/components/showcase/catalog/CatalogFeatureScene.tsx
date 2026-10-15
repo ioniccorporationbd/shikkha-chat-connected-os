@@ -33,8 +33,9 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • 2 cards → BIG card in the middle + one MEDIUM card outside (right).
  *   • 3 cards → BIG inside + MEDIUM middle + the rest SMALL outside.
  *   • 4 cards → BIG inside + MEDIUM middle + the rest (two) SMALL outside.
- *   • 5+      → the full circular ring; a couple of sections keep every card
- *               inside the room as a grid (per-section variation).
+ *   • 5+      → the full circular ring. (Every section now uses the SAME card
+ *               design — the flat in-room grid variation was removed so the
+ *               busy sections match every other card on the page.)
  *
  *   • No connector lines. The card VISUAL design is unchanged from the current
  *     catalog design; only the arrangement + animation change.
@@ -99,15 +100,11 @@ function scrollToPanel(id: string) {
 export default function CatalogFeatureScene({
   category,
   feature,
-  variant = 0,
   index = 0,
   featureIndex = 0,
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
-  /** Drives the per-section arrangement (which sections keep every card inside
-   *  the room). The card design itself is unchanged. */
-  variant?: number;
   /** The section's order on the page. Drives the one entrance DIRECTION shared
    *  by every card of the section (neighbours get different directions). */
   index?: number;
@@ -168,15 +165,10 @@ export default function CatalogFeatureScene({
   const bigDir = BIG_CARD_DIR[index];
   const BIG_DROP = 150; // px the centre card travels when it drops in
 
-  const v = ((variant % 6) + 6) % 6;
-  const total = category.features.length;
-  // A couple of the busier sections keep every card inside the room (grid).
-  const allInside = total > 4 && (v === 2 || v === 5);
-
   // The ring = the section's other features, laid out on an ellipse that starts
   // at the RIGHT (i = 0, the MEDIUM card) and walks ANTICLOCKWISE from there.
   const ring = useMemo(() => {
-    const items = allInside ? [] : siblings;
+    const items = siblings;
     const n = items.length;
     return items.map((item, i) => {
       const ang = n ? (i / n) * Math.PI * 2 : 0; // 0 = right, + = anticlockwise (up)
@@ -184,7 +176,7 @@ export default function CatalogFeatureScene({
       const y = 50 - RING_RY * Math.sin(ang);
       return { item, i, ang, x, y };
     });
-  }, [allInside, siblings]);
+  }, [siblings]);
 
   const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(ring.length, 1);
 
@@ -225,21 +217,7 @@ export default function CatalogFeatureScene({
       },
     };
   };
-  const tileVariants = (i: number, count: number): Variants => ({
-    hidden: reduce ? { opacity: 1, x: 0 } : { opacity: 0, x: 64 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: {
-        duration: reduce ? 0 : 0.4,
-        ease: PREMIUM_EASE,
-        delay: reduce ? 0 : REVEAL_LEAD_S + i * (REVEAL_SPAN_S / Math.max(count, 1)),
-      },
-    },
-  });
-
   const HeroIcon = SHOWCASE_ICONS[feature.icon];
-  const roomTiles = allInside ? [feature, ...siblings] : [];
 
   return (
     <div
@@ -276,57 +254,31 @@ export default function CatalogFeatureScene({
 
             <div
               className="cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[18px] shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
-              style={allInside ? undefined : { width: BIG.w + 36, height: BIG.h + 36 }}
+              style={{ width: BIG.w + 36, height: BIG.h + 36 }}
             >
-              {allInside ? (
-                <div className="grid h-full w-full grid-cols-3 content-center gap-x-2.5 gap-y-2">
-                  {roomTiles.map((item, i) => {
-                    const Icon = SHOWCASE_ICONS[item.icon];
-                    return (
-                      <motion.button
-                        key={item.id}
-                        type="button"
-                        variants={tileVariants(i, roomTiles.length)}
-                        onClick={() =>
-                          scrollToPanel(catalogFeaturePanelId(category.id, item.id))
-                        }
-                        aria-label={item.title[lang]}
-                        className="cf-room-tile group flex flex-col items-center justify-center gap-1.5 rounded-[14px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_7%,var(--color-white))] px-1.5 py-2 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))]"
-                      >
-                        <span className="text-[22px] leading-none text-[var(--color-primary)]">
-                          <Icon />
-                        </span>
-                        <span className="card-title line-clamp-2">{item.title[lang]}</span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => scrollToPanel(panelId)}
-                  aria-label={feature.title[lang]}
-                  className="cf-room-tile group relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
-                >
-                  <span className="text-[46px] leading-none text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
-                    {HeroIcon ? <HeroIcon /> : null}
-                  </span>
-                  <span className="card-title max-w-[210px] text-center">
-                    {feature.title[lang]}
-                  </span>
-                  <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
-                    {category.title[lang]}
-                  </span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => scrollToPanel(panelId)}
+                aria-label={feature.title[lang]}
+                className="cf-room-tile group relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center outline-none transition-colors hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
+              >
+                <span className="text-[46px] leading-none text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
+                  {HeroIcon ? <HeroIcon /> : null}
+                </span>
+                <span className="card-title max-w-[210px] text-center">
+                  {feature.title[lang]}
+                </span>
+                <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
+                  {category.title[lang]}
+                </span>
+              </button>
             </div>
           </motion.div>
         </div>
 
         {/* Ring of the section's other features — a MEDIUM card first (at the
             right), then the SMALL cards, spanning in circularly anticlockwise. */}
-        {!allInside
-          ? ring.map(({ item, i, ang, x, y }) => {
+        {ring.map(({ item, i, ang, x, y }) => {
               const Icon = SHOWCASE_ICONS[item.icon];
               const tileId = catalogFeaturePanelId(category.id, item.id);
               const size = i === 0 ? MEDIUM : SMALL;
@@ -370,8 +322,7 @@ export default function CatalogFeatureScene({
                   </button>
                 </motion.div>
               );
-            })
-          : null}
+            })}
       </motion.div>
     </div>
   );

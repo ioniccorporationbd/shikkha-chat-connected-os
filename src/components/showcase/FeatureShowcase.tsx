@@ -7,8 +7,6 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
   FEATURE_SHOWCASE,
   SHOWCASE_TEXT,
-  showcaseAccessLabel,
-  showcaseStatusLabel,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
 
@@ -40,7 +38,6 @@ const PANEL =
   "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
 const SUBLIST =
   "mt-1.5 ml-3 space-y-1 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5";
-const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
 /**
  * Click a rail row → go to that section on the page. Fires the exact three
@@ -79,7 +76,6 @@ export default function FeatureShowcase() {
   const [openCategory, setOpenCategory] = useState<string | null>(
     FEATURE_SHOWCASE[0]?.id ?? null,
   );
-  const [openFeature, setOpenFeature] = useState<string | null>(null);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
 
   // Follow the page: when the scroll-sync engine reports a catalog section as
@@ -127,7 +123,6 @@ export default function FeatureShowcase() {
               onClick={() => {
                 const opening = !isOpen;
                 setOpenCategory(opening ? category.id : null);
-                setOpenFeature(null);
                 // Clicking a dropdown navigates to that category's main section.
                 if (opening) navigateToSection(catalogSectionId(category.id));
               }}
@@ -160,22 +155,18 @@ export default function FeatureShowcase() {
               <div className="overflow-hidden">
                 <div className={SUBLIST}>
                   {category.features.map((feature, index) => {
-                    const featureOpen = openFeature === feature.id;
-                    const detailId = `showcase-detail-${feature.id}`;
                     const isActive = activeFeatureId === feature.id;
 
                     return (
                       <div key={feature.id}>
                         <button
                           type="button"
-                          aria-expanded={featureOpen}
-                          aria-controls={detailId}
-                          title={feature.route}
                           onClick={() => {
-                            setOpenFeature(featureOpen ? null : feature.id);
                             setOpenCategory(category.id);
                             setActiveFeatureId(feature.id);
-                            // Clicking a feature link navigates to its section.
+                            // Clicking a feature link navigates to its section —
+                            // it no longer expands an inline description panel
+                            // below the row.
                             navigateToSection(
                               catalogFeaturePanelId(category.id, feature.id),
                             );
@@ -183,7 +174,7 @@ export default function FeatureShowcase() {
                           className={[
                             ROW,
                             "py-2",
-                            featureOpen || isActive ? "is-active" : "",
+                            isActive ? "is-active" : "",
                           ].join(" ")}
                         >
                           <span className={ROW_LABEL}>
@@ -193,53 +184,6 @@ export default function FeatureShowcase() {
                             </span>
                           </span>
                         </button>
-
-                        <div
-                          id={detailId}
-                          className={[
-                            PANEL,
-                            featureOpen
-                              ? "grid-rows-[1fr] opacity-100"
-                              : "grid-rows-[0fr] opacity-0",
-                          ].join(" ")}
-                        >
-                          <div className="overflow-hidden">
-                            <div className="mb-1 ml-2.5 mr-1 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,transparent)] px-2.5 py-2">
-                              <p className={`text-[10.5px] leading-[1.4] ${MUTED}`}>
-                                {feature.description[language]}
-                              </p>
-                              <dl className="mt-1.5 space-y-1 text-[10.5px] leading-[1.4]">
-                                <div className="flex gap-1.5">
-                                  <dt className={`shrink-0 font-semibold ${MUTED}`}>
-                                    {SHOWCASE_TEXT.sourceRoute[language]}:
-                                  </dt>
-                                  <dd className="min-w-0 break-all font-mono text-[10px] text-[var(--color-primary)]">
-                                    {feature.route}
-                                  </dd>
-                                </div>
-                                <div className="flex gap-1.5">
-                                  <dt className={`shrink-0 font-semibold ${MUTED}`}>
-                                    {SHOWCASE_TEXT.whoCanUse[language]}:
-                                  </dt>
-                                  <dd className="min-w-0 font-semibold text-[var(--color-primary)]">
-                                    {showcaseAccessLabel(feature.access, language)}
-                                  </dd>
-                                </div>
-                                <div className="flex gap-1.5">
-                                  <dt className={`shrink-0 font-semibold ${MUTED}`}>
-                                    {SHOWCASE_TEXT.statusLabel[language]}:
-                                  </dt>
-                                  <dd className="min-w-0 font-semibold text-[var(--color-primary)]">
-                                    {showcaseStatusLabel(feature, language)}
-                                  </dd>
-                                </div>
-                              </dl>
-                              <p className={`mt-1.5 text-[10px] leading-[1.4] ${MUTED}`}>
-                                {SHOWCASE_TEXT.infoNote[language]}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
