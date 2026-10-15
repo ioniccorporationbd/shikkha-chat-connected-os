@@ -20,11 +20,11 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • The section's other features sit as MINI-CARDS on a RING around the room.
  *     The ring starts at the RIGHT and runs ANTICLOCKWISE (right → top → left →
  *     bottom), so the cards SPAN IN CIRCULARLY, one after another, over ~1s.
- *   • Every card of a main section flies in from ONE shared direction, and those
- *     directions ROTATE section to section (top → bottom → right → left …). The
- *     FIRST main section goes finer: each of its sub-sections gets its own
- *     direction in order (top → bottom → right → left → out of the centre card).
- *     In one or two sections only, the big centre card drops in top/bottom.
+ *   • EVERY card of a sub-section flies in from ONE shared direction, and the
+ *     sub-sections cycle top → bottom → right → left → out of the centre card.
+ *     Each main section starts that cycle at a different phase, so neighbouring
+ *     sections read differently. In one or two sections only, the big centre
+ *     card additionally drops in top/bottom.
  *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
  *     ring card is a MEDIUM size, and every other card is SMALL.
  *
@@ -154,18 +154,12 @@ export default function CatalogFeatureScene({
     [category.features, feature.id],
   );
 
-  // Entrance DIRECTION. By default ONE direction is shared by every card of a
-  // main section, and the directions rotate section to section (top → bottom →
-  // right → left). The FIRST main section steps down one level: EACH of its
-  // sub-sections (features) gets its own direction in order — 1st from the top,
-  // 2nd from the bottom, 3rd from the right, 4th from the left, 5th out of the
-  // centre card — then the cycle repeats.
-  const SECTION_DIRS = [2, 3, 0, 1] as const; // 2=top 3=bottom 0=right 1=left
-  const SUB_DIRS = [2, 3, 0, 1, 5] as const; // …+ 5 = out of the centre card
-  const subMode = index === 0;
-  const dir = subMode
-    ? SUB_DIRS[(((featureIndex % SUB_DIRS.length) + SUB_DIRS.length) % SUB_DIRS.length)]
-    : SECTION_DIRS[(((index % SECTION_DIRS.length) + SECTION_DIRS.length) % SECTION_DIRS.length)];
+  // EVERY main section steps the entrance direction down to its sub-sections:
+  // the sub-sections cycle top → bottom → right → left → out of the centre card.
+  // Each section starts the cycle at a different point (offset by the section's
+  // order) so neighbouring sections still read differently from each other.
+  const SUB_DIRS = [2, 3, 0, 1, 5] as const; // 2=top 3=bottom 0=right 1=left 5=out of centre
+  const dir = SUB_DIRS[(((featureIndex + index) % SUB_DIRS.length) + SUB_DIRS.length) % SUB_DIRS.length];
 
   // In ONLY these one-or-two sections the BIG (centre) card additionally drops
   // in from the top/bottom as a small flourish (2=top, 3=bottom). Elsewhere the
