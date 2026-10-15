@@ -20,6 +20,10 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • The section's other features sit as MINI-CARDS on a RING around the room.
  *     The ring starts at the RIGHT and runs ANTICLOCKWISE (right → top → left →
  *     bottom), so the cards SPAN IN CIRCULARLY, one after another, over ~1s.
+ *   • Each mini-card flies in from its OWN direction (right / left / top /
+ *     bottom / outside→in / inside the centre card→out), cycling card-by-card.
+ *     So ONE section shows several entrance themes at once and different
+ *     sections differ — never one uniform direction for a whole section.
  *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
  *     ring card is a MEDIUM size, and every other card is SMALL.
  *
@@ -45,7 +49,37 @@ const SMALL = { w: 104, h: 92 };
 // the RIGHT and running anticlockwise (right → top → left → bottom).
 const RING_RX = 36; // % of stage width
 const RING_RY = 38; // % of stage height
-const RING_IN_DIST = 132; // px each ring card travels inward along its radius
+
+// Every ring card flies in from its OWN direction so that a single section
+// shows MULTIPLE entrance themes at once (never one uniform direction for a
+// whole section). `ringOffset` maps a direction variant + the card's ring angle
+// to that card's hidden transform (travelled distance, px):
+//   0 from the RIGHT   1 from the LEFT   2 from the TOP   3 from the BOTTOM
+//   4 from OUTSIDE → IN (towards the centre along its own radius)
+//   5 from INSIDE the centre card → OUT
+const DIR_COUNT = 6;
+const TRAVEL_H = 340;
+const TRAVEL_V = 380;
+const TRAVEL_OUT = 150;
+const TRAVEL_IN = 300;
+function ringOffset(dir: number, ang: number) {
+  const c = Math.cos(ang);
+  const s = Math.sin(ang);
+  switch (dir) {
+    case 0:
+      return { x: TRAVEL_H, y: 0 };
+    case 1:
+      return { x: -TRAVEL_H, y: 0 };
+    case 2:
+      return { x: 0, y: -TRAVEL_V };
+    case 3:
+      return { x: 0, y: TRAVEL_V };
+    case 4:
+      return { x: c * TRAVEL_OUT, y: -s * TRAVEL_OUT };
+    default:
+      return { x: -c * TRAVEL_IN, y: s * TRAVEL_IN };
+  }
+}
 
 // The staggered reveal runs for roughly one second in total.
 const REVEAL_TOTAL_S = 1.0;
@@ -112,6 +146,18 @@ export default function CatalogFeatureScene({
     [category.features, feature.id],
   );
 
+  // Per-section phase so different sections start the direction cycle at a
+  // different point (sections differ from each other), while the card index `i`
+  // keeps every card inside ONE section on its own direction (so a single
+  // section shows several entrance themes at once).
+  const dirSeed = useMemo(() => {
+    let h = 0;
+    for (let k = 0; k < category.id.length; k++) {
+      h = (h * 31 + category.id.charCodeAt(k)) >>> 0;
+    }
+    return h % DIR_COUNT;
+  }, [category.id]);
+
   const v = ((variant % 6) + 6) % 6;
   const total = category.features.length;
   // A couple of the busier sections keep every card inside the room (grid).
@@ -141,23 +187,25 @@ export default function CatalogFeatureScene({
       transition: { duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE, delay: 0 },
     },
   };
-  // Ring cards converge INWARD along their own radius, staggered anticlockwise
-  // from the right — the cycle is circular (right → left).
-  const ringVariants = (i: number, ang: number): Variants => ({
-    hidden: reduce
-      ? { opacity: 1, x: 0, y: 0 }
-      : { opacity: 0, x: Math.cos(ang) * RING_IN_DIST, y: -Math.sin(ang) * RING_IN_DIST },
-    visible: {
-      opacity: 1,
-      x: 0,
-      y: 0,
-      transition: {
-        duration: reduce ? 0 : REVEAL_CARD_S,
-        ease: PREMIUM_EASE,
-        delay: reduce ? 0 : REVEAL_LEAD_S + i * step,
+  // Ring cards fly in from their own per-card direction (see ringOffset) while
+  // the STAGGER still walks anticlockwise from the right, so the reveal reads
+  // as a circular cycle even though the entrance directions differ card to card.
+  const ringVariants = (i: number, ang: number, dir: number): Variants => {
+    const off = ringOffset(dir, ang);
+    return {
+      hidden: reduce ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: off.x, y: off.y },
+      visible: {
+        opacity: 1,
+        x: 0,
+        y: 0,
+        transition: {
+          duration: reduce ? 0 : REVEAL_CARD_S,
+          ease: PREMIUM_EASE,
+          delay: reduce ? 0 : REVEAL_LEAD_S + i * step,
+        },
       },
-    },
-  });
+    };
+  };
   const tileVariants = (i: number, count: number): Variants => ({
     hidden: reduce ? { opacity: 1, x: 0 } : { opacity: 0, x: 64 },
     visible: {
@@ -264,11 +312,12 @@ export default function CatalogFeatureScene({
               const tileId = catalogFeaturePanelId(category.id, item.id);
               const size = i === 0 ? MEDIUM : SMALL;
               const isMedium = i === 0;
+              const dir = (i + dirSeed) % DIR_COUNT;
 
               return (
                 <motion.div
                   key={item.id}
-                  variants={ringVariants(i, ang)}
+                  variants={ringVariants(i, ang, dir)}
                   className="cf-scatter-card absolute z-20"
                   style={{
                     left: `${x}%`,
