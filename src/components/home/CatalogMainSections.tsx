@@ -42,7 +42,7 @@ export default function CatalogMainSections() {
   return (
     <>
       {FEATURE_SHOWCASE.map((category, index) => {
-        const scenes: HubScene[] = category.features.map((feature) => ({
+        const scenes: HubScene[] = category.features.map((feature, featureIndex) => ({
           id: catalogFeaturePanelId(category.id, feature.id),
           title: feature.title.bn,
           node: (
@@ -51,6 +51,7 @@ export default function CatalogMainSections() {
               feature={feature}
               variant={variantBySection[index]}
               index={index}
+              featureIndex={featureIndex}
             />
           ),
         }));

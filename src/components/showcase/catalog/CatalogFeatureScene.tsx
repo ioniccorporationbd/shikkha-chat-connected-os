@@ -20,10 +20,11 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • The section's other features sit as MINI-CARDS on a RING around the room.
  *     The ring starts at the RIGHT and runs ANTICLOCKWISE (right → top → left →
  *     bottom), so the cards SPAN IN CIRCULARLY, one after another, over ~1s.
- *   • Every card of a section flies in from ONE shared direction, and those
- *     directions ROTATE section to section (top → bottom → right → left …), so
- *     neighbouring sections read differently. In one or two sections only, the
- *     big centre card additionally drops in from the top/bottom.
+ *   • Every card of a main section flies in from ONE shared direction, and those
+ *     directions ROTATE section to section (top → bottom → right → left …). The
+ *     FIRST main section goes finer: each of its sub-sections gets its own
+ *     direction in order (top → bottom → right → left → out of the centre card).
+ *     In one or two sections only, the big centre card drops in top/bottom.
  *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
  *     ring card is a MEDIUM size, and every other card is SMALL.
  *
@@ -100,6 +101,7 @@ export default function CatalogFeatureScene({
   feature,
   variant = 0,
   index = 0,
+  featureIndex = 0,
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
@@ -109,6 +111,9 @@ export default function CatalogFeatureScene({
   /** The section's order on the page. Drives the one entrance DIRECTION shared
    *  by every card of the section (neighbours get different directions). */
   index?: number;
+  /** The feature's order WITHIN its main section. In the first main section this
+   *  steps the entrance direction sub-section by sub-section. */
+  featureIndex?: number;
 }) {
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
@@ -149,11 +154,18 @@ export default function CatalogFeatureScene({
     [category.features, feature.id],
   );
 
-  // ONE entrance direction per section — shared by every card of that section.
-  // Neighbouring sections rotate through top → bottom → right → left so no two
-  // adjacent sections read the same. Keyed on the section's page order.
+  // Entrance DIRECTION. By default ONE direction is shared by every card of a
+  // main section, and the directions rotate section to section (top → bottom →
+  // right → left). The FIRST main section steps down one level: EACH of its
+  // sub-sections (features) gets its own direction in order — 1st from the top,
+  // 2nd from the bottom, 3rd from the right, 4th from the left, 5th out of the
+  // centre card — then the cycle repeats.
   const SECTION_DIRS = [2, 3, 0, 1] as const; // 2=top 3=bottom 0=right 1=left
-  const sectionDir = SECTION_DIRS[(((index % SECTION_DIRS.length) + SECTION_DIRS.length) % SECTION_DIRS.length)];
+  const SUB_DIRS = [2, 3, 0, 1, 5] as const; // …+ 5 = out of the centre card
+  const subMode = index === 0;
+  const dir = subMode
+    ? SUB_DIRS[(((featureIndex % SUB_DIRS.length) + SUB_DIRS.length) % SUB_DIRS.length)]
+    : SECTION_DIRS[(((index % SECTION_DIRS.length) + SECTION_DIRS.length) % SECTION_DIRS.length)];
 
   // In ONLY these one-or-two sections the BIG (centre) card additionally drops
   // in from the top/bottom as a small flourish (2=top, 3=bottom). Elsewhere the
@@ -200,9 +212,9 @@ export default function CatalogFeatureScene({
       transition: { duration: reduce ? 0 : bigDir != null ? 0.6 : 0.5, ease: PREMIUM_EASE, delay: 0 },
     },
   };
-  // EVERY ring card of the section flies in from the SAME section direction
-  // (sectionDir) while the STAGGER still walks anticlockwise from the right, so
-  // the cards cascade in together from one shared direction.
+  // EVERY ring card of the scene flies in from the SAME direction (`dir`) while
+  // the STAGGER still walks anticlockwise from the right, so the cards cascade
+  // in together from one shared direction.
   const ringVariants = (i: number, ang: number, dir: number): Variants => {
     const off = ringOffset(dir, ang);
     return {
@@ -329,7 +341,7 @@ export default function CatalogFeatureScene({
               return (
                 <motion.div
                   key={item.id}
-                  variants={ringVariants(i, ang, sectionDir)}
+                  variants={ringVariants(i, ang, dir)}
                   className="cf-scatter-card absolute z-20"
                   style={{
                     left: `${x}%`,
