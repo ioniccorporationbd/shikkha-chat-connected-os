@@ -4,6 +4,9 @@ import Image from "next/image";
 import { useEffect, type ReactNode } from "react";
 import { FiX } from "react-icons/fi";
 
+import ShikkhaLoader from "./ShikkhaLoader";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+
 export interface DetailRow {
   label: string;
   value: string;
@@ -65,6 +68,9 @@ export default function DetailSheet({
   error,
   errorTitle,
 }: DetailSheetProps) {
+  // Keep the sheet mounted through its exit keyframe (smooth close).
+  const { mounted, exiting } = useOverlayPresence(open, 220);
+
   useEffect(() => {
     if (!open) return;
 
@@ -81,20 +87,24 @@ export default function DetailSheet({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-[130]" data-no-translate="true">
+    <div className="fixed inset-0 z-[130] flex items-end justify-center sm:items-center sm:p-4" data-no-translate="true">
       <div
         aria-hidden
         onClick={onClose}
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm"
+        className={`absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm ${
+          exiting ? "u-shk-fade-out" : "u-shk-fade-in"
+        }`}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="absolute inset-x-0 bottom-0 flex max-h-[92vh] flex-col overflow-hidden rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[88vh] sm:w-[640px] sm:max-w-[93vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:border"
+        className={`relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:max-h-[88vh] sm:w-[640px] sm:max-w-[93vw] sm:rounded-[26px] sm:border sm:shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
+          exiting ? "u-shk-modal-out pointer-events-none" : "u-shk-modal-in"
+        }`}
       >
         {/* modern header — Shikkha Chat logo + close */}
         <header className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))_0%,var(--color-white)_72%)] px-5 py-3.5">
@@ -122,9 +132,9 @@ export default function DetailSheet({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {loading ? (
-            <p className="py-8 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-              {loadingText}
-            </p>
+            <div className="py-10">
+              <ShikkhaLoader label={loadingText} size="md" />
+            </div>
           ) : error ? (
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">
               <p className="text-[13px] font-semibold text-[var(--color-danger-strong)]">{errorTitle}</p>

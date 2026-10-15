@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 import { useOptionalLanguage } from "@/lib/i18n/LanguageProvider";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 
 type Lang = "bn" | "en";
 
@@ -149,6 +150,8 @@ export default function DashboardDateField({
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // Keep the popover mounted through its exit keyframe (smooth close).
+  const { mounted: popMounted, exiting: popExiting } = useOverlayPresence(open, 160);
 
   const selected = useMemo(() => parseIso(value), [value]);
   const now = useMemo(() => {
@@ -252,7 +255,7 @@ export default function DashboardDateField({
   };
 
   const navClass =
-    "grid h-8 w-8 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] hover:text-[var(--color-primary)]";
+    "grid h-8 w-8 place-items-center rounded-xl text-[color-mix(in_srgb,var(--color-action)_72%,transparent)] transition hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]";
 
   return (
     <div ref={rootRef} className="relative">
@@ -288,12 +291,15 @@ export default function DashboardDateField({
         />
       </button>
 
-      {open ? (
+      {popMounted ? (
         <div
           role="dialog"
           aria-label={`${copy.dialog} — ${monthLabel}`}
+          aria-hidden={popExiting || undefined}
           data-no-translate="true"
-          className="absolute left-0 z-40 mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-3 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+          className={`absolute left-0 z-40 mt-1.5 w-80 max-w-[calc(100vw-2rem)] origin-top rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-3 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
+            popExiting ? "u-shk-pop-out pointer-events-none" : "u-shk-pop-in"
+          }`}
         >
           <div className="flex items-center justify-between gap-2">
             <button type="button" aria-label={copy.prev} onClick={() => moveMonth(-1)} className={navClass}>
@@ -325,7 +331,7 @@ export default function DashboardDateField({
                 state = "cursor-not-allowed text-[color-mix(in_srgb,var(--color-primary)_32%,transparent)]";
               } else if (cell.selected) {
                 state =
-                  "bg-[var(--color-primary)] font-semibold text-[var(--color-white)] shadow-[0_10px_22px_-12px_color-mix(in_srgb,var(--color-primary)_80%,transparent)]";
+                  "bg-[var(--color-action)] font-semibold text-[var(--color-white)] shadow-[0_10px_22px_-12px_color-mix(in_srgb,var(--color-action)_85%,transparent)]";
               } else if (cell.isToday) {
                 state =
                   "font-semibold text-[var(--color-primary)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,transparent)]";
@@ -366,7 +372,7 @@ export default function DashboardDateField({
               type="button"
               disabled={isDisabledDay(todayIso)}
               onClick={() => select(todayIso)}
-              className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-secondary)_22%,transparent)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-[var(--color-action)] transition hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               {copy.today}
             </button>

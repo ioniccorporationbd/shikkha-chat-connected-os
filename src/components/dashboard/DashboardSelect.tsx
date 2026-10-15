@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+
 export interface DashboardSelectOption {
   value: string;
   label: string;
@@ -46,6 +48,8 @@ export default function DashboardSelect({
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const baseId = useId();
+  // Keep the option list mounted through its exit keyframe (smooth close).
+  const { mounted: popMounted, exiting: popExiting } = useOverlayPresence(open, 150);
 
   const selectedIndex = options.findIndex((option) => option.value === value);
   const selected = selectedIndex >= 0 ? options[selectedIndex] : undefined;
@@ -141,13 +145,16 @@ export default function DashboardSelect({
         />
       </button>
 
-      {open ? (
+      {popMounted ? (
         <ul
           ref={listRef}
           id={`${baseId}-list`}
           role="listbox"
           aria-label={ariaLabel}
-          className="absolute left-0 right-0 z-30 mt-1.5 max-h-60 overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+          aria-hidden={popExiting || undefined}
+          className={`absolute left-0 right-0 z-30 mt-1.5 max-h-60 origin-top overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
+            popExiting ? "u-shk-pop-out pointer-events-none" : "u-shk-pop-in"
+          }`}
         >
           {options.map((option, index) => {
             const isSelected = option.value === value;

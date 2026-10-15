@@ -2232,3 +2232,143 @@ html[data-lang="en"] .language-toggle-knob {
   align-items: center;
   justify-content: center;
 }
+
+/* =========================================================
+   Dashboard overlays — smooth open AND close (modals, sheet, popovers)
+   Applied via `data-open`-less classes toggled from useOverlayPresence.
+   ========================================================= */
+@keyframes shk-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes shk-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes shk-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes shk-sheet-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes shk-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes shk-modal-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+}
+@keyframes shk-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes shk-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+}
+
+.u-shk-fade-in {
+  animation: shk-fade-in 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.u-shk-fade-out {
+  animation: shk-fade-out 0.2s ease-in both;
+}
+.u-shk-sheet-in {
+  animation: shk-sheet-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.u-shk-sheet-out {
+  animation: shk-sheet-out 0.22s ease-in both;
+}
+.u-shk-modal-in {
+  animation: shk-modal-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.u-shk-modal-out {
+  animation: shk-modal-out 0.2s ease-in both;
+}
+.u-shk-pop-in {
+  animation: shk-pop-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.u-shk-pop-out {
+  animation: shk-pop-out 0.14s ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="u-shk-"] {
+    animation: none !important;
+  }
+}
+
+/* =========================================================
+   Modern branded loader (Shikkha logo + spinning ring)
+   ========================================================= */
+@keyframes shk-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.shk-loader-track {
+  border: 4px solid color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+.shk-loader-ring {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in srgb, var(--color-action) 45%, transparent) 200deg,
+    var(--color-action) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: shk-loader-spin 0.85s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shk-loader-ring {
+    animation: none;
+  }
+}

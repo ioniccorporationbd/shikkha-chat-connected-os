@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { FiX } from "react-icons/fi";
 
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+
 interface DashboardModalProps {
   open: boolean;
   title: string;
@@ -43,6 +45,8 @@ export default function DashboardModal({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  // Keep the dialog mounted through its exit keyframe (smooth close).
+  const { mounted, exiting } = useOverlayPresence(open, 220);
 
   // Keep the latest onClose in a ref so the focus/scroll-lock effect below can
   // depend on `open` alone. When callers pass a fresh onClose every render
@@ -125,7 +129,7 @@ export default function DashboardModal({
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return (
     <div
@@ -135,7 +139,9 @@ export default function DashboardModal({
       <div
         aria-hidden
         onClick={onClose}
-        className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] backdrop-blur-sm"
+        className={`absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] backdrop-blur-sm ${
+          exiting ? "u-shk-fade-out" : "u-shk-fade-in"
+        }`}
       />
 
       <div
@@ -143,7 +149,9 @@ export default function DashboardModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative z-10 flex max-h-[92vh] w-full ${widthClass} flex-col overflow-hidden rounded-t-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:rounded-[26px]`}
+        className={`relative z-10 flex max-h-[92vh] w-full ${widthClass} flex-col overflow-hidden rounded-t-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:rounded-[26px] ${
+          exiting ? "u-shk-modal-out pointer-events-none" : "u-shk-modal-in"
+        }`}
       >
         <header className="relative flex items-start gap-3 bg-[linear-gradient(135deg,var(--color-primary)_0%,color-mix(in_srgb,var(--color-primary)_80%,var(--color-secondary))_100%)] px-5 py-4">
           <div className="min-w-0 flex-1">

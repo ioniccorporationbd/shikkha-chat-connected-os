@@ -32,6 +32,7 @@ import PanelCard from "@/components/dashboard/PanelCard";
 import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
 import PaymentSuccessView from "@/components/dashboard/payment/PaymentSuccessView";
 import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
+import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
 import UserAvatar from "@/components/dashboard/UserAvatar";
@@ -907,14 +908,7 @@ export default function DashboardShell({
 
             {!data && !loadError ? (
               <PanelCard title={copy.loadingTitle} hint={copy.loadingHint}>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {[0, 1, 2, 3].map((index) => (
-                    <div
-                      key={index}
-                      className="h-[132px] animate-pulse rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
-                    />
-                  ))}
-                </div>
+                <ShikkhaLoader size="lg" className="py-12" />
               </PanelCard>
             ) : null}
 

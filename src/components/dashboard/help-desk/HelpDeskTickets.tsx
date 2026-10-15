@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiLifeBuoy } from "react-icons/fi";
 
-import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
+import { HelpDeskErrorState } from "@/components/help-desk/HelpDeskStates";
+import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
 import TicketEmptyState from "@/components/help-desk/TicketEmptyState";
 import TicketFilters from "@/components/help-desk/TicketFilters";
 import TicketList from "@/components/help-desk/TicketList";
@@ -135,7 +136,7 @@ export default function HelpDeskTickets({
       <TicketFilters copy={copy} value={filter} onChange={setFilter} />
 
       {tickets === null ? (
-        <TicketListSkeleton rows={4} />
+        <ShikkhaLoader size="lg" label={copy.loadingTickets} className="py-12" />
       ) : loadError ? (
         <HelpDeskErrorState copy={copy} onRetry={retry} basePath={basePath} />
       ) : tickets.length === 0 ? (
