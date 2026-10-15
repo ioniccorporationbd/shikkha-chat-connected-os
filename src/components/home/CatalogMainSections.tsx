@@ -50,6 +50,7 @@ export default function CatalogMainSections() {
               category={category}
               feature={feature}
               variant={variantBySection[index]}
+              index={index}
             />
           ),
         }));

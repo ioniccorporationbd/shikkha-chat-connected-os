@@ -20,10 +20,10 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • The section's other features sit as MINI-CARDS on a RING around the room.
  *     The ring starts at the RIGHT and runs ANTICLOCKWISE (right → top → left →
  *     bottom), so the cards SPAN IN CIRCULARLY, one after another, over ~1s.
- *   • Each mini-card flies in from its OWN direction (right / left / top /
- *     bottom / outside→in / inside the centre card→out), cycling card-by-card.
- *     So ONE section shows several entrance themes at once and different
- *     sections differ — never one uniform direction for a whole section.
+ *   • Every card of a section flies in from ONE shared direction, and those
+ *     directions ROTATE section to section (top → bottom → right → left …), so
+ *     neighbouring sections read differently. In one or two sections only, the
+ *     big centre card additionally drops in from the top/bottom.
  *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
  *     ring card is a MEDIUM size, and every other card is SMALL.
  *
@@ -57,7 +57,6 @@ const RING_RY = 38; // % of stage height
 //   0 from the RIGHT   1 from the LEFT   2 from the TOP   3 from the BOTTOM
 //   4 from OUTSIDE → IN (towards the centre along its own radius)
 //   5 from INSIDE the centre card → OUT
-const DIR_COUNT = 6;
 const TRAVEL_H = 340;
 const TRAVEL_V = 380;
 const TRAVEL_OUT = 150;
@@ -100,12 +99,16 @@ export default function CatalogFeatureScene({
   category,
   feature,
   variant = 0,
+  index = 0,
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
   /** Drives the per-section arrangement (which sections keep every card inside
    *  the room). The card design itself is unchanged. */
   variant?: number;
+  /** The section's order on the page. Drives the one entrance DIRECTION shared
+   *  by every card of the section (neighbours get different directions). */
+  index?: number;
 }) {
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
@@ -146,17 +149,18 @@ export default function CatalogFeatureScene({
     [category.features, feature.id],
   );
 
-  // Per-section phase so different sections start the direction cycle at a
-  // different point (sections differ from each other), while the card index `i`
-  // keeps every card inside ONE section on its own direction (so a single
-  // section shows several entrance themes at once).
-  const dirSeed = useMemo(() => {
-    let h = 0;
-    for (let k = 0; k < category.id.length; k++) {
-      h = (h * 31 + category.id.charCodeAt(k)) >>> 0;
-    }
-    return h % DIR_COUNT;
-  }, [category.id]);
+  // ONE entrance direction per section — shared by every card of that section.
+  // Neighbouring sections rotate through top → bottom → right → left so no two
+  // adjacent sections read the same. Keyed on the section's page order.
+  const SECTION_DIRS = [2, 3, 0, 1] as const; // 2=top 3=bottom 0=right 1=left
+  const sectionDir = SECTION_DIRS[(((index % SECTION_DIRS.length) + SECTION_DIRS.length) % SECTION_DIRS.length)];
+
+  // In ONLY these one-or-two sections the BIG (centre) card additionally drops
+  // in from the top/bottom as a small flourish (2=top, 3=bottom). Elsewhere the
+  // centre card just eases in as before.
+  const BIG_CARD_DIR: Record<number, number> = { 1: 2, 6: 3 };
+  const bigDir = BIG_CARD_DIR[index];
+  const BIG_DROP = 150; // px the centre card travels when it drops in
 
   const v = ((variant % 6) + 6) % 6;
   const total = category.features.length;
@@ -179,17 +183,26 @@ export default function CatalogFeatureScene({
   const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(ring.length, 1);
 
   const pageVariants: Variants = { hidden: {}, visible: {} };
+  // The centre card normally eases in; in the one-or-two special sections
+  // (`bigDir`) it additionally drops in from the top/bottom.
   const roomVariants: Variants = {
-    hidden: reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+    hidden: reduce
+      ? { opacity: 1, x: 0, y: 0 }
+      : bigDir === 2
+        ? { opacity: 0, x: 0, y: -BIG_DROP }
+        : bigDir === 3
+          ? { opacity: 0, x: 0, y: BIG_DROP }
+          : { opacity: 0, x: 0, y: 16 },
     visible: {
       opacity: 1,
+      x: 0,
       y: 0,
-      transition: { duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE, delay: 0 },
+      transition: { duration: reduce ? 0 : bigDir != null ? 0.6 : 0.5, ease: PREMIUM_EASE, delay: 0 },
     },
   };
-  // Ring cards fly in from their own per-card direction (see ringOffset) while
-  // the STAGGER still walks anticlockwise from the right, so the reveal reads
-  // as a circular cycle even though the entrance directions differ card to card.
+  // EVERY ring card of the section flies in from the SAME section direction
+  // (sectionDir) while the STAGGER still walks anticlockwise from the right, so
+  // the cards cascade in together from one shared direction.
   const ringVariants = (i: number, ang: number, dir: number): Variants => {
     const off = ringOffset(dir, ang);
     return {
@@ -312,12 +325,11 @@ export default function CatalogFeatureScene({
               const tileId = catalogFeaturePanelId(category.id, item.id);
               const size = i === 0 ? MEDIUM : SMALL;
               const isMedium = i === 0;
-              const dir = (i + dirSeed) % DIR_COUNT;
 
               return (
                 <motion.div
                   key={item.id}
-                  variants={ringVariants(i, ang, dir)}
+                  variants={ringVariants(i, ang, sectionDir)}
                   className="cf-scatter-card absolute z-20"
                   style={{
                     left: `${x}%`,
