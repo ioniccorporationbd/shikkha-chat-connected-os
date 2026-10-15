@@ -22,12 +22,11 @@ const DEFAULT_VISIBLE = 5;
 
 function dotClass(row: DashboardActivityRow): string {
   // The timeline marks wear the SAME palette as the page's icon chips: the
-  // brand primary green for a normal event and the Shikkha action red for a
-  // failed attempt / deliberate sign-out — so the history reads in-theme
-  // instead of with the muted success/danger tokens.
+  // brand primary green for a normal event and the Shikkha action red only for
+  // a failed attempt — so the history reads in-theme. A deliberate sign-out is
+  // a normal event and wears the primary dot like every other normal event.
   if (row.status === "Failed") return "bg-[var(--color-action)]";
   if (row.status === "Blocked") return "bg-[var(--color-warning)]";
-  if (row.event === "logout") return "bg-[var(--color-action)]";
   return "bg-[var(--color-primary)]";
 }
 
