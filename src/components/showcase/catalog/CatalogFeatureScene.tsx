@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ShowcaseCategory, ShowcaseFeature } from "@/lib/feature-showcase";
@@ -18,10 +18,10 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *   • A bordered central FRAME (the "room") holds the current feature plus its
  *     first sibling — one of them rendered larger (the featured pair).
  *   • The remaining sibling features sit as mini-cards SCATTERED around the
- *     room at the original percentage positions — they land both inside the
- *     section and just outside the room frame, the classic in+out arrangement.
- *   • Every scattered card is tied to the room by a drawn connector line and
- *     reveals with the original framer-motion stagger (fade + rise).
+ *     room — some land inside the section, some just outside the room frame.
+ *   • No connector lines. The scattered cards SPAN IN FROM THE RIGHT, one after
+ *     another in ANTICLOCKWISE order, staggered so the whole reveal runs for
+ *     about one second each time the section scrolls into view.
  *   • The card VISUAL design (icon + title tile) is unchanged from the current
  *     catalog design; only the arrangement + animation follow the 13/10 branch.
  *   • A few sections keep every card inside the room (variant driven) so the
@@ -52,6 +52,12 @@ const SCATTER: ReadonlyArray<{ x: number; y: number }> = [
   { x: 91, y: 60 },
 ];
 
+// The staggered reveal runs for roughly one second in total.
+const REVEAL_TOTAL_S = 1.0;
+const REVEAL_LEAD_S = 0.08;
+const REVEAL_CARD_S = 0.42;
+const REVEAL_SPAN_S = Math.max(REVEAL_TOTAL_S - REVEAL_LEAD_S - REVEAL_CARD_S, 0.1); // ≈0.5s of stagger span
+
 function scrollToPanel(id: string) {
   window.dispatchEvent(
     new CustomEvent("connected-os-scroll-to-section", { detail: { id } }),
@@ -75,7 +81,45 @@ export default function CatalogFeatureScene({
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
   const reduce = useReducedMotion();
-  const [hovered, setHovered] = useState<string | null>(null);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  // Reveal the anticlockwise spotting when this section enters the viewport and
+  // replay it on each re-entry. Mirrors the app's own scroll engine (a passive
+  // rAF-throttled scroll listener) which is reliable inside this sticky-scroll
+  // layout where IntersectionObserver proved laggy; the parent variants then
+  // cascade the reveal to the room + scattered cards. Hysteresis prevents flicker.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    let raf: number | null = null;
+    let cur = false;
+    const measure = () => {
+      raf = null;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || 0;
+      const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      const ratio = visible / Math.max(r.height, 1);
+      const next = ratio >= 0.4 ? true : ratio < 0.15 ? false : cur;
+      if (next !== cur) {
+        cur = next;
+        setShown(next);
+      }
+    };
+    const schedule = () => {
+      if (raf != null) return;
+      raf = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    return () => {
+      if (raf != null) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, []);
 
   const panelId = catalogFeaturePanelId(category.id, feature.id);
   const siblings = useMemo(
@@ -96,29 +140,65 @@ export default function CatalogFeatureScene({
     [scattered, shift],
   );
 
-  const pageVariants: Variants = {
-    hidden: { opacity: 1 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: reduce ? 0 : 0.07,
-        delayChildren: reduce ? 0 : 0.12,
-      },
-    },
-  };
-  const itemVariants: Variants = {
-    hidden: reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 },
+  // Each scattered card, tagged with its ANTICLOCKWISE rank around the room
+  // (angle from the centre, 0° = right/east, increasing counter-clockwise).
+  const cards = useMemo(() => {
+    const arr = scattered.map((item, i) => {
+      const p = points[i];
+      const angle = Math.atan2(50 - p.y, p.x - 50);
+      return { item, p, angle };
+    });
+    const order = [...arr].sort((a, b) => a.angle - b.angle);
+    const rank = new Map<string, number>();
+    order.forEach((c, idx) => rank.set(c.item.id, idx));
+    return arr.map((c) => ({ ...c, rank: rank.get(c.item.id) ?? 0 }));
+  }, [scattered, points]);
+
+  const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(cards.length, 1);
+
+  const pageVariants: Variants = { hidden: {}, visible: {} };
+  const roomVariants: Variants = {
+    hidden: reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: reduce ? 0 : 0.55, ease: PREMIUM_EASE },
+      transition: { duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE, delay: 0 },
     },
   };
+  // Scattered cards span in from the RIGHT, sequentially in anticlockwise order.
+  const cardVariants = (rank: number): Variants => ({
+    hidden: reduce ? { opacity: 1, x: 0 } : { opacity: 0, x: 96 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: reduce ? 0 : REVEAL_CARD_S,
+        ease: PREMIUM_EASE,
+        delay: reduce ? 0 : REVEAL_LEAD_S + rank * step,
+      },
+    },
+  });
+  const tileVariants = (i: number, count: number): Variants => ({
+    hidden: reduce ? { opacity: 1, x: 0 } : { opacity: 0, x: 64 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: reduce ? 0 : 0.4,
+        ease: PREMIUM_EASE,
+        delay: reduce ? 0 : REVEAL_LEAD_S + i * (REVEAL_SPAN_S / Math.max(count, 1)),
+      },
+    },
+  });
 
   const HeroIcon = SHOWCASE_ICONS[feature.icon];
+  const roomTiles = allInside ? [feature, ...siblings] : insideCards;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_9%,var(--color-white))]">
+    <div
+      ref={rootRef}
+      className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_9%,var(--color-white))]"
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70 opacity-90 blur-[88px]"
@@ -135,61 +215,12 @@ export default function CatalogFeatureScene({
       <motion.div
         variants={pageVariants}
         initial="hidden"
-        animate="visible"
+        animate={shown ? "visible" : "hidden"}
         className="relative h-full w-full"
       >
-        {/* Connector lines from the room to every scattered card. */}
-        {!allInside && scattered.length ? (
-          <svg
-            className="pointer-events-none absolute inset-0 z-[15] h-full w-full"
-            viewBox="0 0 1000 1000"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            {points.map((p, i) => {
-              const d = `M 500 500 L ${(p.x * 10).toFixed(1)} ${(p.y * 10).toFixed(1)}`;
-              const hot = hovered === scattered[i].id;
-              return (
-                <g key={scattered[i].id}>
-                  <motion.path
-                    d={d}
-                    fill="none"
-                    stroke="var(--color-secondary)"
-                    strokeWidth={hot ? 20 : 14}
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: hot ? 0.55 : 0.28 }}
-                    transition={{ duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE, delay: reduce ? 0 : 0.15 + i * 0.06 }}
-                  />
-                  <motion.path
-                    d={d}
-                    fill="none"
-                    stroke="var(--color-white)"
-                    strokeWidth="7"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: reduce ? 0 : 0.55, ease: PREMIUM_EASE, delay: reduce ? 0 : 0.15 + i * 0.06 }}
-                  />
-                  <motion.path
-                    d={d}
-                    fill="none"
-                    stroke="var(--color-primary)"
-                    strokeWidth={hot ? 6 : 4}
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: reduce ? 0 : 0.6, ease: PREMIUM_EASE, delay: reduce ? 0 : 0.15 + i * 0.06 }}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        ) : null}
-
         {/* Central room — the featured pair (bordered frame + title pill). */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-          <motion.div variants={itemVariants} className="relative">
+          <motion.div variants={roomVariants} className="relative">
             <div className="absolute left-1/2 top-[-54px] z-20 -translate-x-1/2">
               <span className="hc-scene-pill inline-flex h-[40px] min-w-[260px] items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[var(--color-primary)] bg-[var(--color-white)] px-[34px] text-center text-[13px] font-black uppercase leading-[37px] tracking-[0.12em] text-[var(--color-primary)] shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]">
                 {category.title[lang]}
@@ -205,12 +236,13 @@ export default function CatalogFeatureScene({
             >
               {allInside ? (
                 <div className="grid h-full w-full grid-cols-3 content-center gap-x-2.5 gap-y-2">
-                  {[feature, ...siblings].map((item) => {
+                  {roomTiles.map((item, i) => {
                     const Icon = SHOWCASE_ICONS[item.icon];
                     return (
-                      <button
+                      <motion.button
                         key={item.id}
                         type="button"
+                        variants={tileVariants(i, roomTiles.length)}
                         onClick={() =>
                           scrollToPanel(catalogFeaturePanelId(category.id, item.id))
                         }
@@ -221,7 +253,7 @@ export default function CatalogFeatureScene({
                           <Icon />
                         </span>
                         <span className="card-title line-clamp-2">{item.title[lang]}</span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -277,18 +309,17 @@ export default function CatalogFeatureScene({
           </motion.div>
         </div>
 
-        {/* Scattered sibling feature mini-cards (current tile design). */}
+        {/* Scattered sibling feature mini-cards — span in from the right, one
+            after another in anticlockwise order (current tile design). */}
         {!allInside
-          ? scattered.map((item, i) => {
-              const p = points[i];
+          ? cards.map(({ item, p, rank }) => {
               const Icon = SHOWCASE_ICONS[item.icon];
               const tileId = catalogFeaturePanelId(category.id, item.id);
-              const hot = hovered === item.id;
 
               return (
                 <motion.div
                   key={item.id}
-                  variants={itemVariants}
+                  variants={cardVariants(rank)}
                   className="cf-scatter-card absolute z-20"
                   style={{
                     left: `${p.x}%`,
@@ -297,20 +328,13 @@ export default function CatalogFeatureScene({
                     marginTop: -CARD_H / 2,
                     width: CARD_W,
                   }}
-                  onMouseEnter={() => setHovered(item.id)}
-                  onMouseLeave={() =>
-                    setHovered((current) => (current === item.id ? null : current))
-                  }
                 >
                   <button
                     type="button"
                     onClick={() => scrollToPanel(tileId)}
                     aria-label={item.title[lang]}
                     title={item.title[lang]}
-                    className={
-                      "connected-spot hc-orbit-tile group relative flex min-h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[9px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]" +
-                      (hot ? " is-hot" : "")
-                    }
+                    className="connected-spot hc-orbit-tile group relative flex min-h-[100px] w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[9px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
                   >
                     <span className="connected-icon-float mb-[6px] text-[24px] leading-none text-[var(--color-primary)]">
                       <Icon />
