@@ -93,7 +93,7 @@ const sidebarSubtitleTextClass =
 const sidebarRowClass =
   "sidebar-row group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]";
 const sidebarRowLabelClass =
-  "sidebar-row-label inline-flex min-w-0 flex-1 items-center gap-3 text-[13px] leading-snug";
+  "sidebar-row-label inline-flex min-w-0 flex-1 items-center gap-3 text-[14px] leading-snug";
 const sidebarRowIconClass = "shrink-0 text-[16px]";
 const sidebarRowIndexClass =
   "sidebar-row-index w-5 shrink-0 text-center text-[12px] font-bold tabular-nums";
@@ -606,7 +606,7 @@ function SidebarChildLink({
       aria-current={active ? "true" : undefined}
       className={[sidebarRowClass, "py-2", active ? "is-active" : ""].join(" ")}
     >
-      <span className={[sidebarRowLabelClass, "font-medium tracking-[-0.01em]"].join(" ")}>
+      <span className={[sidebarRowLabelClass, "font-semibold tracking-[-0.01em]"].join(" ")}>
         <span className={sidebarRowIndexClass}>{index}</span>
         <span className="truncate">{child.title}</span>
       </span>
