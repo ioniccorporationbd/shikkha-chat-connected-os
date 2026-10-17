@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ShowcaseCategory, ShowcaseFeature } from "@/lib/feature-showcase";
@@ -146,6 +147,10 @@ export default function CatalogFeatureScene({
   }, []);
 
   const panelId = catalogFeaturePanelId(category.id, feature.id);
+  // PILOT (2026-10-17): only the School & Institution Management section swaps
+  // the redundant red category echo inside the main card for the Shikkha Chat
+  // logo. Other sections keep the red text until the result is approved.
+  const showBrandLogo = category.id === "school-management";
   const siblings = useMemo(
     () => category.features.filter((item) => item.id !== feature.id),
     [category.features, feature.id],
@@ -268,9 +273,19 @@ export default function CatalogFeatureScene({
                 <span className="card-title max-w-[210px] text-center">
                   {feature.title[lang]}
                 </span>
-                <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
-                  {category.title[lang]}
-                </span>
+                {showBrandLogo ? (
+                  <Image
+                    src="/images/logo.png"
+                    alt="Shikkha Chat"
+                    width={790}
+                    height={316}
+                    className="mt-1 h-auto w-[186px] object-contain"
+                  />
+                ) : (
+                  <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
+                    {category.title[lang]}
+                  </span>
+                )}
               </button>
             </div>
           </motion.div>
