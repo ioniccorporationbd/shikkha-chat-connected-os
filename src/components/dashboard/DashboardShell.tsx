@@ -47,6 +47,7 @@ import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
 import { ReloadRegistryProvider, useReloadRegistry } from "@/lib/dashboard/reload-registry";
 import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { formatBdMobile } from "@/lib/format/mobile";
 import { NAV_ICONS } from "@/lib/dashboard/icons";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
@@ -105,6 +106,7 @@ export default function DashboardShell({
   const [signingOut, setSigningOut] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const drawerPresence = useOverlayPresence(navOpen, 300);
   const [editOpen, setEditOpen] = useState(false);
   const [imageMenuOpen, setImageMenuOpen] = useState(false);
   const [imageIntent, setImageIntent] = useState<"change-photo" | "remove-photo" | null>(null);
@@ -561,14 +563,20 @@ export default function DashboardShell({
         </aside>
 
         {/* ------------------------------------------------- mobile drawer */}
-        {navOpen ? (
+        {drawerPresence.mounted ? (
           <div className="fixed inset-0 z-[120] lg:hidden" data-no-translate="true">
             <div
               aria-hidden
               onClick={() => setNavOpen(false)}
-              className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm"
+              className={`absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm ${
+                drawerPresence.exiting ? "u-shk-fade-out" : "u-shk-fade-in"
+              }`}
             />
-            <div className="absolute inset-y-0 left-0 flex w-[276px] max-w-[82vw] flex-col overflow-y-auto rounded-r-[26px] border-r border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+            <div
+              className={`absolute inset-y-0 left-0 flex w-[276px] max-w-[82vw] flex-col overflow-y-auto rounded-r-[26px] border-r border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
+                drawerPresence.exiting ? "u-shk-drawer-out" : "u-shk-drawer-in"
+              }`}
+            >
               <div className="flex items-start justify-between gap-2">
                 {renderLogo(() => setNavOpen(false))}
 

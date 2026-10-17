@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { FiCamera, FiTrash2, FiX } from "react-icons/fi";
 
 import { profileCopyFor } from "@/lib/auth/profile-messages";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 interface ProfileImageMenuProps {
@@ -48,7 +49,9 @@ export default function ProfileImageMenu({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  const presence = useOverlayPresence(open, 140);
+
+  if (!presence.mounted) return null;
 
   const itemClass =
     "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition hover:bg-[var(--color-action-tint)]";
@@ -58,7 +61,9 @@ export default function ProfileImageMenu({
       ref={ref}
       role="menu"
       aria-label={copy.imageTitle}
-      className="absolute left-0 top-full z-40 mt-2 w-[210px] rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+      className={`absolute left-0 top-full z-40 mt-2 w-[210px] origin-top-left rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
+        presence.exiting ? "u-shk-pop-out" : "u-shk-pop-in"
+      }`}
     >
       <button type="button" role="menuitem" onClick={onChangePhoto} className={itemClass}>
         <FiCamera aria-hidden className="text-[var(--color-primary)]" size={15} />

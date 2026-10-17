@@ -17,6 +17,7 @@ import { authCopyFor } from "@/lib/auth/messages";
 import { profileCopyFor } from "@/lib/auth/profile-messages";
 import type { DashboardProfileRow, SessionUser } from "@/lib/auth/types";
 import { dashboardCopyFor } from "@/lib/dashboard/messages";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { formatBdMobile } from "@/lib/format/mobile";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
@@ -74,6 +75,7 @@ export default function UserMenu({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
+  const menuPresence = useOverlayPresence(open, 180);
 
   useEffect(() => {
     if (!open) return;
@@ -145,12 +147,14 @@ export default function UserMenu({
         </span>
       </button>
 
-      {open ? (
+      {menuPresence.mounted ? (
         <div
           id={menuId}
           role="menu"
           aria-label={copy.open}
-          className="absolute right-0 z-50 mt-2 w-[326px] max-w-[calc(100vw-1.5rem)] origin-top-right overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_30px_64px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+          className={`absolute right-0 z-50 mt-2 w-[326px] max-w-[calc(100vw-1.5rem)] origin-top-right overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_30px_64px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
+            menuPresence.exiting ? "u-shk-pop-out" : "u-shk-pop-in"
+          }`}
         >
           {/* identity header — brand gradient like the SSPL account summary */}
           <div className="flex items-center gap-3 bg-[linear-gradient(135deg,var(--color-primary)_0%,color-mix(in_srgb,var(--color-primary)_80%,var(--color-secondary))_100%)] px-4 py-4">

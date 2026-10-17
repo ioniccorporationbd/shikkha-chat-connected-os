@@ -25,6 +25,7 @@ import type {
 } from "@/lib/expense-claim/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
 
@@ -150,6 +151,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const [detail, setDetail] = useState<ExpenseClaimDetails | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const detailPresence = useOverlayPresence(Boolean(detailName), 240);
   /** The claim currently being fetched/shown — blocks duplicate fetches. */
   const detailInFlightRef = useRef<string | null>(null);
 
@@ -227,9 +229,9 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
 
   const closeDetails = useCallback(() => {
     detailInFlightRef.current = null;
+    // Keep `detail` mounted during the exit fade so the dialog does not flash
+    // empty while it animates closed; the next open resets it anyway.
     setDetailName(null);
-    setDetail(null);
-    setDetailError("");
   }, []);
 
   useEffect(() => {
@@ -599,14 +601,15 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         ) : null}
       </div>
 
-      {detailName ? (
+      {detailPresence.mounted ? (
         <DetailsDialog
-          name={detailName}
+          name={detailName ?? ""}
           detail={detail}
           loading={detailLoading}
           error={detailError}
           copy={copy}
           language={language}
+          exiting={detailPresence.exiting}
           onClose={closeDetails}
         />
       ) : null}
@@ -697,6 +700,7 @@ function DetailsDialog({
   error,
   copy,
   language,
+  exiting,
   onClose,
 }: {
   name: string;
@@ -705,6 +709,7 @@ function DetailsDialog({
   error: string;
   copy: ExpenseClaimCopy;
   language: string;
+  exiting: boolean;
   onClose: () => void;
 }) {
   const code = detail?.currency || "BDT";
@@ -736,7 +741,10 @@ function DetailsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[130]" data-no-translate="true">
+    <div
+      className={`fixed inset-0 z-[130] ${exiting ? "u-shk-fade-out" : "u-shk-fade-in"}`}
+      data-no-translate="true"
+    >
       <div
         aria-hidden
         onClick={onClose}

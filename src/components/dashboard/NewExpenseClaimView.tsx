@@ -27,6 +27,7 @@ import {
 } from "@/lib/expense-claim/api";
 import { formatAmount } from "@/lib/expense-claim/format";
 import { expenseClaimCopyFor, type ExpenseClaimCopy } from "@/lib/expense-claim/messages";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import type {
   ExpenseClaimCreateResult,
   ExpenseClaimFieldMeta,
@@ -743,6 +744,7 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [showList, setShowList] = useState(false);
+  const listPresence = useOverlayPresence(showList && !field.read_only, 160);
   const [activeIndex, setActiveIndex] = useState(-1);
   const loadedRef = useRef(false);
 
@@ -868,8 +870,10 @@ function LinkField({ field, value, invalid, copy, language, onChange }: LinkFiel
         />
       </div>
 
-      {showList && !field.read_only ? (
-        <ul className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-1 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+      {listPresence.mounted ? (
+        <ul className={`absolute z-30 mt-1 max-h-56 w-full origin-top overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-1 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${
+          listPresence.exiting ? "u-shk-pop-out" : "u-shk-pop-in"
+        }`}>
           {loading ? (
             <li className={`px-3 py-2 ${HELPER}`}>{copy.linkLoading}</li>
           ) : filtered.length === 0 ? (

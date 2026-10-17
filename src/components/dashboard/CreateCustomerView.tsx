@@ -29,6 +29,7 @@ import {
   fetchCustomerSchema,
 } from "@/lib/customer/api";
 import { customerCopyFor, isDuplicateError, type CustomerCopy } from "@/lib/customer/messages";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import type {
   CustomerCreateResult,
   CustomerFieldMeta,
@@ -255,6 +256,7 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
   const wrapRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const reqRef = useRef(0);
+  const listPresence = useOverlayPresence(open, 160);
 
   const listId = `cc-link-list-${field.fieldname}`;
   const optId = useCallback((index: number) => `cc-link-opt-${field.fieldname}-${index}`, [field.fieldname]);
@@ -387,12 +389,14 @@ function LinkField({ field, value, invalid, copy, language, disabled, inputId, o
         ) : null}
       </div>
 
-      {open ? (
+      {listPresence.mounted ? (
         <ul
           ref={listRef}
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-1 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          className={`absolute z-30 mt-1 max-h-56 w-full origin-top overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] p-1 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${
+            listPresence.exiting ? "u-shk-pop-out" : "u-shk-pop-in"
+          }`}
         >
           {loading ? (
             <li className="flex items-center gap-2 px-3 py-2">

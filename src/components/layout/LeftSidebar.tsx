@@ -875,7 +875,7 @@ export default function LeftSidebar() {
           type="button"
           aria-label={text.closeMenu}
           onClick={() => setDrawerOpen(false)}
-          className="sidebar-mobile-backdrop fixed inset-0 z-[85] bg-[var(--color-black)] opacity-35 backdrop-blur-[2px]"
+          className="sidebar-mobile-backdrop u-shk-fade-in fixed inset-0 z-[85] bg-[color-mix(in_srgb,var(--color-black)_35%,transparent)] backdrop-blur-[2px]"
         />
       ) : null}
 

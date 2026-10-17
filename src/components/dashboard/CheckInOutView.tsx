@@ -877,9 +877,16 @@ function DayCard({
         </div>
       </button>
 
-      {open && hasPunches ? (
-        <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_6%,var(--color-white))] p-4">
-          <div className="flex flex-col gap-2.5">
+      {hasPunches ? (
+        <div
+          className={`grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+          aria-hidden={!open}
+        >
+          <div className="overflow-hidden">
+            <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_6%,var(--color-white))] p-4">
+              <div className="flex flex-col gap-2.5">
             {day.punches.map((punch, index) => {
               const isIn = String(punch.log_type).toUpperCase() === "IN";
               return (
@@ -902,6 +909,8 @@ function DayCard({
                 </div>
               );
             })}
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
