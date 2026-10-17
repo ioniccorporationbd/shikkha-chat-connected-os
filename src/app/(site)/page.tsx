@@ -1,7 +1,6 @@
 import CatalogMainSections from "@/components/home/CatalogMainSections";
 import LandingHeroBanner from "@/components/home/LandingHeroBanner";
 import ProductRouterSection from "@/components/home/ProductRouterSection";
-import SiteFooter from "@/components/home/SiteFooter";
 
 export default function Page() {
   return (
@@ -13,9 +12,9 @@ export default function Page() {
           link. The three legacy hub sections are superseded by this. */}
       <CatalogMainSections />
 
+      {/* Site navigation + site links + copyright/back-to-top footer bar.
+          Replaces the old bulky SiteFooter. */}
       <ProductRouterSection />
-
-      <SiteFooter />
     </>
   );
 }

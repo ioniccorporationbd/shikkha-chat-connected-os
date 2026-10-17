@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
 import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
+import {
+  FiArrowUp,
   FiArrowUpRight,
   FiChevronDown,
   FiChevronRight,
-  FiSearch,
-  FiX,
 } from "react-icons/fi";
 import { MdOutlineGridView } from "react-icons/md";
 
@@ -15,7 +19,6 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
   FEATURE_SHOWCASE,
   FEATURE_SHOWCASE_FEATURE_COUNT,
-  type ShowcaseCategory,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
 import { SHOWCASE_ICONS } from "@/components/showcase/catalog/icons";
@@ -30,15 +33,15 @@ type RouterText = {
   subheading: string;
   categorySuffix: string;
   featureSuffix: string;
-  searchPlaceholder: string;
-  searchClear: string;
-  noResults: string;
   openSection: string;
   siteHeading: string;
   siteSubheading: string;
   home: string;
   helpDesk: string;
   expert: string;
+  brand: string;
+  rights: string;
+  backToTop: string;
 };
 
 const textContent: Record<ShowcaseLanguage, RouterText> = {
@@ -46,35 +49,35 @@ const textContent: Record<ShowcaseLanguage, RouterText> = {
     eyebrow: "সাইট নেভিগেশন",
     heading: "সব সেকশন, এক ক্লিকে",
     subheading:
-      "সাইডবারের প্রতিটি ড্রপডাউন সেকশন এখানে — গ্রুপ খুলে ভেতরের প্রতিটি বৈশিষ্ট্যের সরাসরি শর্টকাট, অথবা সার্চ দিয়ে খুঁজুন।",
+      "সাইডবারের প্রতিটি ড্রপডাউন সেকশন এখানে — শুধু যেকোনো গ্রুপ খুলে ভেতরের প্রতিটি বৈশিষ্ট্যের সরাসরি শর্টকাট নিন।",
     categorySuffix: "বিভাগ",
     featureSuffix: "বৈশিষ্ট্য",
-    searchPlaceholder: "সেকশন বা বৈশিষ্ট্য খুঁজুন…",
-    searchClear: "খোঁজ মুছুন",
-    noResults: "কোনো সেকশন বা বৈশিষ্ট্য মেলেনি।",
     openSection: "সেকশনে যান",
     siteHeading: "সাইট লিংক",
     siteSubheading: "পুরো ওয়েবসাইটের দ্রুত লিংক।",
     home: "হোম",
     helpDesk: "হেল্প ডেস্ক",
     expert: "বিশেষজ্ঞের সাথে কথা বলুন",
+    brand: "শিক্ষা চ্যাট",
+    rights: "সর্বস্বত্ব সংরক্ষিত।",
+    backToTop: "উপরে যান",
   },
   en: {
     eyebrow: "Site navigation",
     heading: "Every section, one click away",
     subheading:
-      "Every sidebar dropdown section lives here — open a group to jump straight to any of its features, or use search to find anything fast.",
+      "Every sidebar dropdown section lives here — open a group to jump straight to any of its features.",
     categorySuffix: "sections",
     featureSuffix: "features",
-    searchPlaceholder: "Search sections or features…",
-    searchClear: "Clear search",
-    noResults: "No matching sections or features.",
     openSection: "Go to section",
     siteHeading: "Site links",
     siteSubheading: "Quick links across the whole website.",
     home: "Home",
     helpDesk: "Help Desk",
     expert: "Talk to an Expert",
+    brand: "Shikkha Chat",
+    rights: "All rights reserved.",
+    backToTop: "Back to top",
   },
 };
 
@@ -103,9 +106,10 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 /**
  * Footer-above "site navigation": a theme-matched shortcut directory that
  * mirrors the whole left rail. Each of the 15 catalog categories is an
- * accordion (closed by default) that opens to reveal its features as one-click
- * shortcuts — a search box surfaces anything across both languages. Data comes
- * from FEATURE_SHOWCASE, the exact catalog the rail renders, so nothing drifts.
+ * accordion (closed by default, one open at a time) whose feature list drops
+ * as an OVERLAY — so opening a column never pushes the rows beneath it; only
+ * that column visually extends. A compact site-links bar and a copyright +
+ * back-to-top bar close the page in place of the old footer.
  */
 export default function ProductRouterSection() {
   const { language } = useLanguage();
@@ -113,36 +117,33 @@ export default function ProductRouterSection() {
   const t = textContent[lang];
   const shouldReduceMotion = useReducedMotion();
 
-  const [query, setQuery] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const [openId, setOpenId] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-
-  const q = query.trim().toLowerCase();
-  const searching = q.length > 0;
-
-  const filtered = useMemo(() => {
-    if (!q) return FEATURE_SHOWCASE;
-    const matches = (text: { bn: string; en: string }) =>
-      text.bn.toLowerCase().includes(q) || text.en.toLowerCase().includes(q);
-    return FEATURE_SHOWCASE.map((category) => {
-      const catMatch = matches(category.title);
-      const features = catMatch
-        ? category.features
-        : category.features.filter((f) => matches(f.title));
-      if (!catMatch && features.length === 0) return null;
-      return { ...category, features } as ShowcaseCategory;
-    }).filter((c): c is ShowcaseCategory => c !== null);
-  }, [q]);
+  const year = new Date().getFullYear();
 
   function toggle(id: string) {
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setOpenId((prev) => (prev === id ? null : id));
   }
+
+  // close the open dropdown on outside click or Escape
+  useEffect(() => {
+    if (!openId) return;
+    const onDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && el.closest('[data-card-open="true"]')) return;
+      setOpenId(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenId(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openId]);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -210,12 +211,16 @@ export default function ProductRouterSection() {
     else window.location.assign(href);
   }
 
+  function backToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20"
+      className="relative bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20"
     >
-      {/* soft theme glow + faint dot texture that fades before the dark footer */}
+      {/* soft theme glow + faint dot texture that fades toward the bottom */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[420px] bg-[radial-gradient(70%_100%_at_50%_0%,color-mix(in_srgb,var(--color-action)_7%,transparent),transparent_72%)]"
@@ -252,129 +257,113 @@ export default function ProductRouterSection() {
             </p>
           </motion.div>
 
-          {/* Search */}
-          <motion.div variants={reveal.up} className="mx-auto mb-6 max-w-md">
-            <div className="relative">
-              <FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[16px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t.searchPlaceholder}
-                aria-label={t.searchPlaceholder}
-                className="h-12 w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] pl-11 pr-11 text-[14px] font-medium text-[var(--color-primary)] shadow-[0_10px_30px_-22px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] outline-none transition focus:border-[var(--color-action)] focus:ring-4 focus:ring-[var(--color-action-ring)] placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]"
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery("")}
-                  aria-label={t.searchClear}
-                  className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
-                >
-                  <FiX className="text-[15px]" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Category accordions — closed by default, every feature a shortcut */}
-          {filtered.length === 0 ? (
-            <motion.p
-              variants={reveal.up}
-              className="py-12 text-center text-[14px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-            >
-              {t.noResults}
-            </motion.p>
-          ) : (
-            <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((category) => {
-                const Icon = SHOWCASE_ICONS[category.icon];
-                const isOpen = searching || openIds.has(category.id);
-                return (
-                  <motion.div key={category.id} variants={reveal.up}>
+          {/* Category dropdowns — closed by default, one open at a time,
+              overlay so opening a column never pushes the rows below */}
+          <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {FEATURE_SHOWCASE.map((category) => {
+              const Icon = SHOWCASE_ICONS[category.icon];
+              const isOpen = openId === category.id;
+              return (
+                <motion.div key={category.id} variants={reveal.up}>
+                  <div
+                    className={`relative ${isOpen ? "z-40" : "z-0"}`}
+                    data-card-open={isOpen ? "true" : "false"}
+                  >
+                    {/* header card */}
                     <div
-                      className={`flex h-full flex-col overflow-hidden rounded-[22px] border bg-[var(--color-white)] transition-shadow duration-300 ${
+                      className={`flex items-stretch overflow-hidden rounded-[18px] border bg-[var(--color-white)] transition-shadow duration-300 ${
                         isOpen
-                          ? "border-[color-mix(in_srgb,var(--color-action)_28%,transparent)] shadow-[0_24px_54px_-28px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
-                          : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] shadow-[0_16px_40px_-28px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] hover:shadow-[0_22px_48px_-26px_color-mix(in_srgb,var(--color-action)_24%,transparent)]"
+                          ? "border-[color-mix(in_srgb,var(--color-action)_32%,transparent)] shadow-[0_24px_54px_-26px_color-mix(in_srgb,var(--color-action)_38%,transparent)]"
+                          : "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] shadow-[0_14px_34px_-26px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] hover:shadow-[0_20px_44px_-24px_color-mix(in_srgb,var(--color-action)_26%,transparent)]"
                       }`}
                     >
-                      {/* header row: toggle + jump-to-section */}
-                      <div
-                        className={`flex items-stretch transition-colors duration-300 ${
+                      <button
+                        type="button"
+                        onClick={() => toggle(category.id)}
+                        aria-expanded={isOpen}
+                        aria-haspopup="true"
+                        className={`group/head flex flex-1 items-center gap-3 px-4 py-3.5 text-left transition-colors duration-300 ${
                           isOpen
                             ? "bg-[var(--color-action-tint)]"
-                            : "bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]"
+                            : "bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] hover:bg-[var(--color-action-tint)]"
                         }`}
                       >
-                        <button
-                          type="button"
-                          onClick={() => toggle(category.id)}
-                          aria-expanded={isOpen}
-                          className="group/head flex flex-1 items-center gap-3 px-4 py-3.5 text-left"
-                        >
-                          <span
-                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-white)] text-[18px] transition-colors duration-300 ${
-                              isOpen
-                                ? "text-[var(--color-action)]"
-                                : "text-[var(--color-primary)]"
-                            } shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]`}
-                          >
-                            <Icon />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[14.5px] font-extrabold tracking-[-0.01em]">
-                              {category.title[lang]}
-                            </span>
-                            <span className="block text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                              {category.features.length} {t.featureSuffix}
-                            </span>
-                          </span>
-                          <FiChevronDown
-                            className={`shrink-0 text-[18px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition-transform duration-300 ${
-                              isOpen
-                                ? "rotate-180 text-[var(--color-action)]"
-                                : ""
-                            }`}
-                          />
-                        </button>
                         <span
-                          aria-hidden
-                          className="my-2.5 w-px shrink-0 bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            navigateToSection(catalogSectionId(category.id))
-                          }
-                          aria-label={t.openSection}
-                          title={t.openSection}
-                          className="grid w-11 shrink-0 place-items-center text-[15px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-colors duration-200 hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-white)] text-[18px] transition-colors duration-300 ${
+                            isOpen
+                              ? "text-[var(--color-action)]"
+                              : "text-[var(--color-primary)] group-hover/head:text-[var(--color-action)]"
+                          } shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]`}
                         >
-                          <FiArrowUpRight />
-                        </button>
-                      </div>
-
-                      {/* collapsible feature list (grid-rows 0fr→1fr) */}
-                      <div
-                        className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                          isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                          <Icon />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[14.5px] font-extrabold tracking-[-0.01em]">
+                            {category.title[lang]}
+                          </span>
+                          <span className="block text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                            {category.features.length} {t.featureSuffix}
+                          </span>
+                        </span>
+                        <FiChevronDown
+                          className={`shrink-0 text-[18px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)] transition-transform duration-300 ${
+                            isOpen
+                              ? "rotate-180 text-[var(--color-action)]"
+                              : ""
+                          }`}
+                        />
+                      </button>
+                      <span
+                        aria-hidden
+                        className="my-2.5 w-px shrink-0 bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateToSection(catalogSectionId(category.id))
+                        }
+                        aria-label={t.openSection}
+                        title={t.openSection}
+                        className={`grid w-11 shrink-0 place-items-center text-[15px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-colors duration-200 hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] ${
+                          isOpen ? "bg-[var(--color-action-tint)]" : ""
                         }`}
                       >
-                        <div className="min-h-0 overflow-hidden">
-                          <ul className="p-2 pt-2">
+                        <FiArrowUpRight />
+                      </button>
+                    </div>
+
+                    {/* floating feature list (overlay — does not affect layout) */}
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.div
+                          initial={
+                            shouldReduceMotion
+                              ? { opacity: 0 }
+                              : { opacity: 0, y: -8 }
+                          }
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={
+                            shouldReduceMotion
+                              ? { opacity: 0 }
+                              : { opacity: 0, y: -8 }
+                          }
+                          transition={{ duration: 0.22, ease: EASE }}
+                          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[320px] overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_22%,transparent)] bg-[var(--color-white)] p-2 shadow-[0_30px_60px_-18px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+                        >
+                          <ul>
                             {category.features.map((feature, i) => (
                               <li key={feature.id}>
                                 <button
                                   type="button"
-                                  onClick={() =>
+                                  onClick={() => {
+                                    setOpenId(null);
                                     navigateToSection(
                                       catalogFeaturePanelId(
                                         category.id,
                                         feature.id
                                       )
-                                    )
-                                  }
+                                    );
+                                  }}
                                   className="group/row flex w-full items-center gap-3 rounded-xl px-2.5 py-1.5 text-left transition-colors duration-200 hover:bg-[var(--color-action-tint)]"
                                 >
                                   <span className="w-5 shrink-0 text-center text-[11px] font-bold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] group-hover/row:text-[var(--color-action)]">
@@ -388,19 +377,19 @@ export default function ProductRouterSection() {
                               </li>
                             ))}
                           </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
 
           {/* Whole-website links strip */}
           <motion.div
             variants={reveal.up}
-            className="mt-6 rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-5 shadow-[0_16px_40px_-30px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:px-6"
+            className="mt-6 rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-5 shadow-[0_16px_40px_-30px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:px-6"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -428,6 +417,26 @@ export default function ProductRouterSection() {
                   </button>
                 ))}
               </div>
+            </div>
+          </motion.div>
+
+          {/* Copyright + back-to-top bar (styled like the site-links strip) */}
+          <motion.div
+            variants={reveal.up}
+            className="mt-3 rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-3.5 shadow-[0_16px_40px_-30px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:px-6"
+          >
+            <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
+              <p className="text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                © {year} {t.brand}. {t.rights}
+              </p>
+              <button
+                type="button"
+                onClick={backToTop}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] bg-[var(--color-white)] px-4 py-2 text-[13px] font-bold text-[var(--color-primary)] transition duration-200 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+              >
+                {t.backToTop}
+                <FiArrowUp className="text-[14px]" />
+              </button>
             </div>
           </motion.div>
         </motion.div>
