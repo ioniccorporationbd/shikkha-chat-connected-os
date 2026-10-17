@@ -548,14 +548,18 @@ div {
    inline glyphs, exactly like the Dashboard rail.
 --------------------------------------------------------------------- */
 .sidebar-row {
-  color: color-mix(in srgb, var(--color-primary) 72%, transparent);
+  color: color-mix(in srgb, var(--color-primary) 78%, transparent);
+  font-weight: 600;
   transition: background-color 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1)),
     color 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1)),
-    box-shadow 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1));
+    box-shadow 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 280ms var(--ease-smooth, cubic-bezier(0.22, 1, 0.36, 1));
 }
 .sidebar-row:hover {
   background-color: var(--color-action-tint);
   color: var(--color-action);
+  box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--color-action) 55%, transparent);
+  transform: translateY(-1px);
 }
 .sidebar-row.is-active {
   background-color: var(--color-action);

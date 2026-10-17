@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
 import {
   FaRegCircleQuestion,
@@ -8,6 +9,7 @@ import {
   FaStar,
   FaUsers,
 } from "react-icons/fa6";
+import { FiArrowRight, FiArrowUpRight } from "react-icons/fi";
 import {
   MdOutlineAnalytics,
   MdOutlineAutoAwesome,
@@ -36,6 +38,9 @@ type ProductGroupId =
   | "operational-excellence";
 
 type ProductId =
+  | "home-connections-panel"
+  | "student-achievement"
+  | "operational-excellence"
   | "student-information"
   | "sis"
   | "enrollment"
@@ -65,7 +70,8 @@ type ProductItem = {
   title: string;
   subtitle?: string;
   icon: ReactNode;
-  featured?: boolean;
+  /** Hub overview card — rendered full-width as the group header card. */
+  overview?: boolean;
 };
 
 type ProductGroup = {
@@ -74,39 +80,65 @@ type ProductGroup = {
   products: ProductItem[];
 };
 
-const colorPrimary = "var(--color-primary)";
-const colorSecondary = "var(--color-secondary)";
-const colorWhite = "var(--color-white)";
-const colorBlack = "var(--color-black)";
-
 type RouterProductText = {
   title: string;
   subtitle?: string;
 };
 
 type RouterText = {
+  eyebrow: string;
+  heading: string;
+  subheading: string;
   saved: string;
   allProducts: string;
   noSavedTitle: string;
   noSavedDescription: string;
   saveProduct: string;
+  overviewPill: string;
+  linksHeading: string;
+  linkHome: string;
+  linkHelpDesk: string;
+  linkMyOs: string;
+  linkExpert: string;
   groups: Record<ProductGroupId, string>;
   products: Record<ProductId, RouterProductText>;
 };
 
 const textContent: Record<LanguageCode, RouterText> = {
   bn: {
+    eyebrow: "সাইটম্যাপ",
+    heading: "পুরো সংযুক্ত ওএস এক নজরে",
+    subheading:
+      "হোম কানেকশন, শিক্ষার্থী অর্জন ও অপারেশনাল উৎকর্ষতার প্রতিটি সেকশন — এক জায়গায়, এক ক্লিকে।",
     saved: "সংরক্ষিত",
-    allProducts: "সব পণ্য",
-    noSavedTitle: "এখনও কোনো পণ্য সংরক্ষিত নেই",
-    noSavedDescription: "সংরক্ষণ করতে যেকোনো পণ্যের স্টার আইকনে ক্লিক করুন।",
-    saveProduct: "পণ্য সংরক্ষণ করুন",
+    allProducts: "সব সেকশন",
+    noSavedTitle: "এখনও কোনো সেকশন সংরক্ষিত নেই",
+    noSavedDescription: "সংরক্ষণ করতে যেকোনো সেকশনের স্টার আইকনে ক্লিক করুন।",
+    saveProduct: "সেকশন সংরক্ষণ করুন",
+    overviewPill: "ওভারভিউ",
+    linksHeading: "সম্পূর্ণ ওয়েবসাইট",
+    linkHome: "হোম",
+    linkHelpDesk: "হেল্প ডেস্ক",
+    linkMyOs: "আমার সংযুক্ত সিস্টেম",
+    linkExpert: "বিশেষজ্ঞের সাথে কথা বলুন",
     groups: {
       "home-connections": "হোম কানেকশন",
       "student-achievement": "শিক্ষার্থী অর্জন",
       "operational-excellence": "অপারেশনাল উৎকর্ষতা",
     },
     products: {
+      "home-connections-panel": {
+        title: "হোম কানেকশন সারাংশ",
+        subtitle: "হাব ওভারভিউ",
+      },
+      "student-achievement": {
+        title: "শিক্ষার্থী অর্জন সারাংশ",
+        subtitle: "হাব ওভারভিউ",
+      },
+      "operational-excellence": {
+        title: "অপারেশনাল উৎকর্ষতা সারাংশ",
+        subtitle: "হাব ওভারভিউ",
+      },
       "student-information": {
         title: "শিক্ষার্থীর তথ্য",
       },
@@ -185,17 +217,39 @@ const textContent: Record<LanguageCode, RouterText> = {
     },
   },
   en: {
+    eyebrow: "Site map",
+    heading: "The whole connected OS at a glance",
+    subheading:
+      "Every section across Home Connections, Student Achievement and Operational Excellence — in one place, one click away.",
     saved: "Saved",
-    allProducts: "All Products",
-    noSavedTitle: "No saved products yet",
-    noSavedDescription: "Click any star icon to save a product here.",
-    saveProduct: "Save product",
+    allProducts: "All sections",
+    noSavedTitle: "No saved sections yet",
+    noSavedDescription: "Click the star icon on any section to save it here.",
+    saveProduct: "Save section",
+    overviewPill: "Overview",
+    linksHeading: "Whole website",
+    linkHome: "Home",
+    linkHelpDesk: "Help Desk",
+    linkMyOs: "My Connected System",
+    linkExpert: "Talk to an Expert",
     groups: {
       "home-connections": "Home Connections",
       "student-achievement": "Student Achievement",
       "operational-excellence": "Operational Excellence",
     },
     products: {
+      "home-connections-panel": {
+        title: "Home Connections Summary",
+        subtitle: "Hub overview",
+      },
+      "student-achievement": {
+        title: "Student Achievement Summary",
+        subtitle: "Hub overview",
+      },
+      "operational-excellence": {
+        title: "Operational Excellence Summary",
+        subtitle: "Hub overview",
+      },
       "student-information": {
         title: "Student Information",
       },
@@ -275,125 +329,56 @@ const textContent: Record<LanguageCode, RouterText> = {
   },
 };
 
+/**
+ * One card per sidebar dropdown section. Each group opens with its hub-overview
+ * card so the router mirrors the left rail exactly (8 / 10 / 8 = 26 sections).
+ */
 const productBase: Record<
   ProductGroupId,
   {
     products: Array<{
       id: ProductId;
       icon: ReactNode;
-      featured?: boolean;
+      overview?: boolean;
     }>;
   }
 > = {
   "home-connections": {
     products: [
-      {
-        id: "student-information",
-        icon: <MdOutlineSchool />,
-        featured: true,
-      },
-      {
-        id: "sis",
-        icon: <FaUsers />,
-      },
-      {
-        id: "enrollment",
-        icon: <MdOutlineFactCheck />,
-      },
-      {
-        id: "special-programs",
-        icon: <MdOutlineCelebration />,
-      },
-      {
-        id: "family-engagement",
-        icon: <MdOutlineFamilyRestroom />,
-        featured: true,
-      },
-      {
-        id: "communications",
-        icon: <MdOutlineChat />,
-      },
-      {
-        id: "attendance-support",
-        icon: <FaRegCircleQuestion />,
-      },
+      { id: "home-connections-panel", icon: <MdOutlineHub />, overview: true },
+      { id: "student-information", icon: <MdOutlineSchool /> },
+      { id: "sis", icon: <FaUsers /> },
+      { id: "enrollment", icon: <MdOutlineFactCheck /> },
+      { id: "special-programs", icon: <MdOutlineCelebration /> },
+      { id: "family-engagement", icon: <MdOutlineFamilyRestroom /> },
+      { id: "communications", icon: <MdOutlineChat /> },
+      { id: "attendance-support", icon: <FaRegCircleQuestion /> },
     ],
   },
   "student-achievement": {
     products: [
-      {
-        id: "classroom-solutions",
-        icon: <MdOutlineGridView />,
-        featured: true,
-      },
-      {
-        id: "learning-management-schoology",
-        icon: <MdOutlinePsychology />,
-      },
-      {
-        id: "assessment-performance-matters",
-        icon: <MdOutlineAnalytics />,
-      },
-      {
-        id: "curriculum-instruction",
-        icon: <MdOutlineMenuBook />,
-      },
-      {
-        id: "student-intervention",
-        icon: <FaRegCircleQuestion />,
-        featured: true,
-      },
-      {
-        id: "mtss",
-        icon: <MdOutlineHub />,
-      },
-      {
-        id: "behavior-support",
-        icon: <MdOutlineFavoriteBorder />,
-      },
-      {
-        id: "college-career-life-readiness",
-        icon: <FaRegStar />,
-        featured: true,
-      },
-      {
-        id: "cclr-naviance",
-        icon: <FaUsers />,
-      },
+      { id: "student-achievement", icon: <MdOutlineAnalytics />, overview: true },
+      { id: "classroom-solutions", icon: <MdOutlineGridView /> },
+      { id: "learning-management-schoology", icon: <MdOutlinePsychology /> },
+      { id: "assessment-performance-matters", icon: <MdOutlineAnalytics /> },
+      { id: "curriculum-instruction", icon: <MdOutlineMenuBook /> },
+      { id: "student-intervention", icon: <FaRegCircleQuestion /> },
+      { id: "mtss", icon: <MdOutlineHub /> },
+      { id: "behavior-support", icon: <MdOutlineFavoriteBorder /> },
+      { id: "college-career-life-readiness", icon: <FaRegStar /> },
+      { id: "cclr-naviance", icon: <FaUsers /> },
     ],
   },
   "operational-excellence": {
     products: [
-      {
-        id: "resource-planning",
-        icon: <MdOutlineGridView />,
-        featured: true,
-      },
-      {
-        id: "financial-strategy-allovue",
-        icon: <MdOutlineAnalytics />,
-      },
-      {
-        id: "erp-systems",
-        icon: <MdOutlineAutoAwesome />,
-      },
-      {
-        id: "predictive-enrollment",
-        icon: <FaUsers />,
-      },
-      {
-        id: "talent-management",
-        icon: <MdOutlinePsychology />,
-        featured: true,
-      },
-      {
-        id: "recruiting-and-hr",
-        icon: <FaRegStar />,
-      },
-      {
-        id: "educator-support",
-        icon: <FaRegCircleQuestion />,
-      },
+      { id: "operational-excellence", icon: <MdOutlineAutoAwesome />, overview: true },
+      { id: "resource-planning", icon: <MdOutlineGridView /> },
+      { id: "financial-strategy-allovue", icon: <MdOutlineAnalytics /> },
+      { id: "erp-systems", icon: <MdOutlineAutoAwesome /> },
+      { id: "predictive-enrollment", icon: <FaUsers /> },
+      { id: "talent-management", icon: <MdOutlinePsychology /> },
+      { id: "recruiting-and-hr", icon: <FaRegStar /> },
+      { id: "educator-support", icon: <FaRegCircleQuestion /> },
     ],
   },
 };
@@ -401,9 +386,7 @@ const productBase: Record<
 function getGroups(language: LanguageCode): ProductGroup[] {
   const text = textContent[language];
 
-  return (
-    Object.keys(productBase) as ProductGroupId[]
-  ).map((groupId) => ({
+  return (Object.keys(productBase) as ProductGroupId[]).map((groupId) => ({
     id: groupId,
     title: text.groups[groupId],
     products: productBase[groupId].products.map((product) => ({
@@ -417,7 +400,6 @@ function getGroups(language: LanguageCode): ProductGroup[] {
 /**
  * SAVEED-01 — the "Home Connections" group button targeted the non-existent
  * `home-connections` id; its real rail panel is `home-connections-panel`.
- * The other two groups already match their panel ids, so they pass through.
  */
 const groupScrollTargets: Record<ProductGroupId, string> = {
   "home-connections": "home-connections-panel",
@@ -451,6 +433,7 @@ function scrollToProduct(id: string) {
 /** Shared signature easing — matches the site's --ease-smooth (see LandingHeroBanner). */
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/** Regular section card — raised, bolder, hover-lifted to the brand red. */
 function ProductCard({
   product,
   isSaved,
@@ -461,45 +444,30 @@ function ProductCard({
   onSave: () => void;
 }) {
   return (
-    // SAVEED-02 — a non-interactive card wrapper holding TWO independent
-    // controls: the navigation button (fills the card) and the save button
-    // (top-right). This removes the invalid <button>-inside-<button> nesting
-    // while keeping the card's exact look, hover and click behaviour.
     <div className="group relative">
       <button
         type="button"
         onClick={() => scrollToProduct(product.id)}
         className={[
-          "flex h-[124px] w-full flex-col justify-center rounded-[18px] border p-3 text-center",
-          "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] text-[var(--color-primary)]",
-          "shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]",
-          "transition duration-300 hover:-translate-y-1 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
-          "hover:shadow-[0_22px_46px_color-mix(in_srgb,var(--color-action)_16%,transparent)]",
+          "flex h-[132px] w-full flex-col items-center justify-center gap-1.5 rounded-[22px] border p-3 text-center",
+          "border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] text-[var(--color-primary)]",
+          "shadow-[0_16px_36px_-18px_color-mix(in_srgb,var(--color-primary)_42%,transparent)]",
+          "transition duration-300 hover:-translate-y-1.5",
+          "hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
+          "hover:shadow-[0_28px_52px_-16px_color-mix(in_srgb,var(--color-action)_36%,transparent)]",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
-          product.featured ? "items-start text-left" : "items-center",
         ].join(" ")}
       >
-        {!product.featured ? (
-          <div className="mb-2 text-[30px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
-            {product.icon}
-          </div>
-        ) : (
-          <div className="mb-2 text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]">
-            {product.icon}
-          </div>
-        )}
+        <span className="mb-0.5 grid h-11 w-11 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] text-[26px] text-[var(--color-primary)] transition duration-300 group-hover:scale-110 group-hover:bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] group-hover:text-[var(--color-action)]">
+          {product.icon}
+        </span>
 
-        <h3
-          className={[
-            "max-w-[125px] text-[13px] font-bold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]",
-            product.featured ? "uppercase" : "",
-          ].join(" ")}
-        >
+        <h3 className="max-w-[150px] text-[13.5px] font-extrabold leading-[1.14] tracking-[-0.03em] text-[var(--color-primary)] transition-colors duration-300 group-hover:text-[var(--color-action)]">
           {product.title}
         </h3>
 
         {product.subtitle ? (
-          <p className="mt-1 text-[11px] font-medium leading-none text-[var(--color-black)] opacity-65">
+          <p className="text-[11px] font-semibold leading-none text-[var(--color-black)] opacity-60">
             {product.subtitle}
           </p>
         ) : null}
@@ -511,13 +479,59 @@ function ProductCard({
           event.stopPropagation();
           onSave();
         }}
-        aria-label="Save product"
+        aria-label="Save section"
         aria-pressed={isSaved}
-        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition duration-300 hover:scale-125 group-hover:text-[var(--color-action)] group-hover/wrap:text-[var(--color-action)]"
+        className="absolute right-3 top-3 z-20 cursor-pointer text-[15px] text-[var(--color-primary)] transition duration-300 hover:scale-125 group-hover:text-[var(--color-action)]"
       >
         {isSaved ? <FaStar /> : <FaRegStar />}
       </button>
     </div>
+  );
+}
+
+/** Hub-overview card — a full-width, inverse "cover" card for each group. */
+function OverviewCard({
+  product,
+  overviewPill,
+}: {
+  product: ProductItem;
+  overviewPill: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => scrollToProduct(product.id)}
+      className={[
+        "group col-span-2 flex w-full items-center gap-3.5 rounded-[22px] p-4 text-left",
+        "bg-[linear-gradient(135deg,var(--color-primary),color-mix(in_srgb,var(--color-primary)_78%,var(--color-action)))] text-[var(--color-white)]",
+        "shadow-[0_20px_44px_-20px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]",
+        "transition duration-300 hover:-translate-y-1",
+        "hover:shadow-[0_28px_54px_-16px_color-mix(in_srgb,var(--color-action)_45%,transparent)]",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]",
+      ].join(" ")}
+    >
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-white)_16%,transparent)] text-[26px] text-[var(--color-white)] transition duration-300 group-hover:scale-110">
+        {product.icon}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)] px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.12em]">
+            {overviewPill}
+          </span>
+        </span>
+        <span className="mt-1 block truncate text-[15px] font-extrabold tracking-[-0.02em]">
+          {product.title}
+        </span>
+        {product.subtitle ? (
+          <span className="block truncate text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-white)_72%,transparent)]">
+            {product.subtitle}
+          </span>
+        ) : null}
+      </span>
+
+      <FiArrowRight className="shrink-0 text-[18px] text-[color-mix(in_srgb,var(--color-white)_80%,transparent)] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[var(--color-white)]" />
+    </button>
   );
 }
 
@@ -527,7 +541,7 @@ export default function ProductRouterSection() {
   const text = textContent[currentLanguage];
 
   const [tab, setTab] = useState<"saved" | "all">("all");
-  const [savedIds, setSavedIds] = useState<ProductId[]>([]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
 
   const groups = useMemo(() => getGroups(currentLanguage), [currentLanguage]);
 
@@ -622,7 +636,7 @@ export default function ProductRouterSection() {
   }, [shouldReduceMotion]);
 
   useEffect(() => {
-    const sync = () => setSavedIds(readSavedSections() as ProductId[]);
+    const sync = () => setSavedIds(readSavedSections());
 
     sync();
 
@@ -636,7 +650,7 @@ export default function ProductRouterSection() {
   }, []);
 
   function toggleSaved(id: ProductId) {
-    setSavedIds(toggleSavedSection(id) as ProductId[]);
+    setSavedIds(toggleSavedSection(id));
   }
 
   const visibleGroups = useMemo(() => {
@@ -652,11 +666,24 @@ export default function ProductRouterSection() {
       .filter((group) => group.products.length > 0);
   }, [tab, groups, savedIds]);
 
+  const siteLinks = [
+    { label: text.linkHome, href: "#intro", external: false },
+    { label: text.linkHelpDesk, href: "/help-desk", external: true },
+    { label: text.linkMyOs, href: "#my-connected-os", external: false },
+    { label: text.linkExpert, href: "#connect", external: false },
+  ];
+
   return (
     <section
       ref={sectionRef}
       className="relative min-h-screen bg-[var(--color-white)] px-4 py-16 text-[var(--color-primary)] sm:px-6 lg:px-8 lg:py-20"
     >
+      {/* soft decorative glow so the section reads as a premium site-map band */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[420px] bg-[radial-gradient(60%_100%_at_50%_0%,color-mix(in_srgb,var(--color-action)_7%,transparent),transparent_70%)]"
+      />
+
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
         <motion.div
           variants={reveal.container}
@@ -664,102 +691,161 @@ export default function ProductRouterSection() {
           animate={revealed ? "show" : "hidden"}
           className="flex w-full flex-col items-center"
         >
-        <motion.div
-          variants={reveal.head}
-          className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
-        >
-          <button
-            type="button"
-            onClick={() => setTab("saved")}
-            className={[
-              "flex h-[50px] items-center gap-2 rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-7 sm:text-[17px]",
-              tab === "saved"
-                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
-            ].join(" ")}
-          >
-            <FaStar className="text-[17px]" />
-            {text.saved}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("all")}
-            className={[
-              "h-[50px] rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-8 sm:text-[17px]",
-              tab === "all"
-                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
-                : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
-            ].join(" ")}
-          >
-            {text.allProducts}
-          </button>
-        </motion.div>
-
-        {visibleGroups.length === 0 ? (
-          <motion.div
-            variants={reveal.head}
-            className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] px-8 py-8 text-center shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
-          >
-            <h3 className="text-2xl font-bold text-[var(--color-primary)]">
-              {text.noSavedTitle}
-            </h3>
-
-            <p className="mt-2 text-[15px] font-medium text-[var(--color-black)] opacity-70">
-              {text.noSavedDescription}
+          {/* Section intro — modernises the plain toggle-only opening. */}
+          <motion.div variants={reveal.head} className="mb-8 flex max-w-2xl flex-col items-center text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] bg-[var(--color-action-tint)] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-action)]">
+              <MdOutlineGridView className="text-[14px]" />
+              {text.eyebrow}
+            </span>
+            <h2 className="mt-4 text-[26px] font-extrabold leading-[1.12] tracking-[-0.03em] text-[var(--color-primary)] sm:text-[32px]">
+              {text.heading}
+            </h2>
+            <p className="mt-3 text-[15px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-black)_62%,var(--color-primary))]">
+              {text.subheading}
             </p>
           </motion.div>
-        ) : (
+
+          {/* Saved / All toggle */}
           <motion.div
-            variants={reveal.grid}
-            className="grid w-full grid-cols-1 items-start gap-8 md:grid-cols-2 xl:grid-cols-3"
+            variants={reveal.head}
+            className="mb-10 flex overflow-hidden rounded-[16px] border border-[var(--color-primary)] bg-[var(--color-white)] p-1 shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
           >
-            {visibleGroups.map((group, index) => (
-              <motion.div
-                key={group.id}
-                style={{ y: shouldReduceMotion ? 0 : colDrift[index % colDrift.length] }}
-                className="relative flex flex-col items-center"
-              >
-                <motion.div variants={reveal.up} className="flex w-full flex-col items-center">
-                <button
-                  type="button"
-                  onClick={() => scrollToProduct(groupScrollTargets[group.id])}
-                  className={[
-                    "relative z-20 rounded-full border border-[var(--color-action)] px-7 py-3 text-[16px] font-bold",
-                    "bg-[var(--color-action)] text-[var(--color-white)]",
-                    "shadow-[0_16px_34px_color-mix(in_srgb,var(--color-action)_18%,transparent)]",
-                    "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-action-hover)] hover:text-[var(--color-white)]",
-                  ].join(" ")}
-                >
-                  {group.title}
-                </button>
+            <button
+              type="button"
+              onClick={() => setTab("saved")}
+              className={[
+                "flex h-[50px] items-center gap-2 rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-7 sm:text-[17px]",
+                tab === "saved"
+                  ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                  : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
+              ].join(" ")}
+            >
+              <FaStar className="text-[17px]" />
+              {text.saved}
+            </button>
 
-                <div className="h-7 w-[4px] bg-[var(--color-primary)]" />
-
-                <div className="group/wrap relative w-full rounded-[30px] border-2 border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-3 shadow-[0_24px_54px_color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition-colors duration-300 hover:border-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))]">
-
-                  <div className="relative z-10 grid grid-cols-2 gap-3">
-                    {group.products.map((product) => {
-                      const isSaved = savedIds.includes(product.id);
-
-                      return (
-                        <motion.div key={product.id} variants={reveal.card}>
-                          <ProductCard
-                            product={product}
-                            isSaved={isSaved}
-                            onSave={() => toggleSaved(product.id)}
-                          />
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-                </motion.div>
-              </motion.div>
-            ))}
-
+            <button
+              type="button"
+              onClick={() => setTab("all")}
+              className={[
+                "h-[50px] rounded-[12px] px-5 text-[15px] font-bold transition duration-300 sm:px-8 sm:text-[17px]",
+                tab === "all"
+                  ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_10px_24px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                  : "bg-[var(--color-white)] text-[var(--color-primary)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]",
+              ].join(" ")}
+            >
+              {text.allProducts}
+            </button>
           </motion.div>
-        )}
+
+          {visibleGroups.length === 0 ? (
+            <motion.div
+              variants={reveal.head}
+              className="rounded-3xl border border-[var(--color-primary)] bg-[var(--color-white)] px-8 py-8 text-center shadow-[0_18px_42px_color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+            >
+              <h3 className="text-2xl font-bold text-[var(--color-primary)]">
+                {text.noSavedTitle}
+              </h3>
+
+              <p className="mt-2 text-[15px] font-medium text-[var(--color-black)] opacity-70">
+                {text.noSavedDescription}
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              variants={reveal.grid}
+              className="grid w-full grid-cols-1 items-start gap-8 md:grid-cols-2 xl:grid-cols-3"
+            >
+              {visibleGroups.map((group, index) => (
+                <motion.div
+                  key={group.id}
+                  style={{ y: shouldReduceMotion ? 0 : colDrift[index % colDrift.length] }}
+                  className="relative flex flex-col items-center"
+                >
+                  <motion.div variants={reveal.up} className="flex w-full flex-col items-center">
+                    <button
+                      type="button"
+                      onClick={() => scrollToProduct(groupScrollTargets[group.id])}
+                      className={[
+                        "relative z-20 inline-flex items-center gap-2 rounded-full border border-[var(--color-action)] px-6 py-3 text-[16px] font-bold",
+                        "bg-[var(--color-action)] text-[var(--color-white)]",
+                        "shadow-[0_16px_34px_color-mix(in_srgb,var(--color-action)_18%,transparent)]",
+                        "transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-action-hover)] hover:text-[var(--color-white)]",
+                      ].join(" ")}
+                    >
+                      {group.title}
+                      <span className="rounded-full bg-[color-mix(in_srgb,var(--color-white)_22%,transparent)] px-2 py-0.5 text-[12px] font-bold tabular-nums">
+                        {group.products.length}
+                      </span>
+                    </button>
+
+                    <div className="h-7 w-[4px] bg-[var(--color-primary)]" />
+
+                    <div className="group/wrap relative w-full rounded-[30px] border-2 border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] p-3 shadow-[0_24px_54px_-24px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition-colors duration-300 hover:border-[var(--color-action)]">
+                      <div className="relative z-10 grid grid-cols-2 gap-3">
+                        {group.products.map((product) => {
+                          if (product.overview) {
+                            return (
+                              <motion.div key={product.id} variants={reveal.card} className="col-span-2">
+                                <OverviewCard
+                                  product={product}
+                                  overviewPill={text.overviewPill}
+                                />
+                              </motion.div>
+                            );
+                          }
+
+                          const isSaved = savedIds.includes(product.id);
+
+                          return (
+                            <motion.div key={product.id} variants={reveal.card}>
+                              <ProductCard
+                                product={product}
+                                isSaved={isSaved}
+                                onSave={() => toggleSaved(product.id)}
+                              />
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Whole-website link strip — every top-level destination in one row. */}
+          <motion.div
+            variants={reveal.head}
+            className="mt-14 w-full rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-6 py-6 sm:px-8"
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {text.linksHeading}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-3">
+              {siteLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="group inline-flex items-center gap-1.5 text-[14px] font-bold tracking-[-0.01em] text-[var(--color-primary)] transition-colors duration-200 hover:text-[var(--color-action)]"
+                >
+                  {link.label}
+                  {link.external ? (
+                    <FiArrowUpRight
+                      aria-hidden
+                      className="text-[13px] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                    />
+                  ) : (
+                    <FiArrowRight
+                      aria-hidden
+                      className="text-[13px] opacity-45 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+                    />
+                  )}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>
