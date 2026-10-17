@@ -2,10 +2,16 @@
 
 import Image from "next/image";
 import { useEffect, type ReactNode } from "react";
-import { FiX } from "react-icons/fi";
+import { FiDownload, FiPrinter, FiX } from "react-icons/fi";
 
 import ShikkhaLoader from "./ShikkhaLoader";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+import {
+  buildDetailDocumentHtml,
+  downloadDetailDocument,
+  printDetailDocument,
+  type DetailDocumentMeta,
+} from "@/lib/dashboard/detail-document";
 
 export interface DetailRow {
   label: string;
@@ -41,6 +47,8 @@ interface DetailSheetProps {
   loadingText?: string;
   error?: string;
   errorTitle?: string;
+  /** Enables the Print / Download action bar for the loaded details. */
+  document?: DetailDocumentMeta;
 }
 
 /**
@@ -67,6 +75,7 @@ export default function DetailSheet({
   loadingText,
   error,
   errorTitle,
+  document: documentMeta,
 }: DetailSheetProps) {
   // Keep the sheet mounted through its exit keyframe (smooth close).
   const { mounted, exiting } = useOverlayPresence(open, 220);
@@ -88,6 +97,41 @@ export default function DetailSheet({
   }, [open, onClose]);
 
   if (!mounted) return null;
+
+  const showActions =
+    Boolean(documentMeta) && !loading && !error && sections.length > 0;
+
+  const buildDocumentHtml = () => {
+    if (!documentMeta) return "";
+    return buildDetailDocumentHtml({
+      brand: documentMeta.brand,
+      eyebrow,
+      title,
+      subtitle,
+      badges: documentMeta.badges,
+      sections: sections.map((s) => ({
+        title: s.title,
+        rows: s.rows.map((r) => ({
+          label: r.label,
+          value: r.value,
+          emphasis: r.emphasis,
+        })),
+      })),
+      tables: documentMeta.tables,
+      footerNote: documentMeta.footerNote,
+      locale: documentMeta.locale,
+    });
+  };
+
+  const handlePrint = () => {
+    const html = buildDocumentHtml();
+    if (html) printDetailDocument(html);
+  };
+
+  const handleDownload = () => {
+    const html = buildDocumentHtml();
+    if (html) downloadDetailDocument(html, documentMeta?.filename || title);
+  };
 
   return (
     <div className="fixed inset-0 z-[130] flex items-end justify-center sm:items-center sm:p-4" data-no-translate="true">
@@ -203,6 +247,41 @@ export default function DetailSheet({
             </div>
           )}
         </div>
+
+        {showActions ? (
+          <footer className="flex items-center justify-between gap-3 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_6%,var(--color-white))] px-5 py-3">
+            <p className="min-w-0 truncate text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+              {documentMeta?.footerNote}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3.5 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+              >
+                <span className="text-[var(--color-primary)]">
+                  <FiDownload size={14} />
+                </span>
+                <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                  {documentMeta?.downloadLabel}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 transition hover:bg-[var(--color-action-hover)]"
+              >
+                <span className="text-[var(--color-white)]">
+                  <FiPrinter size={14} />
+                </span>
+                <span className="text-[12px] font-semibold text-[var(--color-white)]">
+                  {documentMeta?.printLabel}
+                </span>
+              </button>
+            </div>
+          </footer>
+        ) : null}
+
       </div>
     </div>
   );

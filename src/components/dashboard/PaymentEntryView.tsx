@@ -814,6 +814,51 @@ function DetailsDialog({
         ) : null
       }
       sections={detail ? paymentDetailSections(detail, copy, language) : []}
+      document={
+        detail
+          ? {
+              brand: "Shikkha Chat",
+              badges: [
+                copy.statuses[
+                  String(detail.display_status || "").trim().toLowerCase() as keyof typeof copy.statuses
+                ] || String(detail.display_status || ""),
+                detail.verified ? copy.verified : "",
+              ].filter(Boolean) as string[],
+              tables:
+                references.length > 0
+                  ? [
+                      {
+                        title: copy.referencesHeading,
+                        columns: [
+                          copy.rDocType,
+                          copy.rReference,
+                          copy.rDue,
+                          copy.rTotal,
+                          copy.rOutstanding,
+                          copy.rAllocated,
+                        ],
+                        rows: references.map((row) => {
+                          const code = detail.currency || "BDT";
+                          return [
+                            row.reference_doctype || "—",
+                            row.reference_name || "—",
+                            row.due_date ? formatDate(String(row.due_date), language) : "—",
+                            formatAmount(Number(row.total_amount ?? 0), code, language),
+                            formatAmount(Number(row.outstanding_amount ?? 0), code, language),
+                            formatAmount(Number(row.allocated_amount ?? 0), code, language),
+                          ];
+                        }),
+                      },
+                    ]
+                  : [],
+              filename: `payment-${name}`,
+              printLabel: language === "en" ? "Print" : "প্রিন্ট",
+              downloadLabel: language === "en" ? "Download" : "ডাউনলোড",
+              footerNote: language === "en" ? "Customer copy" : "গ্রাহক কপি",
+              locale: language === "en" ? "en-GB" : "bn-BD",
+            }
+          : undefined
+      }
     >
       {detail ? paymentReferences(detail, references, copy, language) : null}
     </DetailSheet>

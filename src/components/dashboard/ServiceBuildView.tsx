@@ -659,6 +659,42 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
           ) : null
         }
         sections={detail ? serviceBillSections(detail, copy, language) : []}
+        document={
+          detail
+            ? {
+                brand: "Shikkha Chat",
+                badges: [
+                  copy.statuses[
+                    String(detail.display_status || "").toLowerCase() as SalesInvoiceStatusKey
+                  ] || String(detail.display_status || ""),
+                  detail.verified ? copy.verified : "",
+                ].filter(Boolean) as string[],
+                tables:
+                  (detail.items ?? []).length > 0
+                    ? [
+                        {
+                          title: copy.itemsHeading,
+                          columns: [copy.iItem, copy.iQty, copy.iRate, copy.iAmount],
+                          rows: (detail.items ?? []).map((row) => {
+                            const code = detail.currency || currency;
+                            return [
+                              row.item_name || row.item_code || "—",
+                              `${Number(row.qty ?? 0)}${row.uom ? ` ${row.uom}` : ""}`,
+                              formatAmount(Number(row.rate ?? 0), code, language),
+                              formatAmount(Number(row.amount ?? 0), code, language),
+                            ];
+                          }),
+                        },
+                      ]
+                    : [],
+                filename: `invoice-${detail.name || detailName || "details"}`,
+                printLabel: language === "en" ? "Print" : "প্রিন্ট",
+                downloadLabel: language === "en" ? "Download" : "ডাউনলোড",
+                footerNote: language === "en" ? "Customer copy" : "গ্রাহক কপি",
+                locale: language === "en" ? "en-GB" : "bn-BD",
+              }
+            : undefined
+        }
       >
         {detail ? serviceBillItems(detail, copy, language, currency) : null}
       </DetailSheet>
