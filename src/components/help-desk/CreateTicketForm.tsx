@@ -18,9 +18,9 @@ import {
 } from "@/lib/help-desk/config";
 import { formatFileSize } from "@/lib/help-desk/format";
 import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
-import { uid } from "@/lib/help-desk/mock-store";
+import { uid } from "@/lib/help-desk/ids";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
-import { createTicket, ownerKeyForContact } from "@/lib/help-desk/service";
+import { createTicket } from "@/lib/help-desk/service";
 import type {
   PreferredContact,
   Ticket,
@@ -98,6 +98,7 @@ export default function CreateTicketForm({
         size: file.size,
         mime: file.type || "application/octet-stream",
         previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+        file,
       });
     }
     setAttachments(next);
@@ -147,29 +148,23 @@ export default function CreateTicketForm({
 
     setSubmitting(true);
     try {
-      const ownerKey =
-        status === "authenticated" && user
-          ? ownerKeyForContact({ email: user.email, name: user.full_name })
-          : undefined;
-
-      const ticket = await createTicket(
-        {
-          subject,
-          category,
-          priority,
-          description,
-          contact: { name, email, mobile, preferredContact },
-          relatedRoute,
-          department: department || undefined,
-          attachments,
-        },
-        ownerKey,
-      );
+      // Identity/ownership is decided by the ERP from the session cookie — the
+      // form only sends what the customer typed.
+      const ticket = await createTicket({
+        subject,
+        category,
+        priority,
+        description,
+        contact: { name, email, mobile, preferredContact },
+        relatedRoute,
+        department: department || undefined,
+        attachments,
+      });
 
       setCreated(ticket);
       toast.success(copy.toastCreated.replace("{id}", ticket.id));
-    } catch {
-      toast.error(copy.toastLoadFailed);
+    } catch (error) {
+      toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
     } finally {
       setSubmitting(false);
     }

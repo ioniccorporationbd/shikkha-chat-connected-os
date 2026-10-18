@@ -18,14 +18,13 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-import DashboardSelect from "@/components/dashboard/DashboardSelect";
-import { HD_CARD, HD_GHOST_BTN, HD_INPUT, TICKET_STATUSES } from "@/lib/help-desk/config";
+import { HD_CARD, HD_GHOST_BTN, HD_INPUT } from "@/lib/help-desk/config";
 import { formatDateTime, formatFileSize } from "@/lib/help-desk/format";
 import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { addUserReply, getTicket, reopenTicket, sendSupportReply } from "@/lib/help-desk/service";
+import { addUserReply, attachmentUrl, getTicket, reopenTicket } from "@/lib/help-desk/service";
 import type { Ticket, TicketStatus } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
 
@@ -36,10 +35,9 @@ import TicketPriorityBadge from "./TicketPriorityBadge";
 import TicketStatusBadge from "./TicketStatusBadge";
 
 type LoadState = "loading" | "ready" | "notfound" | "error";
-type SimStatus = TicketStatus | "none";
 
-/** Full ticket details: info, problem, attachments, conversation, reply, care
- *  simulation, resolution + reopen. */
+/** Full ticket details: info, problem, attachments, conversation, reply,
+ *  resolution + reopen — all read from and written to the ERP. */
 export default function TicketDetails({
   ticketId,
   copy,
@@ -59,13 +57,6 @@ export default function TicketDetails({
   const [reply, setReply] = useState("");
   const [replyBusy, setReplyBusy] = useState(false);
   const [reopenBusy, setReopenBusy] = useState(false);
-
-  const [simAgent, setSimAgent] = useState("");
-  const [simBody, setSimBody] = useState("");
-  const [simSteps, setSimSteps] = useState("");
-  const [simStatus, setSimStatus] = useState<SimStatus>("none");
-  const [simResolution, setSimResolution] = useState("");
-  const [simBusy, setSimBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -113,8 +104,8 @@ export default function TicketDetails({
       setTicket(updated);
       setReply("");
       toast.success(copy.replySent);
-    } catch {
-      toast.error(copy.toastLoadFailed);
+    } catch (error) {
+      toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
     } finally {
       setReplyBusy(false);
     }
@@ -127,43 +118,10 @@ export default function TicketDetails({
       const updated = await reopenTicket(ticket.id);
       setTicket(updated);
       toast.info(copy.reopenDone);
-    } catch {
-      toast.error(copy.toastLoadFailed);
+    } catch (error) {
+      toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
     } finally {
       setReopenBusy(false);
-    }
-  };
-
-  const submitSim = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!ticket) return;
-    if (!simBody.trim()) {
-      toast.error(copy.replyValidation);
-      return;
-    }
-    setSimBusy(true);
-    try {
-      const steps = simSteps
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-      const updated = await sendSupportReply(ticket.id, {
-        body: simBody,
-        steps,
-        agentName: simAgent || undefined,
-        statusChange: simStatus === "none" ? undefined : simStatus,
-        resolutionSummary: simResolution || undefined,
-      });
-      setTicket(updated);
-      setSimBody("");
-      setSimSteps("");
-      setSimResolution("");
-      setSimStatus("none");
-      toast.success(copy.simSent);
-    } catch {
-      toast.error(copy.toastLoadFailed);
-    } finally {
-      setSimBusy(false);
     }
   };
 
@@ -244,7 +202,18 @@ export default function TicketDetails({
                         <FiFileText className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
+                        {attachmentUrl(file) ? (
+                          <a
+                            href={attachmentUrl(file) as string}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block truncate text-sm font-semibold text-[var(--color-primary)] underline decoration-[color-mix(in_srgb,var(--color-primary)_30%,var(--color-white))] underline-offset-2 hover:no-underline"
+                          >
+                            {file.name}
+                          </a>
+                        ) : (
+                          <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
+                        )}
                         <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">
                           {formatFileSize(file.size)}
                         </p>
@@ -394,71 +363,6 @@ export default function TicketDetails({
             </ol>
           </section>
 
-          {/* Customer-care simulation */}
-          <section className={`${HD_CARD} p-5`}>
-            <h2 className="text-base font-bold text-[var(--color-primary)]">{copy.simTitle}</h2>
-            <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
-              {copy.simHint}
-            </p>
-            <form onSubmit={submitSim} className="mt-3 space-y-3">
-              <input
-                type="text"
-                value={simAgent}
-                onChange={(e) => setSimAgent(e.target.value)}
-                placeholder={copy.simAgentName}
-                className={HD_INPUT}
-                aria-label={copy.simAgentName}
-              />
-              <textarea
-                value={simBody}
-                onChange={(e) => setSimBody(e.target.value)}
-                rows={2}
-                placeholder={copy.simMessage}
-                className={`${HD_INPUT} resize-y`}
-                aria-label={copy.simMessage}
-              />
-              <textarea
-                value={simSteps}
-                onChange={(e) => setSimSteps(e.target.value)}
-                rows={2}
-                placeholder={copy.simStepsHint}
-                className={`${HD_INPUT} resize-y`}
-                aria-label={copy.simStepsHint}
-              />
-              <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.simStatusLabel}</span>
-                <DashboardSelect
-                  ariaLabel={copy.simStatusLabel}
-                  value={simStatus}
-                  onChange={(value) => setSimStatus(value as SimStatus)}
-                  options={[
-                    { value: "none", label: copy.simStatusNone },
-                    ...TICKET_STATUSES.map((status) => ({ value: status, label: copy.statuses[status] })),
-                  ]}
-                />
-              </div>
-              {simStatus === "resolved" ? (
-                <textarea
-                  value={simResolution}
-                  onChange={(e) => setSimResolution(e.target.value)}
-                  rows={2}
-                  placeholder={copy.simResolutionPlaceholder}
-                  className={`${HD_INPUT} resize-y`}
-                  aria-label={copy.resolvedSummary}
-                />
-              ) : null}
-              <button
-                type="submit"
-                disabled={simBusy}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] px-5 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-              >
-                <FiHeadphones className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
-                <span className="text-sm font-semibold text-[var(--color-white)]">
-                  {simBusy ? copy.simSending : copy.simSend}
-                </span>
-              </button>
-            </form>
-          </section>
         </div>
       </div>
     </div>

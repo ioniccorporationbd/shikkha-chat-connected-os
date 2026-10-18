@@ -2,7 +2,8 @@
  * Help Desk — shared types.
  *
  * Frontend-only for now: no Frappe/ERPNext DocType exists yet, so every value
- * here is produced by the local mock service layer (`src/lib/help-desk/service.ts`).
+ * here is produced by `src/lib/help-desk/service.ts` from the live ERP
+ * (`HD Ticket` and its conversation), never from a local mock store.
  *
  * These shapes are deliberately shaped like a future server payload — a
  * "Help Desk Ticket" document with owner/contact, subject, category, priority,
@@ -55,6 +56,10 @@ export interface TicketAttachment {
    * later backend/file API returns the real, permanent URL instead.
    */
   previewUrl?: string;
+  /** The ERP's stored file URL (`/private/files/...`), once uploaded. */
+  url?: string;
+  /** The browser File while the ticket is still being submitted (never persisted). */
+  file?: File;
 }
 
 /** One entry in a ticket's conversation timeline. */
@@ -140,4 +145,39 @@ export interface SupportReplyInput {
 export interface TicketFilterState {
   status: TicketStatus | "all";
   query: string;
+}
+
+/** Server payload of `GET /api/help-desk/tickets` (computed by the ERP). */
+export interface HelpDeskCounts {
+  all: number;
+  open: number;
+  in_progress: number;
+  waiting_for_user: number;
+  resolved: number;
+  closed: number;
+}
+
+export interface HelpDeskListPayload {
+  tickets: Ticket[];
+  counts: HelpDeskCounts;
+  total: number;
+  page: number;
+  page_size: number;
+  has_more: boolean;
+  server_time: string;
+}
+
+/** Server payload of ticket creation / detail / reply / reopen. */
+export interface HelpDeskTicketPayload {
+  ticket: Ticket;
+  verified?: boolean;
+  duplicate?: boolean;
+}
+
+/** Server payload of `POST /api/help-desk/upload`. */
+export interface HelpDeskUploadedFile {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
 }
