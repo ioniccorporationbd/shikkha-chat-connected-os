@@ -181,3 +181,29 @@ export interface HelpDeskUploadedFile {
   url: string;
   size: number;
 }
+
+/** One ERP-configured priority (`HD Ticket Priority`), mapped to the portal key. */
+export interface HelpDeskOptionPriority {
+  /** Portal priority key (`low`…`urgent`), or `null` for a custom ERP priority. */
+  id: "low" | "medium" | "high" | "urgent" | null;
+  /** The ERP record name, shown when the priority has no portal equivalent. */
+  name: string;
+}
+
+/**
+ * Server payload of `GET /api/help-desk/options` — the lists the ERP actually
+ * has configured (`HD Ticket Status`, `HD Ticket Priority`, `HD Ticket Type`),
+ * so the create form never offers a value the ticket cannot store.
+ */
+export interface HelpDeskOptions {
+  statuses: {
+    name: string;
+    category: string;
+    label: string;
+    color?: string | null;
+    enabled: number;
+  }[];
+  priorities: HelpDeskOptionPriority[];
+  types: string[];
+  categories: { id: string; label: string }[];
+}

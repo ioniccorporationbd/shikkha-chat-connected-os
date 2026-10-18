@@ -14,12 +14,14 @@
 import type {
   CreateTicketInput,
   HelpDeskListPayload,
+  HelpDeskOptions,
   HelpDeskTicketPayload,
   HelpDeskUploadedFile,
   Ticket,
 } from "./types";
 
 const TICKETS_URL = "/api/help-desk/tickets";
+const OPTIONS_URL = "/api/help-desk/options";
 
 /** A failed Help Desk call, carrying the backend's own (human) message. */
 export class HelpDeskError extends Error {
@@ -76,6 +78,16 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+/**
+ * Statuses / priorities / ticket types the ERP has configured. The create form
+ * uses these so it can never offer a value the ticket cannot store; a failure
+ * here is not fatal (the form keeps its default lists).
+ */
+export async function getOptions(): Promise<HelpDeskOptions> {
+  const query = new URLSearchParams({ language: currentLanguage() });
+  return request<HelpDeskOptions>(`${OPTIONS_URL}?${query.toString()}`);
 }
 
 /** All tickets the ERP allows this user to see, newest-updated first. */

@@ -12,16 +12,16 @@ import {
   DEFAULT_PRIORITY,
   HD_CARD,
   HD_INPUT,
-  TICKET_CATEGORIES,
-  TICKET_PRIORITIES,
   PRIORITY_TONE,
 } from "@/lib/help-desk/config";
 import { formatFileSize } from "@/lib/help-desk/format";
 import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
 import { uid } from "@/lib/help-desk/ids";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
-import { createTicket } from "@/lib/help-desk/service";
+import { categoryChoices, priorityChoices } from "@/lib/help-desk/options";
+import { createTicket, getOptions } from "@/lib/help-desk/service";
 import type {
+  HelpDeskOptions,
   PreferredContact,
   Ticket,
   TicketAttachment,
@@ -70,6 +70,7 @@ export default function CreateTicketForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Ticket | null>(null);
+  const [erpOptions, setErpOptions] = useState<HelpDeskOptions | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefilled = useRef(false);
@@ -86,6 +87,28 @@ export default function CreateTicketForm({
       setMobile((current) => current || initialContact?.mobile || "");
     });
   }, [status, user, initialContact]);
+
+  // Offer exactly what the ERP is configured for (statuses/priorities/types come
+  // from `HD Ticket Priority` / `HD Ticket Type`). A failure keeps the default
+  // lists — the backend simply omits a type the ERP does not have.
+  useEffect(() => {
+    let alive = true;
+    getOptions()
+      .then((options) => {
+        if (!alive) return;
+        setErpOptions(options);
+        const categories = categoryChoices(options);
+        setCategory((current) => (categories.some((item) => item.id === current) ? current : categories[0]?.id ?? current));
+        const priorities = priorityChoices(options);
+        setPriority((current) => (priorities.includes(current) ? current : priorities[0] ?? current));
+      })
+      .catch(() => {
+        /* keep the design defaults; nothing to show the user */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -124,6 +147,9 @@ export default function CreateTicketForm({
     setRelatedRoute(sample.relatedRoute);
     setErrors({});
   };
+
+  const categoryOptions = categoryChoices(erpOptions);
+  const priorityOptions = priorityChoices(erpOptions);
 
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
@@ -268,7 +294,7 @@ export default function CreateTicketForm({
           <div>
             <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldCategory}</p>
             <div role="radiogroup" aria-label={copy.fieldCategory} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {TICKET_CATEGORIES.map((option) => {
+              {categoryOptions.map((option) => {
                 const selected = category === option.id;
                 const Icon = option.icon;
                 return (
@@ -296,7 +322,7 @@ export default function CreateTicketForm({
           <div>
             <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPriority}</p>
             <div role="radiogroup" aria-label={copy.fieldPriority} className="flex flex-wrap gap-2">
-              {TICKET_PRIORITIES.map((option) => {
+              {priorityOptions.map((option) => {
                 const selected = priority === option;
                 const tone = PRIORITY_TONE[option];
                 return (
