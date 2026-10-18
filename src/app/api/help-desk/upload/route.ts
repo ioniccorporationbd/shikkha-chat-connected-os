@@ -32,6 +32,7 @@ export async function POST(request: Request) {
 
   const fileName = typeof body.file_name === "string" ? body.file_name : "";
   const content = typeof body.content === "string" ? body.content : "";
+  const language = typeof body.language === "string" && body.language ? body.language : "bn";
   if (!fileName || !content) {
     return jsonFail("The file could not be read. Please try again.", "bad_file", 400);
   }
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   const result = await callFrappe<HelpDeskUploadedFile>("shikkha_os.api.v1.help_desk.upload_attachment", {
     sid,
     httpMethod: "POST",
-    body: { file_name: fileName, content },
+    body: { file_name: fileName, content, language },
   });
 
   if (!result.ok) {

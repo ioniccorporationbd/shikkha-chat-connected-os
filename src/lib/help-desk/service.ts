@@ -130,6 +130,7 @@ export async function uploadAttachment(file: File): Promise<HelpDeskUploadedFile
   return postJson<HelpDeskUploadedFile>("/api/help-desk/upload", {
     file_name: file.name,
     content: bytesToBase64(bytes),
+    language: currentLanguage(),
   });
 }
 
