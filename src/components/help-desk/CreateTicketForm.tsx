@@ -2,44 +2,83 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { FiAlertCircle, FiFileText, FiInfo, FiSend, FiUpload, FiX, FiZap } from "react-icons/fi";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FiAlertCircle,
+  FiBookOpen,
+  FiCheck,
+  FiCheckCircle,
+  FiClock,
+  FiCreditCard,
+  FiFileText,
+  FiHelpCircle,
+  FiInfo,
+  FiPaperclip,
+  FiRefreshCw,
+  FiSend,
+  FiShield,
+  FiTool,
+  FiUpload,
+  FiUser,
+  FiX,
+} from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { useAuthStore } from "@/lib/auth/store";
-import {
-  DEFAULT_CATEGORY,
-  DEFAULT_PRIORITY,
-  HD_CARD,
-  HD_INPUT,
-  PRIORITY_TONE,
-} from "@/lib/help-desk/config";
+import { HD_CARD, HD_INPUT, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { formatFileSize } from "@/lib/help-desk/format";
-import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
 import { uid } from "@/lib/help-desk/ids";
+import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
+import {
+  iconForType,
+  priorityChoices,
+  priorityLabel,
+  teamChoices,
+  typeChoices,
+  typeLabel,
+  type TypeIconKey,
+} from "@/lib/help-desk/options";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
-import { categoryChoices, priorityChoices } from "@/lib/help-desk/options";
 import { createTicket, getOptions } from "@/lib/help-desk/service";
 import type {
   HelpDeskOptions,
+  HelpDeskOptionPriority,
+  HelpDeskOptionType,
   PreferredContact,
   Ticket,
   TicketAttachment,
-  TicketCategoryId,
-  TicketPriority,
 } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
-
-import { DEMO_FORM_SAMPLES, HELPDESK_DEPARTMENTS, isHelpDeskDemoEnabled, type HelpDeskDepartment } from "@/lib/help-desk/demo";
 
 import TicketSuccessCard from "./TicketSuccessCard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_ATTACHMENTS = 3;
+/** Backend hard limit (shikkha_os.api.v1.help_desk.upload_attachment). */
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const ACCEPT =
+  "image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.log,.csv,.doc,.docx,.xls,.xlsx";
+
+const TYPE_ICONS: Record<TypeIconKey, typeof FiTool> = {
+  technical: FiTool,
+  billing: FiCreditCard,
+  account: FiUser,
+  usage: FiBookOpen,
+  other: FiHelpCircle,
+  generic: FiPaperclip,
+};
 
 type FieldErrors = Partial<Record<"name" | "email" | "subject" | "description", string>>;
+type OptionsState = "loading" | "ready" | "error";
 
-/** The New Ticket form: basic info → ticket info → optional extras. */
+/**
+ * The New Ticket form.
+ *
+ * Everything it *offers* is read from the ERP (`HD Ticket Type`,
+ * `HD Ticket Priority`, `HD Team`) — there is no hard-coded option list in the
+ * frontend. The ERP decides what a ticket can be filed under; this component
+ * only decides how those rows look.
+ */
 export default function CreateTicketForm({
   copy,
   language,
@@ -60,17 +99,21 @@ export default function CreateTicketForm({
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
   const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState<TicketCategoryId>(DEFAULT_CATEGORY);
-  const [priority, setPriority] = useState<TicketPriority>(DEFAULT_PRIORITY);
+  const [ticketType, setTicketType] = useState("");
+  const [priority, setPriority] = useState("");
   const [description, setDescription] = useState("");
   const [relatedRoute, setRelatedRoute] = useState("");
   const [preferredContact, setPreferredContact] = useState<PreferredContact>("email");
-  const [department, setDepartment] = useState<HelpDeskDepartment | "">("");
+  const [team, setTeam] = useState("");
   const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Ticket | null>(null);
-  const [erpOptions, setErpOptions] = useState<HelpDeskOptions | null>(null);
+
+  const [options, setOptions] = useState<HelpDeskOptions | null>(null);
+  const [optionsState, setOptionsState] = useState<OptionsState>("loading");
+  const [optionsNonce, setOptionsNonce] = useState(0);
+  const [dragging, setDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefilled = useRef(false);
@@ -88,33 +131,51 @@ export default function CreateTicketForm({
     });
   }, [status, user, initialContact]);
 
-  // Offer exactly what the ERP is configured for (statuses/priorities/types come
-  // from `HD Ticket Priority` / `HD Ticket Type`). A failure keeps the default
-  // lists — the backend simply omits a type the ERP does not have.
+  // Offer exactly what the ERP is configured for. Nothing is guessed locally:
+  // if the ERP has no categories the section says so, and if the call fails the
+  // customer gets an inline retry instead of stale hard-coded values.
   useEffect(() => {
     let alive = true;
     getOptions()
-      .then((options) => {
+      .then((payload) => {
         if (!alive) return;
-        setErpOptions(options);
-        const categories = categoryChoices(options);
-        setCategory((current) => (categories.some((item) => item.id === current) ? current : categories[0]?.id ?? current));
-        const priorities = priorityChoices(options);
-        setPriority((current) => (priorities.includes(current) ? current : priorities[0] ?? current));
+        setOptions(payload);
+        setOptionsState("ready");
+        setTicketType((current) =>
+          current && payload.categories.some((item) => item.value === current) ? current : payload.categories[0]?.value ?? ""
+        );
+        setPriority((current) =>
+          current && payload.priorities.some((item) => item.name === current) ? current : payload.priorities[0]?.name ?? ""
+        );
       })
       .catch(() => {
-        /* keep the design defaults; nothing to show the user */
+        if (!alive) return;
+        setOptions(null);
+        setOptionsState("error");
+        toast.error(copy.toastOptionsFailed);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [optionsNonce, copy.toastOptionsFailed]);
+
+  const categories: HelpDeskOptionType[] = useMemo(() => typeChoices(options), [options]);
+  const priorities: HelpDeskOptionPriority[] = useMemo(() => priorityChoices(options), [options]);
+  const teams: string[] = useMemo(() => teamChoices(options), [options]);
 
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const next: TicketAttachment[] = [...attachments];
+    let added = 0;
     for (const file of Array.from(files)) {
-      if (next.length >= MAX_ATTACHMENTS) break;
+      if (next.length >= MAX_ATTACHMENTS) {
+        toast.error(copy.toastAttachLimit.replace("{count}", String(MAX_ATTACHMENTS)));
+        break;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        toast.error(`${file.name}: ${formatFileSize(MAX_FILE_BYTES)}`);
+        continue;
+      }
       next.push({
         id: uid("att"),
         name: file.name,
@@ -123,8 +184,10 @@ export default function CreateTicketForm({
         previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
         file,
       });
+      added += 1;
     }
     setAttachments(next);
+    if (added > 0) toast.success(copy.toastAttachAdded);
   };
 
   const removeAttachment = (id: string) => {
@@ -133,23 +196,8 @@ export default function CreateTicketForm({
       if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
       return current.filter((a) => a.id !== id);
     });
+    toast.info(copy.toastAttachRemoved);
   };
-
-  // Dev/test aid: fill the form with a ready-made sample. Never auto-submits and
-  // never runs on open — only on an explicit click, and only while demo is on.
-  const fillDemo = () => {
-    const sample = DEMO_FORM_SAMPLES[Math.floor(Math.random() * DEMO_FORM_SAMPLES.length)];
-    setSubject(sample.subject);
-    setCategory(sample.category);
-    setPriority(sample.priority);
-    setDepartment(sample.department);
-    setDescription(sample.description);
-    setRelatedRoute(sample.relatedRoute);
-    setErrors({});
-  };
-
-  const categoryOptions = categoryChoices(erpOptions);
-  const priorityOptions = priorityChoices(erpOptions);
 
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
@@ -175,15 +223,15 @@ export default function CreateTicketForm({
     setSubmitting(true);
     try {
       // Identity/ownership is decided by the ERP from the session cookie — the
-      // form only sends what the customer typed.
+      // form only sends what the customer typed, plus the ERP-configured names.
       const ticket = await createTicket({
         subject,
-        category,
-        priority,
+        ticketType: ticketType || undefined,
+        priority: priority || undefined,
         description,
         contact: { name, email, mobile, preferredContact },
         relatedRoute,
-        department: department || undefined,
+        department: team || undefined,
         attachments,
       });
 
@@ -203,10 +251,10 @@ export default function CreateTicketForm({
     setRelatedRoute("");
     setAttachments([]);
     setErrors({});
-    setCategory(DEFAULT_CATEGORY);
-    setPriority(DEFAULT_PRIORITY);
+    setTicketType(categories[0]?.value ?? "");
+    setPriority(priorities[0]?.name ?? "");
     setPreferredContact("email");
-    setDepartment("");
+    setTeam("");
     // Keep name/email (identity), keep mobile.
   };
 
@@ -214,190 +262,60 @@ export default function CreateTicketForm({
     return <TicketSuccessCard ticket={created} copy={copy} language={language} basePath={basePath} onAnother={resetForm} />;
   }
 
-  const descriptionLeft = Math.max(0, MIN_DESCRIPTION_LENGTH - description.trim().length);
+  const descriptionLength = description.trim().length;
+  const descriptionLeft = Math.max(0, MIN_DESCRIPTION_LENGTH - descriptionLength);
+  const descriptionDone = descriptionLeft === 0;
+  const selectedType = categories.find((item) => item.value === ticketType) ?? null;
+  const selectedPriority = priorities.find((item) => item.name === priority) ?? null;
+  const translatedCategories = copy.categories as unknown as Record<string, string>;
+  const translatedPriorities = copy.priorities as unknown as Record<string, string>;
+  const priorityTone = selectedPriority?.id ? (PRIORITY_TONE as Record<string, string>)[selectedPriority.id] ?? "var(--color-primary)" : "var(--color-primary)";
+  const canSubmit = !submitting && optionsState !== "loading";
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      {isHelpDeskDemoEnabled() ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-4 py-3">
-          <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
-            {copy.demoBadge}
-          </span>
-          <button
-            type="button"
-            onClick={fillDemo}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-primary)] px-3 py-1.5 transition hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-          >
-            <FiZap className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
-            <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.demoFill}</span>
-          </button>
-        </div>
-      ) : null}
-
-      {/* Basic information */}
-      <fieldset className={`${HD_CARD} p-5 sm:p-6`}>
-        <legend className="px-1 text-base font-bold text-[var(--color-primary)]">{copy.sectionBasic}</legend>
-        <div className="mt-3 grid gap-4 sm:grid-cols-3">
-          <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
-            <input
-              id="hd-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={copy.phName}
-              className={HD_INPUT}
-              autoComplete="name"
-            />
-          </Field>
-          <Field label={copy.fieldEmail} error={errors.email} htmlFor="hd-email">
-            <input
-              id="hd-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={copy.phEmail}
-              className={HD_INPUT}
-              autoComplete="email"
-            />
-          </Field>
-          <Field label={copy.fieldMobile} error={undefined} htmlFor="hd-mobile">
-            <input
-              id="hd-mobile"
-              type="tel"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder={copy.phMobile}
-              className={HD_INPUT}
-              autoComplete="tel"
-            />
-          </Field>
-        </div>
-      </fieldset>
-
-      {/* Ticket information */}
-      <fieldset className={`${HD_CARD} p-5 sm:p-6`}>
-        <legend className="px-1 text-base font-bold text-[var(--color-primary)]">{copy.sectionTicket}</legend>
-
-        <div className="mt-3 space-y-5">
-          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
-            <input
-              id="hd-subject"
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={copy.phSubject}
-              className={HD_INPUT}
-            />
-          </Field>
-
-          {/* Category */}
-          <div>
-            <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldCategory}</p>
-            <div role="radiogroup" aria-label={copy.fieldCategory} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {categoryOptions.map((option) => {
-                const selected = category === option.id;
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setCategory(option.id)}
-                    className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
-                      selected
-                        ? "border-[var(--color-action)] bg-[var(--color-action)]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:bg-[var(--color-action-tint)]"
-                    }`}
-                  >
-                    <Icon className={`h-4 w-4 flex-none ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
-                    <span className={`text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>{copy.categories[option.id]}</span>
-                  </button>
-                );
-              })}
-            </div>
+    <form onSubmit={handleSubmit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
+      <div className="min-w-0 space-y-5">
+        {/* Steps 1–2: identity + ticket details */}
+        <Section step={1} title={copy.sectionBasic} hint={copy.sectionBasicHint} copy={copy}>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
+              <input
+                id="hd-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={copy.phName}
+                className={HD_INPUT}
+                autoComplete="name"
+              />
+            </Field>
+            <Field label={copy.fieldEmail} error={errors.email} htmlFor="hd-email">
+              <input
+                id="hd-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={copy.phEmail}
+                className={HD_INPUT}
+                autoComplete="email"
+              />
+            </Field>
+            <Field label={copy.fieldMobile} htmlFor="hd-mobile">
+              <input
+                id="hd-mobile"
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder={copy.phMobile}
+                className={HD_INPUT}
+                autoComplete="tel"
+              />
+            </Field>
           </div>
 
-          {/* Priority */}
-          <div>
-            <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPriority}</p>
-            <div role="radiogroup" aria-label={copy.fieldPriority} className="flex flex-wrap gap-2">
-              {priorityOptions.map((option) => {
-                const selected = priority === option;
-                const tone = PRIORITY_TONE[option];
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setPriority(option)}
-                    className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-                    style={{
-                      borderColor: selected ? tone : `color-mix(in srgb, ${tone} 32%, white)`,
-                      backgroundColor: selected ? `color-mix(in srgb, ${tone} 16%, white)` : "white",
-                    }}
-                  >
-                    <span className="h-2 w-2 flex-none rounded-full" style={{ backgroundColor: tone }} aria-hidden />
-                    <span className="text-sm font-semibold" style={{ color: tone }}>
-                      {copy.priorities[option]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Description */}
-          <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
-            <textarea
-              id="hd-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={copy.phDescription}
-              rows={6}
-              className={`${HD_INPUT} resize-y`}
-            />
-            <span className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">
-              {descriptionLeft > 0 ? `${copy.errDescriptionShort} (${descriptionLeft})` : ""}
-            </span>
-          </Field>
-        </div>
-      </fieldset>
-
-      {/* Optional */}
-      <fieldset className={`${HD_CARD} p-5 sm:p-6`}>
-        <legend className="px-1 text-base font-bold text-[var(--color-primary)]">{copy.sectionOptional}</legend>
-
-        <div className="mt-3">
-          <Field label={copy.fieldDepartment} error={undefined} htmlFor="hd-department">
-            <DashboardSelect
-              ariaLabel={copy.fieldDepartment}
-              value={department}
-              onChange={(value) => setDepartment(value as HelpDeskDepartment | "")}
-              options={[
-                { value: "", label: "—" },
-                ...HELPDESK_DEPARTMENTS.map((option) => ({ value: option, label: option })),
-              ]}
-            />
-          </Field>
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label={copy.fieldRelatedRoute} error={undefined} htmlFor="hd-route">
-            <input
-              id="hd-route"
-              type="text"
-              value={relatedRoute}
-              onChange={(e) => setRelatedRoute(e.target.value)}
-              placeholder={copy.phRelatedRoute}
-              className={HD_INPUT}
-            />
-          </Field>
-
-          <div>
+          <div className="mt-4">
             <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
-            <div role="radiogroup" aria-label={copy.fieldPreferredContact} className="flex gap-2">
+            <div role="radiogroup" aria-label={copy.fieldPreferredContact} className="inline-flex rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1">
               {(["email", "mobile"] as PreferredContact[]).map((option) => {
                 const selected = preferredContact === option;
                 return (
@@ -407,34 +325,201 @@ export default function CreateTicketForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setPreferredContact(option)}
-                    className={`flex-1 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
                       selected
-                        ? "border-[var(--color-action)] bg-[var(--color-action)]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)]"
+                        ? "bg-[var(--color-white)] text-[var(--color-primary)] shadow-sm"
+                        : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))] hover:text-[var(--color-primary)]"
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
-                      {option === "email" ? copy.preferredEmail : copy.preferredMobile}
-                    </span>
+                    {option === "email" ? copy.preferredEmail : copy.preferredMobile}
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
+        </Section>
 
-        {/* Attachments */}
-        <div className="mt-5">
-          <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.attachTitle}</p>
-          <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
-            {copy.attachHint}
-          </p>
+        <Section step={2} title={copy.sectionTicket} hint={copy.sectionTicketHint} copy={copy}>
+          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
+            <input
+              id="hd-subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={copy.phSubject}
+              className={HD_INPUT}
+              maxLength={140}
+            />
+          </Field>
 
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          {/* Category — one card per configured `HD Ticket Type` */}
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldCategory}</p>
+              {optionsState === "ready" ? (
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                  <FiShield className="h-3 w-3" aria-hidden />
+                  {copy.liveBadge}
+                </span>
+              ) : null}
+            </div>
+
+            {optionsState === "loading" ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true" aria-label={copy.optionsLoading}>
+                {[0, 1, 2].map((key) => (
+                  <div key={key} className="h-[46px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" />
+                ))}
+              </div>
+            ) : optionsState === "error" ? (
+              <OptionsError
+                copy={copy}
+                onRetry={() => {
+                  setOptionsState("loading");
+                  setOptionsNonce((n) => n + 1);
+                }}
+              />
+            ) : categories.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+                {copy.optionsEmptyType}
+              </p>
+            ) : (
+              <div role="radiogroup" aria-label={copy.fieldCategory} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {categories.map((option) => {
+                  const selected = ticketType === option.value;
+                  const Icon = TYPE_ICONS[iconForType(option.value, option.key)];
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setTicketType(option.value)}
+                      className={`group relative flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+                        selected
+                          ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+                          : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,var(--color-white))] hover:bg-[var(--color-action-tint)]"
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 flex-none ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+                      <span className={`truncate text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
+                        {typeLabel(option, translatedCategories)}
+                      </span>
+                      {selected ? (
+                        <FiCheckCircle className="ml-auto h-4 w-4 flex-none text-[var(--color-white)]" aria-hidden />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Priority — one pill per configured `HD Ticket Priority` */}
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPriority}</p>
+            {optionsState === "loading" ? (
+              <div className="flex flex-wrap gap-2" aria-busy="true">
+                {[0, 1, 2, 3].map((key) => (
+                  <div key={key} className="h-[42px] w-24 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" />
+                ))}
+              </div>
+            ) : optionsState === "error" ? null : priorities.length === 0 ? (
+              <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">{copy.optionsEmptyPriority}</p>
+            ) : (
+              <div role="radiogroup" aria-label={copy.fieldPriority} className="flex flex-wrap gap-2">
+                {priorities.map((option) => {
+                  const selected = priority === option.name;
+                  const tone = option.id ? (PRIORITY_TONE as Record<string, string>)[option.id] ?? "var(--color-primary)" : "var(--color-primary)";
+                  return (
+                    <button
+                      key={option.name}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setPriority(option.name)}
+                      className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                      style={{
+                        borderColor: selected ? tone : `color-mix(in srgb, ${tone} 30%, white)`,
+                        backgroundColor: selected ? `color-mix(in srgb, ${tone} 14%, white)` : "white",
+                      }}
+                    >
+                      <span className="h-2 w-2 flex-none rounded-full" style={{ backgroundColor: tone }} aria-hidden />
+                      <span className="text-sm font-semibold" style={{ color: tone }}>
+                        {priorityLabel(option, translatedPriorities)}
+                      </span>
+                      {selected ? <FiCheck className="h-3.5 w-3.5" style={{ color: tone }} aria-hidden /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Description with a live progress meter toward the minimum */}
+          <div className="mt-5">
+            <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
+              <textarea
+                id="hd-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={copy.phDescription}
+                rows={6}
+                className={`${HD_INPUT} resize-y`}
+              />
+            </Field>
+            <div className="mt-2 flex items-center gap-3">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${descriptionDone ? "bg-[var(--color-action)]" : "bg-[color-mix(in_srgb,var(--color-action)_55%,var(--color-white))]"}`}
+                  style={{ width: `${Math.min(100, (descriptionLength / MIN_DESCRIPTION_LENGTH) * 100)}%` }}
+                />
+              </div>
+              <span className={`inline-flex flex-none items-center gap-1 text-[11px] font-medium ${descriptionDone ? "text-[var(--color-action)]" : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]"}`}>
+                {descriptionDone ? <FiCheckCircle className="h-3 w-3" aria-hidden /> : null}
+                {descriptionDone ? `${descriptionLength}` : `${descriptionLength}/${MIN_DESCRIPTION_LENGTH}`}
+              </span>
+            </div>
+          </div>
+        </Section>
+
+        <Section step={3} title={copy.sectionOptional} hint={copy.sectionOptionalHint} copy={copy}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={copy.fieldDepartment} htmlFor="hd-team">
+              <DashboardSelect
+                ariaLabel={copy.fieldDepartment}
+                value={team}
+                onChange={(value) => setTeam(value)}
+                options={[
+                  { value: "", label: teams.length ? "—" : copy.optionsEmptyTeam },
+                  ...teams.map((option) => ({ value: option, label: option })),
+                ]}
+              />
+            </Field>
+            <Field label={copy.fieldRelatedRoute} htmlFor="hd-route">
+              <input
+                id="hd-route"
+                type="text"
+                value={relatedRoute}
+                onChange={(e) => setRelatedRoute(e.target.value)}
+                placeholder={copy.phRelatedRoute}
+                className={HD_INPUT}
+              />
+            </Field>
+          </div>
+
+          {/* Drop zone */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.attachTitle}</p>
+              <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                {attachments.length}/{MAX_ATTACHMENTS}
+              </span>
+            </div>
+
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,.pdf"
+              accept={ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -442,87 +527,215 @@ export default function CreateTicketForm({
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
             />
+
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                addFiles(e.dataTransfer.files);
+              }}
               disabled={attachments.length >= MAX_ATTACHMENTS}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--color-primary)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+              className={`mt-2 flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+                dragging
+                  ? "border-[var(--color-action)] bg-[var(--color-action-tint)]"
+                  : "border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] hover:border-[color-mix(in_srgb,var(--color-action)_45%,var(--color-white))]"
+              }`}
             >
-              <FiUpload className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-              <span className="text-sm font-semibold text-[var(--color-primary)]">
-                {attachments.length > 0 ? copy.attachReplace : copy.attachChoose}
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))]">
+                <FiUpload className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+              </span>
+              <span className="text-xs font-semibold text-[var(--color-primary)]">{copy.attachDrop}</span>
+              <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_58%,var(--color-white))]">
+                {copy.attachMax.replace("{count}", String(MAX_ATTACHMENTS))} · ≤ {formatFileSize(MAX_FILE_BYTES)}
               </span>
             </button>
-          </div>
 
-          {attachments.length > 0 ? (
-            <ul className="mt-3 space-y-2">
-              {attachments.map((file) => (
-                <li
-                  key={file.id}
-                  className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] p-2.5"
-                >
-                  {file.previewUrl ? (
-                    <Image
-                      src={file.previewUrl}
-                      alt={file.name}
-                      width={40}
-                      height={40}
-                      unoptimized
-                      className="h-10 w-10 flex-none rounded-xl object-cover"
-                    />
-                  ) : (
-                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
-                      <FiFileText className="h-5 w-5 text-[var(--color-primary)]" aria-hidden />
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
-                    <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">
-                      {formatFileSize(file.size)}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(file.id)}
-                    aria-label={`${copy.attachRemove}: ${file.name}`}
-                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))]"
+            {attachments.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {attachments.map((file) => (
+                  <li
+                    key={file.id}
+                    className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-2.5"
                   >
-                    <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-                  </button>
+                    {file.previewUrl ? (
+                      <Image
+                        src={file.previewUrl}
+                        alt={file.name}
+                        width={40}
+                        height={40}
+                        unoptimized
+                        className="h-10 w-10 flex-none rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
+                        <FiFileText className="h-5 w-5 text-[var(--color-primary)]" aria-hidden />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
+                      <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{formatFileSize(file.size)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(file.id)}
+                      aria-label={`${copy.attachRemove}: ${file.name}`}
+                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))]"
+                    >
+                      <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            <p className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
+              <FiInfo className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+              {copy.attachNote}
+            </p>
+          </div>
+        </Section>
+
+        {/* Actions */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={() => router.push(links.root)}
+            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+          >
+            <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+          >
+            <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
+            <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sticky summary — desktop only; the same information is in the form on mobile */}
+      <aside className="hidden lg:sticky lg:top-4 lg:block">
+        <div className={`${HD_CARD} p-4`}>
+          <p className="text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+            {copy.summaryTitle}
+          </p>
+
+          <dl className="mt-3 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <dt className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{copy.summaryCategory}</dt>
+              <dd className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--color-primary)]">
+                {selectedType ? (
+                  <>
+                    {(() => {
+                      const Icon = TYPE_ICONS[iconForType(selectedType.value, selectedType.key)];
+                      return <Icon className="h-3.5 w-3.5 flex-none" aria-hidden />;
+                    })()}
+                    <span className="truncate">{typeLabel(selectedType, translatedCategories)}</span>
+                  </>
+                ) : (
+                  <span className="text-[color-mix(in_srgb,var(--color-primary)_50%,var(--color-white))]">{copy.summaryNone}</span>
+                )}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <dt className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{copy.summaryPriority}</dt>
+              <dd className="text-xs font-semibold" style={{ color: priorityTone }}>
+                {selectedPriority ? priorityLabel(selectedPriority, translatedPriorities) : copy.summaryNone}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <dt className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{copy.summaryFiles}</dt>
+              <dd className="text-xs font-semibold text-[var(--color-primary)]">{attachments.length}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-4 rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-3">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--color-primary)]">
+              <FiClock className="h-3.5 w-3.5" aria-hidden />
+              {copy.nextTitle}
+            </p>
+            <ol className="mt-2 space-y-1.5">
+              {[copy.nextStep1, copy.nextStep2, copy.nextStep3].map((line, index) => (
+                <li key={index} className="flex gap-2 text-[11px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_68%,var(--color-white))]">
+                  <span className="mt-[3px] flex h-3.5 w-3.5 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] text-[8.5px] font-bold text-[var(--color-primary)]">
+                    {index + 1}
+                  </span>
+                  {line}
                 </li>
               ))}
-            </ul>
-          ) : null}
+            </ol>
+          </div>
 
-          <p className="mt-3 flex items-start gap-2 text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
-            <FiInfo className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
-            {copy.attachNote}
-          </p>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-action)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+          >
+            <FiSend className="h-3.5 w-3.5 text-[var(--color-white)]" aria-hidden />
+            <span className="text-xs font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
+          </button>
         </div>
-      </fieldset>
-
-      {/* Actions */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <button
-          type="button"
-          onClick={() => router.push(links.root)}
-          className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-        >
-          <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
-        </button>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-        >
-          <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
-          <span className="text-sm font-semibold text-[var(--color-white)]">
-            {submitting ? copy.submitting : copy.submit}
-          </span>
-        </button>
-      </div>
+      </aside>
     </form>
+  );
+}
+
+/** A numbered card section: badge + title + hint, then the fields. */
+function Section({
+  step,
+  title,
+  hint,
+  copy,
+  children,
+}: {
+  step: number;
+  title: string;
+  hint: string;
+  copy: HelpDeskCopy;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`${HD_CARD} p-5 sm:p-6`} aria-label={title}>
+      <header className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[var(--color-action)] text-[11px] font-bold text-[var(--color-white)]">
+          {step}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-[15px] font-bold leading-tight text-[var(--color-primary)]">{title}</h2>
+          <p className="mt-0.5 text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{hint}</p>
+        </div>
+        <span className="sr-only">{copy.stepLabel.replace("{n}", String(step))}</span>
+      </header>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function OptionsError({ copy, onRetry }: { copy: HelpDeskCopy; onRetry: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_28%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] px-4 py-3">
+      <FiAlertCircle className="h-4 w-4 flex-none text-[var(--color-danger)]" aria-hidden />
+      <span className="min-w-0 flex-1 text-xs font-medium text-[var(--color-danger)]">{copy.optionsFailed}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex flex-none items-center gap-1.5 rounded-xl border border-[var(--color-danger)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-danger)] transition hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+      >
+        <FiRefreshCw className="h-3 w-3" aria-hidden />
+        {copy.optionsRetry}
+      </button>
+    </div>
   );
 }
 

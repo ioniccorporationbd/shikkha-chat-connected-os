@@ -149,8 +149,10 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
 
   const data = await postJson<HelpDeskTicketPayload>(TICKETS_URL, {
     subject: input.subject.trim(),
-    category: input.category,
-    priority: input.priority,
+    // ERP-managed values, sent exactly as configured (never a local constant):
+    // `HD Ticket Type` name and `HD Ticket Priority` name.
+    ticketType: input.ticketType?.trim() || "",
+    priority: input.priority?.trim() || "",
     description: input.description.trim(),
     contact: {
       name: input.contact.name?.trim() || "",

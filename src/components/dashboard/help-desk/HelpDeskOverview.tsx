@@ -19,7 +19,6 @@ import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/H
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { isHelpDeskDemoEnabled } from "@/lib/help-desk/demo";
 import { formatDateTime } from "@/lib/help-desk/format";
 import {
   isUnresolved,
@@ -121,11 +120,6 @@ export default function HelpDeskOverview({
               <p className="mt-0.5 max-w-2xl text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                 {copy.overviewSubtitle}
               </p>
-              {isHelpDeskDemoEnabled() ? (
-                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
-                  {copy.demoBadge}
-                </span>
-              ) : null}
             </div>
           </div>
 

@@ -120,12 +120,18 @@ export interface Ticket {
 /** Payload accepted by `createTicket`. */
 export interface CreateTicketInput {
   subject: string;
-  category: TicketCategoryId;
-  priority: TicketPriority;
+  /**
+   * ERP `HD Ticket Type` name — the only thing the form sends now that the
+   * options come from the ERP. Sent verbatim; the backend rejects a type that
+   * does not exist instead of silently inventing one.
+   */
+  ticketType?: string;
+  /** ERP `HD Ticket Priority` name (dynamic), never a hard-coded list member. */
+  priority?: string;
   description: string;
   contact: TicketContact;
   relatedRoute?: string;
-  /** Optional department the ticket is routed to (demo/mock phase). */
+  /** ERP `HD Team` name the ticket is routed to, when one is configured. */
   department?: string;
   attachments?: TicketAttachment[];
 }
@@ -184,17 +190,20 @@ export interface HelpDeskUploadedFile {
 
 /** One ERP-configured priority (`HD Ticket Priority`), mapped to the portal key. */
 export interface HelpDeskOptionPriority {
-  /** Portal priority key (`low`…`urgent`), or `null` for a custom ERP priority. */
-  id: "low" | "medium" | "high" | "urgent" | null;
-  /** The ERP record name, shown when the priority has no portal equivalent. */
+  /** Portal priority key when the ERP row maps to one (`low|medium|high|urgent`), else null. */
+  id: string | null;
+  /** The ERP `HD Ticket Priority` name — what the form submits. */
   name: string;
 }
 
-/**
- * Server payload of `GET /api/help-desk/options` — the lists the ERP actually
- * has configured (`HD Ticket Status`, `HD Ticket Priority`, `HD Ticket Type`),
- * so the create form never offers a value the ticket cannot store.
- */
+export interface HelpDeskOptionType {
+  /** The ERP `HD Ticket Type` name — what the form submits. */
+  value: string;
+  /** Portal category key when the row maps to a designed card, else null. */
+  key: string | null;
+}
+
+/** Everything the create form offers, straight from the ERP master data. */
 export interface HelpDeskOptions {
   statuses: {
     name: string;
@@ -205,5 +214,6 @@ export interface HelpDeskOptions {
   }[];
   priorities: HelpDeskOptionPriority[];
   types: string[];
-  categories: { id: string; label: string }[];
+  categories: HelpDeskOptionType[];
+  teams: string[];
 }

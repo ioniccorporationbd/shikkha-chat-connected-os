@@ -81,6 +81,33 @@ export interface HelpDeskCopy {
   submit: string;
   submitting: string;
   cancel: string;
+  // ERP-driven options + form chrome (all values come from the ERP)
+  optionsLoading: string;
+  optionsFailed: string;
+  optionsRetry: string;
+  optionsEmptyType: string;
+  optionsEmptyPriority: string;
+  optionsEmptyTeam: string;
+  sectionBasicHint: string;
+  sectionTicketHint: string;
+  sectionOptionalHint: string;
+  stepLabel: string;
+  liveBadge: string;
+  attachDrop: string;
+  attachMax: string;
+  toastOptionsFailed: string;
+  toastAttachAdded: string;
+  toastAttachRemoved: string;
+  toastAttachLimit: string;
+  summaryTitle: string;
+  summaryCategory: string;
+  summaryPriority: string;
+  summaryFiles: string;
+  summaryNone: string;
+  nextTitle: string;
+  nextStep1: string;
+  nextStep2: string;
+  nextStep3: string;
 
   // Success
   successTitle: string;
@@ -303,6 +330,32 @@ const bn: HelpDeskCopy = {
   submit: "টিকিট জমা দিন",
   submitting: "জমা হচ্ছে…",
   cancel: "বাতিল করুন",
+  optionsLoading: "অপশন লোড হচ্ছে…",
+  optionsFailed: "হেল্প ডেস্কের অপশন লোড করা যায়নি।",
+  optionsRetry: "আবার চেষ্টা করুন",
+  optionsEmptyType: "সিস্টেমে এখন কোনো টিকিট ক্যাটাগরি কনফিগার করা নেই — বিষয় ও বিবরণ দিয়েই টিকিট পাঠাতে পারবেন।",
+  optionsEmptyPriority: "কোনো প্রায়োরিটি কনফিগার করা নেই — ডিফল্ট প্রায়োরিটি ব্যবহার হবে।",
+  optionsEmptyTeam: "কোনো টিম কনফিগার করা নেই",
+  sectionBasicHint: "আপনার সাথে কীভাবে যোগাযোগ করা যাবে জানিয়ে দিন।",
+  sectionTicketHint: "সমস্যাটি নির্দিষ্ট করে লিখুন — যত স্পষ্ট, তত দ্রুত সমাধান।",
+  sectionOptionalHint: "প্রয়োজনে টিম, লিংক বা ফাইল যোগ করুন।",
+  stepLabel: "ধাপ {n}",
+  liveBadge: "ERP থেকে লাইভ",
+  attachDrop: "ফাইল এখানে টেনে ছাড়ুন বা ক্লিক করুন",
+  attachMax: "সর্বোচ্চ {count}টি ফাইল",
+  toastOptionsFailed: "লাইভ হেল্প ডেস্ক অপশন পাওয়া যায়নি — ‘আবার চেষ্টা করুন’ চাপুন।",
+  toastAttachAdded: "ফাইল সংযুক্ত হয়েছে।",
+  toastAttachRemoved: "ফাইল সরানো হয়েছে।",
+  toastAttachLimit: "সর্বোচ্চ {count}টি ফাইল সংযুক্ত করা যাবে।",
+  summaryTitle: "সারসংক্ষেপ",
+  summaryCategory: "ক্যাটাগরি",
+  summaryPriority: "প্রায়োরিটি",
+  summaryFiles: "সংযুক্তি",
+  summaryNone: "এখনো বাছা হয়নি",
+  nextTitle: "এরপর কী হবে?",
+  nextStep1: "টিকিট সাথে সাথে ERP হেল্প ডেস্কে তৈরি হবে — একটি টিকিট আইডি পাবেন।",
+  nextStep2: "সাপোর্ট টিম আপনার দেওয়া যোগাযোগ মাধ্যমেই উত্তর দেবে।",
+  nextStep3: "সব আপডেট ‘আমার টিকিট’ তালিকায় লাইভ দেখা যাবে।",
 
   successTitle: "টিকিট সফলভাবে তৈরি হয়েছে",
   successHint: "টিকিট আইডি সংরক্ষণ করুন — এটি দিয়ে আপনি অবস্থা দেখতে পারবেন।",
@@ -528,6 +581,32 @@ const en: HelpDeskCopy = {
   submit: "Submit ticket",
   submitting: "Submitting…",
   cancel: "Cancel",
+  optionsLoading: "Loading options…",
+  optionsFailed: "Could not load the Help Desk options.",
+  optionsRetry: "Try again",
+  optionsEmptyType: "No ticket categories are configured yet — you can still send a ticket with a subject and description.",
+  optionsEmptyPriority: "No priorities are configured — the default priority will be used.",
+  optionsEmptyTeam: "No teams configured",
+  sectionBasicHint: "Tell us how to reach you about this ticket.",
+  sectionTicketHint: "Describe the issue precisely — clearer reports get faster fixes.",
+  sectionOptionalHint: "Optionally add a team, a related link or files.",
+  stepLabel: "Step {n}",
+  liveBadge: "Live from ERP",
+  attachDrop: "Drag files here or click to browse",
+  attachMax: "Up to {count} files",
+  toastOptionsFailed: "Live Help Desk options are unavailable — press “Try again”.",
+  toastAttachAdded: "File attached.",
+  toastAttachRemoved: "File removed.",
+  toastAttachLimit: "You can attach at most {count} files.",
+  summaryTitle: "Summary",
+  summaryCategory: "Category",
+  summaryPriority: "Priority",
+  summaryFiles: "Attachments",
+  summaryNone: "Not selected yet",
+  nextTitle: "What happens next?",
+  nextStep1: "Your ticket is created in the ERP Help Desk immediately — you get a ticket ID.",
+  nextStep2: "The support team replies on the contact channel you chose.",
+  nextStep3: "Every update appears live in “My tickets”.",
 
   successTitle: "Ticket created successfully",
   successHint: "Keep your ticket ID — you can use it to track the status.",
