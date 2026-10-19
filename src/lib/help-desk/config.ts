@@ -69,24 +69,27 @@ export const DEFAULT_CATEGORY: TicketCategoryId = "technical";
 export const DEFAULT_PRIORITY: TicketPriority = "medium";
 
 /**
- * Colour tokens per status — ONE consistent Shikkha red + neutral-gray palette
- * (no teal/amber/blue/green). Red marks work that still needs attention; grey
- * marks settled / neutral states.
+ * Colour tokens per status — NEUTRAL ink/green scale only.
+ *
+ * Shikkha red is reserved for elements that perform an action when clicked
+ * (primary buttons, the row "view details" action). Status is information, not
+ * an action, so this palette never uses red: ink = live work, teal = in
+ * progress, green = resolved, grey = settled / waiting.
  */
 export const STATUS_TONE: Record<TicketStatus, string> = {
-  open: "#e00516",
-  in_progress: "#a10f1c",
+  open: "#032521",
+  in_progress: "#2e8b76",
   waiting_for_user: "#6b7280",
-  resolved: "#4b5563",
+  resolved: "#2f7d5a",
   closed: "#9ca3af",
 };
 
-/** Colour tokens per priority — grey for routine, Shikkha red as urgency rises. */
+/** Colour tokens per priority — grey for routine, amber/burnt as urgency rises. */
 export const PRIORITY_TONE: Record<TicketPriority, string> = {
   low: "#9ca3af",
   medium: "#6b7280",
-  high: "#e00516",
-  urgent: "#a10f1c",
+  high: "#c98a1f",
+  urgent: "#7c2d12",
 };
 
 /** Categories that are considered "still open" work (not finished). */

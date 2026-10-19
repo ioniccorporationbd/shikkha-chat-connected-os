@@ -7,7 +7,7 @@ import TicketDetails from "@/components/help-desk/TicketDetails";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
-import HelpDeskBreadcrumb from "./HelpDeskBreadcrumb";
+import HelpDeskBackButton from "./HelpDeskBackButton";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskTickets from "./HelpDeskTickets";
 
@@ -49,6 +49,7 @@ export default function HelpDeskDashboard({
     // rail already shows the section.
     return (
       <div className="flex flex-col gap-5">
+        <HelpDeskBackButton label={copy.back} fallbackHref={links.root} />
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
             <FiPlusCircle className="h-5 w-5" aria-hidden />
@@ -68,11 +69,6 @@ export default function HelpDeskDashboard({
   if (view === "detail" && ticketId) {
     return (
       <div className="flex flex-col gap-4">
-        <HelpDeskBreadcrumb
-          copy={copy}
-          basePath={basePath}
-          crumbs={[{ label: copy.listTitle, href: links.tickets }, { label: ticketId }]}
-        />
         <TicketDetails ticketId={ticketId} copy={copy} language={language} basePath={basePath} markSeen />
       </div>
     );

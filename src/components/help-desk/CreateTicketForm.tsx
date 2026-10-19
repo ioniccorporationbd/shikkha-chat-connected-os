@@ -346,7 +346,7 @@ export default function CreateTicketForm({
                     role="radio"
                     aria-checked={selected}
                     onClick={() => setPreferredContact(option)}
-                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+                    className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
                       selected
                         ? "bg-[var(--color-white)] text-[var(--color-primary)] shadow-sm"
                         : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))] hover:text-[var(--color-primary)]"
@@ -415,10 +415,10 @@ export default function CreateTicketForm({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => setTicketType(option.value)}
-                      className={`group relative flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+                      className={`group relative flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
                         selected
-                          ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
-                          : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,var(--color-white))] hover:bg-[var(--color-action-tint)]"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+                          : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
                       }`}
                     >
                       <Icon className={`h-4 w-4 flex-none ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
@@ -458,7 +458,7 @@ export default function CreateTicketForm({
                       role="radio"
                       aria-checked={selected}
                       onClick={() => setPriority(option.name)}
-                      className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                      className="inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                       style={{
                         // Selected = brand ink, so the choice is unmistakable even
                         // for the neutral (grey) priorities; the severity colour
@@ -570,7 +570,7 @@ export default function CreateTicketForm({
                 addFiles(e.dataTransfer.files);
               }}
               disabled={attachments.length >= MAX_ATTACHMENTS}
-              className={`mt-2 flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+              className={`mt-2 flex w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-5 text-center transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
                 dragging
                   ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
                   : "border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]"
@@ -614,7 +614,7 @@ export default function CreateTicketForm({
                       type="button"
                       onClick={() => removeAttachment(file.id)}
                       aria-label={`${copy.attachRemove}: ${file.name}`}
-                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))]"
+                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
                     >
                       <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                     </button>
@@ -635,14 +635,14 @@ export default function CreateTicketForm({
           <button
             type="button"
             onClick={() => router.push(links.root)}
-            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+            className="inline-flex items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))] px-5 py-3 transition duration-200 hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
           >
             <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 shadow-[0_16px_30px_-16px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 shadow-[0_16px_30px_-16px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
           >
             <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
             <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
@@ -708,7 +708,7 @@ export default function CreateTicketForm({
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-action)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-action)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
           >
             <FiSend className="h-3.5 w-3.5 text-[var(--color-white)]" aria-hidden />
             <span className="text-xs font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
@@ -760,7 +760,7 @@ function OptionsError({ copy, onRetry }: { copy: HelpDeskCopy; onRetry: () => vo
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex flex-none items-center gap-1.5 rounded-xl border border-[var(--color-danger)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-danger)] transition hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+        className="inline-flex flex-none items-center gap-1.5 rounded-xl border border-[var(--color-danger)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-danger)] transition hover:bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
       >
         <FiRefreshCw className="h-3 w-3" aria-hidden />
         {copy.optionsRetry}

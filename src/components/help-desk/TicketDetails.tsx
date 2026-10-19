@@ -198,7 +198,7 @@ export default function TicketDetails({
                       key={file.id}
                       className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-2.5"
                     >
-                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]">
+                      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]">
                         <FiFileText className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -374,10 +374,10 @@ function BackLink({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string })
   return (
     <Link
       href={links.tickets}
-      className="inline-flex items-center gap-2 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+      className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
     >
-      <FiArrowLeft className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-      <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.backToList}</span>
+      <FiArrowLeft size={14} className="text-[var(--color-primary)]" aria-hidden />
+      <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.backToList}</span>
     </Link>
   );
 }
@@ -385,7 +385,7 @@ function BackLink({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string })
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] text-[var(--color-primary)]">
+      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] text-[var(--color-primary)]">
         {icon}
       </span>
       <div className="min-w-0">

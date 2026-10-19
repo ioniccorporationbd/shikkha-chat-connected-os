@@ -58,9 +58,9 @@ export default function SupportReply({
           ) : null}
 
           {message.statusChange ? (
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action-tint)] px-3 py-1">
-              <FiCheckCircle className="h-3.5 w-3.5 text-[var(--color-action)]" aria-hidden />
-              <span className="text-xs font-semibold text-[var(--color-action)]">
+            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-white))] px-3 py-1">
+              <FiCheckCircle className="h-3.5 w-3.5 text-[var(--color-success)]" aria-hidden />
+              <span className="text-xs font-semibold text-[color-mix(in_srgb,var(--color-success)_82%,black)]">
                 {copy.timelineStatusTo}: {copy.statuses[message.statusChange]}
               </span>
             </span>

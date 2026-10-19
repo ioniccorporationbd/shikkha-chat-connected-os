@@ -126,6 +126,9 @@ export interface HelpDeskCopy {
   listSubtitle: string;
   searchPlaceholder: string;
   filterAll: string;
+  colSl: string;
+  back: string;
+  openOnlyNote: string;
   colTicketId: string;
   colSubject: string;
   colCategory: string;
@@ -372,6 +375,9 @@ const bn: HelpDeskCopy = {
   listSubtitle: "আপনার তৈরি করা টিকিটের অবস্থা ও অগ্রগতি।",
   searchPlaceholder: "টিকিট আইডি বা বিষয় দিয়ে খুঁজুন",
   filterAll: "সব",
+  colSl: "ক্রম",
+  back: "পেছনে যান",
+  openOnlyNote: "শুধু ওপেন স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
   colTicketId: "টিকিট আইডি",
   colSubject: "বিষয়",
   colCategory: "ক্যাটাগরি",
@@ -623,6 +629,9 @@ const en: HelpDeskCopy = {
   listSubtitle: "Status and progress of the tickets you filed.",
   searchPlaceholder: "Search by ticket ID or subject",
   filterAll: "All",
+  colSl: "SL",
+  back: "Go back",
+  openOnlyNote: "Showing open tickets only",
   colTicketId: "Ticket ID",
   colSubject: "Subject",
   colCategory: "Category",

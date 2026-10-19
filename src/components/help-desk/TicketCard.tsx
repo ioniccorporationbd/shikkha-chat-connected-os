@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiArrowRight, FiCalendar } from "react-icons/fi";
+import { FiCalendar, FiChevronRight } from "react-icons/fi";
 
 import { formatDateTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
@@ -12,30 +12,42 @@ import TicketCategoryChip from "./TicketCategoryChip";
 import TicketPriorityBadge from "./TicketPriorityBadge";
 import TicketStatusBadge from "./TicketStatusBadge";
 
-/** A single ticket as a mobile-friendly card (used below the `lg` table breakpoint). */
+/**
+ * A single ticket as a card (below the `lg` table breakpoint). Mirrors the
+ * desktop row: serial number, id, status, subject, chips and the same outline
+ * "view details" action button — red appears on that action only.
+ */
 export default function TicketCard({
   ticket,
   copy,
   language,
   basePath,
   newReply,
+  sl,
 }: {
   ticket: Ticket;
   copy: HelpDeskCopy;
   language: string;
   basePath?: string;
   newReply?: boolean;
+  /** Row serial number shown on the desktop table. */
+  sl?: number;
 }) {
   const links = helpDeskLinks(basePath);
   return (
-    <article className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] p-4 shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
+    <article className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_7%,transparent)]">
       <div className="flex items-start justify-between gap-3">
-        <span className="text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+          {typeof sl === "number" ? (
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] text-[11px] tabular-nums text-[var(--color-primary)]">
+              {sl}
+            </span>
+          ) : null}
           {ticket.id}
         </span>
         <span className="flex items-center gap-2">
           {newReply ? (
-            <span className="rounded-full bg-[var(--color-danger)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
               {copy.newReplyBadge}
             </span>
           ) : null}
@@ -57,10 +69,10 @@ export default function TicketCard({
         </span>
         <Link
           href={links.ticket(ticket.id)}
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
         >
-          <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
-          <FiArrowRight className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+          <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+          <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
         </Link>
       </div>
     </article>

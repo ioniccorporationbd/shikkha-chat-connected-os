@@ -12,7 +12,6 @@ import {
   FiList,
   FiPlusCircle,
   FiRefreshCw,
-  FiSearch,
 } from "react-icons/fi";
 
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
@@ -31,6 +30,8 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { listTickets } from "@/lib/help-desk/service";
 import type { Ticket } from "@/lib/help-desk/types";
+
+import HelpDeskBackButton from "./HelpDeskBackButton";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
@@ -97,18 +98,20 @@ export default function HelpDeskOverview({
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
   ];
 
+  // The ticket list shows open tickets only, so the quick actions stay on the
+  // two destinations that actually exist: file a ticket, or open the list.
   const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = [
     { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
-    { key: "open", label: copy.quickOpenTickets, href: `${links.tickets}?status=open`, icon: FiInbox },
-    { key: "resolved", label: copy.quickResolvedTickets, href: `${links.tickets}?status=resolved`, icon: FiCheckCircle },
-    { key: "search", label: copy.quickSearchTickets, href: `${links.tickets}?focus=search`, icon: FiSearch },
+    { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
   ];
 
   return (
     <div className="flex flex-col gap-4">
+      <HelpDeskBackButton label={copy.back} fallbackHref="/" />
+
       {/* Hero */}
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
-        <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-action)_7%,var(--color-white))_0%,var(--color-white)_72%)] p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))_0%,var(--color-white)_72%)] p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)] shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]">
               <FiHeadphones size={24} aria-hidden />
@@ -133,7 +136,7 @@ export default function HelpDeskOverview({
             </Link>
             <Link
               href={links.tickets}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
             >
               <FiList size={15} className="text-[var(--color-primary)]" aria-hidden />
               <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.listTitle}</span>
@@ -151,7 +154,7 @@ export default function HelpDeskOverview({
           {/* Summary */}
           <section className="flex flex-col gap-3">
             <h2 className="px-1 text-[15px] font-semibold">{copy.summaryHeading}</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
               {summaryCards.map((card) => (
                 <SummaryCard key={card.key} label={card.label} value={card.value} tone={card.tone} icon={card.icon} />
               ))}
@@ -161,14 +164,14 @@ export default function HelpDeskOverview({
           {/* Quick actions */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <Link
                     key={action.key}
                     href={action.href}
-                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
                       <Icon size={18} aria-hidden />
@@ -231,7 +234,7 @@ export default function HelpDeskOverview({
                     <li key={ticket.id}>
                       <Link
                         href={links.ticket(ticket.id)}
-                        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:border-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                       >
                         <span
                           className="h-2.5 w-2.5 shrink-0 rounded-full"
@@ -309,13 +312,13 @@ function TicketRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
       >
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-[var(--color-primary)]">{ticket.subject}</span>
             {showNew ? (
-              <span className="shrink-0 rounded-full bg-[var(--color-danger)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-white)]">
+              <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
                 {copy.newReplyBadge}
               </span>
             ) : null}
