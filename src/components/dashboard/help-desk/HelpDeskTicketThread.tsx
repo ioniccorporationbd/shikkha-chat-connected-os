@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertCircle, FiCheckCircle, FiRefreshCw } from "react-icons/fi";
+import { FiAlertCircle, FiRefreshCw } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
@@ -15,6 +15,8 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
+import { reopenTicket } from "@/lib/help-desk/service";
+import { toast } from "@/lib/ui/toast";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
@@ -58,7 +60,7 @@ export default function HelpDeskTicketThread({
 
   const [quoted, setQuoted] = useState<ConversationMessage | null>(null);
   const [mode, setMode] = useState<"message" | "requirement">("message");
-  const [notice, setNotice] = useState<{ tone: "ok" | "warn"; text: string } | null>(null);
+  const [reopenBusy, setReopenBusy] = useState(false);
 
   const [statusValue, setStatusValue] = useState("");
   const [resolution, setResolution] = useState("");
@@ -140,11 +142,11 @@ export default function HelpDeskTicketThread({
           });
           setPayload(data);
           setQuoted(null);
-          setNotice({ tone: "ok", text: copy.composerSent });
+          toast.success(copy.composerRequirementSent, copy.conversationTitle);
           return true;
         } catch (err) {
           const text = err instanceof Error ? err.message : "";
-          setNotice({ tone: "warn", text: text || copy.composerFailed });
+          toast.error(text || copy.composerFailed);
           console.error("[help-desk] requirement failed", ticketId, err);
           return false;
         }
@@ -158,35 +160,54 @@ export default function HelpDeskTicketThread({
         });
         setPayload(data);
         setQuoted(null);
-        setNotice({ tone: "ok", text: copy.composerSent });
+        toast.success(copy.composerSent);
         return true;
       } catch (err) {
         const text = err instanceof Error ? err.message : "";
-        setNotice({ tone: "warn", text: text || copy.composerFailed });
+        toast.error(text || copy.composerFailed);
         console.error("[help-desk] message send failed", ticketId, err);
         return false;
       }
     },
-    [copy.composerFailed, copy.composerSent, mode, ticketId]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, mode, ticketId]
   );
 
   const submitStatus = useCallback(async () => {
     if (statusBusy) return;
     setStatusBusy(true);
-    setNotice(null);
     try {
+      // The backend writes the solution Communication before the status change,
+      // inside one transaction, so a ticket can never close without its answer.
       const data = await setTicketStatus(ticketId, { status: statusValue, resolution });
       setPayload(data);
       setResolution("");
-      setNotice({ tone: "ok", text: copy.statusUpdated });
+      toast.success(copy.statusUpdated);
     } catch (err) {
       const text = err instanceof Error ? err.message : "";
-      setNotice({ tone: "warn", text: text || copy.statusFailed });
+      toast.error(text || copy.statusFailed);
       console.error("[help-desk] status update failed", ticketId, err);
     } finally {
       setStatusBusy(false);
     }
   }, [copy.statusFailed, copy.statusUpdated, resolution, statusBusy, statusValue, ticketId]);
+
+  // Closed tickets reject replies in this ERP. The only permitted way back is an
+  // explicit reopen — never a silent status change.
+  const reopen = useCallback(async () => {
+    if (reopenBusy) return;
+    setReopenBusy(true);
+    try {
+      await reopenTicket(ticketId);
+      toast.success(copy.conversationReopened);
+      await load(true);
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "";
+      toast.error(text || copy.conversationReopenFailed);
+      console.error("[help-desk] reopen failed", ticketId, err);
+    } finally {
+      setReopenBusy(false);
+    }
+  }, [copy.conversationReopenFailed, copy.conversationReopened, load, reopenBusy, ticketId]);
 
   const isSupport = payload?.isSupport ?? false;
   const canReply = payload?.canReply ?? false;
@@ -275,21 +296,6 @@ export default function HelpDeskTicketThread({
         </button>
       </div>
 
-      {notice ? (
-        <div
-          className={[
-            "flex items-center gap-2 rounded-xl border px-3 py-2 text-[12.5px] font-semibold",
-            notice.tone === "ok"
-              ? "border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
-              : "border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-white))] text-[#8a5a10]",
-          ].join(" ")}
-          role="status"
-        >
-          {notice.tone === "ok" ? <FiCheckCircle size={14} aria-hidden /> : <FiAlertCircle size={14} aria-hidden />}
-          {notice.text}
-        </div>
-      ) : null}
-
       <ProblemInfoCard
         ticket={ticket}
         copy={copy}
@@ -330,10 +336,7 @@ export default function HelpDeskTicketThread({
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => {
-                    setMode(tab.key);
-                    setNotice(null);
-                  }}
+                  onClick={() => setMode(tab.key)}
                   className={[
                     "rounded-lg px-2.5 py-1 text-[11.5px] font-semibold transition",
                     mode === tab.key
@@ -361,6 +364,16 @@ export default function HelpDeskTicketThread({
               <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
                 {copy.conversationClosedHint}
               </p>
+              {!isSupport ? (
+                <button
+                  type="button"
+                  onClick={() => void reopen()}
+                  disabled={reopenBusy}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-action)] px-3 py-1.5 text-[11.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                >
+                  {reopenBusy ? copy.conversationReopening : copy.conversationReopen}
+                </button>
+              ) : null}
             </div>
           )}
         </div>

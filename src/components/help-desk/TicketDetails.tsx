@@ -16,6 +16,7 @@ import {
   FiRotateCcw,
   FiSend,
   FiUser,
+  FiX,
 } from "react-icons/fi";
 
 import { HD_CARD, HD_GHOST_BTN, HD_INPUT } from "@/lib/help-desk/config";
@@ -24,7 +25,8 @@ import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { addUserReply, attachmentUrl, getTicket, reopenTicket } from "@/lib/help-desk/service";
+import { addRequirement } from "@/lib/help-desk/conversations";
+import { attachmentUrl, getTicket, reopenTicket } from "@/lib/help-desk/service";
 import type { Ticket, TicketStatus } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
 
@@ -54,8 +56,9 @@ export default function TicketDetails({
   const [state, setState] = useState<LoadState>("loading");
   const [ticket, setTicket] = useState<Ticket | null>(null);
 
-  const [reply, setReply] = useState("");
-  const [replyBusy, setReplyBusy] = useState(false);
+  const [requirement, setRequirement] = useState("");
+  const [requirementFiles, setRequirementFiles] = useState<File[]>([]);
+  const [requirementBusy, setRequirementBusy] = useState(false);
   const [reopenBusy, setReopenBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -91,23 +94,26 @@ export default function TicketDetails({
     void load();
   };
 
-  const submitReply = async (event: React.FormEvent) => {
+  // Additional requirements replace the old open-ticket reply form. They are
+  // ticket-linked Communications, honoured by the ERP only while status = Open.
+  const submitRequirement = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!ticket) return;
-    if (!reply.trim()) {
-      toast.error(copy.replyValidation);
+    if (!requirement.trim()) {
+      toast.error(copy.reqValidation);
       return;
     }
-    setReplyBusy(true);
+    setRequirementBusy(true);
     try {
-      const updated = await addUserReply(ticket.id, reply);
-      setTicket(updated);
-      setReply("");
-      toast.success(copy.replySent);
+      await addRequirement(ticket.id, { message: requirement, attachments: requirementFiles });
+      setRequirement("");
+      setRequirementFiles([]);
+      toast.success(copy.reqSent);
+      await load();
     } catch (error) {
       toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
     } finally {
-      setReplyBusy(false);
+      setRequirementBusy(false);
     }
   };
 
@@ -153,6 +159,9 @@ export default function TicketDetails({
   }
 
   const isResolved = ticket.status === "resolved" || ticket.status === "closed";
+  // Additional requirements are Open-only; the ERP re-checks this server-side.
+  const canAddRequirement = ticket.status === "open";
+  const convLinks = helpDeskLinks(basePath);
 
   return (
     <div className="space-y-4">
@@ -231,38 +240,106 @@ export default function TicketDetails({
 
           {/* Conversation */}
           <section className={`${HD_CARD} p-5 sm:p-6`}>
-            <h2 className="mb-4 inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
-              <FiMessageSquare className="h-4 w-4" aria-hidden />
-              {copy.detailsConversation}
-            </h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
+                <FiMessageSquare className="h-4 w-4" aria-hidden />
+                {copy.detailsConversation}
+              </h2>
+              <Link
+                href={convLinks.message(ticket.id)}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-action)] hover:underline"
+              >
+                {copy.viewConversation}
+              </Link>
+            </div>
             <TicketConversation messages={ticket.messages} copy={copy} language={language} />
 
-            {/* Reply */}
-            <form onSubmit={submitReply} className="mt-5 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] pt-4">
-              <label htmlFor="hd-reply" className="text-sm font-bold text-[var(--color-primary)]">
-                {copy.replyTitle}
-              </label>
-              <textarea
-                id="hd-reply"
-                value={reply}
-                onChange={(event) => setReply(event.target.value)}
-                rows={3}
-                placeholder={copy.replyPlaceholder}
-                className={`${HD_INPUT} mt-2 resize-y`}
-              />
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={replyBusy}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-                >
-                  <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
-                  <span className="text-sm font-semibold text-[var(--color-white)]">
-                    {replyBusy ? copy.replySending : copy.replySend}
-                  </span>
-                </button>
+            {/* Additional requirements — Open tickets only (spec §4) */}
+            {canAddRequirement ? (
+              <form
+                onSubmit={submitRequirement}
+                className="mt-5 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] pt-4"
+              >
+                <label htmlFor="hd-requirement" className="text-sm font-bold text-[var(--color-primary)]">
+                  {copy.reqTitle}
+                </label>
+                <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-primary)_64%,var(--color-white))]">
+                  {copy.reqHint}
+                </p>
+                <textarea
+                  id="hd-requirement"
+                  value={requirement}
+                  onChange={(event) => setRequirement(event.target.value)}
+                  rows={4}
+                  placeholder={copy.reqPlaceholder}
+                  className={`${HD_INPUT} mt-2 resize-y`}
+                />
+
+                {requirementFiles.length > 0 ? (
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {requirementFiles.map((file) => (
+                      <li
+                        key={`${file.name}-${file.size}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3 py-1 text-xs font-medium text-[var(--color-primary)]"
+                      >
+                        <FiPaperclip className="h-3.5 w-3.5" aria-hidden />
+                        <span className="max-w-[14rem] truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => setRequirementFiles((files) => files.filter((item) => item !== file))}
+                          className="rounded-full p-0.5 text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] transition hover:text-[var(--color-action)]"
+                          aria-label={file.name}
+                        >
+                          <FiX className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
+                    <FiPaperclip className="h-4 w-4" aria-hidden />
+                    {copy.reqAttach}
+                    <input
+                      type="file"
+                      multiple
+                      className="sr-only"
+                      onChange={(event) => {
+                        const picked = Array.from(event.target.files ?? []);
+                        setRequirementFiles((files) => {
+                          const merged = [...files];
+                          picked.forEach((file) => {
+                            if (!merged.some((item) => item.name === file.name && item.size === file.size)) {
+                              merged.push(file);
+                            }
+                          });
+                          return merged;
+                        });
+                        event.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={requirementBusy}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-2.5 transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                  >
+                    <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
+                    <span className="text-sm font-semibold text-[var(--color-white)]">
+                      {requirementBusy ? copy.reqSending : copy.reqSubmit}
+                    </span>
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-4">
+                <p className="text-sm font-bold text-[var(--color-primary)]">{copy.reqClosed}</p>
+                <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--color-primary)_64%,var(--color-white))]">
+                  {copy.reqClosedHint}
+                </p>
               </div>
-            </form>
+            )}
           </section>
         </div>
 

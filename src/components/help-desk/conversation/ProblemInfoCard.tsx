@@ -1,6 +1,6 @@
 "use client";
 
-import { FiFileText, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiFileText, FiMail, FiPhone, FiUser } from "react-icons/fi";
 
 import {
   conversationCategoryLabel,
@@ -44,9 +44,13 @@ export default function ProblemInfoCard({
     { key: "submitted", label: copy.problemSubmitted, value: formatDateTime(ticket.createdAt, language) },
     { key: "assigned", label: copy.problemAssigned, value: ticket.assignedAgent || "—" },
   ];
+  if (ticket.department) {
+    meta.push({ key: "department", label: copy.problemDepartment, value: ticket.department });
+  }
   if (showCustomer) {
     meta.push({ key: "customer", label: copy.problemCustomer, value: ticket.contact?.name || "—" });
   }
+  const canShowContact = Boolean(showCustomer && ticket.contact);
 
   return (
     <section className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
@@ -125,6 +129,55 @@ export default function ProblemInfoCard({
           </p>
         )}
       </div>
+
+      {canShowContact ? (
+        <div className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3 py-2.5">
+          <h3 className="text-[12px] font-bold text-[var(--color-primary)]">{copy.customerContactTitle}</h3>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-[var(--color-primary)]">
+            <span className="inline-flex items-center gap-1.5 font-semibold">
+              <FiUser size={12} aria-hidden />
+              {ticket.contact?.name || "—"}
+            </span>
+            {ticket.contact?.email ? (
+              <a
+                href={`mailto:${ticket.contact.email}`}
+                className="inline-flex items-center gap-1.5 transition hover:text-[var(--color-action)]"
+              >
+                <FiMail size={12} aria-hidden />
+                {ticket.contact.email}
+              </a>
+            ) : null}
+            {ticket.contact?.mobile ? (
+              <a
+                href={`tel:${ticket.contact.mobile}`}
+                className="inline-flex items-center gap-1.5 transition hover:text-[var(--color-action)]"
+              >
+                <FiPhone size={12} aria-hidden />
+                {ticket.contact.mobile}
+              </a>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {ticket.resolutionSummary ? (
+        <div className="mt-4 rounded-xl border border-[color-mix(in_srgb,var(--color-success)_34%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_7%,var(--color-white))] px-3 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="inline-flex items-center gap-1.5 text-[12.5px] font-bold text-[var(--color-primary)]">
+              <FiCheckCircle size={13} className="text-[var(--color-success)]" aria-hidden />
+              {copy.solutionTitle}
+            </h3>
+            <span className="text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {[copy.solutionBy, ticket.assignedAgent, ticket.resolvedAt ? formatDateTime(ticket.resolvedAt, language) : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </div>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-[var(--color-primary)]">
+            {ticket.resolutionSummary}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-4 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

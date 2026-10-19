@@ -182,14 +182,18 @@ export interface HelpDeskCopy {
   timelineCreated: string;
   timelineStatusTo: string;
 
-  // Reply
-  replyTitle: string;
-  replyPlaceholder: string;
-  replyStepsPlaceholder: string;
-  replySend: string;
-  replySending: string;
-  replySent: string;
-  replyValidation: string;
+  // Additional requirements (Open tickets only)
+  reqTitle: string;
+  reqHint: string;
+  reqPlaceholder: string;
+  reqAttach: string;
+  reqSubmit: string;
+  reqSending: string;
+  reqSent: string;
+  reqValidation: string;
+  reqClosed: string;
+  reqClosedHint: string;
+  viewConversation: string;
 
   // Customer-care simulation (demo affordance)
   simTitle: string;
@@ -433,13 +437,17 @@ const bn: HelpDeskCopy = {
   timelineCreated: "টিকিট তৈরি হয়েছে",
   timelineStatusTo: "স্ট্যাটাস পরিবর্তন",
 
-  replyTitle: "উত্তর লিখুন",
-  replyPlaceholder: "আপনার মন্তব্য বা অতিরিক্ত তথ্য লিখুন…",
-  replyStepsPlaceholder: "প্রতি লাইনে একটি ধাপ (ঐচ্ছিক)",
-  replySend: "উত্তর পাঠান",
-  replySending: "পাঠানো হচ্ছে…",
-  replySent: "আপনার উত্তর যোগ হয়েছে।",
-  replyValidation: "উত্তর খালি রাখা যাবে না।",
+  reqTitle: "অতিরিক্ত রিকোয়ারমেন্ট যোগ করুন",
+  reqHint: "টিকিট ওপেন থাকা অবস্থায় অতিরিক্ত তথ্য বা রিকোয়ারমেন্ট যোগ করুন — সাপোর্ট টিম এটি দেখতে পাবে।",
+  reqPlaceholder: "অতিরিক্ত রিকোয়ারমেন্টের বিবরণ লিখুন…",
+  reqAttach: "সংযুক্তি যোগ করুন (ঐচ্ছিক)",
+  reqSubmit: "অতিরিক্ত রিকোয়ারমেন্ট জমা দিন",
+  reqSending: "জমা হচ্ছে…",
+  reqSent: "আপনার অতিরিক্ত রিকোয়ারমেন্ট যোগ হয়েছে।",
+  reqValidation: "রিকোয়ারমেন্টের বিবরণ খালি রাখা যাবে না।",
+  reqClosed: "টিকিটটি ক্লোজড",
+  reqClosedHint: "ক্লোজড টিকিটে অতিরিক্ত রিকোয়ারমেন্ট যোগ করা যায় না। টিকিট আবার খুলতে চাইলে পাশের ‘রিওপেন’ অপশন ব্যবহার করুন।",
+  viewConversation: "সম্পূর্ণ কথোপকথন দেখুন",
 
   simTitle: "কাস্টমার কেয়ার প্রতিক্রিয়া (ডেমো)",
   simHint: "ব্যবহারকারীর অভিজ্ঞতা পরীক্ষা করতে সাপোর্ট এজেন্টের উত্তর অনুকরণ করুন।",
@@ -692,13 +700,17 @@ const en: HelpDeskCopy = {
   timelineCreated: "Ticket created",
   timelineStatusTo: "Status changed",
 
-  replyTitle: "Write a reply",
-  replyPlaceholder: "Add a comment or extra information…",
-  replyStepsPlaceholder: "One step per line (optional)",
-  replySend: "Send reply",
-  replySending: "Sending…",
-  replySent: "Your reply was added.",
-  replyValidation: "A reply cannot be empty.",
+  reqTitle: "Add Additional Requirements",
+  reqHint: "While the ticket is Open, add extra details or requirements — the support team will see them.",
+  reqPlaceholder: "Describe the additional requirement…",
+  reqAttach: "Attach a file (optional)",
+  reqSubmit: "Submit Additional Requirement",
+  reqSending: "Submitting…",
+  reqSent: "Your additional requirement was added.",
+  reqValidation: "The requirement description cannot be empty.",
+  reqClosed: "This ticket is closed",
+  reqClosedHint: "Additional requirements can only be added while a ticket is Open. Use the reopen option if the problem is back.",
+  viewConversation: "View full conversation",
 
   simTitle: "Customer care response (demo)",
   simHint: "Simulate a support agent reply to exercise the full user experience.",

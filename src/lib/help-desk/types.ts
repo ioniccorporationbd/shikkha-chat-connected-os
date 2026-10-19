@@ -255,6 +255,7 @@ export interface ConversationSummary {
   status: TicketStatus;
   statusLabel: string;
   priority: TicketPriority;
+  category?: TicketCategoryId;
   customer: string;
   assignedAgent?: string | null;
   counterpart?: string | null;
@@ -262,6 +263,8 @@ export interface ConversationSummary {
   lastSender: string;
   lastSenderRole: "customer" | "support";
   lastMessageAt: string;
+  /** When the customer originally submitted the problem. */
+  submittedAt?: string;
   updatedAt: string;
   messageCount: number;
   unread: number;

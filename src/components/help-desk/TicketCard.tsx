@@ -21,6 +21,7 @@ export default function TicketCard({
   ticket,
   copy,
   language,
+  detailHref,
   basePath,
   newReply,
   sl,
@@ -28,6 +29,8 @@ export default function TicketCard({
   ticket: Ticket;
   copy: HelpDeskCopy;
   language: string;
+  /** Optional override for the card's detail URL (solved cards open Messages). */
+  detailHref?: (ticketId: string) => string;
   basePath?: string;
   newReply?: boolean;
   /** Row serial number shown on the desktop table. */
@@ -68,7 +71,7 @@ export default function TicketCard({
           {formatDateTime(ticket.updatedAt, language)}
         </span>
         <Link
-          href={links.ticket(ticket.id)}
+          href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
           className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
         >
           <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>

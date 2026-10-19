@@ -29,6 +29,7 @@ export default function TicketList({
   basePath,
   unseenIds,
   slStart = 1,
+  detailHref,
 }: {
   tickets: Ticket[];
   copy: HelpDeskCopy;
@@ -38,6 +39,8 @@ export default function TicketList({
   unseenIds?: ReadonlySet<string>;
   /** First row's serial number (page-aware). */
   slStart?: number;
+  /** Optional override for the row's detail URL (solved rows open Messages). */
+  detailHref?: (ticketId: string) => string;
 }) {
   const links = helpDeskLinks(basePath);
 
@@ -61,6 +64,7 @@ export default function TicketList({
             copy={copy}
             language={language}
             basePath={basePath}
+            detailHref={detailHref}
             newReply={Boolean(unseenIds?.has(ticket.id))}
             sl={slStart + index}
           />
@@ -117,7 +121,7 @@ export default function TicketList({
                 </td>
                 <td className="px-4 py-3.5">
                   <Link
-                    href={links.ticket(ticket.id)}
+                    href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
                     className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                   >
                     <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>

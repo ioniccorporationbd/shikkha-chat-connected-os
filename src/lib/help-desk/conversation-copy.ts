@@ -38,6 +38,9 @@ export interface ConversationCopy {
   colCustomer: string;
   colPriority: string;
   colStatus: string;
+  colCategory: string;
+  colSubmitted: string;
+  colDate: string;
   actionOpen: string;
   actionView: string;
   unreadBadge: (count: number) => string;
@@ -51,6 +54,12 @@ export interface ConversationCopy {
   problemStatus: string;
   problemSubmitted: string;
   problemAssigned: string;
+  problemDepartment: string;
+  customerContactTitle: string;
+  customerEmail: string;
+  customerPhone: string;
+  solutionTitle: string;
+  solutionBy: string;
   problemCustomer: string;
   problemAttachments: string;
   problemNoAttachments: string;
@@ -75,6 +84,10 @@ export interface ConversationCopy {
   conversationNewMessages: string;
   conversationClosed: string;
   conversationClosedHint: string;
+  conversationReopen: string;
+  conversationReopening: string;
+  conversationReopened: string;
+  conversationReopenFailed: string;
 
   /* ---- composer ---- */
   composerPlaceholder: string;
@@ -92,6 +105,7 @@ export interface ConversationCopy {
   composerClosed: string;
   composerRequirementPlaceholder: string;
   composerRequirementSend: string;
+  composerRequirementSent: string;
   composerRequirementHint: string;
 
   /* ---- employee: problems + status ---- */
@@ -144,6 +158,9 @@ const bn: ConversationCopy = {
   colCustomer: "গ্রাহক",
   colPriority: "গুরুত্ব",
   colStatus: "স্ট্যাটাস",
+  colCategory: "ক্যাটাগরি",
+  colSubmitted: "জমার সময়",
+  colDate: "তারিখ ও সময়",
   actionOpen: "খুলুন",
   actionView: "দেখুন",
   unreadBadge: (count) => `${count} নতুন`,
@@ -156,6 +173,12 @@ const bn: ConversationCopy = {
   problemStatus: "স্ট্যাটাস",
   problemSubmitted: "জমা দেওয়ার সময়",
   problemAssigned: "দায়িত্বপ্রাপ্ত কর্মী",
+  problemDepartment: "বিভাগ / টিম",
+  customerContactTitle: "গ্রাহকের তথ্য",
+  customerEmail: "ইমেইল",
+  customerPhone: "মোবাইল",
+  solutionTitle: "সমাধান",
+  solutionBy: "সমাধান দিয়েছেন",
   problemCustomer: "গ্রাহক",
   problemAttachments: "সংযুক্তি",
   problemNoAttachments: "কোনো সংযুক্তি নেই",
@@ -177,7 +200,11 @@ const bn: ConversationCopy = {
   conversationCustomer: "গ্রাহক",
   conversationNewMessages: "নতুন বার্তা এসেছে — নিচে যান",
   conversationClosed: "টিকিটটি ক্লোজড",
-  conversationClosedHint: "ক্লোজড টিকিটে নতুন বার্তা পাঠানো যায় না। প্রয়োজনে টিকিট Reopen করুন।",
+  conversationClosedHint: "ইআরপি নিয়ম অনুযায়ী ক্লোজড টিকিটে নতুন বার্তা পাঠানো যায় না। টিকিট রিওপেন করলে কথোপকথন আবার চালু হবে — স্ট্যাটাস নিজে থেকে বদলানো হয় না।",
+  conversationReopen: "টিকিট রিওপেন করুন",
+  conversationReopening: "রিওপেন হচ্ছে…",
+  conversationReopened: "টিকিট রিওপেন হয়েছে — এখন আপনি উত্তর দিতে পারবেন।",
+  conversationReopenFailed: "টিকিট রিওপেন করা যায়নি।",
 
   replyAction: "উত্তর দিন",
   composerPlaceholder: "আপনার বার্তা লিখুন…",
@@ -194,6 +221,7 @@ const bn: ConversationCopy = {
   composerClosed: "ক্লোজড টিকিটে বার্তা পাঠানো যাবে না।",
   composerRequirementPlaceholder: "অতিরিক্ত রিকোয়ারমেন্ট লিখুন…",
   composerRequirementSend: "রিকোয়ারমেন্ট যোগ করুন",
+  composerRequirementSent: "অতিরিক্ত রিকোয়ারমেন্ট যোগ হয়েছে।",
   composerRequirementHint: "টিকিট খোলা থাকা অবস্থায়ই অতিরিক্ত রিকোয়ারমেন্ট যোগ করা যায়।",
 
   problemsTitle: "সমস্যা ব্যবস্থাপনা",
@@ -244,6 +272,9 @@ const en: ConversationCopy = {
   colCustomer: "Customer",
   colPriority: "Priority",
   colStatus: "Status",
+  colCategory: "Category",
+  colSubmitted: "Submitted at",
+  colDate: "Date & time",
   actionOpen: "Open",
   actionView: "View",
   unreadBadge: (count) => `${count} new`,
@@ -256,6 +287,12 @@ const en: ConversationCopy = {
   problemStatus: "Status",
   problemSubmitted: "Submitted",
   problemAssigned: "Assigned employee",
+  problemDepartment: "Department / team",
+  customerContactTitle: "Customer information",
+  customerEmail: "Email",
+  customerPhone: "Mobile",
+  solutionTitle: "Solution",
+  solutionBy: "Resolved by",
   problemCustomer: "Customer",
   problemAttachments: "Attachments",
   problemNoAttachments: "No attachments",
@@ -277,7 +314,11 @@ const en: ConversationCopy = {
   conversationCustomer: "Customer",
   conversationNewMessages: "New message arrived — jump to it",
   conversationClosed: "This ticket is closed",
-  conversationClosedHint: "Closed tickets accept no new messages. Reopen the ticket if you need to.",
+  conversationClosedHint: "The ERP does not accept new messages on a closed ticket. Reopening it resumes the conversation — the status is never changed silently.",
+  conversationReopen: "Reopen ticket",
+  conversationReopening: "Reopening…",
+  conversationReopened: "Ticket reopened — you can reply again.",
+  conversationReopenFailed: "The ticket could not be reopened.",
 
   replyAction: "Reply",
   composerPlaceholder: "Write your message…",
@@ -294,6 +335,7 @@ const en: ConversationCopy = {
   composerClosed: "Messages cannot be sent on a closed ticket.",
   composerRequirementPlaceholder: "Describe the additional requirement…",
   composerRequirementSend: "Add requirement",
+  composerRequirementSent: "Additional requirement added.",
   composerRequirementHint: "Additional requirements can only be added while the ticket is open.",
 
   problemsTitle: "Problem management",

@@ -8,6 +8,7 @@ import ListPagination from "@/components/dashboard/ListPagination";
 import { genericPaginationCopy } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import {
+  conversationCategoryLabel,
   conversationCopyFor,
   conversationPriorityLabel,
   conversationStatusLabel,
@@ -203,16 +204,30 @@ export default function HelpDeskMessages({
               <table className="w-full min-w-[62rem] border-collapse text-left">
                 <thead>
                   <tr className="bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
-                    {[
-                      copy.colSl,
-                      copy.colTicket,
-                      copy.colSubject,
-                      copy.colLastMessage,
-                      isProblems ? copy.colCustomer : copy.colSender,
-                      copy.colUpdated,
-                      copy.colUnread,
-                      copy.colAction,
-                    ].map((label) => (
+                    {(isProblems
+                      ? [
+                          copy.colSl,
+                          copy.colTicket,
+                          copy.colCustomer,
+                          copy.colSubject,
+                          copy.colCategory,
+                          copy.colPriority,
+                          copy.colStatus,
+                          copy.colSubmitted,
+                          copy.colAction,
+                        ]
+                      : [
+                          copy.colSl,
+                          copy.colTicket,
+                          copy.colSubject,
+                          copy.colLastMessage,
+                          copy.colSender,
+                          copy.colDate,
+                          copy.colStatus,
+                          copy.colUnread,
+                          copy.colAction,
+                        ]
+                    ).map((label) => (
                       <th
                         key={label}
                         className="whitespace-nowrap px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
@@ -231,26 +246,37 @@ export default function HelpDeskMessages({
                       <td className="px-3 py-2.5 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                         {(page - 1) * rowsPerPage + index + 1}
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="whitespace-nowrap px-3 py-2.5">
                         <span className="rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-2 py-0.5 text-[11px] font-bold text-[var(--color-primary)]">
                           {row.ticketId}
                         </span>
-                      </td>
-                      <td className="max-w-[16rem] px-3 py-2.5">
-                        <Link href={`${messagesBase}/${row.ticketId}`} className="block truncate text-[13px] font-semibold text-[var(--color-primary)] hover:underline">
-                          {row.subject}
-                        </Link>
-                        <span className="mt-0.5 flex flex-wrap items-center gap-1">
+                        {!isProblems && row.unread > 0 ? (
                           <span
-                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
-                            style={{
-                              backgroundColor: `color-mix(in srgb, ${STATUS_TONE[row.status]} 13%, white)`,
-                              color: STATUS_TONE[row.status],
-                            }}
+                            className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]"
+                            title={copy.unreadBadge(row.unread)}
                           >
-                            {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                            {row.unread}
                           </span>
-                          {isProblems ? (
+                        ) : null}
+                      </td>
+
+                      {isProblems ? (
+                        <>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                            {row.customer}
+                          </td>
+                          <td className="max-w-[16rem] px-3 py-2.5">
+                            <Link
+                              href={`${messagesBase}/${row.ticketId}`}
+                              className="block truncate text-[13px] font-semibold text-[var(--color-primary)] hover:underline"
+                            >
+                              {row.subject}
+                            </Link>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                            {row.category ? conversationCategoryLabel[row.category]?.[language === "en" ? "en" : "bn"] ?? row.category : copy.noUnread}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5">
                             <span
                               className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
                               style={{
@@ -260,37 +286,74 @@ export default function HelpDeskMessages({
                             >
                               {conversationPriorityLabel[row.priority]?.[language === "en" ? "en" : "bn"] ?? row.priority}
                             </span>
-                          ) : null}
-                        </span>
-                      </td>
-                      <td className="max-w-[20rem] px-3 py-2.5">
-                        <span className="line-clamp-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                          {row.lastMessage}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[12.5px] font-semibold text-[var(--color-primary)]">
-                        {row.lastSender}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
-                        {formatDateTime(row.lastMessageAt, language)}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {row.unread > 0 ? (
-                          <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
-                            {row.unread}
-                          </span>
-                        ) : (
-                          <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
-                            {copy.noUnread}
-                          </span>
-                        )}
-                      </td>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5">
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              style={{
+                                backgroundColor: `color-mix(in srgb, ${STATUS_TONE[row.status]} 13%, white)`,
+                                color: STATUS_TONE[row.status],
+                              }}
+                            >
+                              {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
+                            {formatDateTime(row.submittedAt ?? row.lastMessageAt, language)}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="max-w-[16rem] px-3 py-2.5">
+                            <Link
+                              href={`${messagesBase}/${row.ticketId}`}
+                              className="block truncate text-[13px] font-semibold text-[var(--color-primary)] hover:underline"
+                            >
+                              {row.subject}
+                            </Link>
+                          </td>
+                          <td className="max-w-[18rem] px-3 py-2.5">
+                            <span className="line-clamp-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                              {row.lastMessage}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                            {row.lastSender}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
+                            {formatDateTime(row.lastMessageAt, language)}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-2.5">
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                              style={{
+                                backgroundColor: `color-mix(in srgb, ${STATUS_TONE[row.status]} 13%, white)`,
+                                color: STATUS_TONE[row.status],
+                              }}
+                            >
+                              {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {row.unread > 0 ? (
+                              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
+                                {row.unread}
+                              </span>
+                            ) : (
+                              <span className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                                {copy.noUnread}
+                              </span>
+                            )}
+                          </td>
+                        </>
+                      )}
+
                       <td className="px-3 py-2.5">
                         <Link
                           href={`${messagesBase}/${row.ticketId}`}
                           className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-action)] px-2.5 py-1.5 text-[11.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                         >
-                          {copy.actionOpen}
+                          {isProblems ? copy.actionView : copy.actionOpen}
                           <FiArrowRight size={12} className="text-[var(--color-white)]" aria-hidden />
                         </Link>
                       </td>
@@ -320,12 +383,52 @@ export default function HelpDeskMessages({
                     ) : null}
                   </div>
                   <p className="mt-1.5 truncate text-[13.5px] font-semibold text-[var(--color-primary)]">{row.subject}</p>
-                  <p className="mt-1 line-clamp-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
-                    {row.lastMessage}
-                  </p>
+                  {isProblems ? (
+                    <p className="mt-0.5 truncate text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_66%,transparent)]">
+                      {row.customer}
+                    </p>
+                  ) : (
+                    <p className="mt-1 line-clamp-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
+                      {row.lastMessage}
+                    </p>
+                  )}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                    {isProblems && row.category ? (
+                      <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                        {conversationCategoryLabel[row.category]?.[language === "en" ? "en" : "bn"] ?? row.category}
+                      </span>
+                    ) : null}
+                    {isProblems ? (
+                      <span
+                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, ${PRIORITY_TONE[row.priority]} 13%, white)`,
+                          color: PRIORITY_TONE[row.priority],
+                        }}
+                      >
+                        {conversationPriorityLabel[row.priority]?.[language === "en" ? "en" : "bn"] ?? row.priority}
+                      </span>
+                    ) : null}
+                    <span
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${STATUS_TONE[row.status]} 13%, white)`,
+                        color: STATUS_TONE[row.status],
+                      }}
+                    >
+                      {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                    </span>
+                  </div>
                   <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                    <span className="truncate">{row.lastSender}</span>
-                    <span className="shrink-0">{formatDateTime(row.lastMessageAt, language)}</span>
+                    <span className="truncate">
+                      {isProblems ? row.customer : row.lastSender}
+                    </span>
+                    <span className="shrink-0">
+                      {formatDateTime(
+                        isProblems ? row.submittedAt ?? row.lastMessageAt : row.lastMessageAt,
+                        language,
+                      )}
+                    </span>
                   </div>
                 </Link>
               </li>

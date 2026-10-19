@@ -56,6 +56,9 @@ export default function HelpDeskTicketBoard({
   const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS);
 
   const isSolved = variant === "closed";
+  const links = helpDeskLinks(basePath);
+  // Solved rows open the ticket conversation: solution, requirements, full history.
+  const messageHref = (ticketId: string) => links.message(ticketId);
 
   const load = useCallback(async () => {
     try {
@@ -99,7 +102,6 @@ export default function HelpDeskTicketBoard({
   const visible = rows.slice(start, start + rowsPerPage);
 
   const paginationCopy = useMemo(() => genericPaginationCopy(language), [language]);
-  const links = helpDeskLinks(basePath);
 
   const Icon = isSolved ? FiCheckCircle : FiInbox;
 
@@ -165,6 +167,7 @@ export default function HelpDeskTicketBoard({
             basePath={basePath}
             unseenIds={unseen}
             slStart={start + 1}
+            detailHref={isSolved ? messageHref : undefined}
           />
           <ListPagination
             copy={paginationCopy}
