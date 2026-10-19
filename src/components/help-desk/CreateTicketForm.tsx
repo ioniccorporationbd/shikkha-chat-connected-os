@@ -40,6 +40,7 @@ import {
 } from "@/lib/help-desk/options";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { createTicket, getOptions } from "@/lib/help-desk/service";
+import { reportClientError } from "@/lib/log/report-error";
 import type {
   HelpDeskOptions,
   HelpDeskOptionPriority,
@@ -148,11 +149,16 @@ export default function CreateTicketForm({
           current && payload.priorities.some((item) => item.name === current) ? current : payload.priorities[0]?.name ?? ""
         );
       })
-      .catch(() => {
+      .catch((error) => {
         if (!alive) return;
         setOptions(null);
         setOptionsState("error");
         toast.error(copy.toastOptionsFailed);
+        reportClientError({
+          scope: "help-desk:options",
+          message: "Loading the ERP-managed ticket options failed.",
+          detail: error instanceof Error ? `${error.name}: ${error.message}` : error,
+        });
       });
     return () => {
       alive = false;
@@ -239,6 +245,21 @@ export default function CreateTicketForm({
       toast.success(copy.toastCreated.replace("{id}", ticket.id));
     } catch (error) {
       toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
+      reportClientError({
+        scope: "help-desk:create",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "Creating the ticket failed without a message.",
+        detail: {
+          error: error instanceof Error ? `${error.name}` : typeof error,
+          stack: error instanceof Error ? error.stack?.slice(0, 1200) : undefined,
+          ticketType,
+          priority,
+          department: team || undefined,
+          attachments: attachments.length,
+        },
+      });
     } finally {
       setSubmitting(false);
     }

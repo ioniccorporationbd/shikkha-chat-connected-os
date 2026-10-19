@@ -206,9 +206,16 @@ export function dashboardPathFor(user: DashboardPersona): string {
 /**
  * Resolve a post-login destination.
  *
- * A dashboard destination is always chosen by role, never by `?next=` — sending
- * a customer to `/userDashboard` (or staff to `/clientDashboard`) is exactly the
- * bug this guards against. Any other internal path is honoured as-is.
+ * The dashboard *panel* is always chosen by role, never by `?next=` — sending a
+ * customer to `/userDashboard` (or staff to `/clientDashboard`) is exactly the
+ * bug this guards against.
+ *
+ * A deep dashboard path keeps its tail and only the panel is swapped:
+ * `?next=/clientDashboard/help-desk` signs a customer in on
+ * `/clientDashboard/help-desk` (not on the dashboard home), and a staff account
+ * following the same link lands on `/userDashboard/help-desk`. Without this the
+ * login round-trip silently collapsed every module link back to the panel root,
+ * which is what made `Help Desk` look like it "redirected to the dashboard".
  */
 export function preferredRedirect(
   candidate: string | null | undefined,
@@ -216,5 +223,52 @@ export function preferredRedirect(
 ): string {
   const target = safeRedirectPath(candidate);
 
-  return isDashboardPath(target) ? dashboardPathFor(user) : target;
+  if (!isDashboardPath(target)) {
+    // Retired public Help Desk links (`/help-desk`, `/help-desk/tickets`) are
+    // forwarded straight into the visitor's own panel instead of bouncing
+    // through the public redirect page - one hop, always the right dashboard.
+    if (target === HELP_DESK_PATH || target.startsWith(`${HELP_DESK_PATH}/`)) {
+      const tail = target.slice(HELP_DESK_PATH.length);
+
+      return `${dashboardPathFor(user)}${HELP_DESK_PATH}${tail}`;
+    }
+
+    return target;
+  }
+
+  const panel = dashboardPathFor(user);
+  const base = DASHBOARD_PATHS.find((path) => target === path || target.startsWith(`${path}/`));
+  const tail = base ? target.slice(base.length) : "";
+
+  return tail ? `${panel}${tail}` : panel;
+}
+
+/**
+ * Which path a login/OTP form should hand to `preferredRedirect`.
+ *
+ * A deep dashboard link from `?next=` outranks the ERP's `redirect_to`, because
+ * the ERP only knows the panel (`/clientDashboard`) and would drop the module
+ * the visitor asked for. When `?next=` is absent or shallow the ERP wins (it is
+ * authoritative about the panel), and anything non-internal is discarded by
+ * `safeRedirectPath`.
+ */
+export function loginDestination(
+  nextPath: string | null | undefined,
+  erpRedirectTo?: string | null
+): string {
+  const raw = (nextPath ?? "").trim();
+  const next = safeRedirectPath(nextPath);
+  const erp = (erpRedirectTo ?? "").trim();
+  const erpIsInternal = erp.startsWith("/") && !erp.startsWith("//");
+
+  // No `?next=` (or it was rejected as unsafe): the ERP knows the panel.
+  if (!raw) return erpIsInternal ? erp : next;
+
+  // A bare panel root in `?next=` is only a hint about the panel, so the ERP's
+  // role-aware `redirect_to` is better. Everything else - a module link, a
+  // deep dashboard route, a plain page - is what the visitor asked for and must
+  // survive the sign-in round-trip.
+  if (DASHBOARD_PATHS.includes(next)) return erpIsInternal ? erp : next;
+
+  return next;
 }

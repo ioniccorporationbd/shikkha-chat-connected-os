@@ -21,7 +21,9 @@ import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
  */
 export async function helpDeskRedirectTarget(suffix = ""): Promise<string> {
   const publicRoot = `/${HELP_DESK_SEGMENT}`;
-  const loginTarget = `${LOGIN_PATH}?next=${encodeURIComponent(publicRoot)}`;
+  // Keep the sub-path (`/help-desk/tickets`, `/help-desk/tickets/HD-TICKET-0001`)
+  // so the sign-in round-trip lands exactly where the visitor was headed.
+  const loginTarget = `${LOGIN_PATH}?next=${encodeURIComponent(`${publicRoot}${suffix}`)}`;
 
   const cookieStore = await cookies();
   const sid = cookieStore.get(SESSION_COOKIE)?.value;

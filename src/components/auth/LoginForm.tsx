@@ -22,7 +22,12 @@ import OtpInput from "@/components/auth/OtpInput";
 import { ApiError, postJson } from "@/lib/api/http";
 import { authCopyFor, authErrorMessage } from "@/lib/auth/messages";
 import { registerCopyFor } from "@/lib/auth/register-messages";
-import { preferredRedirect, REGISTER_PATH, safeRedirectPath } from "@/lib/auth/session";
+import {
+  loginDestination,
+  preferredRedirect,
+  REGISTER_PATH,
+  safeRedirectPath,
+} from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
 import {
   AUTH_HOME_BUTTON_CLASS,
@@ -231,7 +236,12 @@ export default function LoginForm() {
       });
 
       setSession(payload?.user ?? null);
-      router.replace(preferredRedirect(payload?.redirect_to ?? nextPath, payload?.user));
+      // A `?next=` module link outranks the ERP's panel-level redirect_to, so
+      // "Help Desk" survives the sign-in round-trip instead of collapsing to
+      // the dashboard home.
+      router.replace(
+        preferredRedirect(loginDestination(nextPath, payload?.redirect_to), payload?.user)
+      );
       router.refresh();
     } catch (thrown) {
       handleApiError(thrown);

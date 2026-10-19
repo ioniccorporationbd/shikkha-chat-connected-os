@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import {
   FiCamera,
   FiClock,
@@ -37,7 +37,9 @@ import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import UserMenu from "@/components/dashboard/UserMenu";
+import ClientErrorBridge from "@/components/dashboard/ClientErrorBridge";
 import { postJson } from "@/lib/api/http";
+import { reportClientError } from "@/lib/log/report-error";
 import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
 import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCESS_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
@@ -154,6 +156,39 @@ export default function DashboardShell({
       : onHelpDeskTickets
         ? "tickets"
         : "overview";
+
+  /**
+   * Rail click for Help Desk.
+   *
+   * The link itself is a plain `<Link href>`, so the address bar is the source of
+   * truth. This handler only adds a watchdog: if the transition never lands on
+   * the help-desk route within a couple of seconds (dead client router, stale
+   * chunk, aborted RSC request), the failure is reported to the console AND to
+   * the ERP Error Log, then recovered with a full page load to the same URL - so
+   * the click can never silently leave the visitor on the dashboard home.
+   * Modified clicks (new tab, middle click) are left to the browser.
+   */
+  const onHelpDeskClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      setNavOpen(false);
+
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        if (window.location.pathname.startsWith(helpDeskPath)) return;
+
+        reportClientError({
+          scope: "help-desk:navigation",
+          message: "Help Desk navigation did not complete; falling back to a full page load.",
+          detail: { from: window.location.pathname, to: helpDeskPath },
+        });
+        window.location.assign(helpDeskPath);
+      }, 2500);
+    },
+    [helpDeskPath]
+  );
 
   const viewTitle = onHelpDeskView
     ? copy.nav.helpDesk
@@ -465,14 +500,15 @@ export default function DashboardShell({
       const HelpDeskIcon = NAV_ICONS.helpdesk;
       const active = onHelpDeskView;
 
+      // A real link, not a JS `router.push`: the Help Desk entry has to work
+      // like every other URL in the panel - middle-click, refresh and Back all
+      // keep `/clientDashboard/help-desk` (or `/userDashboard/help-desk`), and a
+      // failed client-side navigation can never leave the click doing nothing.
       items.push(
-        <button
+        <Link
           key="help-desk"
-          type="button"
-          onClick={() => {
-            router.push(helpDeskPath);
-            setNavOpen(false);
-          }}
+          href={helpDeskPath}
+          onClick={onHelpDeskClick}
           aria-current={active ? "page" : undefined}
           className={navButtonClass(active)}
         >
@@ -480,7 +516,7 @@ export default function DashboardShell({
             <HelpDeskIcon className="shrink-0 text-[16px]" />
             <span className="truncate">{copy.nav.helpDesk}</span>
           </span>
-        </button>
+        </Link>
       );
     }
 
@@ -540,6 +576,7 @@ export default function DashboardShell({
 
   return (
     <ReloadRegistryProvider value={reloadRegistry.value}>
+    <ClientErrorBridge />
     <div
       data-no-translate="true"
       className="min-h-screen w-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
