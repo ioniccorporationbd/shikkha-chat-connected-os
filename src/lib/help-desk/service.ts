@@ -90,11 +90,29 @@ export async function getOptions(): Promise<HelpDeskOptions> {
   return request<HelpDeskOptions>(`${OPTIONS_URL}?${query.toString()}`);
 }
 
+/**
+ * Normalise one ticket to the UI contract.
+ *
+ * The ERP only ships a ticket's conversation (`messages`) on the DETAIL response;
+ * list rows carry no `messages` key at all. The UI contract in `types.ts` says
+ * `messages: TicketMessage[]`, so an endpoint omitting the key used to crash
+ * `HelpDeskOverview` with "Cannot read properties of undefined (reading
+ * 'length')". Every response now passes through here, so array fields are never
+ * undefined regardless of what the backend (or an older deployed backend) sends.
+ */
+function normaliseTicket(ticket: Ticket): Ticket {
+  return {
+    ...ticket,
+    messages: Array.isArray(ticket.messages) ? ticket.messages : [],
+    attachments: Array.isArray(ticket.attachments) ? ticket.attachments : [],
+  };
+}
+
 /** All tickets the ERP allows this user to see, newest-updated first. */
 export async function listTickets(): Promise<Ticket[]> {
   const query = new URLSearchParams({ language: currentLanguage(), page_size: "500" });
   const data = await request<HelpDeskListPayload>(`${TICKETS_URL}?${query.toString()}`);
-  return data.tickets;
+  return (data.tickets ?? []).map(normaliseTicket);
 }
 
 /**
@@ -108,7 +126,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
     const data = await request<HelpDeskTicketPayload>(
       `${TICKETS_URL}/${encodeURIComponent(id)}?${query.toString()}`
     );
-    return data.ticket;
+    return normaliseTicket(data.ticket);
   } catch (error) {
     if (error instanceof HelpDeskError && (error.status === 404 || error.status === 403)) return null;
     throw error;
@@ -167,7 +185,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     language: currentLanguage(),
   });
 
-  return data.ticket;
+  return normaliseTicket(data.ticket);
 }
 
 /** Append a customer reply (stored as a real `Communication` in the ERP). */
@@ -176,7 +194,7 @@ export async function addUserReply(id: string, body: string): Promise<Ticket> {
     `${TICKETS_URL}/${encodeURIComponent(id)}/replies`,
     { message: body.trim(), language: currentLanguage() }
   );
-  return data.ticket;
+  return normaliseTicket(data.ticket);
 }
 
 /** Reopen a resolved/closed ticket — the user says "the problem is still there". */
@@ -185,7 +203,7 @@ export async function reopenTicket(id: string): Promise<Ticket> {
     `${TICKETS_URL}/${encodeURIComponent(id)}/reopen`,
     { language: currentLanguage() }
   );
-  return data.ticket;
+  return normaliseTicket(data.ticket);
 }
 
 /** Same-origin URL that streams a private ERP attachment with the portal session. */

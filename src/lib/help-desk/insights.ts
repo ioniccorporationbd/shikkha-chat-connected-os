@@ -96,10 +96,18 @@ export function summariseTickets(tickets: readonly Ticket[]): TicketSummary {
   return summary;
 }
 
-/** The most recent support-authored message on a ticket, or `null`. */
+/**
+ * The most recent support-authored message on a ticket, or `null`.
+ *
+ * `messages` is guaranteed by the service layer, but this also tolerates a
+ * payload that omits it (a list endpoint that never shipped the conversation) —
+ * an absent conversation must read as "no reply", never crash the overview.
+ */
 export function latestSupportReply(ticket: Ticket): TicketMessage | null {
-  for (let index = ticket.messages.length - 1; index >= 0; index -= 1) {
-    if (ticket.messages[index].author === "support") return ticket.messages[index];
+  const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].author === "support") return messages[index];
   }
   return null;
 }
