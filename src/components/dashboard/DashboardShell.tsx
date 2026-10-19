@@ -147,9 +147,17 @@ export default function DashboardShell({
   const onHelpDeskTickets = helpDeskSuffix === "/tickets";
   const onHelpDeskSolved = helpDeskSuffix === "/solved";
   const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/");
+  const onHelpDeskMessages = helpDeskSuffix === "/messages";
+  const onHelpDeskConversation = helpDeskSuffix.startsWith("/messages/");
+  const onHelpDeskProblems = helpDeskSuffix === "/problems";
+  const onHelpDeskProblem = helpDeskSuffix.startsWith("/problems/");
   const helpDeskTicketId = onHelpDeskDetail
     ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length))
-    : undefined;
+    : onHelpDeskConversation
+      ? decodeURIComponent(helpDeskSuffix.slice("/messages/".length))
+      : onHelpDeskProblem
+        ? decodeURIComponent(helpDeskSuffix.slice("/problems/".length))
+        : undefined;
   const helpDeskView: HelpDeskView = onHelpDeskNew
     ? "new"
     : onHelpDeskDetail
@@ -158,7 +166,15 @@ export default function DashboardShell({
         ? "tickets"
         : onHelpDeskSolved
           ? "solved"
-          : "overview";
+          : onHelpDeskMessages
+            ? "messages"
+            : onHelpDeskConversation
+              ? "conversation"
+              : onHelpDeskProblems
+                ? "problems"
+                : onHelpDeskProblem
+                  ? "problem"
+                  : "overview";
 
   /**
    * Rail click for Help Desk.
@@ -708,6 +724,7 @@ export default function DashboardShell({
                 basePath={helpDeskPath}
                 ticketId={helpDeskTicketId}
                 copy={helpDeskCopyFor(language)}
+                staff={!isClient}
                 language={language}
                 contact={helpDeskContact}
               />

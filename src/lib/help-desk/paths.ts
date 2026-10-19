@@ -23,6 +23,14 @@ export interface HelpDeskLinks {
   solved: string;
   /** A single ticket's details. */
   ticket: (id: string) => string;
+  /** The per-ticket Messages index. */
+  messages: string;
+  /** A single ticket conversation inside Messages. */
+  message: (id: string) => string;
+  /** Support's problem queue (every customer ticket, answered or not). */
+  problems: string;
+  /** A single problem in the employee view. */
+  problem: (id: string) => string;
 }
 
 /** Build the help-desk link set for a dashboard root (defaults to the public root). */
@@ -34,5 +42,9 @@ export function helpDeskLinks(base = `/${HELP_DESK_SEGMENT}`): HelpDeskLinks {
     tickets: `${root}/tickets`,
     solved: `${root}/solved`,
     ticket: (id: string) => `${root}/tickets/${encodeURIComponent(id)}`,
+    messages: `${root}/messages`,
+    message: (id: string) => `${root}/messages/${encodeURIComponent(id)}`,
+    problems: `${root}/problems`,
+    problem: (id: string) => `${root}/problems/${encodeURIComponent(id)}`,
   };
 }

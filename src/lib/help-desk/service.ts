@@ -37,13 +37,13 @@ export class HelpDeskError extends Error {
 }
 
 /** The UI language for backend messages (`<html lang>`), defaulting to Bangla. */
-function currentLanguage(): string {
+export function currentLanguage(): string {
   if (typeof document === "undefined") return "bn";
   const lang = document.documentElement.lang || "bn";
   return lang.toLowerCase().startsWith("en") ? "en" : "bn";
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, { cache: "no-store", ...init });

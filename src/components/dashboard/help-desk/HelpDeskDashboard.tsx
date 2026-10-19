@@ -8,11 +8,22 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
+import HelpDeskMessages from "./HelpDeskMessages";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
+import HelpDeskTicketThread from "./HelpDeskTicketThread";
 import HelpDeskTickets from "./HelpDeskTickets";
 
-export type HelpDeskView = "overview" | "new" | "tickets" | "solved" | "detail";
+export type HelpDeskView =
+  | "overview"
+  | "new"
+  | "tickets"
+  | "solved"
+  | "detail"
+  | "messages"
+  | "conversation"
+  | "problems"
+  | "problem";
 
 export interface HelpDeskContactPrefill {
   name?: string;
@@ -34,6 +45,7 @@ export default function HelpDeskDashboard({
   copy,
   language,
   contact,
+  staff = false,
 }: {
   view: HelpDeskView;
   basePath: string;
@@ -41,6 +53,8 @@ export default function HelpDeskDashboard({
   copy: HelpDeskCopy;
   language: string;
   contact?: HelpDeskContactPrefill;
+  /** True on the employee dashboard, which adds the problem queue. */
+  staff?: boolean;
 }) {
   const links = helpDeskLinks(basePath);
 
@@ -83,5 +97,35 @@ export default function HelpDeskDashboard({
     return <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />;
   }
 
-  return <HelpDeskOverview copy={copy} language={language} basePath={basePath} />;
+  if (view === "messages") {
+    return <HelpDeskMessages language={language} basePath={basePath} />;
+  }
+
+  if (view === "problems") {
+    return <HelpDeskMessages language={language} basePath={basePath} variant="problems" />;
+  }
+
+  if (view === "conversation" && ticketId) {
+    return (
+      <HelpDeskTicketThread
+        language={language}
+        ticketId={ticketId}
+        listHref={links.messages}
+        backFallback={links.messages}
+      />
+    );
+  }
+
+  if (view === "problem" && ticketId) {
+    return (
+      <HelpDeskTicketThread
+        language={language}
+        ticketId={ticketId}
+        listHref={links.problems}
+        backFallback={links.problems}
+      />
+    );
+  }
+
+  return <HelpDeskOverview copy={copy} language={language} basePath={basePath} staff={staff} />;
 }

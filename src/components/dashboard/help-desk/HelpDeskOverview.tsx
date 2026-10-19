@@ -10,8 +10,10 @@ import {
   FiHeadphones,
   FiInbox,
   FiList,
+  FiMessageSquare,
   FiPlusCircle,
   FiRefreshCw,
+  FiTool,
 } from "react-icons/fi";
 
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
@@ -26,6 +28,7 @@ import {
   summariseTickets,
   unseenSupportIds,
 } from "@/lib/help-desk/insights";
+import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { listTickets } from "@/lib/help-desk/service";
@@ -45,12 +48,16 @@ export default function HelpDeskOverview({
   copy,
   language,
   basePath,
+  staff = false,
 }: {
   copy: HelpDeskCopy;
   language: string;
   basePath: string;
+  /** Employees also get the problem-management queue. */
+  staff?: boolean;
 }) {
   const links = helpDeskLinks(basePath);
+  const conversationCopy = conversationCopyFor(language);
 
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState(false);
@@ -104,6 +111,10 @@ export default function HelpDeskOverview({
     { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
     { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
     { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
+    { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
+    ...(staff
+      ? [{ key: "problems", label: conversationCopy.problemsTitle, href: links.problems, icon: FiTool }]
+      : []),
   ];
 
   return (

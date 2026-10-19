@@ -203,6 +203,100 @@ export interface HelpDeskOptionType {
   key: string | null;
 }
 
+/* ------------------------------------------------------------------ *
+ * Ticket conversations (the Messages module)
+ *
+ * One row per ticket, one thread per ticket. Everything below is produced by
+ * `shikkha_os.api.v1.help_desk_messages` out of real `HD Ticket`,
+ * `Communication` and `File` records — there is no local message store.
+ * ------------------------------------------------------------------ */
+
+/** What a conversation entry is: a plain message, an added requirement, or a resolution. */
+export type ConversationMessageKind = "message" | "requirement" | "resolution";
+
+/** A file attached to one message (an existing ERP `File` record). */
+export interface ConversationAttachment {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+  url?: string;
+}
+
+/** The message this entry quotes as its reply-to reference. */
+export interface ConversationReplyRef {
+  id: string;
+  author: MessageAuthor;
+  authorName?: string;
+  body: string;
+}
+
+/** One entry in a ticket's conversation, as returned by the ERP. */
+export interface ConversationMessage {
+  id: string;
+  author: MessageAuthor;
+  authorName?: string;
+  body: string;
+  /** ISO timestamp. */
+  createdAt: string;
+  kind: ConversationMessageKind;
+  replyTo?: ConversationReplyRef | null;
+  attachments: ConversationAttachment[];
+  /** True when the signed-in user wrote this entry. */
+  isMine: boolean;
+  /** Whether the *recipient* has read it (ERP `Communication.seen`). */
+  seen: boolean;
+}
+
+/** One Messages table row — a single ticket thread. */
+export interface ConversationSummary {
+  ticketId: string;
+  subject: string;
+  status: TicketStatus;
+  statusLabel: string;
+  priority: TicketPriority;
+  customer: string;
+  assignedAgent?: string | null;
+  counterpart?: string | null;
+  lastMessage: string;
+  lastSender: string;
+  lastSenderRole: "customer" | "support";
+  lastMessageAt: string;
+  updatedAt: string;
+  messageCount: number;
+  unread: number;
+}
+
+/** Server payload of `GET /api/help-desk/conversations`. */
+export interface ConversationListPayload {
+  conversations: ConversationSummary[];
+  total: number;
+  unread: number;
+  page: number;
+  page_size: number;
+  has_more: boolean;
+  isSupport: boolean;
+  server_time: string;
+}
+
+/** Server payload of `GET /api/help-desk/conversations/[id]`. */
+export interface ConversationPayload {
+  ticket: Ticket;
+  messages: ConversationMessage[];
+  requirements: ConversationMessage[];
+  unread: number;
+  statusCategory: string;
+  isSupport: boolean;
+  canReply: boolean;
+  canAddRequirement: boolean;
+  canChangeStatus: boolean;
+  /** The ERP status row currently set on the ticket (employees). */
+  currentStatus?: string;
+  /** Every existing `HD Ticket Status` an employee may move the ticket to. */
+  statuses?: { name: string; category: string }[];
+  server_time: string;
+}
+
 /** Everything the create form offers, straight from the ERP master data. */
 export interface HelpDeskOptions {
   statuses: {
