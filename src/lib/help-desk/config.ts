@@ -89,7 +89,7 @@ export const PRIORITY_TONE: Record<TicketPriority, string> = {
   low: "#9ca3af",
   medium: "#6b7280",
   high: "#c98a1f",
-  urgent: "#7c2d12",
+  urgent: "#8a5a00",
 };
 
 /** Categories that are considered "still open" work (not finished). */

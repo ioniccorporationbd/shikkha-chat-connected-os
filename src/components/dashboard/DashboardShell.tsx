@@ -145,6 +145,7 @@ export default function DashboardShell({
   const helpDeskSuffix = onHelpDeskView ? pathname.slice(helpDeskPath.length) : "";
   const onHelpDeskNew = helpDeskSuffix === "/new";
   const onHelpDeskTickets = helpDeskSuffix === "/tickets";
+  const onHelpDeskSolved = helpDeskSuffix === "/solved";
   const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/");
   const helpDeskTicketId = onHelpDeskDetail
     ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length))
@@ -155,7 +156,9 @@ export default function DashboardShell({
       ? "detail"
       : onHelpDeskTickets
         ? "tickets"
-        : "overview";
+        : onHelpDeskSolved
+          ? "solved"
+          : "overview";
 
   /**
    * Rail click for Help Desk.

@@ -8,16 +8,27 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 /** Calm empty state shown when the user has no tickets yet. */
-export function TicketEmptyState({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string }) {
+export function TicketEmptyState({
+  copy,
+  basePath,
+  title,
+  hint,
+}: {
+  copy: HelpDeskCopy;
+  basePath?: string;
+  /** Section-specific copy (defaults to the "no tickets yet" wording). */
+  title?: string;
+  hint?: string;
+}) {
   const links = helpDeskLinks(basePath);
   return (
     <div className={`${HD_CARD} flex flex-col items-center gap-3 p-8 text-center sm:p-10`}>
       <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]">
         <FiInbox className="h-8 w-8 text-[var(--color-primary)]" aria-hidden />
       </span>
-      <h2 className="text-lg font-bold text-[var(--color-primary)]">{copy.emptyTitle}</h2>
+      <h2 className="text-lg font-bold text-[var(--color-primary)]">{title ?? copy.emptyTitle}</h2>
       <p className="max-w-md text-sm text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
-        {copy.emptyHint}
+        {hint ?? copy.emptyHint}
       </p>
       <Link
         href={links.newTicket}

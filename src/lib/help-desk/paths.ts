@@ -17,8 +17,10 @@ export interface HelpDeskLinks {
   root: string;
   /** The New Ticket form. */
   newTicket: string;
-  /** The ticket list. */
+  /** The ticket list (open tickets only). */
   tickets: string;
+  /** The solved/closed ticket list. */
+  solved: string;
   /** A single ticket's details. */
   ticket: (id: string) => string;
 }
@@ -30,6 +32,7 @@ export function helpDeskLinks(base = `/${HELP_DESK_SEGMENT}`): HelpDeskLinks {
     root,
     newTicket: `${root}/new`,
     tickets: `${root}/tickets`,
+    solved: `${root}/solved`,
     ticket: (id: string) => `${root}/tickets/${encodeURIComponent(id)}`,
   };
 }

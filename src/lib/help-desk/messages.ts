@@ -124,6 +124,12 @@ export interface HelpDeskCopy {
   // List
   listTitle: string;
   listSubtitle: string;
+  /** Solved (closed) tickets section — identical design to the open list. */
+  solvedTitle: string;
+  solvedSubtitle: string;
+  solvedOnlyNote: string;
+  solvedEmptyTitle: string;
+  solvedEmptyHint: string;
   searchPlaceholder: string;
   filterAll: string;
   colSl: string;
@@ -373,6 +379,11 @@ const bn: HelpDeskCopy = {
 
   listTitle: "আমার টিকিট",
   listSubtitle: "আপনার তৈরি করা টিকিটের অবস্থা ও অগ্রগতি।",
+  solvedTitle: "সমাধান হওয়া টিকিট",
+  solvedSubtitle: "যেসব টিকিট সমাধান হয়ে বন্ধ হয়েছে সেগুলোর তালিকা।",
+  solvedOnlyNote: "শুধু ক্লোজড স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
+  solvedEmptyTitle: "এখনও কোনো বন্ধ হওয়া টিকিট নেই।",
+  solvedEmptyHint: "টিকিট সমাধান হয়ে বন্ধ হলে সেটি এখানে দেখা যাবে।",
   searchPlaceholder: "টিকিট আইডি বা বিষয় দিয়ে খুঁজুন",
   filterAll: "সব",
   colSl: "ক্রম",
@@ -627,6 +638,11 @@ const en: HelpDeskCopy = {
 
   listTitle: "My tickets",
   listSubtitle: "Status and progress of the tickets you filed.",
+  solvedTitle: "Solved tickets",
+  solvedSubtitle: "Every ticket that has been resolved and closed.",
+  solvedOnlyNote: "Showing closed tickets only",
+  solvedEmptyTitle: "No closed tickets yet.",
+  solvedEmptyHint: "A ticket shows up here once it is resolved and closed.",
   searchPlaceholder: "Search by ticket ID or subject",
   filterAll: "All",
   colSl: "SL",

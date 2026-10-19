@@ -103,6 +103,7 @@ export default function HelpDeskOverview({
   const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = [
     { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
     { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
+    { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
   ];
 
   return (
@@ -164,7 +165,7 @@ export default function HelpDeskOverview({
           {/* Quick actions */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (

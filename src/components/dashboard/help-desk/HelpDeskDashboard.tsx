@@ -9,9 +9,10 @@ import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
 import HelpDeskOverview from "./HelpDeskOverview";
+import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTickets from "./HelpDeskTickets";
 
-export type HelpDeskView = "overview" | "new" | "tickets" | "detail";
+export type HelpDeskView = "overview" | "new" | "tickets" | "solved" | "detail";
 
 export interface HelpDeskContactPrefill {
   name?: string;
@@ -76,6 +77,10 @@ export default function HelpDeskDashboard({
 
   if (view === "tickets") {
     return <HelpDeskTickets copy={copy} language={language} basePath={basePath} />;
+  }
+
+  if (view === "solved") {
+    return <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />;
   }
 
   return <HelpDeskOverview copy={copy} language={language} basePath={basePath} />;
