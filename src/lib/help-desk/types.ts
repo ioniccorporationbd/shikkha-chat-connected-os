@@ -258,6 +258,8 @@ export interface ConversationSummary {
   category?: TicketCategoryId;
   customer: string;
   assignedAgent?: string | null;
+  /** When the ticket left Open (ERP `resolution_date`, else last update). */
+  resolvedAt?: string;
   counterpart?: string | null;
   lastMessage: string;
   lastSender: string;

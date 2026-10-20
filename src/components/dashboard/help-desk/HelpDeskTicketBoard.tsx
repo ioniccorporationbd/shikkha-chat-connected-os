@@ -61,7 +61,6 @@ export default function HelpDeskTicketBoard({
   const isSolved = variant === "closed";
   const links = helpDeskLinks(basePath);
   // Solved rows open the ticket conversation: solution, requirements, full history.
-  const messageHref = (ticketId: string) => links.message(ticketId);
 
   const load = useCallback(async () => {
     try {
@@ -282,7 +281,7 @@ export default function HelpDeskTicketBoard({
             basePath={basePath}
             unseenIds={unseen}
             slStart={start + 1}
-            detailHref={isSolved ? messageHref : undefined}
+            stamp={isSolved ? "resolved" : "created"}
           />
           <ListPagination
             copy={paginationCopy}

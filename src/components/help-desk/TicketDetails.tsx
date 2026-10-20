@@ -161,7 +161,6 @@ export default function TicketDetails({
   const isResolved = ticket.status === "resolved" || ticket.status === "closed";
   // Additional requirements are Open-only; the ERP re-checks this server-side.
   const canAddRequirement = ticket.status === "open";
-  const convLinks = helpDeskLinks(basePath);
 
   return (
     <div className="space-y-4">
@@ -245,12 +244,6 @@ export default function TicketDetails({
                 <FiMessageSquare className="h-4 w-4" aria-hidden />
                 {copy.detailsConversation}
               </h2>
-              <Link
-                href={convLinks.message(ticket.id)}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-action)] hover:underline"
-              >
-                {copy.viewConversation}
-              </Link>
             </div>
             <TicketConversation messages={ticket.messages} copy={copy} language={language} />
 

@@ -49,6 +49,24 @@ export function formatDate(iso: string | undefined, language: string): string {
   }
 }
 
+/** Time of day only, e.g. `08:10 PM` — the clock half of a chat-style stamp. */
+export function formatTime(iso: string | undefined, language: string): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(11, 16);
+  }
+}
+
 /** Absolute time for a conversation bubble (date + HH:mm). */
 export function formatBubbleTime(iso: string, language: string): string {
   return formatDateTime(iso, language);

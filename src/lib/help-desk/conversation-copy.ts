@@ -49,6 +49,10 @@ export interface ConversationCopy {
   colStatus: string;
   colCategory: string;
   colSubmitted: string;
+  /** Solve Problem queue header: date/time of the row (closed when closed). */
+  colClosedAt: string;
+  /** Short chip label in front of a Solve Problem row's closed stamp. */
+  stampClosed: string;
   colDate: string;
   actionOpen: string;
   actionView: string;
@@ -208,6 +212,8 @@ const bn: ConversationCopy = {
   colStatus: "স্ট্যাটাস",
   colCategory: "ক্যাটাগরি",
   colSubmitted: "জমার সময়",
+  colClosedAt: "তারিখ ও সময়",
+  stampClosed: "ক্লোজ",
   colDate: "তারিখ ও সময়",
   actionOpen: "খুলুন",
   actionView: "দেখুন",
@@ -359,6 +365,8 @@ const en: ConversationCopy = {
   colStatus: "Status",
   colCategory: "Category",
   colSubmitted: "Submitted at",
+  colClosedAt: "Date & time",
+  stampClosed: "Closed",
   colDate: "Date & time",
   actionOpen: "Open",
   actionView: "View",

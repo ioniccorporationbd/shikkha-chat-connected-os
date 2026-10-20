@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FiCalendar, FiChevronRight } from "react-icons/fi";
 
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -25,6 +25,7 @@ export default function TicketCard({
   basePath,
   newReply,
   sl,
+  stamp = "created",
 }: {
   ticket: Ticket;
   copy: HelpDeskCopy;
@@ -35,6 +36,8 @@ export default function TicketCard({
   newReply?: boolean;
   /** Row serial number shown on the desktop table. */
   sl?: number;
+  /** Same meaning as on the table: created stamp for Open, resolved for Closed. */
+  stamp?: "created" | "resolved";
 }) {
   const links = helpDeskLinks(basePath);
   return (
@@ -68,7 +71,10 @@ export default function TicketCard({
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-[color-mix(in_srgb,var(--color-primary)_65%,var(--color-white))]">
           <FiCalendar className="h-3.5 w-3.5" aria-hidden />
-          {formatDateTime(ticket.updatedAt, language)}
+          <span className="font-semibold">{stamp === "resolved" ? copy.stampClosed : copy.stampCreated}</span>
+          <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]" aria-hidden>·</span>
+          <span>{formatDate(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}</span>
+          <span className="font-semibold tabular-nums">{formatTime(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}</span>
         </span>
         <Link
           href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}

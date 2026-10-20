@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FiChevronRight } from "react-icons/fi";
 
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -30,6 +30,7 @@ export default function TicketList({
   unseenIds,
   slStart = 1,
   detailHref,
+  stamp = "created",
 }: {
   tickets: Ticket[];
   copy: HelpDeskCopy;
@@ -39,8 +40,15 @@ export default function TicketList({
   unseenIds?: ReadonlySet<string>;
   /** First row's serial number (page-aware). */
   slStart?: number;
-  /** Optional override for the row's detail URL (solved rows open Messages). */
+  /** Optional override for the row's detail URL. */
   detailHref?: (ticketId: string) => string;
+  /**
+   * Which timestamp the date/time column carries: `created` for the Open
+   * tickets table (when the ticket was filed) and `resolved` for the Closed
+   * table (when it left Open). WhatsApp-style: the date and the clock time sit
+   * together, stacked, so a row reads like a chat entry.
+   */
+  stamp?: "created" | "resolved";
 }) {
   const links = helpDeskLinks(basePath);
 
@@ -66,6 +74,7 @@ export default function TicketList({
             basePath={basePath}
             detailHref={detailHref}
             newReply={Boolean(unseenIds?.has(ticket.id))}
+            stamp={stamp}
             sl={slStart + index}
           />
         ))}
@@ -83,7 +92,7 @@ export default function TicketList({
               <th scope="col" className={`${HEAD} hidden xl:table-cell`}>{copy.colCategory}</th>
               <th scope="col" className={`${HEAD} hidden xl:table-cell`}>{copy.colPriority}</th>
               <th scope="col" className={HEAD}>{copy.colStatus}</th>
-              <th scope="col" className={`${HEAD} hidden xl:table-cell`}>{copy.colUpdated}</th>
+              <th scope="col" className={HEAD}>{stamp === "resolved" ? copy.colClosedAt : copy.colCreatedAt}</th>
               <th scope="col" className={HEAD}>{copy.colAction}</th>
             </tr>
           </thead>
@@ -116,8 +125,20 @@ export default function TicketList({
                 <td className="px-4 py-3.5">
                   <TicketStatusBadge status={ticket.status} copy={copy} />
                 </td>
-                <td className="hidden whitespace-nowrap px-4 py-3.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)] xl:table-cell">
-                  {formatDateTime(ticket.updatedAt, language)}
+                <td className="whitespace-nowrap px-4 py-3.5">
+                  {(() => {
+                    const iso = stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt;
+                    return (
+                      <>
+                        <span className="block text-[12.5px] font-semibold text-[var(--color-primary)]">
+                          {formatDate(iso, language)}
+                        </span>
+                        <span className="block text-[11.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                          {formatTime(iso, language)}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-3.5">
                   <Link

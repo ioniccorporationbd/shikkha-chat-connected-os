@@ -150,6 +150,14 @@ export interface HelpDeskCopy {
   colPriority: string;
   colStatus: string;
   colUpdated: string;
+  /** Header of the Open-tickets date/time column: when the ticket was filed. */
+  colCreatedAt: string;
+  /** Header of the Closed-tickets date/time column: when it left Open. */
+  colClosedAt: string;
+  /** Short label above a mobile card's created stamp. */
+  stampCreated: string;
+  /** Short label above a mobile card's closed stamp. */
+  stampClosed: string;
   colAction: string;
   viewDetails: string;
   listGuestTitle: string;
@@ -415,6 +423,10 @@ const bn: HelpDeskCopy = {
   colPriority: "প্রায়োরিটি",
   colStatus: "স্ট্যাটাস",
   colUpdated: "সর্বশেষ হালনাগাদ",
+  colCreatedAt: "তৈরি হয়েছে (তারিখ ও সময়)",
+  colClosedAt: "ক্লোজ হয়েছে (তারিখ ও সময়)",
+  stampCreated: "তৈরি",
+  stampClosed: "ক্লোজ",
   colAction: "অ্যাকশন",
   viewDetails: "বিস্তারিত দেখুন",
   listGuestTitle: "আপনি লগইন করেননি",
@@ -685,6 +697,10 @@ const en: HelpDeskCopy = {
   colPriority: "Priority",
   colStatus: "Status",
   colUpdated: "Last updated",
+  colCreatedAt: "Created (date & time)",
+  colClosedAt: "Closed (date & time)",
+  stampCreated: "Created",
+  stampClosed: "Closed",
   colAction: "Action",
   viewDetails: "View details",
   listGuestTitle: "You are not signed in",

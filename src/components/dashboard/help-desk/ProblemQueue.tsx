@@ -16,7 +16,7 @@ import {
 } from "@/lib/help-desk/conversation-copy";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { listConversations } from "@/lib/help-desk/conversations";
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { ConversationSummary } from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
@@ -50,6 +50,19 @@ export default function ProblemQueue({
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
   const paginationCopy = useMemo(() => genericPaginationCopy(language), [language]);
+
+  /**
+   * The timestamp a row is dated by. New Problem rows are dated by submission;
+   * Solve Problem rows by the moment the ticket left Open (`resolution_date`,
+   * falling back to submission then last activity when the ERP has no date).
+   */
+  const closedStamp = useCallback(
+    (row: ConversationSummary) =>
+      mode === "solve"
+        ? row.resolvedAt || row.submittedAt || row.lastMessageAt
+        : row.submittedAt || row.lastMessageAt,
+    [mode],
+  );
 
   const [rows, setRows] = useState<ConversationSummary[] | null>(null);
   const [total, setTotal] = useState(0);
@@ -273,7 +286,7 @@ export default function ProblemQueue({
               <table className="w-full min-w-[58rem] border-collapse text-left">
                 <thead>
                   <tr className="bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
-                    {[copy.colSl, copy.colTicket, copy.colCustomer, copy.colSubject, copy.colPriority, copy.colStatus, copy.colSubmitted, copy.colAction].map(
+                    {[copy.colSl, copy.colTicket, copy.colCustomer, copy.colSubject, copy.colPriority, copy.colStatus, mode === "solve" ? copy.colClosedAt : copy.colSubmitted, copy.colAction].map(
                       (label) => (
                         <th
                           key={label}
@@ -335,8 +348,13 @@ export default function ProblemQueue({
                           {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
-                        {formatDateTime(row.submittedAt ?? row.lastMessageAt, language)}
+                      <td className="whitespace-nowrap px-3 py-2.5">
+                        <span className="block text-[12px] font-semibold text-[var(--color-primary)]">
+                          {formatDate(closedStamp(row), language)}
+                        </span>
+                        <span className="block text-[11px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                          {formatTime(closedStamp(row), language)}
+                        </span>
                       </td>
                       <td className="px-3 py-2.5">
                         <button
@@ -388,8 +406,12 @@ export default function ProblemQueue({
                     >
                       {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
                     </span>
-                    <span className="text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                      {formatDateTime(row.submittedAt ?? row.lastMessageAt, language)}
+                    <span className="inline-flex items-center gap-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {mode === "solve" && row.status === "closed" ? (
+                        <span className="font-bold">{copy.stampClosed}</span>
+                      ) : null}
+                      <span>{formatDate(closedStamp(row), language)}</span>
+                      <span className="font-semibold tabular-nums text-[var(--color-primary)]">{formatTime(closedStamp(row), language)}</span>
                     </span>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-bold text-[var(--color-primary)]">
