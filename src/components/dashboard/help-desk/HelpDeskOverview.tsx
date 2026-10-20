@@ -11,7 +11,6 @@ import {
   FiInbox,
   FiList,
   FiPlusCircle,
-  FiRefreshCw,
   FiTool,
 } from "react-icons/fi";
 
@@ -106,7 +105,6 @@ export default function HelpDeskOverview({
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
     { key: "total", label: copy.summaryTotal, value: summary.total, tone: "var(--color-primary)", icon: FiInbox },
     { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
-    { key: "in_progress", label: copy.statuses.in_progress, value: summary.inProgress, tone: STATUS_TONE.in_progress, icon: FiRefreshCw },
     { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: STATUS_TONE.waiting_for_user, icon: FiClock },
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
   ];
@@ -197,7 +195,7 @@ export default function HelpDeskOverview({
           {/* Summary */}
           <section className="flex flex-col gap-3">
             <h2 className="px-1 text-[15px] font-semibold">{copy.summaryHeading}</h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {summaryCards.map((card) => (
                 <SummaryCard key={card.key} label={card.label} value={card.value} tone={card.tone} icon={card.icon} />
               ))}
