@@ -10,6 +10,7 @@ import {
   FiClock,
   FiFileText,
   FiHeadphones,
+  FiHelpCircle,
   FiInfo,
   FiMessageSquare,
   FiRotateCcw,
@@ -17,14 +18,14 @@ import {
   FiUser,
 } from "react-icons/fi";
 
-import { HD_CARD, HD_GHOST_BTN } from "@/lib/help-desk/config";
+import { HD_CARD, HD_GHOST_BTN, HD_PRIMARY_BTN } from "@/lib/help-desk/config";
 import { formatDate, formatTime } from "@/lib/help-desk/format";
 import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { getTicket, reopenTicket } from "@/lib/help-desk/service";
-import type { Ticket, TicketStatus } from "@/lib/help-desk/types";
+import type { Ticket } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
 
 import { HelpDeskErrorState, HelpDeskNotFound, TicketDetailsSkeleton } from "./HelpDeskStates";
@@ -180,8 +181,8 @@ export default function TicketDetails({
         </dl>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr]">
-        {/* Main column */}
+      <div className="grid items-start gap-4 lg:grid-cols-[1.7fr_1fr]">
+        {/* Main column — problem, then the conversation at the same width */}
         <div className="space-y-4">
           {/* Problem */}
           <section className={`${HD_CARD} p-5 sm:p-6`}>
@@ -200,10 +201,60 @@ export default function TicketDetails({
               ))}
             </div>
           </section>
+
+          {/* Conversation — directly under the problem, same column width */}
+          <section className={`${HD_CARD} p-5 sm:p-6`}>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
+                <FiMessageSquare className="h-4 w-4" aria-hidden />
+                {copy.detailsConversation}
+              </h2>
+              {ticket.messages.length > 0 ? (
+                <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_65%,var(--color-white))]">
+                  {ticket.messages.length}
+                </span>
+              ) : null}
+            </div>
+            <TicketConversation messages={ticket.messages} copy={copy} language={language} />
+          </section>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
+        {/* Sidebar — sticks while the thread scrolls */}
+        <div className="space-y-4 lg:sticky lg:top-6">
+          {/* Info */}
+          <section className={`${HD_CARD} overflow-hidden p-5`}>
+            <h2 className="inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)]">
+              <FiInfo className="h-4 w-4" aria-hidden />
+              {copy.detailsInfo}
+            </h2>
+            <dl className="mt-3 divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]">
+              <InfoRow icon={<FiUser className="h-3.5 w-3.5" aria-hidden />} label={copy.fieldName} value={ticket.contact.name} />
+              <InfoRow icon={<FiSend className="h-3.5 w-3.5" aria-hidden />} label={copy.fieldEmail} value={ticket.contact.email} />
+              {ticket.contact.mobile ? (
+                <InfoRow icon={<FiClock className="h-3.5 w-3.5" aria-hidden />} label={copy.fieldMobile} value={ticket.contact.mobile} />
+              ) : null}
+              <InfoRow
+                icon={<FiHeadphones className="h-3.5 w-3.5" aria-hidden />}
+                label={copy.detailsAgent}
+                value={ticket.assignedAgent || copy.detailsUnassigned}
+              />
+              {ticket.department ? (
+                <InfoRow
+                  icon={<FiBriefcase className="h-3.5 w-3.5" aria-hidden />}
+                  label={copy.detailsDepartment}
+                  value={ticket.department}
+                />
+              ) : null}
+              {ticket.relatedRoute ? (
+                <InfoRow
+                  icon={<FiActivity className="h-3.5 w-3.5" aria-hidden />}
+                  label={copy.detailsRelatedRoute}
+                  value={ticket.relatedRoute}
+                />
+              ) : null}
+            </dl>
+          </section>
+
           {/* Resolved block */}
           {isResolved ? (
             <section className="overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] p-5">
@@ -248,85 +299,8 @@ export default function TicketDetails({
               </div>
             </section>
           ) : null}
-
-          {/* Info */}
-          <section className={`${HD_CARD} p-5`}>
-            <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
-              <FiInfo className="h-4 w-4" aria-hidden />
-              {copy.detailsInfo}
-            </h2>
-            <dl className="mt-3 space-y-3">
-              <InfoRow icon={<FiUser className="h-4 w-4" aria-hidden />} label={copy.fieldName} value={ticket.contact.name} />
-              <InfoRow icon={<FiSend className="h-4 w-4" aria-hidden />} label={copy.fieldEmail} value={ticket.contact.email} />
-              {ticket.contact.mobile ? (
-                <InfoRow icon={<FiClock className="h-4 w-4" aria-hidden />} label={copy.fieldMobile} value={ticket.contact.mobile} />
-              ) : null}
-              <InfoRow
-                icon={<FiHeadphones className="h-4 w-4" aria-hidden />}
-                label={copy.detailsAgent}
-                value={ticket.assignedAgent || copy.detailsUnassigned}
-              />
-              {ticket.department ? (
-                <InfoRow
-                  icon={<FiBriefcase className="h-4 w-4" aria-hidden />}
-                  label={copy.detailsDepartment}
-                  value={ticket.department}
-                />
-              ) : null}
-              {ticket.relatedRoute ? (
-                <InfoRow
-                  icon={<FiActivity className="h-4 w-4" aria-hidden />}
-                  label={copy.detailsRelatedRoute}
-                  value={ticket.relatedRoute}
-                />
-              ) : null}
-            </dl>
-          </section>
-
-          {/* Timeline */}
-          <section className={`${HD_CARD} p-5`}>
-            <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
-              <FiActivity className="h-4 w-4" aria-hidden />
-              {copy.detailsTimeline}
-            </h2>
-            <ol className="mt-3 space-y-3">
-              <TimelineItem
-                label={copy.timelineCreated}
-                date={formatDate(ticket.createdAt, language)}
-                time={formatTime(ticket.createdAt, language)}
-              />
-              {ticket.messages
-                .filter((message) => message.statusChange)
-                .map((message) => (
-                  <TimelineItem
-                    key={`t-${message.id}`}
-                    label={`${copy.timelineStatusTo} · ${copy.statuses[message.statusChange as TicketStatus]}`}
-                    date={formatDate(message.createdAt, language)}
-                    time={formatTime(message.createdAt, language)}
-                  />
-                ))}
-            </ol>
-          </section>
-
         </div>
       </div>
-      {/* Conversation — the last block on the page. Replies are read here; new
-          requirements and attachments are no longer submitted from this page. */}
-      <section className={`${HD_CARD} p-5 sm:p-6`}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
-            <FiMessageSquare className="h-4 w-4" aria-hidden />
-            {copy.detailsConversation}
-          </h2>
-          {ticket.messages.length > 0 ? (
-            <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_65%,var(--color-white))]">
-              {ticket.messages.length}
-            </span>
-          ) : null}
-        </div>
-        <TicketConversation messages={ticket.messages} copy={copy} language={language} />
-      </section>
-
     </div>
   );
 }
@@ -334,13 +308,22 @@ export default function TicketDetails({
 function BackLink({ copy, basePath }: { copy: HelpDeskCopy; basePath?: string }) {
   const links = helpDeskLinks(basePath);
   return (
-    <Link
-      href={links.tickets}
-      className="inline-flex w-fit items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
-    >
-      <FiArrowLeft size={14} className="text-[var(--color-primary)]" aria-hidden />
-      <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.backToList}</span>
-    </Link>
+    <div className="flex flex-wrap items-center gap-2">
+      <Link
+        href={links.tickets}
+        className={`${HD_PRIMARY_BTN} px-4 py-2`}
+        style={{ color: "var(--color-white)" }}
+      >
+        <FiArrowLeft className="h-4 w-4" style={{ color: "var(--color-white)" }} aria-hidden />
+        <span className="text-sm font-semibold" style={{ color: "var(--color-white)" }}>
+          {copy.backToList}
+        </span>
+      </Link>
+      <Link href={links.root} className={`${HD_GHOST_BTN} px-4 py-2`}>
+        <FiHelpCircle className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+        <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.navHelpDesk}</span>
+      </Link>
+    </div>
   );
 }
 
@@ -357,32 +340,17 @@ function MetaCell({ label, children }: { label: string; children: React.ReactNod
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] text-[var(--color-primary)]">
+    <div className="flex items-center gap-2.5 py-2 first:pt-0 last:pb-0">
+      <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_78%,var(--color-white))]">
         {icon}
       </span>
-      <div className="min-w-0">
-        <dt className="text-xs font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
+      <div className="flex min-w-0 flex-1 items-baseline justify-between gap-3">
+        <dt className="flex-none text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
           {label}
         </dt>
-        <dd className="break-words text-sm font-semibold text-[var(--color-primary)]">{value}</dd>
+        <dd className="min-w-0 break-words text-right text-[13px] font-semibold text-[var(--color-primary)]">{value}</dd>
       </div>
     </div>
   );
 }
 
-function TimelineItem({ label, date, time }: { label: string; date: string; time: string }) {
-  return (
-    <li className="flex items-start gap-3">
-      <span className="mt-1.5 flex h-2.5 w-2.5 flex-none rounded-full bg-[var(--color-primary)]" aria-hidden />
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-[var(--color-primary)]">{label}</p>
-        <p className="mt-0.5 inline-flex flex-wrap items-center gap-x-1.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,var(--color-white))]">
-          <span className="tabular-nums">{date}</span>
-          <span className="opacity-40">·</span>
-          <span className="font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_72%,var(--color-white))]">{time}</span>
-        </p>
-      </div>
-    </li>
-  );
-}
