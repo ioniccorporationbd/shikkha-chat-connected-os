@@ -30,7 +30,18 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
 
 /** One page of ticket threads, newest conversation activity first. */
 export async function listConversations(
-  options: { search?: string; page?: number; pageSize?: number; includeEmpty?: boolean } = {}
+  options: {
+    search?: string;
+    page?: number;
+    pageSize?: number;
+    includeEmpty?: boolean;
+    /**
+     * Restrict the queue to ticket statuses (comma/space separated keys such as
+     * `open`) or the token `not_open` for the employee Solve queue. The ERP is
+     * what enforces it — this is only the request.
+     */
+    statuses?: string;
+  } = {}
 ): Promise<ConversationListPayload> {
   const query = new URLSearchParams({ language: currentLanguage() });
   if (options.search?.trim()) query.set("search", options.search.trim());
@@ -38,6 +49,7 @@ export async function listConversations(
   if (options.pageSize && options.pageSize > 0) query.set("page_size", String(options.pageSize));
   // Support's problem queue needs tickets that nobody has replied to yet.
   if (options.includeEmpty) query.set("include_empty", "1");
+  if (options.statuses?.trim()) query.set("statuses", options.statuses.trim());
   return request<ConversationListPayload>(`${CONVERSATIONS_URL}?${query.toString()}`);
 }
 

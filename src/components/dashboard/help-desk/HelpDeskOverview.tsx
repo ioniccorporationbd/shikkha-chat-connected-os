@@ -105,17 +105,34 @@ export default function HelpDeskOverview({
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
   ];
 
-  // The ticket list shows open tickets only, so the quick actions stay on the
-  // two destinations that actually exist: file a ticket, or open the list.
-  const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = [
-    { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
-    { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
-    { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
-    { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
-    ...(staff
-      ? [{ key: "problems", label: conversationCopy.problemsTitle, href: links.problems, icon: FiTool }]
-      : []),
-  ];
+  // The employee overview mirrors the customer one but its section buttons are
+  // the three worklists the help desk is built around, in order: New Problem
+  // (open tickets only), Solve Problem (everything already worked on) and
+  // Messages. The customer keeps file-ticket / open / solved / messages.
+  const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
+    ? [
+        { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
+        { key: "solve-problem", label: conversationCopy.navSolveProblem, href: links.solved, icon: FiTool },
+        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
+      ]
+    : [
+        { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
+        { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
+        { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
+        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
+      ];
+
+  // Hero buttons: the employee jumps straight into the New Problem queue; the
+  // customer's two buttons (file a ticket / open list) are unchanged.
+  const heroActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
+    ? [
+        { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
+        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
+      ]
+    : [
+        { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
+        { key: "list", label: copy.listTitle, href: links.tickets, icon: FiList },
+      ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -139,20 +156,26 @@ export default function HelpDeskOverview({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={links.newTicket}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-            >
-              <FiPlusCircle size={15} className="text-[var(--color-white)]" aria-hidden />
-              <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.navNewTicket}</span>
-            </Link>
-            <Link
-              href={links.tickets}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-            >
-              <FiList size={15} className="text-[var(--color-primary)]" aria-hidden />
-              <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.listTitle}</span>
-            </Link>
+            {heroActions.map((action, index) => {
+              const Icon = action.icon;
+              const primary = index === 0;
+              return (
+                <Link
+                  key={action.key}
+                  href={action.href}
+                  className={
+                    primary
+                      ? "inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                      : "inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                  }
+                >
+                  <Icon size={15} className={primary ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"} aria-hidden />
+                  <span className={primary ? "text-[13px] font-semibold text-[var(--color-white)]" : "text-[13px] font-semibold text-[var(--color-primary)]"}>
+                    {action.label}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

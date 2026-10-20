@@ -126,6 +126,23 @@ export interface ConversationCopy {
   resolutionMark: string;
   resolutionBadge: string;
 
+  /* ---- employee queues: New Problem / Solve Problem ---- */
+  navNewProblem: string;
+  navSolveProblem: string;
+  queueNewTitle: string;
+  queueNewSubtitle: string;
+  queueSolveTitle: string;
+  queueSolveSubtitle: string;
+  queueNewEmptyTitle: string;
+  queueNewEmptyHint: string;
+  queueSolveEmptyTitle: string;
+  queueSolveEmptyHint: string;
+  queueViewDetails: string;
+  queueCount: (count: number) => string;
+  detailCardTitle: string;
+  detailCardClose: string;
+  detailCardLoading: string;
+
   /* ---- ticket detail (customer) ---- */
   detailConversationLink: string;
   detailRequirementButton: string;
@@ -256,6 +273,22 @@ const bn: ConversationCopy = {
   resolutionMark: "সমাধান হিসেবে চিহ্নিত করুন",
   resolutionBadge: "সমাধান",
 
+  navNewProblem: "নিউ প্রবলেম",
+  navSolveProblem: "সলভ প্রবলেম",
+  queueNewTitle: "নিউ প্রবলেম",
+  queueNewSubtitle: "গ্রাহকের পাঠানো নতুন সমস্যা — স্ট্যাটাস এখনও খোলা। টেবিল থেকে বিস্তারিত দেখুন, উত্তর দিন বা স্ট্যাটাস বদলান।",
+  queueSolveTitle: "সলভ প্রবলেম",
+  queueSolveSubtitle: "যেসব সমস্যায় ইতিমধ্যে কাজ শুরু হয়েছে, গ্রাহকের উত্তরের অপেক্ষায় আছে বা সমাধান হয়ে গেছে।",
+  queueNewEmptyTitle: "নতুন কোনো সমস্যা নেই",
+  queueNewEmptyHint: "গ্রাহক নতুন সমস্যা পাঠালে সেটি সাথে সাথে এখানে দেখা যাবে।",
+  queueSolveEmptyTitle: "সমাধানের তালিকা এখন খালি",
+  queueSolveEmptyHint: "কোনো সমস্যায় কাজ শুরু করলে সেটি নিউ প্রবলেম থেকে এখানে চলে আসবে।",
+  queueViewDetails: "ভিউ ডিটেইলস",
+  queueCount: (count) => `${count}টি সমস্যা`,
+  detailCardTitle: "সমস্যার বিস্তারিত",
+  detailCardClose: "বন্ধ করুন",
+  detailCardLoading: "বিস্তারিত লোড হচ্ছে…",
+
   detailConversationLink: "সম্পূর্ণ কথোপকথন দেখুন",
   detailRequirementButton: "রিকোয়ারমেন্ট যোগ করুন",
 
@@ -383,6 +416,22 @@ const en: ConversationCopy = {
   statusFailed: "The status could not be updated.",
   resolutionMark: "Mark as the solution",
   resolutionBadge: "Solution",
+
+  navNewProblem: "New problems",
+  navSolveProblem: "Solve problems",
+  queueNewTitle: "New problems",
+  queueNewSubtitle: "Every customer problem still in the Open state — open it, read the details, reply and change its status.",
+  queueSolveTitle: "Solve problems",
+  queueSolveSubtitle: "Problems already in progress, waiting for the customer, resolved or closed.",
+  queueNewEmptyTitle: "No new problems",
+  queueNewEmptyHint: "A problem appears here the moment a customer submits it.",
+  queueSolveEmptyTitle: "Nothing to solve yet",
+  queueSolveEmptyHint: "Start working on a problem and it moves here from New problems.",
+  queueViewDetails: "View details",
+  queueCount: (count) => `${count} problem${count === 1 ? "" : "s"}`,
+  detailCardTitle: "Problem details",
+  detailCardClose: "Close",
+  detailCardLoading: "Loading the details…",
 
   detailConversationLink: "Open the full conversation",
   detailRequirementButton: "Add requirement",

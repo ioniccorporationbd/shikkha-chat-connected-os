@@ -13,6 +13,7 @@ import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
 import HelpDeskTickets from "./HelpDeskTickets";
+import ProblemQueue from "./ProblemQueue";
 
 export type HelpDeskView =
   | "overview"
@@ -94,7 +95,14 @@ export default function HelpDeskDashboard({
   }
 
   if (view === "solved") {
-    return <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />;
+    // The customer's "Solved" list is their own finished tickets; for an
+    // employee the same route is the Solve Problem queue — the tickets they are
+    // working on or have finished, with the detail card in place.
+    return staff ? (
+      <ProblemQueue language={language} mode="solve" />
+    ) : (
+      <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />
+    );
   }
 
   if (view === "messages") {
@@ -102,7 +110,9 @@ export default function HelpDeskDashboard({
   }
 
   if (view === "problems") {
-    return <HelpDeskMessages language={language} basePath={basePath} variant="problems" />;
+    // New Problem: only tickets the ERP still reports as open. The queue opens
+    // the detail card in place, so there is no separate problem page to visit.
+    return <ProblemQueue language={language} mode="open" />;
   }
 
   if (view === "conversation" && ticketId) {
