@@ -11,6 +11,15 @@ import type { TicketCategoryId, TicketPriority, TicketStatus } from "./types";
 export interface ConversationCopy {
   /* ---- shared navigation ---- */
   back: string;
+  /** Label of the persistent "go to Help Desk overview" nav button. */
+  helpDeskHome: string;
+  /** Date-range + title filters shared by every Help Desk table. */
+  filtersFrom: string;
+  filtersTo: string;
+  filtersTitle: string;
+  filtersTitlePlaceholder: string;
+  filtersClear: string;
+  filtersActive: string;
   viewMessages: string;
   viewProblem: string;
 
@@ -165,6 +174,13 @@ export interface ConversationCopy {
 
 const bn: ConversationCopy = {
   back: "পেছনে যান",
+  helpDeskHome: "হেল্প ডেস্ক",
+  filtersFrom: "শুরুর তারিখ",
+  filtersTo: "শেষ তারিখ",
+  filtersTitle: "শিরোনাম",
+  filtersTitlePlaceholder: "সমস্যার শিরোনাম দিয়ে খুঁজুন",
+  filtersClear: "ফিল্টার মুছুন",
+  filtersActive: "ফিল্টার চালু",
   viewMessages: "মেসেজ দেখুন",
   viewProblem: "সমস্যা দেখুন",
 
@@ -309,6 +325,13 @@ const bn: ConversationCopy = {
 
 const en: ConversationCopy = {
   back: "Go back",
+  helpDeskHome: "Help Desk",
+  filtersFrom: "From date",
+  filtersTo: "To date",
+  filtersTitle: "Title",
+  filtersTitlePlaceholder: "Filter by problem title",
+  filtersClear: "Clear filters",
+  filtersActive: "Filters active",
   viewMessages: "View messages",
   viewProblem: "View problem",
 

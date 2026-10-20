@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertCircle, FiRefreshCw, FiX } from "react-icons/fi";
+import Link from "next/link";
+import { FiAlertCircle, FiHeadphones, FiRefreshCw, FiX } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
+import { helpDeskHomeFor } from "@/components/dashboard/help-desk/HelpDeskBackButton";
 import {
   getConversation,
   markConversationRead,
@@ -221,6 +223,21 @@ export default function ProblemDetailCard({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* The queue's own Back/Help Desk row sits behind this overlay, so
+                the card carries its own Help Desk exit. Close stays the only
+                "go back" control — two back buttons would be ambiguous. */}
+            <Link
+              href={helpDeskHomeFor("/userDashboard")}
+              onClick={(event) => {
+                event.stopPropagation();
+                onClose();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-action)] px-2.5 py-1.5 text-[11.5px] font-bold transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+              style={{ color: "var(--color-white)" }}
+            >
+              <FiHeadphones size={12} aria-hidden style={{ color: "var(--color-white)" }} />
+              <span style={{ color: "var(--color-white)" }}>{copy.helpDeskHome}</span>
+            </Link>
             <button
               type="button"
               onClick={() => void load()}

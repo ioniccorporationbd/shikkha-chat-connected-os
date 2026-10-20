@@ -19,7 +19,18 @@ export const dynamic = "force-dynamic";
 const LIST_METHOD = "shikkha_os.api.v1.help_desk_messages.list_conversations";
 
 /** Only these query keys are forwarded — the ERP decides everything else. */
-const ALLOWED_QUERY_KEYS = ["search", "page", "page_size", "language", "include_empty", "statuses"] as const;
+const ALLOWED_QUERY_KEYS = [
+  "search",
+  "page",
+  "page_size",
+  "language",
+  "include_empty",
+  "statuses",
+  "from_date",
+  "to_date",
+  "date_field",
+  "title",
+] as const;
 
 export async function GET(request: Request) {
   const sid = readCookie(request, SESSION_COOKIE);

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiArrowRight, FiInbox, FiMessageSquare, FiRefreshCw, FiSearch } from "react-icons/fi";
+import { FiArrowRight, FiInbox, FiMessageSquare, FiRefreshCw, FiSearch, FiX } from "react-icons/fi";
+
+import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
 
 import ListPagination from "@/components/dashboard/ListPagination";
 import { genericPaginationCopy } from "@/lib/dashboard/list-controls";
@@ -60,6 +62,18 @@ export default function HelpDeskMessages({
   const [rowsPerPage, setRowsPerPage] = useState<number>(ROWS_OPTIONS[0]);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [titleInput, setTitleInput] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setTitleFilter(titleInput.trim());
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [titleInput]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -73,6 +87,12 @@ export default function HelpDeskMessages({
     try {
       const data = await listConversations({
         search,
+        title: titleFilter,
+        // Messages are dated by their latest activity, which is what the row
+        // shows; the Problems variant keeps the submission date instead.
+        fromDate,
+        toDate,
+        dateField: isProblems ? "created" : "activity",
         page,
         pageSize: rowsPerPage,
         includeEmpty: isProblems,
@@ -86,7 +106,7 @@ export default function HelpDeskMessages({
       setTotal(0);
       setError(true);
     }
-  }, [isProblems, page, rowsPerPage, search]);
+  }, [fromDate, isProblems, page, rowsPerPage, search, titleFilter, toDate]);
 
   useReloadHandler(load);
 
@@ -113,6 +133,8 @@ export default function HelpDeskMessages({
 
   return (
     <div className="flex flex-col gap-4">
+      <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={`${basePath}/help-desk`} />
+
       {/* Header */}
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
         <div className="flex flex-col gap-4 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))_0%,var(--color-white)_72%)] p-5 sm:p-6">
@@ -155,6 +177,73 @@ export default function HelpDeskMessages({
               className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
             />
           </label>
+
+          <div className="grid gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-3 sm:grid-cols-2 lg:grid-cols-[repeat(2,minmax(0,150px))_minmax(0,1fr)_auto]">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {copy.filtersFrom}
+              </span>
+              <input
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(event) => {
+                  setFromDate(event.target.value);
+                  setPage(1);
+                }}
+                className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {copy.filtersTo}
+              </span>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(event) => {
+                  setToDate(event.target.value);
+                  setPage(1);
+                }}
+                className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {copy.filtersTitle}
+              </span>
+              <div className="flex h-9 items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5">
+                <FiSearch size={13} className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" aria-hidden />
+                <input
+                  value={titleInput}
+                  onChange={(event) => setTitleInput(event.target.value)}
+                  placeholder={copy.filtersTitlePlaceholder}
+                  className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+                />
+              </div>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setTitleInput("");
+                setTitleFilter("");
+                setSearchInput("");
+                setSearch("");
+                setPage(1);
+              }}
+              disabled={!fromDate && !toDate && !titleFilter && !search}
+              className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 self-start rounded-xl border border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] px-3 text-[12px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-40 lg:self-end"
+            >
+              <FiX size={13} aria-hidden />
+              {copy.filtersClear}
+            </button>
+          </div>
         </div>
       </section>
 
@@ -252,7 +341,7 @@ export default function HelpDeskMessages({
                         </span>
                         {!isProblems && row.unread > 0 ? (
                           <span
-                            className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]"
+                            className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]"
                             title={copy.unreadBadge(row.unread)}
                           >
                             {row.unread}
@@ -336,7 +425,7 @@ export default function HelpDeskMessages({
                           </td>
                           <td className="px-3 py-2.5">
                             {row.unread > 0 ? (
-                              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
+                              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
                                 {row.unread}
                               </span>
                             ) : (
@@ -377,7 +466,7 @@ export default function HelpDeskMessages({
                       {row.ticketId}
                     </span>
                     {row.unread > 0 ? (
-                      <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]">
+                      <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]">
                         {row.unread}
                       </span>
                     ) : null}

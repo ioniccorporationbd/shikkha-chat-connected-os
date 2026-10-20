@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
-import ThemeScript from "@/components/theme/ThemeScript";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Toaster from "@/components/ui/Toaster";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
@@ -18,12 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // The pre-paint theme script sets data-theme / color-scheme on <html>
-    // before hydration; suppressHydrationWarning on the element below keeps
-    // that deliberate attribute write from reading as a mismatch.
+    // Light mode is the only supported theme (dark mode was removed). The
+    // attribute is still written so any stale `data-theme` value left in a
+    // user's storage is overridden, and the inline script in <head> clears the
+    // retired preference key so nobody keeps a dark flag around.
     <html
       lang="bn"
       data-lang="bn"
+      data-theme="light"
       translate="no"
       className="h-full antialiased"
       suppressHydrationWarning
@@ -52,9 +53,17 @@ export default function RootLayout({
             server-rendered (it adds translated-ltr / <font> and changes
             lang="bn" -> "en"). The app has its own language switch. */}
         <meta name="google" content="notranslate" />
-        {/* Sets <html data-theme> from the saved choice / OS preference before
-            first paint — no flash of the wrong theme and no hydration shift. */}
-        <ThemeScript />
+        {/* Dark mode was retired: drop the old preference key before first
+            paint so a previously-dark user cannot flash or re-enter dark mode.
+            Runs once, costs one localStorage lookup, and never throws when
+            storage is blocked. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{localStorage.removeItem("shikkha-theme")}catch(e){}' +
+              'try{document.documentElement.setAttribute("data-theme","light");document.documentElement.style.colorScheme="light"}catch(e){}',
+          }}
+        />
       </head>
       <body
         suppressHydrationWarning

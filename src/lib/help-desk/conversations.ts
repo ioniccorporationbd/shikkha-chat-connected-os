@@ -14,6 +14,7 @@
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
   ConversationListPayload,
+  HelpDeskBadgesPayload,
   ConversationPayload,
   HelpDeskUploadedFile,
 } from "./types";
@@ -26,6 +27,17 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+/** Unread activity counts behind the Help Desk numeric badges. */
+export async function getHelpDeskBadges(): Promise<HelpDeskBadgesPayload | null> {
+  try {
+    return await request<HelpDeskBadgesPayload>(`/api/help-desk/badges?language=${currentLanguage()}`);
+  } catch (error) {
+    // A badge is decoration: a failed poll must never break the page.
+    if (error instanceof HelpDeskError) return null;
+    throw error;
+  }
 }
 
 /** One page of ticket threads, newest conversation activity first. */
@@ -41,6 +53,17 @@ export async function listConversations(
      * what enforces it — this is only the request.
      */
     statuses?: string;
+    /**
+     * Inclusive calendar days (`YYYY-MM-DD`). Every list filters on its own
+     * timestamp, named by `dateField`: `created` = ticket submission,
+     * `activity` = latest conversation activity, `resolved` = resolution day.
+     * The ERP applies the range before counting and paginating.
+     */
+    fromDate?: string;
+    toDate?: string;
+    dateField?: "created" | "activity" | "resolved";
+    /** Case-insensitive partial match on the ticket subject only. */
+    title?: string;
   } = {}
 ): Promise<ConversationListPayload> {
   const query = new URLSearchParams({ language: currentLanguage() });
@@ -50,6 +73,10 @@ export async function listConversations(
   // Support's problem queue needs tickets that nobody has replied to yet.
   if (options.includeEmpty) query.set("include_empty", "1");
   if (options.statuses?.trim()) query.set("statuses", options.statuses.trim());
+  if (options.fromDate?.trim()) query.set("from_date", options.fromDate.trim());
+  if (options.toDate?.trim()) query.set("to_date", options.toDate.trim());
+  if (options.dateField) query.set("date_field", options.dateField);
+  if (options.title?.trim()) query.set("title", options.title.trim());
   return request<ConversationListPayload>(`${CONVERSATIONS_URL}?${query.toString()}`);
 }
 

@@ -14,12 +14,17 @@ export function formatDateTime(iso: string | undefined, language: string): strin
   if (Number.isNaN(date.getTime())) return "—";
 
   try {
+    // Every timestamp in the Help Desk is shown in Asia/Dhaka — the site's
+    // business timezone — so a browser set to UTC+0 and one set to Dhaka read
+    // the same time, and the ERP's stored value is never shifted.
     return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
       day: "2-digit",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
     }).format(date);
   } catch {
     return date.toISOString();
@@ -37,6 +42,7 @@ export function formatDate(iso: string | undefined, language: string): string {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "Asia/Dhaka",
     }).format(date);
   } catch {
     return date.toISOString().slice(0, 10);

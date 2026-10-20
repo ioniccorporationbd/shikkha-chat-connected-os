@@ -37,7 +37,6 @@ import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import UserMenu from "@/components/dashboard/UserMenu";
-import ThemeToggle from "@/components/theme/ThemeToggle";
 import ClientErrorBridge from "@/components/dashboard/ClientErrorBridge";
 import { postJson } from "@/lib/api/http";
 import { reportClientError } from "@/lib/log/report-error";
@@ -689,8 +688,6 @@ export default function DashboardShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              {/* Light ⇄ dark switch — additive; the light theme is unchanged. */}
-              <ThemeToggle />
               <button
                 type="button"
                 onClick={handleReload}

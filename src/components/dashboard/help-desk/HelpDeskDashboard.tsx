@@ -65,7 +65,7 @@ export default function HelpDeskDashboard({
     // rail already shows the section.
     return (
       <div className="flex flex-col gap-5">
-        <HelpDeskBackButton label={copy.back} fallbackHref={links.root} />
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={links.root} />
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
             <FiPlusCircle className="h-5 w-5" aria-hidden />

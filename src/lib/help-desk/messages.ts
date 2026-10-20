@@ -134,6 +134,15 @@ export interface HelpDeskCopy {
   filterAll: string;
   colSl: string;
   back: string;
+  /** Label of the persistent "go to Help Desk overview" nav button. */
+  helpDeskHome: string;
+  /** Date-range + title filters shared by every Help Desk table. */
+  filtersFrom: string;
+  filtersTo: string;
+  filtersTitle: string;
+  filtersTitlePlaceholder: string;
+  filtersClear: string;
+  filtersActive: string;
   openOnlyNote: string;
   colTicketId: string;
   colSubject: string;
@@ -392,6 +401,13 @@ const bn: HelpDeskCopy = {
   filterAll: "সব",
   colSl: "ক্রম",
   back: "পেছনে যান",
+  helpDeskHome: "হেল্প ডেস্ক",
+  filtersFrom: "শুরুর তারিখ",
+  filtersTo: "শেষ তারিখ",
+  filtersTitle: "শিরোনাম",
+  filtersTitlePlaceholder: "সমস্যার শিরোনাম দিয়ে খুঁজুন",
+  filtersClear: "ফিল্টার মুছুন",
+  filtersActive: "ফিল্টার চালু",
   openOnlyNote: "শুধু ওপেন স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
   colTicketId: "টিকিট আইডি",
   colSubject: "বিষয়",
@@ -655,6 +671,13 @@ const en: HelpDeskCopy = {
   filterAll: "All",
   colSl: "SL",
   back: "Go back",
+  helpDeskHome: "Help Desk",
+  filtersFrom: "From date",
+  filtersTo: "To date",
+  filtersTitle: "Title",
+  filtersTitlePlaceholder: "Filter by problem title",
+  filtersClear: "Clear filters",
+  filtersActive: "Filters active",
   openOnlyNote: "Showing open tickets only",
   colTicketId: "Ticket ID",
   colSubject: "Subject",

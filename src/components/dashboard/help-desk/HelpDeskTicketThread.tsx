@@ -217,7 +217,7 @@ export default function HelpDeskTicketThread({
   if (loading && !payload) {
     return (
       <div className="flex flex-col gap-4">
-        <HelpDeskBackButton label={copy.back} fallbackHref={backFallback} />
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
         <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW}`} aria-busy="true">
           <div className="h-5 w-40 animate-pulse rounded bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))]" />
           <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]" />
@@ -230,7 +230,7 @@ export default function HelpDeskTicketThread({
   if (missing || (!payload && !error)) {
     return (
       <div className="flex flex-col gap-4">
-        <HelpDeskBackButton label={copy.back} fallbackHref={backFallback} />
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
         <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-8 text-center ${CARD_SHADOW}`}>
           <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
             <FiAlertCircle size={22} aria-hidden />
@@ -253,7 +253,7 @@ export default function HelpDeskTicketThread({
   if (error && !payload) {
     return (
       <div className="flex flex-col gap-4">
-        <HelpDeskBackButton label={copy.back} fallbackHref={backFallback} />
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
         <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-8 text-center ${CARD_SHADOW}`}>
           <p className="text-[14px] font-semibold text-[var(--color-primary)]">{copy.conversationErrorTitle}</p>
           <p className="mt-1 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
@@ -276,7 +276,7 @@ export default function HelpDeskTicketThread({
 
   return (
     <div className="flex flex-col gap-4">
-      <HelpDeskBackButton label={copy.back} fallbackHref={backFallback} />
+      <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">

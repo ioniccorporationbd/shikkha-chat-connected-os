@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiCheckCircle, FiInbox, FiPlus } from "react-icons/fi";
+import { FiCheckCircle, FiInbox, FiPlus, FiSearch, FiX } from "react-icons/fi";
 
 import ListPagination from "@/components/dashboard/ListPagination";
 import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
@@ -54,6 +54,9 @@ export default function HelpDeskTicketBoard({
   const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
 
   const isSolved = variant === "closed";
   const links = helpDeskLinks(basePath);
@@ -91,10 +94,30 @@ export default function HelpDeskTicketBoard({
   const unseen = useMemo(() => unseenSupportIds(tickets ?? []), [tickets]);
 
   const wanted = STATUS_BY_VARIANT[variant];
-  const rows = useMemo(
-    () => sortTicketsSmart((tickets ?? []).filter((ticket) => ticket.status === wanted)),
-    [tickets, wanted],
-  );
+
+  // This board already holds every authorised ticket in memory, so the date and
+  // title filters run here and the visible total stays exact (no partial page
+  // is ever filtered). Open rows are dated by submission; solved rows by their
+  // resolution day, falling back to the last update when no date was recorded.
+  const rows = useMemo(() => {
+    const needle = titleFilter.trim().toLowerCase();
+    const start = fromDate ? `${fromDate}T00:00:00` : "";
+    const end = toDate ? `${toDate}T23:59:59.999` : "";
+    return sortTicketsSmart(
+      (tickets ?? []).filter((ticket) => {
+        if (ticket.status !== wanted) return false;
+        if (needle && !ticket.subject.toLowerCase().includes(needle)) return false;
+        if (!start && !end) return true;
+        const raw = isSolved ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt;
+        if (!raw) return false;
+        if (start && raw < start) return false;
+        if (end && raw > end) return false;
+        return true;
+      }),
+    );
+  }, [fromDate, isSolved, tickets, titleFilter, toDate, wanted]);
+
+  const filtersActive = Boolean(fromDate || toDate || titleFilter.trim());
 
   const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
   const safePage = Math.min(page, pageCount);
@@ -108,7 +131,7 @@ export default function HelpDeskTicketBoard({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <HelpDeskBackButton label={copy.back} fallbackHref={basePath} />
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={basePath} />
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden />
           {isSolved ? copy.solvedOnlyNote : copy.openOnlyNote}
@@ -147,10 +170,102 @@ export default function HelpDeskTicketBoard({
         </div>
       </div>
 
+      {/* Date range + title. Applied to the already-authorised full set held by
+          this board, so the pagination total is always the real match count. */}
+      <div className="grid gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-3 sm:grid-cols-2 lg:grid-cols-[repeat(2,minmax(0,150px))_minmax(0,1fr)_auto]">
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {copy.filtersFrom}
+          </span>
+          <input
+            type="date"
+            value={fromDate}
+            max={toDate || undefined}
+            onChange={(event) => {
+              setFromDate(event.target.value);
+              setPage(1);
+            }}
+            className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {copy.filtersTo}
+          </span>
+          <input
+            type="date"
+            value={toDate}
+            min={fromDate || undefined}
+            onChange={(event) => {
+              setToDate(event.target.value);
+              setPage(1);
+            }}
+            className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {copy.filtersTitle}
+          </span>
+          <div className="flex h-9 items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5">
+            <FiSearch size={13} className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" aria-hidden />
+            <input
+              value={titleFilter}
+              onChange={(event) => {
+                setTitleFilter(event.target.value);
+                setPage(1);
+              }}
+              placeholder={copy.filtersTitlePlaceholder}
+              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+            />
+          </div>
+        </label>
+
+        <button
+          type="button"
+          onClick={() => {
+            setFromDate("");
+            setToDate("");
+            setTitleFilter("");
+            setPage(1);
+          }}
+          disabled={!filtersActive}
+          className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 self-start rounded-xl border border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] px-3 text-[12px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-40 lg:self-end"
+        >
+          <FiX size={13} aria-hidden />
+          {copy.filtersClear}
+        </button>
+      </div>
+
       {tickets === null ? (
         <ShikkhaLoader size="lg" label={copy.loadingTickets} className="py-12" />
       ) : loadError ? (
         <HelpDeskErrorState copy={copy} onRetry={retry} basePath={basePath} />
+      ) : rows.length === 0 && filtersActive ? (
+        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-8 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
+            <FiSearch size={22} aria-hidden />
+          </span>
+          <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">{copy.filtersActive}</p>
+          <p className="mt-1 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+            {copy.filtersClear} →
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setFromDate("");
+              setToDate("");
+              setTitleFilter("");
+              setPage(1);
+            }}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+          >
+            <FiX size={13} className="text-[var(--color-white)]" aria-hidden />
+            {copy.filtersClear}
+          </button>
+        </div>
       ) : rows.length === 0 ? (
         <TicketEmptyState
           copy={copy}

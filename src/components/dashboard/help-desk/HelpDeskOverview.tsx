@@ -17,10 +17,13 @@ import {
 } from "react-icons/fi";
 
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
+import NotificationBadge from "@/components/dashboard/help-desk/NotificationBadge";
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { formatDateTime } from "@/lib/help-desk/format";
+import { useHelpDeskBadges } from "@/lib/help-desk/use-badges";
+import type { HelpDeskBadgeCounts } from "@/lib/help-desk/types";
 import {
   isUnresolved,
   latestSupportReply,
@@ -97,6 +100,10 @@ export default function HelpDeskOverview({
   const recent = useMemo(() => sortTicketsSmart(list).slice(0, 4), [list]);
   const unresolved = useMemo(() => list.filter((ticket) => isUnresolved(ticket.status)).slice(0, 4), [list]);
 
+  // Real unread activity, straight from the ERP. Zero never renders a badge and
+  // the New Ticket / file-ticket action never carries one.
+  const badges = useHelpDeskBadges();
+
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
     { key: "total", label: copy.summaryTotal, value: summary.total, tone: "var(--color-primary)", icon: FiInbox },
     { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
@@ -136,7 +143,7 @@ export default function HelpDeskOverview({
 
   return (
     <div className="flex flex-col gap-4">
-      <HelpDeskBackButton label={copy.back} fallbackHref="/" />
+      <HelpDeskBackButton label={copy.back} fallbackHref="/" showHome={false} />
 
       {/* Hero */}
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
@@ -173,6 +180,9 @@ export default function HelpDeskOverview({
                   <span className={primary ? "text-[13px] font-semibold text-[var(--color-white)]" : "text-[13px] font-semibold text-[var(--color-primary)]"}>
                     {action.label}
                   </span>
+                  {primary ? null : (
+                    <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
+                  )}
                 </Link>
               );
             })}
@@ -211,7 +221,10 @@ export default function HelpDeskOverview({
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
                       <Icon size={18} aria-hidden />
                     </span>
-                    <span className="text-[13px] font-semibold text-[var(--color-primary)]">{action.label}</span>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]">{action.label}</span>
+                      <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
+                    </span>
                     <FiArrowRight
                       size={15}
                       className="ml-auto text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition group-hover:translate-x-0.5"
@@ -367,4 +380,23 @@ function TicketRow({
       </Link>
     </li>
   );
+}
+
+/** Which live count belongs to which section button (0 = no badge). */
+function badgeCountFor(key: string, counts: HelpDeskBadgeCounts): number {
+  switch (key) {
+    case "messages":
+      return counts.messages;
+    case "new-problem":
+      return counts.new_problem;
+    case "solve-problem":
+      return counts.solve_problem;
+    case "open":
+      return counts.open_tickets;
+    case "solved":
+      return counts.solved_tickets;
+    default:
+      // Filing a new ticket is never an unread state.
+      return 0;
+  }
 }
