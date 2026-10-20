@@ -185,6 +185,7 @@ export interface HelpDeskCopy {
   detailsProblem: string;
   detailsAttachments: string;
   detailsNoAttachments: string;
+  noConversation: string;
   detailsInfo: string;
   detailsConversation: string;
   detailsTimeline: string;
@@ -455,7 +456,8 @@ const bn: HelpDeskCopy = {
   detailsTitle: "টিকিট বিস্তারিত",
   detailsProblem: "সমস্যার বিবরণ",
   detailsAttachments: "সংযুক্তি",
-  detailsNoAttachments: "কোনো সংযুক্তি নেই।",
+  detailsNoAttachments: "এই টিকিটে কোনো ফাইল সংযুক্ত নেই।",
+  noConversation: "এখনো কোনো কথোপকথন নেই।",
   detailsInfo: "তথ্য",
   detailsConversation: "কথোপকথন",
   detailsTimeline: "কার্যক্রমের সময়রেখা",
@@ -734,6 +736,7 @@ const en: HelpDeskCopy = {
   detailsProblem: "Problem description",
   detailsAttachments: "Attachments",
   detailsNoAttachments: "No attachments.",
+  noConversation: "No conversation yet.",
   detailsInfo: "Information",
   detailsConversation: "Conversation",
   detailsTimeline: "Activity timeline",

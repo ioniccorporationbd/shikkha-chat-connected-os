@@ -2,7 +2,7 @@
 
 import { FiInfo, FiUser } from "react-icons/fi";
 
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import type { TicketMessage } from "@/lib/help-desk/types";
 
@@ -18,6 +18,17 @@ export default function TicketConversation({
   copy: HelpDeskCopy;
   language: string;
 }) {
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-8 text-center">
+        <FiInfo className="h-5 w-5 text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]" aria-hidden />
+        <p className="text-sm font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
+          {copy.noConversation}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {messages.map((message) => {
@@ -35,7 +46,8 @@ export default function TicketConversation({
                     ? copy.timelineStatusTo
                     : message.body}
                   {message.statusChange ? `: ${copy.statuses[message.statusChange]}` : ""} ·{" "}
-                  {formatDateTime(message.createdAt, language)}
+                  <span className="tabular-nums">{formatDate(message.createdAt, language)}</span>{" "}
+                  <span className="tabular-nums">{formatTime(message.createdAt, language)}</span>
                 </span>
               </span>
             </div>
@@ -51,7 +63,8 @@ export default function TicketConversation({
                 </span>
                 <p className="text-sm font-bold text-[var(--color-primary)]">{copy.you}</p>
                 <span className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
-                  · {formatDateTime(message.createdAt, language)}
+                  · <span className="tabular-nums">{formatDate(message.createdAt, language)}</span>{" "}
+                  <span className="tabular-nums">{formatTime(message.createdAt, language)}</span>
                 </span>
               </div>
               <div className="px-4 py-3">
