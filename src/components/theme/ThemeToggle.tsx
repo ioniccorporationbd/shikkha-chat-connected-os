@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { FiMoon, FiSun } from "react-icons/fi";
 
 import {
@@ -22,37 +22,42 @@ type Props = {
  * reloads. Only additive: the light theme is the default and is never mutated
  * by this component.
  */
-export default function ThemeToggle({ className, variant = "compact" }: Props) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const full = variant === "full";
+/**
+ * External store: the painted `data-theme` attribute. Using
+ * `useSyncExternalStore` keeps the button in sync with every other toggle
+ * without a mount effect (no cascading setState, no SSR mismatch — the server
+ * snapshot is always "light", the mode the pre-paint script starts from).
+ */
+function subscribe(onChange: () => void): () => void {
+  window.addEventListener(THEME_EVENT, onChange);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  const onSystem = () => {
+    // Follow the OS only while the user has not made an explicit choice.
+    try {
+      if (window.localStorage.getItem("shikkha-theme")) return;
+    } catch {
+      return;
+    }
+    onChange();
+  };
+  media.addEventListener?.("change", onSystem);
+  return () => {
+    window.removeEventListener(THEME_EVENT, onChange);
+    media.removeEventListener?.("change", onSystem);
+  };
+}
 
-  // Read the painted theme after mount (the attribute is set by the inline
-  // script before hydration, so reading during render would mismatch SSR).
-  useEffect(() => {
-    setTheme(currentTheme());
-    const sync = () => setTheme(currentTheme());
-    window.addEventListener(THEME_EVENT, sync);
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystem = () => {
-      // Follow the OS only while the user has not made an explicit choice.
-      try {
-        if (window.localStorage.getItem("shikkha-theme")) return;
-      } catch {
-        return;
-      }
-      sync();
-    };
-    media.addEventListener?.("change", onSystem);
-    return () => {
-      window.removeEventListener(THEME_EVENT, sync);
-      media.removeEventListener?.("change", onSystem);
-    };
-  }, []);
+export default function ThemeToggle({ className, variant = "compact" }: Props) {
+  const theme = useSyncExternalStore<Theme>(
+    subscribe,
+    currentTheme,
+    () => "light",
+  );
+  const full = variant === "full";
 
   const toggle = useCallback(() => {
     const next: Theme = currentTheme() === "dark" ? "light" : "dark";
     applyTheme(next, true);
-    setTheme(next);
   }, []);
 
   const isDark = theme === "dark";

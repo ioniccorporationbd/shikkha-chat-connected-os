@@ -283,10 +283,29 @@ export interface ConversationListPayload {
 }
 
 /** Server payload of `GET /api/help-desk/conversations/[id]`. */
+/** One row of the detail page's audit trail (`get_conversation().timeline`). */
+export type ConversationTimelineType = "created" | "message" | "requirement" | "resolution" | "status";
+
+export interface ConversationTimelineEvent {
+  /** Communication name, `created`, or a synthetic `status:<at>` id. */
+  id: string;
+  type: ConversationTimelineType;
+  at: string;
+  author: "user" | "support";
+  authorName: string;
+  text: string;
+  /** Raw ERP status names — only on `type: "status"` events. */
+  from?: string;
+  to?: string;
+  attachments: number;
+}
+
 export interface ConversationPayload {
   ticket: Ticket;
   messages: ConversationMessage[];
   requirements: ConversationMessage[];
+  /** Every event on the ticket, oldest first (creation, replies, status). */
+  timeline?: ConversationTimelineEvent[];
   unread: number;
   statusCategory: string;
   isSupport: boolean;

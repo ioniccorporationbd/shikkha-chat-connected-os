@@ -129,6 +129,21 @@ export interface ConversationCopy {
   /* ---- ticket detail (customer) ---- */
   detailConversationLink: string;
   detailRequirementButton: string;
+
+  /* ---- detail page: full timeline ---- */
+  timelineTitle: string;
+  timelineHint: string;
+  timelineEmpty: string;
+  timelineCreated: string;
+  timelineMessage: string;
+  timelineReplyCustomer: string;
+  timelineRequirement: string;
+  timelineResolution: string;
+  timelineStatus: string;
+  timelineSupport: string;
+  timelineYou: string;
+  timelineAttachments: (count: number) => string;
+  timelineCount: (count: number) => string;
 }
 
 const bn: ConversationCopy = {
@@ -243,6 +258,20 @@ const bn: ConversationCopy = {
 
   detailConversationLink: "সম্পূর্ণ কথোপকথন দেখুন",
   detailRequirementButton: "রিকোয়ারমেন্ট যোগ করুন",
+
+  timelineTitle: "সম্পূর্ণ কথোপকথন টাইমলাইন",
+  timelineHint: "টিকিট তৈরি থেকে এখন পর্যন্ত প্রতিটি বার্তা, রিকোয়ারমেন্ট, সমাধান ও স্ট্যাটাস পরিবর্তন — সময় অনুযায়ী সাজানো।",
+  timelineEmpty: "এখনও কোনো কার্যক্রম নেই।",
+  timelineCreated: "টিকিট তৈরি",
+  timelineMessage: "বার্তা",
+  timelineReplyCustomer: "গ্রাহকের বার্তা",
+  timelineRequirement: "অতিরিক্ত রিকোয়ারমেন্ট",
+  timelineResolution: "সমাধান",
+  timelineStatus: "স্ট্যাটাস পরিবর্তন",
+  timelineSupport: "সাপোর্ট টিম",
+  timelineYou: "আপনি",
+  timelineAttachments: (count) => `${count}টি সংযুক্তি`,
+  timelineCount: (count) => `${count}টি কার্যক্রম`,
 };
 
 const en: ConversationCopy = {
@@ -357,6 +386,20 @@ const en: ConversationCopy = {
 
   detailConversationLink: "Open the full conversation",
   detailRequirementButton: "Add requirement",
+
+  timelineTitle: "Full conversation timeline",
+  timelineHint: "Every message, requirement, solution and status change from the moment the ticket was created — ordered by time.",
+  timelineEmpty: "No activity yet.",
+  timelineCreated: "Ticket created",
+  timelineMessage: "Message",
+  timelineReplyCustomer: "Customer message",
+  timelineRequirement: "Additional requirement",
+  timelineResolution: "Solution",
+  timelineStatus: "Status change",
+  timelineSupport: "Support team",
+  timelineYou: "You",
+  timelineAttachments: (count) => `${count} attachment${count === 1 ? "" : "s"}`,
+  timelineCount: (count) => `${count} event${count === 1 ? "" : "s"}`,
 };
 
 export const conversationCopy: Record<"bn" | "en", ConversationCopy> = { bn, en };

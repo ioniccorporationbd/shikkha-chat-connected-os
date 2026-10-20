@@ -5,6 +5,7 @@ import { FiAlertCircle, FiRefreshCw } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
+import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
 import {
@@ -378,6 +379,10 @@ export default function HelpDeskTicketThread({
           )}
         </div>
       </section>
+
+      {/* B2 — full audit trail: creation, every reply/requirement, the
+          employee solution and each ERP status change, oldest first. */}
+      <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
 
       {payload!.canChangeStatus ? (
         <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
