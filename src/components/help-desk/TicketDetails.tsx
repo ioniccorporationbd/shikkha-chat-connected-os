@@ -6,6 +6,7 @@ import {
   FiActivity,
   FiArrowLeft,
   FiBriefcase,
+  FiCalendar,
   FiCheckCircle,
   FiClock,
   FiFileText,
@@ -31,6 +32,7 @@ import { toast } from "@/lib/ui/toast";
 import { HelpDeskErrorState, HelpDeskNotFound, TicketDetailsSkeleton } from "./HelpDeskStates";
 import TicketCategoryChip from "./TicketCategoryChip";
 import TicketConversation from "./TicketConversation";
+import TicketMetaTag from "./TicketMetaTag";
 import TicketPriorityBadge from "./TicketPriorityBadge";
 import TicketStatusBadge from "./TicketStatusBadge";
 
@@ -182,39 +184,59 @@ export default function TicketDetails({
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-[1.7fr_1fr]">
-        {/* Main column — problem, then the conversation at the same width */}
+        {/* Main column — one card: the original problem as the first entry of
+            the thread, then every reply and status update below it. */}
         <div className="space-y-4">
-          {/* Problem */}
           <section className={`${HD_CARD} p-5 sm:p-6`}>
-            <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
-              <FiFileText className="h-4 w-4" aria-hidden />
-              {copy.detailsProblem}
-            </h2>
-            <div className="mt-3 space-y-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-4">
-              {descriptionParagraphs.map((block, index) => (
-                <p
-                  key={`desc-${index}`}
-                  className="whitespace-pre-line break-words text-[15px] leading-relaxed text-[var(--color-primary)]"
-                >
-                  {block}
-                </p>
-              ))}
-            </div>
-          </section>
-
-          {/* Conversation — directly under the problem, same column width */}
-          <section className={`${HD_CARD} p-5 sm:p-6`}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="inline-flex items-center gap-2 text-base font-bold text-[var(--color-primary)]">
                 <FiMessageSquare className="h-4 w-4" aria-hidden />
-                {copy.detailsConversation}
+                {copy.detailsProblemAndConversation}
               </h2>
-              {ticket.messages.length > 0 ? (
-                <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_65%,var(--color-white))]">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <TicketStatusBadge status={ticket.status} copy={copy} />
+                <TicketMetaTag icon={<FiMessageSquare className="h-3 w-3" aria-hidden />}>
                   {ticket.messages.length}
-                </span>
-              ) : null}
+                </TicketMetaTag>
+              </div>
             </div>
+
+            {/* The original problem, presented as the first entry of the thread */}
+            <article className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-4">
+              <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+                <TicketMetaTag tone="accent" icon={<FiFileText className="h-3 w-3" aria-hidden />}>
+                  {copy.tagProblem}
+                </TicketMetaTag>
+                <TicketMetaTag icon={<FiUser className="h-3 w-3" aria-hidden />}>
+                  {ticket.contact.name}
+                </TicketMetaTag>
+                <TicketMetaTag tone="outline" icon={<FiCalendar className="h-3 w-3" aria-hidden />}>
+                  {formatDate(ticket.createdAt, language)}
+                </TicketMetaTag>
+                <TicketMetaTag tone="outline" icon={<FiClock className="h-3 w-3" aria-hidden />}>
+                  {formatTime(ticket.createdAt, language)}
+                </TicketMetaTag>
+              </div>
+              <div className="space-y-3">
+                {descriptionParagraphs.map((block, index) => (
+                  <p
+                    key={`desc-${index}`}
+                    className="whitespace-pre-line break-words text-[14.5px] leading-relaxed text-[var(--color-primary)]"
+                  >
+                    {block}
+                  </p>
+                ))}
+              </div>
+            </article>
+
+            <div className="my-4 flex items-center gap-3">
+              <span className="h-px flex-1 bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]" aria-hidden />
+              <span className="whitespace-nowrap text-[10.5px] font-bold uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--color-primary)_50%,var(--color-white))]">
+                {copy.threadReplies}
+              </span>
+              <span className="h-px flex-1 bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]" aria-hidden />
+            </div>
+
             <TicketConversation messages={ticket.messages} copy={copy} language={language} />
           </section>
         </div>
