@@ -72,6 +72,9 @@ export interface HelpDeskCopy {
   selectPriority: string;
   preferredEmail: string;
   preferredMobile: string;
+  preferredContactHint: string;
+  preferredEmailHint: string;
+  preferredMobileHint: string;
   attachTitle: string;
   attachHint: string;
   attachChoose: string;
@@ -265,6 +268,7 @@ export interface HelpDeskCopy {
   errRequired: string;
   errEmail: string;
   errDescriptionShort: string;
+  descriptionMinHint: string;
 
   // Categories / priorities / statuses
   categories: Record<TicketCategoryId, string>;
@@ -351,6 +355,9 @@ const bn: HelpDeskCopy = {
   selectPriority: "প্রায়োরিটি বেছে নিন",
   preferredEmail: "ইমেইল",
   preferredMobile: "মোবাইল",
+  preferredContactHint: "আমরা যে মাধ্যমে উত্তর দেব সেটি বেছে নিন",
+  preferredEmailHint: "এই ইমেইলে উত্তর যাবে",
+  preferredMobileHint: "এই নম্বরে কল করা হবে",
   attachTitle: "স্ক্রিনশট / সংযুক্তি",
   attachHint: "ছবি বা PDF যোগ করে সমস্যা বোঝাতে সাহায্য করুন।",
   attachChoose: "ফাইল বাছুন",
@@ -525,6 +532,7 @@ const bn: HelpDeskCopy = {
   errRequired: "এই ঘরটি পূরণ করুন।",
   errEmail: "সঠিক ইমেইল দিন।",
   errDescriptionShort: "অনুগ্রহ করে অন্তত কয়েক শব্দে সমস্যাটি লিখুন।",
+  descriptionMinHint: "অন্তত {count} অক্ষর",
 
   categories: {
     login: "লগইন সমস্যা",
@@ -625,6 +633,9 @@ const en: HelpDeskCopy = {
   selectPriority: "Choose a priority",
   preferredEmail: "Email",
   preferredMobile: "Mobile",
+  preferredContactHint: "Pick how we should get back to you",
+  preferredEmailHint: "We reply to this email",
+  preferredMobileHint: "We call this number",
   attachTitle: "Screenshot / attachment",
   attachHint: "Attach an image or PDF to help explain the problem.",
   attachChoose: "Choose file",
@@ -799,6 +810,7 @@ const en: HelpDeskCopy = {
   errRequired: "This field is required.",
   errEmail: "Please enter a valid email.",
   errDescriptionShort: "Please describe the problem in at least a few words.",
+  descriptionMinHint: "At least {count} characters",
 
   categories: {
     login: "Login problem",
