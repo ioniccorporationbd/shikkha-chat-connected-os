@@ -189,6 +189,25 @@ export interface HelpDeskCopy {
   detailsProblemAndConversation: string;
   tagProblem: string;
   threadReplies: string;
+  /* --- Chat (WhatsApp-style conversation) --- */
+  chatAllConversations: string;
+  chatPinnedTitle: string;
+  chatPinAction: string;
+  chatUnpinAction: string;
+  chatPlaceholder: string;
+  chatSend: string;
+  chatAttach: string;
+  chatVoice: string;
+  chatRecording: string;
+  chatToday: string;
+  chatYesterday: string;
+  chatVoiceNote: string;
+  chatClosedNotice: string;
+  chatSendFailed: string;
+  chatPinFailed: string;
+  chatSent: string;
+  chatRemoveFile: string;
+  chatLatestOnly: string;
   detailsInfo: string;
   detailsConversation: string;
   detailsTimeline: string;
@@ -464,6 +483,24 @@ const bn: HelpDeskCopy = {
   detailsProblemAndConversation: "সমস্যার বিবরণ ও কথোপকথন",
   tagProblem: "মূল সমস্যা",
   threadReplies: "উত্তর ও আপডেট",
+  chatAllConversations: "সব কনভারসেশন",
+  chatPinnedTitle: "পিন করা মেসেজ",
+  chatPinAction: "পিন করুন",
+  chatUnpinAction: "পিন সরান",
+  chatPlaceholder: "একটি মেসেজ লিখুন…",
+  chatSend: "পাঠান",
+  chatAttach: "ছবি, পিডিএফ বা ফাইল",
+  chatVoice: "ভয়েস বার্তা রেকর্ড করুন",
+  chatRecording: "রেকর্ডিং চলছে… থামাতে ট্যাপ করুন",
+  chatToday: "আজ",
+  chatYesterday: "গতকাল",
+  chatVoiceNote: "ভয়েস বার্তা",
+  chatClosedNotice: "টিকিটটি বন্ধ আছে। নতুন মেসেজ পাঠাতে চাইলে টিকিট আবার খুলুন।",
+  chatSendFailed: "মেসেজ পাঠানো যায়নি। আবার চেষ্টা করুন।",
+  chatPinFailed: "পিন করা যায়নি। আবার চেষ্টা করুন।",
+  chatSent: "মেসেজ পাঠানো হয়েছে।",
+  chatRemoveFile: "সরান",
+  chatLatestOnly: "সর্বশেষ ৫টি মেসেজ দেখানো হচ্ছে।",
   detailsInfo: "তথ্য",
   detailsConversation: "কথোপকথন",
   detailsTimeline: "কার্যক্রমের সময়রেখা",
@@ -746,6 +783,24 @@ const en: HelpDeskCopy = {
   detailsProblemAndConversation: "Problem & conversation",
   tagProblem: "Original issue",
   threadReplies: "Replies & updates",
+  chatAllConversations: "All conversations",
+  chatPinnedTitle: "Pinned message",
+  chatPinAction: "Pin",
+  chatUnpinAction: "Unpin",
+  chatPlaceholder: "Type a message…",
+  chatSend: "Send",
+  chatAttach: "Photo, PDF or file",
+  chatVoice: "Record a voice message",
+  chatRecording: "Recording… tap to stop",
+  chatToday: "Today",
+  chatYesterday: "Yesterday",
+  chatVoiceNote: "Voice message",
+  chatClosedNotice: "This ticket is closed. Reopen it to send a new message.",
+  chatSendFailed: "The message could not be sent. Please try again.",
+  chatPinFailed: "The message could not be pinned. Please try again.",
+  chatSent: "Message sent.",
+  chatRemoveFile: "Remove",
+  chatLatestOnly: "Showing the latest 5 messages.",
   detailsInfo: "Information",
   detailsConversation: "Conversation",
   detailsTimeline: "Activity timeline",

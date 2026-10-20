@@ -11,7 +11,9 @@ import {
   FiClock,
   FiFileText,
   FiHeadphones,
+  FiChevronRight,
   FiHelpCircle,
+  FiBookmark,
   FiInfo,
   FiMessageSquare,
   FiRotateCcw,
@@ -25,13 +27,14 @@ import { markTicketSeen } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { getTicket, reopenTicket } from "@/lib/help-desk/service";
+import { addUserReply, getTicket, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import type { Ticket } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
 
 import { HelpDeskErrorState, HelpDeskNotFound, TicketDetailsSkeleton } from "./HelpDeskStates";
 import TicketCategoryChip from "./TicketCategoryChip";
-import TicketConversation from "./TicketConversation";
+import ChatComposer from "./chat/ChatComposer";
+import ChatThread from "./chat/ChatThread";
 import TicketMetaTag from "./TicketMetaTag";
 import TicketPriorityBadge from "./TicketPriorityBadge";
 import TicketStatusBadge from "./TicketStatusBadge";
@@ -58,20 +61,23 @@ export default function TicketDetails({
 
   const [reopenBusy, setReopenBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const found = await getTicket(ticketId);
-      if (!found) {
-        setState("notfound");
-        return;
+  const load = useCallback(
+    async (silent = false) => {
+      try {
+        const found = await getTicket(ticketId);
+        if (!found) {
+          if (!silent) setState("notfound");
+          return;
+        }
+        setTicket(found);
+        setState("ready");
+        if (markSeen) markTicketSeen(found);
+      } catch {
+        if (!silent) setState("error");
       }
-      setTicket(found);
-      setState("ready");
-      if (markSeen) markTicketSeen(found);
-    } catch {
-      setState("error");
-    }
-  }, [ticketId, markSeen]);
+    },
+    [ticketId, markSeen]
+  );
 
   useEffect(() => {
     let active = true;
@@ -86,9 +92,35 @@ export default function TicketDetails({
   // Shared header reload → refetch the open ticket (local state, not React Query).
   useReloadHandler(load);
 
+  // Keep the thread live: an employee reply that arrives while the page is open
+  // shows up on its own, without a manual refresh.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [load]);
+
   const retry = () => {
     setState("loading");
     void load();
+  };
+
+  const sendMessage = async (text: string, attachments: Array<{ name: string; url: string }>) => {
+    if (!ticket) return;
+    const updated = await addUserReply(ticket.id, text || "📎", attachments);
+    setTicket(updated);
+    toast.info(copy.chatSent);
+  };
+
+  const togglePin = async (messageId: string, nextPinned: boolean) => {
+    if (!ticket) return;
+    try {
+      const pinnedMessageId = await pinTicketMessage(ticket.id, messageId, nextPinned);
+      setTicket({ ...ticket, pinnedMessageId });
+    } catch (error) {
+      toast.error(error instanceof Error && error.message ? error.message : copy.chatPinFailed);
+    }
   };
 
   const doReopen = async () => {
@@ -104,6 +136,11 @@ export default function TicketDetails({
       setReopenBusy(false);
     }
   };
+
+  const pinnedMessage =
+    ticket && ticket.pinnedMessageId
+      ? ticket.messages.find((message) => message.id === ticket.pinnedMessageId)
+      : undefined;
 
   if (state === "loading") {
     return (
@@ -237,7 +274,62 @@ export default function TicketDetails({
               <span className="h-px flex-1 bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]" aria-hidden />
             </div>
 
-            <TicketConversation messages={ticket.messages} copy={copy} language={language} />
+            {pinnedMessage ? (
+              <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-[var(--color-action)] bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))] px-3 py-2.5">
+                <FiBookmark className="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-action)]" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-[var(--color-action)]">
+                    {copy.chatPinnedTitle}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 break-words text-[13px] font-medium text-[var(--color-primary)]">
+                    {pinnedMessage.body || copy.chatVoiceNote}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                    {pinnedMessage.authorName?.trim() || (pinnedMessage.author === "user" ? copy.you : copy.support)} ·{" "}
+                    {formatDate(pinnedMessage.createdAt, language)} · {formatTime(pinnedMessage.createdAt, language)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void togglePin(pinnedMessage.id, false)}
+                  className="flex-none rounded-full px-2 py-1 text-[11px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))]"
+                >
+                  {copy.chatUnpinAction}
+                </button>
+              </div>
+            ) : null}
+
+            <ChatThread
+              messages={ticket.messages}
+              copy={copy}
+              language={language}
+              pinnedMessageId={ticket.pinnedMessageId}
+              onPin={isResolved ? undefined : (messageId, next) => void togglePin(messageId, next)}
+              limit={5}
+              compact
+            />
+
+            <div className="mt-3 flex flex-col items-start gap-1">
+              <Link
+                href={helpDeskLinks(basePath).conversation(ticket.id)}
+                className={`${HD_GHOST_BTN} inline-flex min-h-10 items-center gap-1.5`}
+              >
+                {copy.chatAllConversations}
+                <FiChevronRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+              {ticket.messages.length > 5 ? (
+                <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                  {copy.chatLatestOnly}
+                </span>
+              ) : null}
+            </div>
+
+            <ChatComposer
+              copy={copy}
+              onSend={sendMessage}
+              disabled={isResolved}
+              notice={isResolved ? copy.chatClosedNotice : undefined}
+            />
           </section>
         </div>
 

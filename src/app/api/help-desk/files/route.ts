@@ -59,10 +59,31 @@ export async function GET(request: Request) {
   }
 
   const fileName = decodeURIComponent(url.split("/").pop() || "attachment");
+  // Frappe usually sends the right type; fall back to the extension so images,
+  // PDFs and voice notes still render inline when it is generic.
+  const ext = (fileName.split(".").pop() || "").toLowerCase();
+  const byExt: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+    pdf: "application/pdf",
+    webm: "audio/webm",
+    mp3: "audio/mpeg",
+    m4a: "audio/mp4",
+    wav: "audio/wav",
+    ogg: "audio/ogg",
+  };
+  const upstreamType = upstream.headers.get("content-type") || "";
+  const contentType =
+    upstreamType && !/octet-stream/i.test(upstreamType)
+      ? upstreamType
+      : byExt[ext] || "application/octet-stream";
   return new Response(upstream.body, {
     status: 200,
     headers: {
-      "content-type": upstream.headers.get("content-type") || "application/octet-stream",
+      "content-type": contentType,
       "content-disposition": `inline; filename="${fileName.replace(/"/g, "")}"`,
       "cache-control": "private, max-age=60",
     },

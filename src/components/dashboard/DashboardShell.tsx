@@ -146,17 +146,22 @@ export default function DashboardShell({
   const onHelpDeskNew = helpDeskSuffix === "/new";
   const onHelpDeskTickets = helpDeskSuffix === "/tickets";
   const onHelpDeskSolved = helpDeskSuffix === "/solved";
-  const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/");
+  const onHelpDeskConversation = /^\/tickets\/[^/]+\/conversation$/.test(helpDeskSuffix);
+  const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/") && !onHelpDeskConversation;
   const onHelpDeskProblems = helpDeskSuffix === "/problems";
   const onHelpDeskProblem = helpDeskSuffix.startsWith("/problems/");
   const helpDeskTicketId = onHelpDeskDetail
     ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length))
+    : onHelpDeskConversation
+      ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length, helpDeskSuffix.length - "/conversation".length))
     : onHelpDeskProblem
       ? decodeURIComponent(helpDeskSuffix.slice("/problems/".length))
       : undefined;
   const helpDeskView: HelpDeskView = onHelpDeskNew
     ? "new"
-    : onHelpDeskDetail
+    : onHelpDeskConversation
+      ? "conversation"
+      : onHelpDeskDetail
       ? "detail"
       : onHelpDeskTickets
         ? "tickets"

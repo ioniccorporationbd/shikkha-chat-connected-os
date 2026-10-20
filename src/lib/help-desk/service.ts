@@ -188,13 +188,37 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   return normaliseTicket(data.ticket);
 }
 
-/** Append a customer reply (stored as a real `Communication` in the ERP). */
-export async function addUserReply(id: string, body: string): Promise<Ticket> {
+/**
+ * Append a customer reply (stored as a real `Communication` in the ERP) with
+ * any chat attachments — images, PDFs, documents or a recorded voice note.
+ */
+export async function addUserReply(
+  id: string,
+  body: string,
+  attachments: Array<{ name: string; url: string }> = []
+): Promise<Ticket> {
   const data = await postJson<HelpDeskTicketPayload>(
     `${TICKETS_URL}/${encodeURIComponent(id)}/replies`,
-    { message: body.trim(), language: currentLanguage() }
+    { message: body.trim(), attachments, language: currentLanguage() }
   );
   return normaliseTicket(data.ticket);
+}
+
+/**
+ * Pin (or unpin) one message of this ticket's conversation. The pin is stored
+ * per customer on the shared cache — no new doctype, field or table — and comes
+ * back on `getTicket()` so the details page can keep showing it.
+ */
+export async function pinTicketMessage(
+  id: string,
+  messageId: string,
+  pinned: boolean
+): Promise<string | null> {
+  const data = await postJson<{ pinnedMessageId?: string | null }>(
+    `${TICKETS_URL}/${encodeURIComponent(id)}/pins`,
+    { message: messageId, pinned, language: currentLanguage() }
+  );
+  return data.pinnedMessageId ?? null;
 }
 
 /** Reopen a resolved/closed ticket — the user says "the problem is still there". */

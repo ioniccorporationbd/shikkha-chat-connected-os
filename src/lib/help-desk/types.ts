@@ -63,6 +63,15 @@ export interface TicketAttachment {
 }
 
 /** One entry in a ticket's conversation timeline. */
+/** A file carried by a chat message (image, PDF, document or voice note). */
+export interface MessageAttachment {
+  /** ERP file URL, served through `/api/help-desk/files`. */
+  url: string;
+  fileName?: string;
+  fileType?: string;
+  size?: number;
+}
+
 export interface TicketMessage {
   id: string;
   author: MessageAuthor;
@@ -75,6 +84,8 @@ export interface TicketMessage {
   steps?: string[];
   /** When this entry changed the ticket status, the new status (for the timeline). */
   statusChange?: TicketStatus;
+  /** Files attached to this message. */
+  attachments?: MessageAttachment[];
 }
 
 /** The person who filed the ticket (or who is tracking it). */
@@ -101,6 +112,8 @@ export interface Ticket {
   attachments: TicketAttachment[];
   /** The full conversation, oldest first. */
   messages: TicketMessage[];
+  /** The message this customer pinned to the ticket, if any (ERP cache-backed). */
+  pinnedMessageId?: string | null;
   /** ISO timestamps. */
   createdAt: string;
   updatedAt: string;

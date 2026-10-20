@@ -8,6 +8,7 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
+import HelpDeskConversation from "./HelpDeskConversation";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
@@ -20,6 +21,7 @@ export type HelpDeskView =
   | "tickets"
   | "solved"
   | "detail"
+  | "conversation"
   | "problems"
   | "problem";
 
@@ -85,6 +87,10 @@ export default function HelpDeskDashboard({
         <TicketDetails ticketId={ticketId} copy={copy} language={language} basePath={basePath} markSeen />
       </div>
     );
+  }
+
+  if (view === "conversation" && ticketId) {
+    return <HelpDeskConversation ticketId={ticketId} copy={copy} language={language} basePath={basePath} />;
   }
 
   if (view === "tickets") {

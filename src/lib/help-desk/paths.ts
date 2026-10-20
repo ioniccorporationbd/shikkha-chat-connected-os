@@ -23,6 +23,8 @@ export interface HelpDeskLinks {
   solved: string;
   /** A single ticket's details. */
   ticket: (id: string) => string;
+  /** The full WhatsApp-style conversation of one ticket. */
+  conversation: (id: string) => string;
   /** The per-ticket Messages index. */
   /** A single ticket conversation inside Messages. */
   /** Support's problem queue (every customer ticket, answered or not). */
@@ -40,6 +42,7 @@ export function helpDeskLinks(base = `/${HELP_DESK_SEGMENT}`): HelpDeskLinks {
     tickets: `${root}/tickets`,
     solved: `${root}/solved`,
     ticket: (id: string) => `${root}/tickets/${encodeURIComponent(id)}`,
+    conversation: (id: string) => `${root}/tickets/${encodeURIComponent(id)}/conversation`,
     problems: `${root}/problems`,
     problem: (id: string) => `${root}/problems/${encodeURIComponent(id)}`,
   };
