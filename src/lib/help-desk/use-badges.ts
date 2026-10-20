@@ -8,7 +8,6 @@ import { getHelpDeskBadges } from "./conversations";
 import type { HelpDeskBadgeCounts } from "./types";
 
 export const EMPTY_BADGE_COUNTS: HelpDeskBadgeCounts = {
-  messages: 0,
   open_tickets: 0,
   solved_tickets: 0,
   new_problem: 0,

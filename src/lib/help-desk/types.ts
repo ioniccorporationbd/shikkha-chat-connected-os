@@ -273,8 +273,6 @@ export interface ConversationSummary {
 /** Server payload of `GET /api/help-desk/conversations`. */
 /** Unread activity counts for the Help Desk section cards and nav entries. */
 export interface HelpDeskBadgeCounts {
-  /** Unread messages on the whole visible inbox (support) / replies (customer). */
-  messages: number;
   /** Customer: unread support replies on Open tickets. Always 0 for staff. */
   open_tickets: number;
   /** Customer: unread support replies on Resolved/Closed tickets. */

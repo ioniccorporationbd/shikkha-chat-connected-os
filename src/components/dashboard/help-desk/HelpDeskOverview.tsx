@@ -10,7 +10,6 @@ import {
   FiHeadphones,
   FiInbox,
   FiList,
-  FiMessageSquare,
   FiPlusCircle,
   FiRefreshCw,
   FiTool,
@@ -113,20 +112,20 @@ export default function HelpDeskOverview({
   ];
 
   // The employee overview mirrors the customer one but its section buttons are
-  // the three worklists the help desk is built around, in order: New Problem
-  // (open tickets only), Solve Problem (everything already worked on) and
-  // Messages. The customer keeps file-ticket / open / solved / messages.
+  // the two worklists the help desk is built around: New Problem (open tickets
+  // only) and Solve Problem (everything already worked on). The customer keeps
+  // file-ticket / open / solved. Messages is deliberately absent on both sides:
+  // replies live on the ticket itself, so a separate inbox duplicated the
+  // timeline and split unread state.
   const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
     ? [
         { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
         { key: "solve-problem", label: conversationCopy.navSolveProblem, href: links.solved, icon: FiTool },
-        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
       ]
     : [
         { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
         { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
         { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
-        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
       ];
 
   // Hero buttons: the employee jumps straight into the New Problem queue; the
@@ -134,7 +133,6 @@ export default function HelpDeskOverview({
   const heroActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
     ? [
         { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
-        { key: "messages", label: conversationCopy.messagesTitle, href: links.messages, icon: FiMessageSquare },
       ]
     : [
         { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
@@ -209,7 +207,7 @@ export default function HelpDeskOverview({
           {/* Quick actions */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
@@ -385,8 +383,6 @@ function TicketRow({
 /** Which live count belongs to which section button (0 = no badge). */
 function badgeCountFor(key: string, counts: HelpDeskBadgeCounts): number {
   switch (key) {
-    case "messages":
-      return counts.messages;
     case "new-problem":
       return counts.new_problem;
     case "solve-problem":

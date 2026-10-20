@@ -8,7 +8,6 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
-import HelpDeskMessages from "./HelpDeskMessages";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
@@ -21,8 +20,6 @@ export type HelpDeskView =
   | "tickets"
   | "solved"
   | "detail"
-  | "messages"
-  | "conversation"
   | "problems"
   | "problem";
 
@@ -105,25 +102,10 @@ export default function HelpDeskDashboard({
     );
   }
 
-  if (view === "messages") {
-    return <HelpDeskMessages language={language} basePath={basePath} />;
-  }
-
   if (view === "problems") {
     // New Problem: only tickets the ERP still reports as open. The queue opens
     // the detail card in place, so there is no separate problem page to visit.
     return <ProblemQueue language={language} mode="open" />;
-  }
-
-  if (view === "conversation" && ticketId) {
-    return (
-      <HelpDeskTicketThread
-        language={language}
-        ticketId={ticketId}
-        listHref={links.messages}
-        backFallback={links.messages}
-      />
-    );
   }
 
   if (view === "problem" && ticketId) {
