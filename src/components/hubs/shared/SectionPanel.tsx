@@ -140,7 +140,7 @@ export default function SectionPanel({
   };
 
   const iconTileClass = dash
-    ? "interface-icon-text sc-hc-icon-tile grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#032521] text-[var(--color-white)]"
+    ? "interface-icon-text sc-hc-icon-tile grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]"
     : "interface-icon-text grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[var(--color-secondary-strong)]";
 
   const body = (

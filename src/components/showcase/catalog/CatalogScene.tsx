@@ -54,7 +54,7 @@ export default function CatalogScene({
     <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 opacity-90 blur-[78px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffffff]/75 opacity-90 blur-[78px]"
       />
       <div
         aria-hidden="true"
@@ -72,7 +72,7 @@ export default function CatalogScene({
           </button>
 
           <div
-            className="relative w-fit rounded-[26px] border-[3px] bg-white/18 p-[8px] shadow-[0_28px_80px_color-mix(in_srgb,var(--color-primary)_9%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_78%,transparent)] backdrop-blur-[4px]"
+            className="relative w-fit rounded-[26px] border-[3px] bg-[#ffffff]/18 p-[8px] shadow-[0_28px_80px_color-mix(in_srgb,var(--color-primary)_9%,transparent),inset_0_1px_0_color-mix(in_srgb,var(--color-white)_78%,transparent)] backdrop-blur-[4px]"
             style={{ borderColor: "var(--color-secondary)" }}
           >
             <span

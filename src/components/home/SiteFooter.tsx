@@ -82,7 +82,7 @@ const COPY: Record<
  */
 function BrandLogo({ brand }: { brand: string }) {
   return (
-    <span className="inline-flex items-center rounded-2xl bg-[var(--color-white)] px-4 py-2.5 shadow-[0_18px_40px_-20px_rgba(0,0,0,0.65)] ring-1 ring-[color-mix(in_srgb,var(--color-white)_14%,transparent)]">
+    <span className="inline-flex items-center rounded-2xl bg-[#ffffff] px-4 py-2.5 shadow-[0_18px_40px_-20px_rgba(0,0,0,0.65)] ring-1 ring-[color-mix(in_srgb,#ffffff_14%,transparent)]">
       <Image
         src="/images/logo.png"
         alt={brand}
@@ -105,7 +105,7 @@ function FooterColumn({
 }) {
   return (
     <nav className="flex flex-col gap-4" aria-label={heading}>
-      <h4 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-white)_58%,transparent)]">
+      <h4 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,#ffffff_58%,transparent)]">
         {heading}
       </h4>
       <ul className="flex flex-col gap-3">{children}</ul>
@@ -129,7 +129,7 @@ function FooterLink({
     <Link
       href={href}
       {...(dataNoTranslate ? { "data-no-translate": "true" } : {})}
-      className="group inline-flex w-fit items-center gap-1.5 text-[14px] font-medium text-[color-mix(in_srgb,var(--color-white)_82%,transparent)] transition-colors duration-200 hover:text-[var(--color-white)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary-dark)]"
+      className="group inline-flex w-fit items-center gap-1.5 text-[14px] font-medium text-[color-mix(in_srgb,#ffffff_82%,transparent)] transition-colors duration-200 hover:text-[#ffffff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink-surface)]"
     >
       <span className="relative">
         {label}
@@ -163,7 +163,7 @@ export default function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative w-full overflow-hidden bg-[var(--color-primary-dark)] text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+    <footer className="relative w-full overflow-hidden bg-[var(--color-ink-surface)] text-[color-mix(in_srgb,#ffffff_82%,transparent)]">
       {/* slim brand accent hairline along the top edge */}
       <div
         aria-hidden
@@ -177,11 +177,11 @@ export default function SiteFooter() {
             <Link
               href="/"
               aria-label={c.brand}
-              className="rounded-2xl transition duration-300 hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary-dark)]"
+              className="rounded-2xl transition duration-300 hover:-translate-y-0.5 hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink-surface)]"
             >
               <BrandLogo brand={c.brand} />
             </Link>
-            <p className="mt-4 max-w-[34ch] text-[14px] leading-6 text-[color-mix(in_srgb,var(--color-white)_66%,transparent)]">
+            <p className="mt-4 max-w-[34ch] text-[14px] leading-6 text-[color-mix(in_srgb,#ffffff_66%,transparent)]">
               {c.tagline}
             </p>
           </div>
@@ -209,8 +209,8 @@ export default function SiteFooter() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[color-mix(in_srgb,var(--color-white)_14%,transparent)] pt-6">
-          <p className="text-[13px] text-[color-mix(in_srgb,var(--color-white)_60%,transparent)]">
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[color-mix(in_srgb,#ffffff_14%,transparent)] pt-6">
+          <p className="text-[13px] text-[color-mix(in_srgb,#ffffff_60%,transparent)]">
             <span data-no-translate="true">
               © {year} {c.brand}.
             </span>{" "}
@@ -220,7 +220,7 @@ export default function SiteFooter() {
           <Link
             href="#intro"
             aria-label={c.backToTop}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-white)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_10%,transparent)] text-[var(--color-white)] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-primary-dark)]"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color-mix(in_srgb,#ffffff_20%,transparent)] bg-[color-mix(in_srgb,#ffffff_10%,transparent)] text-[#ffffff] transition duration-300 hover:-translate-y-0.5 hover:border-[var(--color-action)] hover:bg-[var(--color-action)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-ink-surface)]"
           >
             <FiArrowUp aria-hidden size={18} />
           </Link>

@@ -9,6 +9,7 @@ import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
 import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 import FeatureShowcase from "@/components/showcase/FeatureShowcase";
@@ -645,6 +646,11 @@ function LanguageSection() {
       {/* Exactly the Dashboard account-dropdown control: ONE single toggle,
           never a separate bespoke segmented switch. */}
       <DashboardLanguageToggle variant="full" />
+
+      {/* Appearance sits beside the language control, same pill style. */}
+      <div className="mt-2.5">
+        <ThemeToggle variant="full" />
+      </div>
 
       {/* Help Desk lives in the SAME section as the language control. */}
       <div className="mt-3 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-3">

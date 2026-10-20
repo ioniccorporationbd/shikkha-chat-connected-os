@@ -231,7 +231,7 @@ export default function CatalogFeatureScene({
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/70 opacity-90 blur-[88px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffffff]/70 opacity-90 blur-[88px]"
       />
       <div
         aria-hidden="true"

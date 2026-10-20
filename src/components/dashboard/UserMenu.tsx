@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 
 import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import { authCopyFor } from "@/lib/auth/messages";
 import { profileCopyFor } from "@/lib/auth/profile-messages";
@@ -289,12 +290,20 @@ export default function UserMenu({
               <DashboardLanguageToggle variant="full" />
             </div>
 
+            {/* Appearance switch — same placement pattern as language. */}
+            <div className="px-2 pb-0.5 pt-1.5">
+              <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                {dashCopy.themeLabel}
+              </p>
+              <ThemeToggle variant="full" />
+            </div>
+
             <button
               type="button"
               role="menuitem"
               onClick={runThen(onSignOut)}
               disabled={signingOut}
-              className="mt-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-primary)] px-3 py-2.5 transition hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+              className="mt-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-deep-surface)] px-3 py-2.5 transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-60"
             >
               <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
                 <FiLogOut aria-hidden size={15} />

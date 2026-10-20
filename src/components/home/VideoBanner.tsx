@@ -164,7 +164,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
       ref={sectionRef}
       id={id}
       lang={currentLanguage}
-      className="relative overflow-visible bg-white"
+      className="relative overflow-visible bg-[var(--color-white)]"
       style={hold > 0 ? { height: `calc(100svh + ${hold * 100}svh)` } : undefined}
     >
       <div className="sticky top-0 h-[100svh] overflow-hidden bg-[var(--color-primary)]">
@@ -182,7 +182,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-10 bg-white/[0.03]" />
+        <div className="pointer-events-none absolute inset-0 z-10 bg-[#ffffff]/[0.03]" />
 
         <div
           className={`pointer-events-none absolute inset-0 z-10 ${content.leftGlow} via-transparent to-transparent`}
@@ -192,9 +192,9 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
           className={`pointer-events-none absolute inset-0 z-10 ${content.rightGlow} via-transparent to-transparent`}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-white/18 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[170px] bg-gradient-to-b from-[#ffffff]/18 to-transparent" />
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-white/14 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[200px] bg-gradient-to-t from-[#ffffff]/14 to-transparent" />
 
         {/* Soft radial scrim so the floating copy keeps its contrast over any frame. */}
         <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(80%_62%_at_50%_50%,rgba(0,0,0,0.36),transparent_76%)]" />
@@ -203,7 +203,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
         <div className="absolute bottom-7 left-5 z-40 lg:bottom-9 lg:left-10">
           <span
             lang="en"
-            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-white/60 bg-white/20 text-[15px] font-black tabular-nums text-white shadow-[0_16px_38px_rgba(0,0,0,0.20)] backdrop-blur-md"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#ffffff]/60 bg-[#ffffff]/20 text-[15px] font-black tabular-nums text-[#ffffff] shadow-[0_16px_38px_rgba(0,0,0,0.20)] backdrop-blur-md"
           >
             {index}
           </span>
@@ -214,7 +214,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
           onClick={toggleVideo}
           aria-label={isPaused ? text.playVideo : text.pauseVideo}
           title={isPaused ? text.playVideo : text.pauseVideo}
-          className="absolute right-5 top-5 z-40 flex h-[54px] w-[54px] items-center justify-center rounded-full border border-white/60 bg-white/20 text-white shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-md transition duration-300 hover:scale-105 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white lg:right-10 lg:top-8"
+          className="absolute right-5 top-5 z-40 flex h-[54px] w-[54px] items-center justify-center rounded-full border border-[#ffffff]/60 bg-[#ffffff]/20 text-[#ffffff] shadow-[0_16px_38px_rgba(0,0,0,0.14)] backdrop-blur-md transition duration-300 hover:scale-105 hover:bg-white hover:text-[var(--sc-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffffff] lg:right-10 lg:top-8"
         >
           {isPaused ? (
             <FaPlay className="text-[22px]" aria-hidden="true" />
@@ -230,21 +230,21 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
           >
             <motion.span
               style={pillStyle}
-              className="mb-6 inline-flex items-center justify-center gap-2.5 rounded-full border border-white/60 bg-white/25 px-5 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md md:text-[13px]"
+              className="mb-6 inline-flex items-center justify-center gap-2.5 rounded-full border border-[#ffffff]/60 bg-[#ffffff]/25 px-5 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ffffff] backdrop-blur-md md:text-[13px]"
             >
               {text.pill}
             </motion.span>
 
             <motion.h2
               style={titleStyle}
-              className="text-balance text-[26px] font-black leading-[1.08] tracking-[-0.02em] text-white drop-shadow-[0_3px_22px_rgba(0,0,0,0.5)] sm:text-[32px] md:text-[42px] lg:text-[52px]"
+              className="text-balance text-[26px] font-black leading-[1.08] tracking-[-0.02em] text-[#ffffff] drop-shadow-[0_3px_22px_rgba(0,0,0,0.5)] sm:text-[32px] md:text-[42px] lg:text-[52px]"
             >
               {text.title}
             </motion.h2>
 
             <motion.p
               style={descStyle}
-              className="mt-6 max-w-[760px] text-[15px] font-medium leading-[1.7] text-white/95 drop-shadow-[0_3px_16px_rgba(0,0,0,0.5)] md:text-[17px] lg:text-[18px]"
+              className="mt-6 max-w-[760px] text-[15px] font-medium leading-[1.7] text-[#ffffff]/95 drop-shadow-[0_3px_16px_rgba(0,0,0,0.5)] md:text-[17px] lg:text-[18px]"
             >
               {text.description}
             </motion.p>
@@ -252,7 +252,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
         </div>
 
         {/* Scroll indicator (চিহ্ন): label + gently bobbing chevron, bottom-center. */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-7 z-40 flex flex-col items-center gap-2.5 text-white/85">
+        <div className="pointer-events-none absolute inset-x-0 bottom-7 z-40 flex flex-col items-center gap-2.5 text-[#ffffff]/85">
           <span className="text-[10px] font-bold uppercase tracking-[0.30em] drop-shadow-[0_4px_14px_rgba(0,0,0,0.35)]">
             {text.scroll}
           </span>
@@ -260,7 +260,7 @@ export default function VideoBanner({ id, content, hold = 0.8 }: Props) {
             aria-hidden="true"
             animate={reduce ? undefined : { y: [0, 7, 0] }}
             transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 bg-white/12 backdrop-blur-sm"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#ffffff]/45 bg-[#ffffff]/12 backdrop-blur-sm"
           >
             <FaChevronDown className="text-[12px]" />
           </motion.span>

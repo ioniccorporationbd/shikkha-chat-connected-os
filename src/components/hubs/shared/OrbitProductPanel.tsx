@@ -220,7 +220,7 @@ function ProductTile({
 
       <motion.span
         aria-hidden="true"
-        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-white/45 blur-[1px]"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[#ffffff]/45 blur-[1px]"
         initial={{ x: "-25%" }}
         whileHover={
           shouldReduceMotion
@@ -317,7 +317,7 @@ export default function OrbitProductPanel({
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/75 opacity-90 blur-[78px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffffff]/75 opacity-90 blur-[78px]"
       />
 
       <motion.div
@@ -350,7 +350,7 @@ export default function OrbitProductPanel({
         <div className="connected-orbit-wrap relative [transform-style:preserve-3d]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-white/35 opacity-60 blur-[34px]"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[#ffffff]/35 opacity-60 blur-[34px]"
           />
 
           <motion.button
@@ -385,7 +385,7 @@ export default function OrbitProductPanel({
 
           <div
             className={[
-              "relative w-fit rounded-[26px] border-[3px] bg-white/18 p-[8px]",
+              "relative w-fit rounded-[26px] border-[3px] bg-[#ffffff]/18 p-[8px]",
               "shadow-[0_28px_80px_color-mix(in srgb, var(--color-primary) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
               "backdrop-blur-[4px]",
             ].join(" ")}

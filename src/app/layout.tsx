@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
+import ThemeScript from "@/components/theme/ThemeScript";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Toaster from "@/components/ui/Toaster";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
@@ -17,7 +18,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="bn" data-lang="bn" translate="no" className="h-full antialiased">
+    // The pre-paint theme script sets data-theme / color-scheme on <html>
+    // before hydration; suppressHydrationWarning on the element below keeps
+    // that deliberate attribute write from reading as a mismatch.
+    <html
+      lang="bn"
+      data-lang="bn"
+      translate="no"
+      className="h-full antialiased"
+      suppressHydrationWarning
+    >
       {/*
         The initial language is a deterministic constant ("bn") for both the
         server render and the client's first render, so React compares the
@@ -42,6 +52,9 @@ export default function RootLayout({
             server-rendered (it adds translated-ltr / <font> and changes
             lang="bn" -> "en"). The app has its own language switch. */}
         <meta name="google" content="notranslate" />
+        {/* Sets <html data-theme> from the saved choice / OS preference before
+            first paint — no flash of the wrong theme and no hydration shift. */}
+        <ThemeScript />
       </head>
       <body
         suppressHydrationWarning

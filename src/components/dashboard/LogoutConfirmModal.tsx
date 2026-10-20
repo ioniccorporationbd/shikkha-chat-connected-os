@@ -57,7 +57,7 @@ export default function LogoutConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={signingOut}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-deep-surface)] px-5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-60"
           >
             <span className="text-[var(--color-white)]">
               <FiLogOut size={15} aria-hidden />

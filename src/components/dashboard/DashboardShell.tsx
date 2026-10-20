@@ -37,6 +37,7 @@ import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
 import UserAvatar from "@/components/dashboard/UserAvatar";
 import UserMenu from "@/components/dashboard/UserMenu";
+import ThemeToggle from "@/components/theme/ThemeToggle";
 import ClientErrorBridge from "@/components/dashboard/ClientErrorBridge";
 import { postJson } from "@/lib/api/http";
 import { reportClientError } from "@/lib/log/report-error";
@@ -563,7 +564,7 @@ export default function DashboardShell({
     <Link
       href="/"
       onClick={onClick}
-      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-primary)] bg-[var(--color-primary)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-primary-dark)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] active:translate-y-0"
+      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-deep-surface)] bg-[var(--color-deep-surface)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-deep-surface-hover)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] active:translate-y-0"
     >
       <FiHome aria-hidden size={16} className="shrink-0 text-[var(--color-white)]" />
       <span className="text-[13px] font-black tracking-[-0.01em] text-[var(--color-white)]">
@@ -583,7 +584,7 @@ export default function DashboardShell({
         type="button"
         onClick={requestSignOut}
         disabled={signingOut}
-        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-primary)] px-3.5 py-2.5 transition hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-deep-surface)] px-3.5 py-2.5 transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-60"
       >
         <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
           <FiLogOut size={16} />
@@ -688,13 +689,15 @@ export default function DashboardShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
+              {/* Light ⇄ dark switch — additive; the light theme is unchanged. */}
+              <ThemeToggle />
               <button
                 type="button"
                 onClick={handleReload}
                 disabled={isFetching || reloading}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-primary)] bg-[var(--color-primary)] transition hover:bg-[var(--color-primary-dark)] disabled:opacity-70"
+                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-deep-surface)] bg-[var(--color-deep-surface)] transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-70"
               >
                 <span className="text-[var(--color-white)]">
                   <FiRefreshCw size={15} className={isFetching || reloading ? "animate-spin" : undefined} />
