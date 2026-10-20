@@ -129,6 +129,26 @@ export interface ConversationCopy {
   composerVoiceNote: string;
   jumpToQuoted: string;
 
+  /* ---- chat header + message actions + media ---- */
+  /** Header identity line shown to a customer: their supporter. */
+  chatSupportName: string;
+  /** Header identity line shown to support: the customer who filed it. */
+  chatCustomerName: string;
+  chatStatusPrefix: string;
+  pinAction: string;
+  unpinAction: string;
+  pinnedBar: string;
+  pinFailed: string;
+  pinToast: string;
+  unpinToast: string;
+  chatEventOpened: string;
+  copyAction: string;
+  copied: string;
+  imageOpen: string;
+  imageClose: string;
+  imageDownload: string;
+  voicePreview: string;
+
   /* ---- employee: problems + status ---- */
   problemsTitle: string;
   problemsSubtitle: string;
@@ -293,6 +313,22 @@ const bn: ConversationCopy = {
   composerAttachmentOnly: "সংযুক্তি",
   composerVoiceNote: "ভয়েস বার্তা",
   jumpToQuoted: "মূল বার্তায় যান",
+  chatSupportName: "শিক্ষা চ্যাট সাপোর্ট",
+  chatCustomerName: "গ্রাহক",
+  chatStatusPrefix: "স্ট্যাটাস",
+  pinAction: "পিন করুন",
+  unpinAction: "পিন সরান",
+  pinnedBar: "পিন করা বার্তা",
+  pinFailed: "বার্তাটি পিন করা যায়নি। আবার চেষ্টা করুন।",
+  pinToast: "বার্তাটি পিন করা হয়েছে।",
+  unpinToast: "বার্তার পিন সরানো হয়েছে।",
+  chatEventOpened: "টিকিট খোলা হয়েছে",
+  copyAction: "কপি",
+  copied: "কপি হয়েছে",
+  imageOpen: "ছবিটি বড় করে দেখুন",
+  imageClose: "বন্ধ করুন",
+  imageDownload: "ডাউনলোড",
+  voicePreview: "ভয়েস নোট প্রিভিউ",
 
   problemsTitle: "সমস্যা ব্যবস্থাপনা",
   problemsSubtitle: "গ্রাহকের জমা দেওয়া সমস্যাগুলো এখানে তদন্ত করুন ও সমাধান দিন।",
@@ -454,6 +490,22 @@ const en: ConversationCopy = {
   composerAttachmentOnly: "Attachment",
   composerVoiceNote: "Voice message",
   jumpToQuoted: "Go to the original message",
+  chatSupportName: "Shikkha Chat Support",
+  chatCustomerName: "Customer",
+  chatStatusPrefix: "Status",
+  pinAction: "Pin",
+  unpinAction: "Unpin",
+  pinnedBar: "Pinned message",
+  pinFailed: "Couldn't pin that message. Try again.",
+  pinToast: "Message pinned.",
+  unpinToast: "Pin removed.",
+  chatEventOpened: "Ticket opened",
+  copyAction: "Copy",
+  copied: "Copied",
+  imageOpen: "Open image",
+  imageClose: "Close",
+  imageDownload: "Download",
+  voicePreview: "Voice note preview",
 
   problemsTitle: "Problem management",
   problemsSubtitle: "Investigate the problems customers submit and post the solution.",

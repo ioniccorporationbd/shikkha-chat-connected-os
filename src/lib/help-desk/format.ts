@@ -98,9 +98,12 @@ export function formatChatDay(iso: string | undefined, language: string): string
   if (key === dhakaDayKey(new Date(now - 86_400_000))) return language === "en" ? "Yesterday" : "গতকাল";
 
   try {
+    // Carry the year so an old thread reads "১৮ অক্টোবর, ২০২৬" instead of a
+    // bare day/month that could be any October.
     return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
-      day: "2-digit",
-      month: "short",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
       timeZone: "Asia/Dhaka",
     }).format(date);
   } catch {

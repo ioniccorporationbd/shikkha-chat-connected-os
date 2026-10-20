@@ -9,6 +9,17 @@ import type { ConversationMessage } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
 
+/** A real ticket event (opened / status changed / resolved) shown as a chip. */
+export type ThreadSystemEvent = {
+  id: string;
+  at: string;
+  label: string;
+};
+
+type ThreadRow =
+  | { kind: "message"; key: string; at: string; message: ConversationMessage; dayLabel: string | null }
+  | { kind: "event"; key: string; at: string; label: string; dayLabel: string | null };
+
 /**
  * The scrollable ticket thread.
  *
@@ -27,6 +38,11 @@ export default function ConversationThread({
   onQuote,
   heightClass,
   bare = false,
+  onPin,
+  canPin = false,
+  pinnedId = null,
+  focus = null,
+  systemEvents,
 }: {
   copy: ConversationCopy;
   language: string;
@@ -39,6 +55,21 @@ export default function ConversationThread({
   heightClass?: string;
   /** Drop the panel chrome so the thread can sit flush inside a chat card. */
   bare?: boolean;
+  /** Pin/unpin a message — rendered only where the ERP allows a reply. */
+  onPin?: (message: ConversationMessage) => void;
+  canPin?: boolean;
+  pinnedId?: string | null;
+  /**
+   * External jump request (pinned banner, notification). `nonce` must change
+   * for the same id to be jumped to again.
+   */
+  focus?: { id: string; nonce: number } | null;
+  /**
+   * Verified ticket events rendered as centred chips. Only the immersive
+   * /conversation route passes these: in ticket details the same events live
+   * in the timeline card, and showing them twice would be noise.
+   */
+  systemEvents?: ThreadSystemEvent[];
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -105,16 +136,49 @@ export default function ConversationThread({
     // The gap snapshot lives in a ref; the effect only re-runs on data.
   }, [messages, loading, error]);
 
-  // One pass over the thread: a separator before the first message of each day,
-  // then the bubble itself. Precomputed so render never mutates shared state.
-  const rows = useMemo(() => {
-    const labels = messages.map((message) => formatChatDay(message.createdAt, language));
-    return messages.map((message, index) => ({
-      key: message.id,
+  // Jump requests from outside (pinned banner, etc.). The message must already
+  // be in the thread; the banner only renders for loaded messages.
+  const focusNonce = focus?.nonce ?? 0;
+  useEffect(() => {
+    if (!focus?.id || focusNonce === 0) return;
+    const timer = window.setTimeout(() => jumpToMessage(focus.id), 30);
+    return () => window.clearTimeout(timer);
+  }, [focus?.id, focusNonce, jumpToMessage]);
+
+  // One pass over the thread: a separator before the first entry of each day,
+  // then bubbles and (on the chat-only route) system-event chips interleaved
+  // by time. Precomputed so render never mutates shared state.
+  const rows = useMemo<ThreadRow[]>(() => {
+    const entries: ThreadRow[] = messages.map((message) => ({
+      kind: "message",
+      key: `m-${message.id}`,
+      at: message.createdAt,
       message,
+      dayLabel: null,
+    }));
+
+    if (systemEvents?.length) {
+      const known = new Set(messages.map((message) => message.id));
+      for (const event of systemEvents) {
+        if (known.has(event.id)) continue;
+        entries.push({ kind: "event", key: `e-${event.id}`, at: event.at, label: event.label, dayLabel: null });
+      }
+      // An event with a missing timestamp is put first (it is normally the
+      // ticket-created marker); messages missing one keep their server order.
+      const time = (row: ThreadRow) => {
+        const value = new Date(row.at).getTime();
+        if (!Number.isNaN(value)) return value;
+        return row.kind === "event" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+      };
+      entries.sort((a, b) => time(a) - time(b) || (a.kind === "message" ? -1 : 1));
+    }
+
+    const labels = entries.map((entry) => formatChatDay(entry.at, language));
+    return entries.map((entry, index) => ({
+      ...entry,
       dayLabel: index === 0 || labels[index] !== labels[index - 1] ? labels[index] : null,
     }));
-  }, [messages, language]);
+  }, [messages, language, systemEvents]);
 
   return (
     <div className="relative">
@@ -157,7 +221,7 @@ export default function ConversationThread({
               {copy.conversationRetry}
             </button>
           </div>
-        ) : messages.length === 0 ? (
+        ) : rows.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] text-[var(--color-primary)]">
               <FiMessageCircle size={20} aria-hidden />
@@ -168,25 +232,36 @@ export default function ConversationThread({
           </div>
         ) : (
           <div className="mt-auto flex flex-col gap-2.5">
-          {rows.map((row) => (
-            <Fragment key={row.key}>
-              {row.dayLabel ? (
-                <div className="my-1 flex items-center justify-center">
-                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-3 py-0.5 text-[10.5px] font-bold text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
-                    {row.dayLabel}
-                  </span>
-                </div>
-              ) : null}
-              <MessageBubble
-                message={row.message}
-                copy={copy}
-                language={language}
-                onQuote={onQuote}
-                onJumpTo={jumpToMessage}
-                highlighted={highlightId === row.message.id}
-              />
-            </Fragment>
-          ))}
+            {rows.map((row) => (
+              <Fragment key={row.key}>
+                {row.dayLabel ? (
+                  <div className="my-1 flex items-center justify-center">
+                    <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-3 py-0.5 text-[10.5px] font-bold text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
+                      {row.dayLabel}
+                    </span>
+                  </div>
+                ) : null}
+                {row.kind === "event" ? (
+                  <div className="my-0.5 flex justify-center" data-system-event={row.key}>
+                    <span className="max-w-[88%] rounded-full border border-[color-mix(in_srgb,var(--color-primary)_13%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-2.5 py-1 text-center text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_64%,transparent)]">
+                      {row.label}
+                    </span>
+                  </div>
+                ) : (
+                  <MessageBubble
+                    message={row.message}
+                    copy={copy}
+                    language={language}
+                    onQuote={onQuote}
+                    onJumpTo={jumpToMessage}
+                    onPin={onPin}
+                    canPin={canPin}
+                    pinned={pinnedId === row.message.id}
+                    highlighted={highlightId === row.message.id}
+                  />
+                )}
+              </Fragment>
+            ))}
           </div>
         )}
         <div ref={bottomRef} />

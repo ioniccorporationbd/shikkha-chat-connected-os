@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { FiAlertCircle, FiChevronRight, FiMessageCircle, FiRefreshCw } from "react-icons/fi";
+import { FiAlertCircle, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
-import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
+import ConversationHeader from "@/components/help-desk/conversation/ConversationHeader";
+import ConversationThread, { type ThreadSystemEvent } from "@/components/help-desk/conversation/ConversationThread";
+import PinnedMessageBanner from "@/components/help-desk/conversation/PinnedMessageBanner";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
@@ -17,7 +19,8 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
-import { reopenTicket } from "@/lib/help-desk/service";
+import { helpDeskCopyFor } from "@/lib/help-desk/messages";
+import { pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { toast } from "@/lib/ui/toast";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
 
@@ -25,7 +28,9 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transpar
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 /** How often an open thread asks the ERP for new messages (ms). */
-const POLL_INTERVAL_MS = 30_000;
+// A support conversation should feel live; one tiny request every 15s per
+// open thread is the interval the team already expected here.
+const POLL_INTERVAL_MS = 15_000;
 
 /**
  * One ticket conversation — customer and employee use the same screen.
@@ -63,6 +68,9 @@ export default function HelpDeskTicketThread({
   chatOnly?: boolean;
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
+  // Status names come from the Help Desk copy so the chip reads "Closed", not
+  // the raw lifecycle key the type carries.
+  const hdCopy = useMemo(() => helpDeskCopyFor(language), [language]);
 
   const [payload, setPayload] = useState<ConversationPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +78,12 @@ export default function HelpDeskTicketThread({
   const [missing, setMissing] = useState(false);
 
   const [quoted, setQuoted] = useState<ConversationMessage | null>(null);
+  // Ticket-level pin: the ERP stores which message is pinned on the HD Ticket,
+  // so this state is only ever a mirror of the server value.
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
+  const [pinBusy, setPinBusy] = useState(false);
+  // Jump request handed down to the thread (pinned banner).
+  const [focus, setFocus] = useState<{ id: string; nonce: number } | null>(null);
   const [mode, setMode] = useState<"message" | "requirement">("message");
   const [reopenBusy, setReopenBusy] = useState(false);
 
@@ -95,6 +109,7 @@ export default function HelpDeskTicketThread({
         }
         setMissing(false);
         setPayload(data);
+        setPinnedId(data.ticket.pinnedMessageId ?? null);
         setError(false);
         setStatusValue((current) => current || data.currentStatus || "");
         if (data.unread > 0) {
@@ -220,6 +235,32 @@ export default function HelpDeskTicketThread({
     }
   }, [copy.conversationReopenFailed, copy.conversationReopened, load, reopenBusy, ticketId]);
 
+  // Pin or unpin one message. The ERP decides whether the caller may; we only
+  // reflect whatever pinned id it returns.
+  const togglePin = useCallback(
+    async (message: ConversationMessage) => {
+      if (pinBusy) return;
+      const nextPinned = pinnedId === message.id ? false : true;
+      setPinBusy(true);
+      try {
+        const result = await pinTicketMessage(ticketId, message.id, nextPinned);
+        setPinnedId(result);
+        if (result) {
+          toast.success(copy.pinToast);
+          setFocus({ id: result, nonce: Date.now() });
+        } else {
+          toast.success(copy.unpinToast);
+        }
+      } catch (err) {
+        console.error("[help-desk] pin failed", ticketId, message.id, err);
+        toast.error(copy.pinFailed);
+      } finally {
+        setPinBusy(false);
+      }
+    },
+    [copy.pinFailed, copy.pinToast, copy.unpinToast, pinBusy, pinnedId, ticketId]
+  );
+
   const isSupport = payload?.isSupport ?? false;
   const canReply = payload?.canReply ?? false;
   const canAddRequirement = payload?.canAddRequirement ?? false;
@@ -283,6 +324,24 @@ export default function HelpDeskTicketThread({
   }
 
   const ticket = payload!.ticket;
+
+  const pinnedMessage = pinnedId ? messages.find((message) => message.id === pinnedId) ?? null : null;
+
+  // The immersive route hides the timeline card, so it inherits the verified
+  // status/creation events as chips. Message-like events are skipped: they are
+  // already bubbles in this very thread.
+  const systemEvents: ThreadSystemEvent[] = chatOnly
+    ? (payload!.timeline ?? [])
+        .filter((event) => event.type === "created" || event.type === "status")
+        .map((event) => ({
+          id: event.id,
+          at: event.at,
+          // A creation event is a marker, not a paragraph: the description is
+          // already the first bubble.
+          label: event.type === "created" ? copy.chatEventOpened : event.text,
+        }))
+        .filter((event) => Boolean(event.label))
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -375,20 +434,14 @@ export default function HelpDeskTicketThread({
       ) : null}
 
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action)]">
-              <FiMessageCircle size={14} aria-hidden />
-            </span>
-            <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.conversationTitle}</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            {payload!.unread > 0 ? (
-              <span className="rounded-full bg-[var(--color-action)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
-                {copy.unreadBadge(payload!.unread)}
-              </span>
-            ) : null}
-            {allConversationsHref ? (
+        <ConversationHeader
+          copy={copy}
+          ticket={ticket}
+          isSupport={isSupport}
+          statusLabel={hdCopy.statuses[ticket.status] ?? ticket.status}
+          unread={payload!.unread}
+          actions={
+            allConversationsHref ? (
               <Link
                 href={allConversationsHref}
                 className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
@@ -396,9 +449,19 @@ export default function HelpDeskTicketThread({
                 <FiChevronRight size={12} className="order-2" aria-hidden />
                 {copy.allConversations}
               </Link>
-            ) : null}
-          </div>
-        </div>
+            ) : undefined
+          }
+        />
+
+        {pinnedMessage ? (
+          <PinnedMessageBanner
+            copy={copy}
+            message={pinnedMessage}
+            onJump={() => setFocus({ id: pinnedMessage.id, nonce: Date.now() })}
+            onUnpin={canReply ? () => void togglePin(pinnedMessage) : undefined}
+            unpinBusy={pinBusy}
+          />
+        ) : null}
 
         <div className="bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]">
           <ConversationThread
@@ -410,6 +473,11 @@ export default function HelpDeskTicketThread({
             error={false}
             onRetry={() => void load()}
             onQuote={canReply ? (message) => setQuoted(message) : undefined}
+            onPin={canReply ? (message) => void togglePin(message) : undefined}
+            canPin={canReply}
+            pinnedId={pinnedId}
+            focus={focus}
+            systemEvents={systemEvents}
             heightClass={
               chatOnly
                 ? "max-h-[calc(100dvh-17rem)] min-h-[24rem] sm:max-h-[calc(100dvh-15rem)]"

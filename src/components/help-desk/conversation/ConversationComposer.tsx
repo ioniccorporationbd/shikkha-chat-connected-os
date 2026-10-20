@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiMic, FiPaperclip, FiSend, FiSquare, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
@@ -159,6 +159,21 @@ export default function ConversationComposer({
   const placeholder = requirementMode ? copy.composerRequirementPlaceholder : copy.composerPlaceholder;
   const hasContent = text.trim().length > 0 || files.length > 0;
 
+  // A recorded voice note deserves a listen before it is posted. The object
+  // URLs are local to the browser — nothing is uploaded until Send.
+  const audioPreviews = useMemo(
+    () => files.map((file) => (audioIsAudio(file) ? URL.createObjectURL(file) : null)),
+    [files],
+  );
+  useEffect(
+    () => () => {
+      audioPreviews.forEach((url) => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    },
+    [audioPreviews],
+  );
+
   return (
     <div className="w-full">
       {quoted ? (
@@ -296,6 +311,23 @@ export default function ConversationComposer({
                 </li>
               ))}
             </ul>
+          ) : null}
+
+          {audioPreviews.some(Boolean) ? (
+            <div className="mt-2 space-y-1.5" aria-label={copy.voicePreview}>
+              {audioPreviews.map((url, index) =>
+                url ? (
+                  <audio
+                    key={`preview-${index}`}
+                    controls
+                    preload="metadata"
+                    src={url}
+                    aria-label={`${copy.voicePreview} — ${files[index]?.name ?? ""}`}
+                    className="h-9 w-full max-w-xs"
+                  />
+                ) : null,
+              )}
+            </div>
           ) : null}
 
           {requirementMode ? (
