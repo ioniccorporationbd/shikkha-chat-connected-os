@@ -86,6 +86,7 @@ export interface ConversationCopy {
 
   /* ---- conversation ---- */
   conversationTitle: string;
+  allConversations: string;
   conversationLoading: string;
   conversationErrorTitle: string;
   conversationErrorHint: string;
@@ -120,6 +121,13 @@ export interface ConversationCopy {
   composerRequirementSend: string;
   composerRequirementSent: string;
   composerRequirementHint: string;
+  composerRecordVoice: string;
+  composerRecording: string;
+  composerStopRecording: string;
+  composerMicDenied: string;
+  composerAttachmentOnly: string;
+  composerVoiceNote: string;
+  jumpToQuoted: string;
 
   /* ---- employee: problems + status ---- */
   problemsTitle: string;
@@ -244,6 +252,7 @@ const bn: ConversationCopy = {
   requirementBadge: "অতিরিক্ত রিকোয়ারমেন্ট",
 
   conversationTitle: "কথোপকথন",
+  allConversations: "সব কনভারসেশন",
   conversationLoading: "কথোপকথন লোড হচ্ছে…",
   conversationErrorTitle: "কথোপকথন লোড করা যায়নি",
   conversationErrorHint: "সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
@@ -277,6 +286,13 @@ const bn: ConversationCopy = {
   composerRequirementSend: "রিকোয়ারমেন্ট যোগ করুন",
   composerRequirementSent: "অতিরিক্ত রিকোয়ারমেন্ট যোগ হয়েছে।",
   composerRequirementHint: "টিকিট খোলা থাকা অবস্থায়ই অতিরিক্ত রিকোয়ারমেন্ট যোগ করা যায়।",
+  composerRecordVoice: "ভয়েস রেকর্ড করুন",
+  composerRecording: "রেকর্ড হচ্ছে",
+  composerStopRecording: "রেকর্ডিং থামান",
+  composerMicDenied: "মাইক্রোফোন ব্যবহার করা যায়নি। ব্রাউজারের অনুমতি দিন।",
+  composerAttachmentOnly: "সংযুক্তি",
+  composerVoiceNote: "ভয়েস বার্তা",
+  jumpToQuoted: "মূল বার্তায় যান",
 
   problemsTitle: "সমস্যা ব্যবস্থাপনা",
   problemsSubtitle: "গ্রাহকের জমা দেওয়া সমস্যাগুলো এখানে তদন্ত করুন ও সমাধান দিন।",
@@ -397,6 +413,7 @@ const en: ConversationCopy = {
   requirementBadge: "Additional requirement",
 
   conversationTitle: "Conversation",
+  allConversations: "All conversations",
   conversationLoading: "Loading the conversation…",
   conversationErrorTitle: "The conversation could not be loaded",
   conversationErrorHint: "Something went wrong with the connection. Please try again.",
@@ -430,6 +447,13 @@ const en: ConversationCopy = {
   composerRequirementSend: "Add requirement",
   composerRequirementSent: "Additional requirement added.",
   composerRequirementHint: "Additional requirements can only be added while the ticket is open.",
+  composerRecordVoice: "Record a voice note",
+  composerRecording: "Recording",
+  composerStopRecording: "Stop recording",
+  composerMicDenied: "The microphone is unavailable. Allow it in the browser.",
+  composerAttachmentOnly: "Attachment",
+  composerVoiceNote: "Voice message",
+  jumpToQuoted: "Go to the original message",
 
   problemsTitle: "Problem management",
   problemsSubtitle: "Investigate the problems customers submit and post the solution.",

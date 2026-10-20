@@ -53,7 +53,7 @@ export default function ProblemInfoCard({
   const canShowContact = Boolean(showCustomer && ticket.contact);
 
   return (
-    <section className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+    <section className="rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold text-[var(--color-primary)]">
           {ticket.id}

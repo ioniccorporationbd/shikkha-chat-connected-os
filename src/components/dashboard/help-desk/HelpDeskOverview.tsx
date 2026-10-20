@@ -105,7 +105,7 @@ export default function HelpDeskOverview({
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
     { key: "total", label: copy.summaryTotal, value: summary.total, tone: "var(--color-primary)", icon: FiInbox },
     { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
-    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: STATUS_TONE.waiting_for_user, icon: FiClock },
+    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: "#c98a1f", icon: FiClock },
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
   ];
 

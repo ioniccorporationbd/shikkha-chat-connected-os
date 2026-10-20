@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiAlertCircle, FiRefreshCw } from "react-icons/fi";
+import Link from "next/link";
+import { FiAlertCircle, FiChevronRight, FiMessageCircle, FiRefreshCw } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
@@ -44,6 +45,9 @@ export default function HelpDeskTicketThread({
   listHref,
   backFallback,
   titleOverride,
+  expanded,
+  allConversationsHref,
+  chatOnly = false,
 }: {
   language: string;
   ticketId: string;
@@ -51,6 +55,12 @@ export default function HelpDeskTicketThread({
   listHref: string;
   backFallback: string;
   titleOverride?: string;
+  /** Full-page conversation route: let the thread grow to most of the screen. */
+  expanded?: boolean;
+  /** Link to the full conversation route, shown in the chat card header. */
+  allConversationsHref?: string;
+  /** Chat-only view: the conversation fills the page, problem/timeline hidden. */
+  chatOnly?: boolean;
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
 
@@ -297,37 +307,65 @@ export default function HelpDeskTicketThread({
         </button>
       </div>
 
-      <ProblemInfoCard
-        ticket={ticket}
-        copy={copy}
-        language={language}
-        requirements={requirements}
-        showCustomer={isSupport}
-      />
-
-      <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.conversationTitle}</h2>
-          {payload!.unread > 0 ? (
-            <span className="rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
-              {copy.unreadBadge(payload!.unread)}
-            </span>
-          ) : null}
-        </div>
-
-        <ConversationThread
+      {chatOnly ? null : (
+        <ProblemInfoCard
+          ticket={ticket}
           copy={copy}
           language={language}
-          messages={messages}
-          loading={false}
-          error={false}
-          onRetry={() => void load()}
-          onQuote={canReply ? (message) => setQuoted(message) : undefined}
+          requirements={requirements}
+          showCustomer={isSupport}
         />
+      )}
 
-        <div className="mt-3 flex flex-col gap-2">
+      <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action)]">
+              <FiMessageCircle size={14} aria-hidden />
+            </span>
+            <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.conversationTitle}</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {payload!.unread > 0 ? (
+              <span className="rounded-full bg-[var(--color-action)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
+                {copy.unreadBadge(payload!.unread)}
+              </span>
+            ) : null}
+            {allConversationsHref ? (
+              <Link
+                href={allConversationsHref}
+                className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+              >
+                <FiChevronRight size={12} className="order-2" aria-hidden />
+                {copy.allConversations}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]">
+          <ConversationThread
+            bare
+            copy={copy}
+            language={language}
+            messages={messages}
+            loading={false}
+            error={false}
+            onRetry={() => void load()}
+            onQuote={canReply ? (message) => setQuoted(message) : undefined}
+            heightClass={
+              chatOnly
+                ? "max-h-[calc(100dvh-17rem)] min-h-[24rem] sm:max-h-[calc(100dvh-15rem)]"
+                : expanded
+                  ? "max-h-[min(62vh,46rem)] min-h-[18rem]"
+                  : "max-h-[26rem] min-h-[12rem] sm:max-h-[34rem]"
+            }
+          />
+        </div>
+
+        <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3 pb-3 pt-2.5 sm:px-4">
           {canAddRequirement ? (
-            <div className="flex w-fit items-center gap-1 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1">
+            <div className="mb-2 flex w-fit items-center gap-1 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1">
               {(
                 [
                   { key: "message" as const, label: copy.composerSend },
@@ -382,9 +420,11 @@ export default function HelpDeskTicketThread({
 
       {/* B2 — full audit trail: creation, every reply/requirement, the
           employee solution and each ERP status change, oldest first. */}
-      <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
+      {chatOnly ? null : (
+        <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
+      )}
 
-      {payload!.canChangeStatus ? (
+      {!chatOnly && payload!.canChangeStatus ? (
         <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
           <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
           <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">

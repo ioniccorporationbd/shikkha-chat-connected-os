@@ -25,8 +25,6 @@ export interface HelpDeskLinks {
   ticket: (id: string) => string;
   /** The full WhatsApp-style conversation of one ticket. */
   conversation: (id: string) => string;
-  /** The per-ticket Messages index. */
-  /** A single ticket conversation inside Messages. */
   /** Support's problem queue (every customer ticket, answered or not). */
   problems: string;
   /** A single problem in the employee view. */

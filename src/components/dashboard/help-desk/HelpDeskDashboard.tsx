@@ -3,12 +3,10 @@
 import { FiPlusCircle } from "react-icons/fi";
 
 import CreateTicketForm from "@/components/help-desk/CreateTicketForm";
-import TicketDetails from "@/components/help-desk/TicketDetails";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
-import HelpDeskConversation from "./HelpDeskConversation";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
@@ -81,16 +79,22 @@ export default function HelpDeskDashboard({
     );
   }
 
-  if (view === "detail" && ticketId) {
+  if ((view === "detail" || view === "conversation") && ticketId) {
+    // One shared screen for customers and staff: the problem block in its own
+    // section, then the WhatsApp-style conversation in a completely separate
+    // section. `conversation` is the same thread with a taller panel, so old
+    // "see all messages" links keep working.
     return (
-      <div className="flex flex-col gap-4">
-        <TicketDetails ticketId={ticketId} copy={copy} language={language} basePath={basePath} markSeen />
-      </div>
+      <HelpDeskTicketThread
+        language={language}
+        ticketId={ticketId}
+        listHref={links.tickets}
+        backFallback={links.tickets}
+        expanded={view === "conversation"}
+        chatOnly={view === "conversation"}
+        allConversationsHref={view === "detail" ? links.conversation(ticketId) : undefined}
+      />
     );
-  }
-
-  if (view === "conversation" && ticketId) {
-    return <HelpDeskConversation ticketId={ticketId} copy={copy} language={language} basePath={basePath} />;
   }
 
   if (view === "tickets") {

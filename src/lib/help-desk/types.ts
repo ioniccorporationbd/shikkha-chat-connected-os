@@ -229,11 +229,12 @@ export type ConversationMessageKind = "message" | "requirement" | "resolution";
 
 /** A file attached to one message (an existing ERP `File` record). */
 export interface ConversationAttachment {
-  id: string;
-  name: string;
-  size: number;
-  mime: string;
+  /** Public file URL from the ERP `File` record. */
   url?: string;
+  fileName: string;
+  /** MIME type as stored on the `File` record (may be empty). */
+  fileType: string;
+  size: number;
 }
 
 /** The message this entry quotes as its reply-to reference. */

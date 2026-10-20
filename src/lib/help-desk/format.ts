@@ -67,9 +67,45 @@ export function formatTime(iso: string | undefined, language: string): string {
   }
 }
 
-/** Absolute time for a conversation bubble (date + HH:mm). */
+/** Time shown inside a chat bubble footer, e.g. `08:10 PM`. */
 export function formatBubbleTime(iso: string, language: string): string {
-  return formatDateTime(iso, language);
+  return formatTime(iso, language);
+}
+
+/** Day the timestamp belongs to in Asia/Dhaka, as `YYYY-MM-DD`. */
+function dhakaDayKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Dhaka",
+  }).format(date);
+  return parts; // en-CA renders as YYYY-MM-DD
+}
+
+/**
+ * Separator label for a chat day: Today / Yesterday, otherwise a short date.
+ * The comparison uses the site business timezone, not the browser's.
+ */
+export function formatChatDay(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const key = dhakaDayKey(date);
+  const now = Date.now();
+  if (key === dhakaDayKey(new Date(now))) return language === "en" ? "Today" : "আজ";
+  if (key === dhakaDayKey(new Date(now - 86_400_000))) return language === "en" ? "Yesterday" : "গতকাল";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "short",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return key;
+  }
 }
 
 /** Human file size, e.g. `184 KB`. */

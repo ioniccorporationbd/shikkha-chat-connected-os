@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiArrowDown, FiMessageCircle, FiRefreshCw } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
+import { formatChatDay } from "@/lib/help-desk/format";
 import type { ConversationMessage } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
@@ -24,6 +25,8 @@ export default function ConversationThread({
   error,
   onRetry,
   onQuote,
+  heightClass,
+  bare = false,
 }: {
   copy: ConversationCopy;
   language: string;
@@ -32,11 +35,31 @@ export default function ConversationThread({
   error: boolean;
   onRetry: () => void;
   onQuote?: (message: ConversationMessage) => void;
+  /** Override the panel height (the full-page route wants a taller thread). */
+  heightClass?: string;
+  /** Drop the panel chrome so the thread can sit flush inside a chat card. */
+  bare?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastCount = useRef(0);
+  // Distance between the reader and the newest message, captured on scroll
+  // BEFORE new bubbles grow the thread. The follow-on-append decision must use
+  // this snapshot: reading the live DOM inside the effect sees the already
+  // grown layout and would wrongly think the reader had scrolled up.
+  const bottomGap = useRef(0);
   const [pendingNew, setPendingNew] = useState(false);
+  // Quoted-reply target flash: tapping the quote block scrolls to the original
+  // message and rings it briefly, the way WhatsApp does it.
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+
+  const jumpToMessage = useCallback((id: string) => {
+    const node = document.getElementById(`msg-${id}`);
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(id);
+    window.setTimeout(() => setHighlightId((current) => (current === id ? null : current)), 1800);
+  }, []);
 
   const atBottom = useCallback(() => {
     const node = scrollRef.current;
@@ -46,6 +69,7 @@ export default function ConversationThread({
 
   const jumpToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    bottomGap.current = 0;
     setPendingNew(false);
   }, []);
 
@@ -61,30 +85,51 @@ export default function ConversationThread({
     // First load of a thread: land on the newest message without animating.
     if (previous === 0) {
       bottomRef.current?.scrollIntoView({ block: "end" });
+      bottomGap.current = 0;
       return;
     }
 
-    // A later refresh brought messages in: follow them only if the reader is
-    // already at the end, otherwise offer the jump notice.
-    if (atBottom()) {
+    // A later refresh brought messages in: follow them only if the reader was
+    // already at the end (measured before this render grew the thread),
+    // otherwise offer the jump notice.
+    // Your own message always lands in view, the way WhatsApp treats a send;
+    // someone else's only follows when you were already at the end.
+    const mine = messages[count - 1]?.isMine === true;
+    if (mine || bottomGap.current < 64) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     } else {
       // Queued so the notice appears without a synchronous setState in the effect.
       const notice = window.setTimeout(() => setPendingNew(true), 0);
       return () => window.clearTimeout(notice);
     }
-    // `atBottom()` reads the live DOM; the effect only needs to re-run on data.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // The gap snapshot lives in a ref; the effect only re-runs on data.
   }, [messages, loading, error]);
+
+  // One pass over the thread: a separator before the first message of each day,
+  // then the bubble itself. Precomputed so render never mutates shared state.
+  const rows = useMemo(() => {
+    const labels = messages.map((message) => formatChatDay(message.createdAt, language));
+    return messages.map((message, index) => ({
+      key: message.id,
+      message,
+      dayLabel: index === 0 || labels[index] !== labels[index - 1] ? labels[index] : null,
+    }));
+  }, [messages, language]);
 
   return (
     <div className="relative">
       <div
         ref={scrollRef}
-        onScroll={() => {
+        onScroll={(event) => {
+          const node = event.currentTarget;
+          bottomGap.current = node.scrollHeight - node.scrollTop - node.clientHeight;
           if (pendingNew && atBottom()) setPendingNew(false);
         }}
-        className="flex max-h-[26rem] min-h-[14rem] flex-col gap-3 overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3 sm:max-h-[32rem]"
+        className={
+          bare
+            ? `flex flex-col gap-3 overflow-y-auto px-3.5 py-3 sm:px-4 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
+            : `flex flex-col gap-3 overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
+        }
       >
         {loading ? (
           <div className="flex flex-1 flex-col gap-2.5" aria-busy="true" aria-label={copy.conversationLoading}>
@@ -122,15 +167,27 @@ export default function ConversationThread({
             </p>
           </div>
         ) : (
-          messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              copy={copy}
-              language={language}
-              onQuote={onQuote}
-            />
-          ))
+          <div className="mt-auto flex flex-col gap-2.5">
+          {rows.map((row) => (
+            <Fragment key={row.key}>
+              {row.dayLabel ? (
+                <div className="my-1 flex items-center justify-center">
+                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-3 py-0.5 text-[10.5px] font-bold text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
+                    {row.dayLabel}
+                  </span>
+                </div>
+              ) : null}
+              <MessageBubble
+                message={row.message}
+                copy={copy}
+                language={language}
+                onQuote={onQuote}
+                onJumpTo={jumpToMessage}
+                highlighted={highlightId === row.message.id}
+              />
+            </Fragment>
+          ))}
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
