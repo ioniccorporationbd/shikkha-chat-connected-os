@@ -317,6 +317,63 @@ export default function HelpDeskTicketThread({
         />
       )}
 
+      {/* B2 — full audit trail: creation, every reply/requirement, the
+          employee solution and each ERP status change, oldest first. */}
+      {chatOnly ? null : (
+        <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
+      )}
+
+      {!chatOnly && payload!.canChangeStatus ? (
+        <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
+          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
+          <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+            {copy.statusHint}
+          </p>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-[15rem_1fr]">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {copy.problemStatus}
+              </span>
+              <select
+                value={statusValue}
+                onChange={(event) => setStatusValue(event.target.value)}
+                className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+              >
+                <option value="">{copy.statusSelect}</option>
+                {(payload!.statuses ?? []).map((status) => (
+                  <option key={status.name} value={status.name}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {copy.statusResolution}
+              </span>
+              <textarea
+                value={resolution}
+                onChange={(event) => setResolution(event.target.value)}
+                rows={2}
+                placeholder={copy.statusResolutionPlaceholder}
+                className="resize-y rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+              />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void submitStatus()}
+            disabled={statusBusy || !statusValue}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+          >
+            {statusBusy ? copy.statusUpdating : copy.statusUpdate}
+          </button>
+        </section>
+      ) : null}
+
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2">
@@ -417,63 +474,6 @@ export default function HelpDeskTicketThread({
           )}
         </div>
       </section>
-
-      {/* B2 — full audit trail: creation, every reply/requirement, the
-          employee solution and each ERP status change, oldest first. */}
-      {chatOnly ? null : (
-        <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
-      )}
-
-      {!chatOnly && payload!.canChangeStatus ? (
-        <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
-          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
-          <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-            {copy.statusHint}
-          </p>
-
-          <div className="mt-3 grid gap-3 lg:grid-cols-[15rem_1fr]">
-            <label className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                {copy.problemStatus}
-              </span>
-              <select
-                value={statusValue}
-                onChange={(event) => setStatusValue(event.target.value)}
-                className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-              >
-                <option value="">{copy.statusSelect}</option>
-                {(payload!.statuses ?? []).map((status) => (
-                  <option key={status.name} value={status.name}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                {copy.statusResolution}
-              </span>
-              <textarea
-                value={resolution}
-                onChange={(event) => setResolution(event.target.value)}
-                rows={2}
-                placeholder={copy.statusResolutionPlaceholder}
-                className="resize-y rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-              />
-            </label>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => void submitStatus()}
-            disabled={statusBusy || !statusValue}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-          >
-            {statusBusy ? copy.statusUpdating : copy.statusUpdate}
-          </button>
-        </section>
-      ) : null}
     </div>
   );
 }
