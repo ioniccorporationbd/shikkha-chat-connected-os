@@ -8,6 +8,8 @@ import ConversationComposer, { type ComposerInput } from "@/components/help-desk
 import ConversationHeader from "@/components/help-desk/conversation/ConversationHeader";
 import ConversationThread, { type ThreadSystemEvent } from "@/components/help-desk/conversation/ConversationThread";
 import PinnedMessageBanner from "@/components/help-desk/conversation/PinnedMessageBanner";
+import DeleteMessageDialog from "@/components/help-desk/conversation/DeleteMessageDialog";
+import ForwardMessageDialog from "@/components/help-desk/conversation/ForwardMessageDialog";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
@@ -20,7 +22,7 @@ import {
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
-import { pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
+import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { toast } from "@/lib/ui/toast";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
 
@@ -82,6 +84,10 @@ export default function HelpDeskTicketThread({
   // so this state is only ever a mirror of the server value.
   const [pinnedId, setPinnedId] = useState<string | null>(null);
   const [pinBusy, setPinBusy] = useState(false);
+  // Deleting a message removes a real Communication: always behind a confirm.
+  const [deleteTargets, setDeleteTargets] = useState<ConversationMessage[] | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [forwardSource, setForwardSource] = useState<ConversationMessage | null>(null);
   // Jump request handed down to the thread (pinned banner).
   const [focus, setFocus] = useState<{ id: string; nonce: number } | null>(null);
   const [mode, setMode] = useState<"message" | "requirement">("message");
@@ -259,6 +265,47 @@ export default function HelpDeskTicketThread({
       }
     },
     [copy.pinFailed, copy.pinToast, copy.unpinToast, pinBusy, pinnedId, ticketId]
+  );
+
+  // Delete one or several messages after confirmation. Each message is its own
+  // Communication, so a batch is a loop of single, permission-checked deletes.
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTargets?.length || deleteBusy) return;
+    setDeleteBusy(true);
+    let failed = 0;
+    for (const target of deleteTargets) {
+      try {
+        await deleteMessage(target.id);
+      } catch (err) {
+        failed += 1;
+        console.error("[help-desk] delete failed", ticketId, target.id, err);
+      }
+    }
+    setDeleteBusy(false);
+    setDeleteTargets(null);
+    if (failed > 0) toast.error(copy.deleteFailed);
+    else toast.success(copy.deleteDone);
+    await load(true);
+  }, [copy.deleteDone, copy.deleteFailed, deleteBusy, deleteTargets, load, ticketId]);
+
+  // Forward reuses the reply path: the target ticket gets a real message.
+  const forwardTo = useCallback(
+    async (targetTicketId: string) => {
+      if (!forwardSource) return false;
+      const body = `${copy.forwardPrefix}${forwardSource.body ?? ""}`.trim();
+      if (!body) return false;
+      try {
+        await forwardMessage(targetTicketId, body);
+        toast.success(copy.forwardDone);
+        return true;
+      } catch (err) {
+        const text = err instanceof Error ? err.message : "";
+        toast.error(text || copy.forwardFailed);
+        console.error("[help-desk] forward failed", ticketId, targetTicketId, err);
+        return false;
+      }
+    },
+    [copy.forwardDone, copy.forwardFailed, copy.forwardPrefix, forwardSource, ticketId]
   );
 
   const isSupport = payload?.isSupport ?? false;
@@ -475,6 +522,11 @@ export default function HelpDeskTicketThread({
             onQuote={canReply ? (message) => setQuoted(message) : undefined}
             onPin={canReply ? (message) => void togglePin(message) : undefined}
             canPin={canReply}
+            onDelete={canReply ? (targets) => setDeleteTargets(targets) : undefined}
+            canDelete={canReply}
+            onForward={canReply ? (message) => setForwardSource(message) : undefined}
+            canForward={canReply}
+            onCopied={() => toast.success(copy.copied)}
             pinnedId={pinnedId}
             focus={focus}
             systemEvents={systemEvents}
@@ -542,6 +594,25 @@ export default function HelpDeskTicketThread({
           )}
         </div>
       </section>
+
+      {deleteTargets ? (
+        <DeleteMessageDialog
+          copy={copy}
+          count={deleteTargets.length}
+          busy={deleteBusy}
+          onCancel={() => setDeleteTargets(null)}
+          onConfirm={() => void confirmDelete()}
+        />
+      ) : null}
+
+      {forwardSource ? (
+        <ForwardMessageDialog
+          copy={copy}
+          currentTicketId={ticketId}
+          onClose={() => setForwardSource(null)}
+          onForward={forwardTo}
+        />
+      ) : null}
     </div>
   );
 }

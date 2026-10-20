@@ -221,6 +221,26 @@ export async function pinTicketMessage(
   return data.pinnedMessageId ?? null;
 }
 
+/**
+ * Delete one chat message. Each message is a `Communication` record, so the ERP
+ * removes exactly that record (permission-checked server-side) — no soft-delete
+ * column is invented on the frontend.
+ */
+export async function deleteMessage(messageId: string): Promise<void> {
+  await request<{ deleted?: boolean }>(`/api/help-desk/messages/${encodeURIComponent(messageId)}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Forward a message into another ticket. A forward is a normal reply on the
+ * target ticket that carries the original text — the ERP keeps it as a real
+ * `Communication`, so the receiving agent sees it like any other message.
+ */
+export async function forwardMessage(id: string, body: string): Promise<Ticket> {
+  return addUserReply(id, body);
+}
+
 /** Reopen a resolved/closed ticket — the user says "the problem is still there". */
 export async function reopenTicket(id: string): Promise<Ticket> {
   const data = await postJson<HelpDeskTicketPayload>(

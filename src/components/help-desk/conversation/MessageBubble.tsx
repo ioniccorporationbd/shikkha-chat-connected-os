@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FiBookmark, FiCheck, FiCheckCircle, FiCopy, FiCornerUpLeft, FiFileText } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiCheckCircle, FiChevronDown, FiFileText } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
@@ -9,6 +9,7 @@ import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage } from "@/lib/help-desk/types";
 
 import ImageLightbox from "./ImageLightbox";
+import MessageActionMenu, { type MessageMenuAction } from "./MessageActionMenu";
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i;
 const AUDIO_EXT = /\.(webm|mp3|m4a|wav|ogg|oga|aac|mp4)$/i;
@@ -16,13 +17,18 @@ const AUDIO_EXT = /\.(webm|mp3|m4a|wav|ogg|oga|aac|mp4)$/i;
 const isImageFile = (mime: string, name: string) => (mime || "").startsWith("image/") || IMAGE_EXT.test(name || "");
 const isAudioFile = (mime: string, name: string) => (mime || "").startsWith("audio/") || AUDIO_EXT.test(name || "");
 
+// Message ids are Communication names, plus two synthetic ids the ERP builds
+// for markers; only real records can be deleted.
+const deletableId = (id: string) => Boolean(id) && id !== "created" && !id.startsWith("status:");
+
 /**
- * One message in a ticket conversation, laid out like a messenger thread:
- * my bubbles on the right with a red tint, the other party's on the left in
- * white, the author name only where the writer is somebody else, and the time
- * tucked into the bubble footer next to the read tick.
+ * One message in a ticket conversation, shaped like a messenger thread rather
+ * than a card: no border, no outer frame — only a soft fill, the sender's name
+ * on every message, and the time in the footer. Mine on the right in blush,
+ * the other party on the left in a cool mint tint.
  *
- * Quiet hover toolbar (always visible on touch): reply, pin/unpin, copy.
+ * Clicking a message (or pressing its chevron) opens the WhatsApp-style menu:
+ * reply, copy, pin, forward, select, delete.
  */
 export default function MessageBubble({
   message,
@@ -34,6 +40,15 @@ export default function MessageBubble({
   canPin = false,
   pinned = false,
   highlighted,
+  canDelete = false,
+  canForward = false,
+  onDelete,
+  onForward,
+  onSelect,
+  onCopied,
+  selectMode = false,
+  selected = false,
+  onToggleSelect,
 }: {
   message: ConversationMessage;
   copy: ConversationCopy;
@@ -47,11 +62,23 @@ export default function MessageBubble({
   pinned?: boolean;
   /** Briefly ring the bubble after a jump, like a chat app search hit. */
   highlighted?: boolean;
+  canDelete?: boolean;
+  canForward?: boolean;
+  onDelete?: (message: ConversationMessage) => void;
+  onForward?: (message: ConversationMessage) => void;
+  onSelect?: (message: ConversationMessage) => void;
+  onCopied?: () => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (message: ConversationMessage) => void;
 }) {
   const mine = message.isMine;
   const isRequirement = message.kind === "requirement";
   const isResolution = message.kind === "resolution";
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  // A pointer-driven click opens the menu; the same gesture on a link, audio
+  // player or attachment must keep its native behaviour.
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<number | null>(null);
 
@@ -84,42 +111,90 @@ export default function MessageBubble({
     setCopied(true);
     if (copyTimer.current) window.clearTimeout(copyTimer.current);
     copyTimer.current = window.setTimeout(() => setCopied(false), 1500);
+    onCopied?.();
   };
 
   const authorLabel = isResolution
     ? copy.conversationSupport
     : message.authorName || (message.author === "support" ? copy.conversationSupport : copy.conversationCustomer);
 
-  // One shared look for the hover/tap toolbar buttons.
-  const actionClass =
-    "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)] invisible transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] hover:text-[var(--color-primary)] focus-visible:visible focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] max-sm:visible sm:group-hover:visible";
+  const handleAction = (action: MessageMenuAction) => {
+    if (action === "reply") onQuote?.(message);
+    else if (action === "copy") void copyText();
+    else if (action === "pin") onPin?.(message);
+    else if (action === "forward") onForward?.(message);
+    else if (action === "select") onSelect?.(message);
+    else if (action === "delete") onDelete?.(message);
+  };
+
+  const openMenu = (x: number, y: number) => {
+    if (selectMode) return;
+    setMenu({ x, y });
+  };
+
+  // Anything the reader can interact with inside the bubble keeps its own
+  // behaviour; everything else is "click the message" like WhatsApp.
+  const isInteractive = (target: EventTarget | null) =>
+    target instanceof Element && Boolean(target.closest("button, a, audio, video, input, textarea, select, [data-no-menu]"));
 
   return (
     <div
       id={`msg-${message.id}`}
       className={[
-        "flex w-full scroll-mt-4 rounded-2xl transition-shadow",
+        "flex w-full scroll-mt-4 items-end gap-2",
         mine ? "justify-end" : "justify-start",
-        highlighted ? "ring-2 ring-[color-mix(in_srgb,var(--color-action)_45%,transparent)] ring-offset-2" : "",
+        highlighted ? "rounded-2xl ring-2 ring-[color-mix(in_srgb,var(--color-action)_45%,transparent)] ring-offset-2" : "",
       ].join(" ")}
     >
-      <div className={`group flex max-w-[min(32rem,86%)] flex-col gap-1 ${mine ? "items-end" : "items-start"}`}>
-        <div
+      {selectMode ? (
+        <span
           className={[
-            "min-w-[6.5rem] rounded-2xl border px-3.5 py-2 text-[13.5px] leading-relaxed shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+            "mb-2 flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-2 transition",
+            selected
+              ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-white)]"
+              : "border-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] bg-[var(--color-white)]",
+            mine ? "order-2" : "",
+          ].join(" ")}
+          aria-hidden
+        >
+          {selected ? <FiCheck size={11} /> : null}
+        </span>
+      ) : null}
+
+      <div className={`group relative flex max-w-[min(32rem,86%)] flex-col ${mine ? "items-end" : "items-start"}`}>
+        <div
+          onClick={(event) => {
+            if (selectMode) {
+              onToggleSelect?.(message);
+              return;
+            }
+            if (isInteractive(event.target)) return;
+            openMenu(event.clientX, event.clientY);
+          }}
+          onContextMenu={(event) => {
+            if (selectMode) return;
+            event.preventDefault();
+            openMenu(event.clientX, event.clientY);
+          }}
+          className={[
+            "relative min-w-[7rem] max-w-full cursor-pointer rounded-[12px] px-3 py-1.5 text-[13.5px] leading-relaxed shadow-[0_1px_1px_rgba(16,24,40,0.05)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-1",
             mine
-              ? "rounded-br-md border-[color-mix(in_srgb,var(--color-action)_22%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] text-[var(--color-primary)]"
-              : "rounded-bl-md border-[color-mix(in_srgb,var(--color-primary)_13%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)]",
-            isRequirement ? "border-l-4 border-l-[color-mix(in_srgb,var(--color-warning)_70%,transparent)]" : "",
-            isResolution ? "border-l-4 border-l-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]" : "",
-            pinned ? "ring-1 ring-[color-mix(in_srgb,var(--color-action)_35%,transparent)]" : "",
+              ? "rounded-br-[4px] bg-[color-mix(in_srgb,var(--color-action)_13%,var(--color-white))]"
+              : "rounded-bl-[4px] bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))]",
+            selected ? "ring-2 ring-[color-mix(in_srgb,var(--color-primary)_35%,transparent)]" : "",
+            "text-[var(--color-primary)]",
           ].join(" ")}
         >
-          {!mine ? (
-            <p className="mb-1 text-[11px] font-bold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))]">
-              {authorLabel}
-            </p>
-          ) : null}
+          <p
+            className={[
+              "mb-0.5 text-[11px] font-bold",
+              mine
+                ? "text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))]"
+                : "text-[color-mix(in_srgb,var(--color-primary)_82%,transparent)]",
+            ].join(" ")}
+          >
+            {mine ? copy.conversationYou : authorLabel}
+          </p>
 
           {isRequirement || isResolution ? (
             <span
@@ -141,7 +216,7 @@ export default function MessageBubble({
               data-jump-to={message.replyTo.id}
               title={copy.jumpToQuoted}
               aria-label={copy.jumpToQuoted}
-              className="mb-2 block w-full rounded-xl border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-2.5 py-1.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+              className="mb-1.5 block w-full rounded-md border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_60%,transparent)] px-2 py-1 text-left transition hover:bg-[color-mix(in_srgb,var(--color-white)_90%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
             >
               <p className="text-[10.5px] font-bold text-[color-mix(in_srgb,var(--color-action)_80%,var(--color-primary))]">
                 {message.replyTo.authorName ||
@@ -168,7 +243,7 @@ export default function MessageBubble({
                       <button
                         type="button"
                         onClick={() => href && setLightbox({ src: href, alt: file.fileName || copy.imageOpen })}
-                        className="block overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                        className="block overflow-hidden rounded-lg transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                         aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
                         title={copy.imageOpen}
                       >
@@ -186,7 +261,7 @@ export default function MessageBubble({
                 if (audio) {
                   return (
                     <li key={key}>
-                      <div className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-2 py-1.5">
+                      <div className="rounded-lg bg-[color-mix(in_srgb,var(--color-white)_80%,transparent)] px-1.5 py-1">
                         <audio
                           controls
                           preload="none"
@@ -206,7 +281,7 @@ export default function MessageBubble({
                       href={href ?? undefined}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 transition hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)]"
+                      className="flex items-center gap-2 rounded-lg bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] px-2.5 py-1.5 transition hover:bg-[var(--color-white)]"
                     >
                       <FiFileText size={14} className="flex-none text-[var(--color-primary)]" aria-hidden />
                       <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--color-primary)]">
@@ -222,7 +297,7 @@ export default function MessageBubble({
             </ul>
           ) : null}
 
-          <div className="mt-1 flex items-center justify-end gap-1">
+          <div className="mt-0.5 flex items-center justify-end gap-1">
             {pinned ? (
               <FiBookmark
                 size={10}
@@ -230,8 +305,8 @@ export default function MessageBubble({
                 aria-label={copy.pinnedBar}
               />
             ) : null}
-            <span className="text-[10px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
-              {formatBubbleTime(message.createdAt, language)}
+            <span className="text-[10px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_46%,transparent)]">
+              {copied ? copy.copied : formatBubbleTime(message.createdAt, language)}
             </span>
             {mine ? (
               message.seen ? (
@@ -241,42 +316,43 @@ export default function MessageBubble({
               )
             ) : null}
           </div>
-        </div>
 
-        <div className={`flex items-center gap-2 px-1 ${mine ? "flex-row-reverse" : ""}`}>
-          {onQuote ? (
-            <button type="button" onClick={() => onQuote(message)} aria-label={copy.replyAction} title={copy.replyAction} className={actionClass}>
-              <FiCornerUpLeft size={12} aria-hidden />
-              <span className="hidden sm:inline">{copy.replyAction}</span>
-            </button>
-          ) : null}
-          {canPin && onPin ? (
+          {!selectMode ? (
             <button
               type="button"
-              onClick={() => onPin(message)}
-              aria-label={pinned ? copy.unpinAction : copy.pinAction}
-              title={pinned ? copy.unpinAction : copy.pinAction}
-              aria-pressed={pinned}
-              className={actionClass}
+              onClick={(event) => {
+                const rect = event.currentTarget.getBoundingClientRect();
+                openMenu(rect.right - 8, rect.bottom + 4);
+              }}
+              aria-label={copy.menuOpen}
+              title={copy.menuOpen}
+              aria-haspopup="menu"
+              className={[
+                "absolute -right-2 -top-2 hidden h-5 w-5 items-center justify-center rounded-full bg-[var(--color-white)] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] shadow-[0_1px_4px_rgba(15,23,42,0.18)] transition hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] sm:flex",
+                menu ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100",
+              ].join(" ")}
             >
-              <FiBookmark size={12} aria-hidden className={pinned ? "fill-current" : undefined} />
-              <span className="hidden sm:inline">{pinned ? copy.unpinAction : copy.pinAction}</span>
-            </button>
-          ) : null}
-          {message.body ? (
-            <button
-              type="button"
-              onClick={() => void copyText()}
-              aria-label={copied ? copy.copied : copy.copyAction}
-              title={copied ? copy.copied : copy.copyAction}
-              className={actionClass}
-            >
-              {copied ? <FiCheck size={12} aria-hidden /> : <FiCopy size={12} aria-hidden />}
-              <span className="hidden sm:inline">{copied ? copy.copied : copy.copyAction}</span>
+              <FiChevronDown size={13} aria-hidden />
             </button>
           ) : null}
         </div>
       </div>
+
+      {menu ? (
+        <MessageActionMenu
+          copy={copy}
+          x={menu.x}
+          y={menu.y}
+          pinned={pinned}
+          canReply={Boolean(onQuote)}
+          canCopy={Boolean(message.body)}
+          canPin={canPin && Boolean(onPin)}
+          canForward={canForward && Boolean(onForward)}
+          canDelete={canDelete && deletableId(message.id) && Boolean(onDelete)}
+          onAction={handleAction}
+          onClose={() => setMenu(null)}
+        />
+      ) : null}
 
       {lightbox ? (
         <ImageLightbox copy={copy} src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />

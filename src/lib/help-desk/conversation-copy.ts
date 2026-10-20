@@ -142,6 +142,29 @@ export interface ConversationCopy {
   pinToast: string;
   unpinToast: string;
   chatEventOpened: string;
+  menuAria: string;
+  menuOpen: string;
+  forwardAction: string;
+  selectAction: string;
+  deleteAction: string;
+  deleteTitle: string;
+  deleteBody: string;
+  deleteConfirm: string;
+  deleteCancel: string;
+  deleteDone: string;
+  deleteFailed: string;
+  forwardTitle: string;
+  forwardHint: string;
+  forwardEmpty: string;
+  forwardDone: string;
+  forwardFailed: string;
+  forwardPrefix: string;
+  selectHint: string;
+  selectCount: string;
+  selectCopy: string;
+  selectDelete: string;
+  selectCancel: string;
+  copyEmpty: string;
   copyAction: string;
   copied: string;
   imageOpen: string;
@@ -323,6 +346,29 @@ const bn: ConversationCopy = {
   pinToast: "বার্তাটি পিন করা হয়েছে।",
   unpinToast: "বার্তার পিন সরানো হয়েছে।",
   chatEventOpened: "টিকিট খোলা হয়েছে",
+  menuAria: "বার্তার অপশন",
+  menuOpen: "বার্তার অপশন খুলুন",
+  forwardAction: "ফরওয়ার্ড",
+  selectAction: "সিলেক্ট",
+  deleteAction: "ডিলিট",
+  deleteTitle: "বার্তাটি ডিলিট করবেন?",
+  deleteBody: "বার্তাটি সবার জন্য স্থায়ীভাবে মুছে যাবে। এটি ফেরানো যাবে না।",
+  deleteConfirm: "ডিলিট করুন",
+  deleteCancel: "বাতিল",
+  deleteDone: "বার্তা ডিলিট হয়েছে।",
+  deleteFailed: "বার্তা ডিলিট করা যায়নি।",
+  forwardTitle: "বার্তাটি ফরওয়ার্ড করুন",
+  forwardHint: "যে টিকিটে পাঠাবেন সেটি বেছে নিন",
+  forwardEmpty: "ফরওয়ার্ড করার জন্য অন্য কোনো টিকিট নেই।",
+  forwardDone: "বার্তা ফরওয়ার্ড হয়েছে।",
+  forwardFailed: "ফরওয়ার্ড করা যায়নি।",
+  forwardPrefix: "ফরওয়ার্ড করা হয়েছে:\n",
+  selectHint: "বার্তা নির্বাচন করুন",
+  selectCount: "টি বার্তা নির্বাচিত",
+  selectCopy: "কপি করুন",
+  selectDelete: "ডিলিট",
+  selectCancel: "বাতিল",
+  copyEmpty: "এই বার্তায় কপি করার মতো লেখা নেই।",
   copyAction: "কপি",
   copied: "কপি হয়েছে",
   imageOpen: "ছবিটি বড় করে দেখুন",
@@ -500,6 +546,29 @@ const en: ConversationCopy = {
   pinToast: "Message pinned.",
   unpinToast: "Pin removed.",
   chatEventOpened: "Ticket opened",
+  menuAria: "Message options",
+  menuOpen: "Open message options",
+  forwardAction: "Forward",
+  selectAction: "Select",
+  deleteAction: "Delete",
+  deleteTitle: "Delete this message?",
+  deleteBody: "It will be removed for everyone. This cannot be undone.",
+  deleteConfirm: "Delete",
+  deleteCancel: "Cancel",
+  deleteDone: "Message deleted.",
+  deleteFailed: "Couldn't delete the message.",
+  forwardTitle: "Forward message",
+  forwardHint: "Choose the ticket to forward it to",
+  forwardEmpty: "There is no other ticket to forward to.",
+  forwardDone: "Message forwarded.",
+  forwardFailed: "Couldn't forward the message.",
+  forwardPrefix: "Forwarded:\n",
+  selectHint: "Select messages",
+  selectCount: "selected",
+  selectCopy: "Copy",
+  selectDelete: "Delete",
+  selectCancel: "Cancel",
+  copyEmpty: "This message has no text to copy.",
   copyAction: "Copy",
   copied: "Copied",
   imageOpen: "Open image",

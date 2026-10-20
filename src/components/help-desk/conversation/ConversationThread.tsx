@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FiArrowDown, FiMessageCircle, FiRefreshCw } from "react-icons/fi";
+import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatChatDay } from "@/lib/help-desk/format";
@@ -43,6 +43,11 @@ export default function ConversationThread({
   pinnedId = null,
   focus = null,
   systemEvents,
+  onDelete,
+  canDelete = false,
+  onForward,
+  canForward = false,
+  onCopied,
 }: {
   copy: ConversationCopy;
   language: string;
@@ -70,6 +75,14 @@ export default function ConversationThread({
    * in the timeline card, and showing them twice would be noise.
    */
   systemEvents?: ThreadSystemEvent[];
+  /** Delete one or more messages (the ERP deletes the Communication records). */
+  onDelete?: (messages: ConversationMessage[]) => void;
+  canDelete?: boolean;
+  /** Forward a message into another ticket. */
+  onForward?: (message: ConversationMessage) => void;
+  canForward?: boolean;
+  /** Confirmation toast after copying. */
+  onCopied?: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -83,6 +96,55 @@ export default function ConversationThread({
   // Quoted-reply target flash: tapping the quote block scrolls to the original
   // message and rings it briefly, the way WhatsApp does it.
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  // Multi-select, the way a messenger lets you pick several messages and act on
+  // them at once. Nothing is selected until the reader asks for it.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const selectedMessages = useMemo(
+    () => messages.filter((message) => selected.includes(message.id)),
+    [messages, selected],
+  );
+
+  const enterSelectMode = useCallback((message: ConversationMessage) => {
+    setSelectMode(true);
+    setSelected([message.id]);
+  }, []);
+
+  const toggleSelected = useCallback((message: ConversationMessage) => {
+    setSelected((current) =>
+      current.includes(message.id) ? current.filter((id) => id !== message.id) : [...current, message.id],
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectMode(false);
+    setSelected([]);
+  }, []);
+
+  const copySelected = useCallback(async () => {
+    const text = selectedMessages
+      .map((message) => message.body?.trim())
+      .filter(Boolean)
+      .join("\n\n");
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const node = document.createElement("textarea");
+      node.value = text;
+      node.style.position = "fixed";
+      node.style.opacity = "0";
+      document.body.appendChild(node);
+      node.select();
+      try {
+        document.execCommand("copy");
+      } finally {
+        document.body.removeChild(node);
+      }
+    }
+    onCopied?.();
+  }, [onCopied, selectedMessages]);
 
   const jumpToMessage = useCallback((id: string) => {
     const node = document.getElementById(`msg-${id}`);
@@ -182,6 +244,49 @@ export default function ConversationThread({
 
   return (
     <div className="relative">
+      {selectMode ? (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-[var(--color-primary)] px-3 py-1.5 text-[var(--color-white)]">
+          <span className="text-[12px] font-semibold">
+            {selected.length === 0 ? copy.selectHint : `${selected.length} ${copy.selectCount}`}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => void copySelected()}
+              disabled={selected.length === 0}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold transition hover:bg-[color-mix(in_srgb,var(--color-white)_16%,transparent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-white)_70%,transparent)]"
+            >
+              <FiCopy size={12} aria-hidden />
+              {copy.selectCopy}
+            </button>
+            {canDelete && onDelete ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selected.length) return;
+                  onDelete(selectedMessages);
+                  clearSelection();
+                }}
+                disabled={selected.length === 0}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11.5px] font-semibold transition hover:bg-[color-mix(in_srgb,var(--color-white)_16%,transparent)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-white)_70%,transparent)]"
+              >
+                <FiTrash2 size={12} aria-hidden />
+                {copy.selectDelete}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={clearSelection}
+              aria-label={copy.selectCancel}
+              title={copy.selectCancel}
+              className="inline-flex items-center gap-1 rounded-lg px-1.5 py-1 transition hover:bg-[color-mix(in_srgb,var(--color-white)_16%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-white)_70%,transparent)]"
+            >
+              <FiX size={13} aria-hidden />
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div
         ref={scrollRef}
         onScroll={(event) => {
@@ -258,6 +363,15 @@ export default function ConversationThread({
                     canPin={canPin}
                     pinned={pinnedId === row.message.id}
                     highlighted={highlightId === row.message.id}
+                    canDelete={canDelete}
+                    canForward={canForward}
+                    onDelete={(target) => onDelete?.([target])}
+                    onForward={onForward}
+                    onSelect={enterSelectMode}
+                    onCopied={onCopied}
+                    selectMode={selectMode}
+                    selected={selected.includes(row.message.id)}
+                    onToggleSelect={toggleSelected}
                   />
                 )}
               </Fragment>
