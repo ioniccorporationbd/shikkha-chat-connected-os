@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { FiAward, FiBriefcase, FiCompass, FiGrid, FiHome, FiMenu, FiX } from "react-icons/fi";
+import { FiAward, FiBriefcase, FiGrid, FiHome, FiMenu, FiX } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
@@ -41,23 +41,12 @@ type ActiveSectionId =
   | "educator-support"
   | "my-connected-os";
 
-type OpenGroup = "home" | "student" | "operational" | null;
 type LanguageCode = "bn" | "en";
 
 type MenuChild = {
   title: string;
   href: string;
 };
-
-type MenuGroup = {
-  title: string;
-  href: string;
-  group?: OpenGroup;
-  children?: MenuChild[];
-};
-
-const colorPrimary = "var(--color-primary)";
-const colorSecondary = "var(--color-secondary)";
 
 /** Leading icon for each rail group, so links read as icon + label. */
 const GROUP_ICONS: Record<string, IconType> = {
@@ -71,15 +60,6 @@ const sidebarWidthClass =
   "w-[min(88vw,300px)] sm:w-[310px] xl:w-[300px] 2xl:w-[272px]";
 
 const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
-
-/* Strict text sizing, rebalanced for a clearer hierarchy: card titles and nav
-   group labels share one calm size, nested links sit a step below, and the
-   uppercase eyebrow label is small and light so it reads as a quiet heading
-   rather than body copy. */
-const sidebarTitleTextClass = "text-[14px] font-semibold tracking-[-0.02em]";
-
-const sidebarSubtitleTextClass =
-  "text-[11px] font-semibold uppercase tracking-[0.14em]";
 
 /* Homepage rail nav rows — the Dashboard rail's navigation language applied to
    the homepage's SQUARE outer shell. A Dashboard row is borderless on one 16px
@@ -105,10 +85,6 @@ const sidebarRowIndexClass =
    tokens (primary #032521 / secondary #a2c4c0), only softened with color-mix,
    so no new palette is introduced.
 ------------------------------------------------------------------------- */
-const cardBorderClass =
-  "border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]";
-const cardShadowClass =
-  "shadow-[0_18px_44px_-32px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 const sidebarText = {
   bn: {
     logoHome: "শিক্ষা চ্যাট হোম",
@@ -210,137 +186,6 @@ const sidebarText = {
   },
 } as const;
 
-function getSidebarMenu(language: LanguageCode): MenuGroup[] {
-  const text = sidebarText[language];
-
-  return [
-    {
-      title: text.groups.home,
-      href: "#home-connections-panel",
-      group: "home",
-      children: [
-        {
-          title: text.sections.studentInformation,
-          href: "#student-information",
-        },
-        {
-          title: text.sections.sis,
-          href: "#sis",
-        },
-        {
-          title: text.sections.enrollment,
-          href: "#enrollment",
-        },
-        {
-          title: text.sections.specialPrograms,
-          href: "#special-programs",
-        },
-        {
-          title: text.sections.familyEngagement,
-          href: "#family-engagement",
-        },
-        {
-          title: text.sections.communications,
-          href: "#communications",
-        },
-        {
-          title: text.sections.attendanceSupport,
-          href: "#attendance-support",
-        },
-      ],
-    },
-    {
-      title: text.groups.student,
-      href: "#student-achievement",
-      group: "student",
-      children: [
-        {
-          title: text.sections.studentAchievement,
-          href: "#student-achievement",
-        },
-        {
-          title: text.sections.classroomSolutions,
-          href: "#classroom-solutions",
-        },
-        {
-          title: text.sections.learningManagementSchoology,
-          href: "#learning-management-schoology",
-        },
-        {
-          title: text.sections.assessmentPerformanceMatters,
-          href: "#assessment-performance-matters",
-        },
-        {
-          title: text.sections.curriculumInstruction,
-          href: "#curriculum-instruction",
-        },
-        {
-          title: text.sections.studentIntervention,
-          href: "#student-intervention",
-        },
-        {
-          title: text.sections.mtss,
-          href: "#mtss",
-        },
-        {
-          title: text.sections.behaviorSupport,
-          href: "#behavior-support",
-        },
-        {
-          title: text.sections.collegeCareerLifeReadiness,
-          href: "#college-career-life-readiness",
-        },
-        {
-          title: text.sections.cclrNaviance,
-          href: "#cclr-naviance",
-        },
-      ],
-    },
-    {
-      title: text.groups.operational,
-      href: "#operational-excellence",
-      group: "operational",
-      children: [
-        {
-          title: text.sections.operationalExcellence,
-          href: "#operational-excellence",
-        },
-        {
-          title: text.sections.resourcePlanning,
-          href: "#resource-planning",
-        },
-        {
-          title: text.sections.financialStrategyAllovue,
-          href: "#financial-strategy-allovue",
-        },
-        {
-          title: text.sections.erpSystems,
-          href: "#erp-systems",
-        },
-        {
-          title: text.sections.predictiveEnrollment,
-          href: "#predictive-enrollment",
-        },
-        {
-          title: text.sections.talentManagement,
-          href: "#talent-management",
-        },
-        {
-          title: text.sections.recruitingHr,
-          href: "#recruiting-and-hr",
-        },
-        {
-          title: text.sections.educatorSupport,
-          href: "#educator-support",
-        },
-      ],
-    },
-    {
-      title: text.groups.myOs,
-      href: "#my-connected-os",
-    },
-  ];
-}
 
 const homeConnectionSectionIds: ActiveSectionId[] = [
   "home-connections-panel",
@@ -377,12 +222,6 @@ const operationalExcellenceSectionIds: ActiveSectionId[] = [
   "educator-support",
 ];
 
-const allSectionIds: ActiveSectionId[] = [
-  ...homeConnectionSectionIds,
-  ...studentAchievementSectionIds,
-  ...operationalExcellenceSectionIds,
-  "my-connected-os",
-];
 
 function getIdFromHref(href: string) {
   return href.replace("#", "") as ActiveSectionId;
@@ -400,48 +239,6 @@ function isOperationalExcellenceSection(id: string) {
   return operationalExcellenceSectionIds.includes(id as ActiveSectionId);
 }
 
-function getGroupById(id: string): OpenGroup {
-  if (isHomeConnectionSection(id)) return "home";
-  if (isStudentAchievementSection(id)) return "student";
-  if (isOperationalExcellenceSection(id)) return "operational";
-  return null;
-}
-
-function getGroupColor(group: OpenGroup, isMyConnected = false) {
-  if (group === "student") return colorSecondary;
-
-  if (group === "home" || group === "operational" || isMyConnected) {
-    return colorPrimary;
-  }
-
-  return colorPrimary;
-}
-
-function getActiveTitle(activeId: ActiveSectionId | null, currentMenu: MenuGroup[]) {
-  if (activeId === null) return "";
-  for (const item of currentMenu) {
-    if (getIdFromHref(item.href) === activeId) return item.title;
-
-    const child = item.children?.find(
-      (childItem) => getIdFromHref(childItem.href) === activeId
-    );
-
-    if (child) return child.title;
-  }
-
-  return "";
-}
-
-function getActiveGroupTitle(activeId: ActiveSectionId | null, language: LanguageCode) {
-  const text = sidebarText[language];
-
-  if (activeId === null) return text.bannerSubtitle;
-  if (isHomeConnectionSection(activeId)) return text.groups.home;
-  if (isStudentAchievementSection(activeId)) return text.groups.student;
-  if (isOperationalExcellenceSection(activeId)) return text.groups.operational;
-
-  return text.groups.myOs;
-}
 
 function dispatchActiveSection(id: string) {
   window.dispatchEvent(
@@ -508,69 +305,6 @@ function Logo({ language }: { language: LanguageCode }) {
   );
 }
 
-function ActiveStatusCard({
-  activeId,
-  currentMenu,
-  language,
-}: {
-  activeId: ActiveSectionId | null;
-  currentMenu: MenuGroup[];
-  language: LanguageCode;
-}) {
-  const group = activeId === null ? null : getGroupById(activeId);
-  const accentColor = getGroupColor(group, activeId === "my-connected-os");
-  const activeTitle =
-    activeId === null
-      ? sidebarText[language].bannerTitle
-      : getActiveTitle(activeId, currentMenu);
-  const groupTitle = getActiveGroupTitle(activeId, language);
-  const text = sidebarText[language];
-  const progressScale =
-    activeId === null
-      ? 0
-      : isHomeConnectionSection(activeId)
-        ? 0.33
-        : isStudentAchievementSection(activeId)
-          ? 0.66
-          : 1;
-
-  return (
-    <div
-      className={`mt-3 overflow-hidden rounded-2xl border bg-[var(--color-white)] p-3 backdrop-blur-md sm:mt-4 sm:p-4 ${cardBorderClass} ${cardShadowClass}`}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_5px_color-mix(in_srgb,var(--color-primary)_7%,transparent)]"
-          style={{ background: accentColor }}
-        />
-
-        <p className={`${sidebarSubtitleTextClass} text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]`}>
-          {text.currentlyViewing}
-        </p>
-      </div>
-
-      <h3
-        className={`${sidebarTitleTextClass} mt-2 leading-[1.2] text-[var(--color-primary)]`}
-      >
-        {activeTitle}
-      </h3>
-
-      <p className="mt-1 text-[12px] font-medium leading-4 text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-        {groupTitle}
-      </p>
-
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
-        <div
-          className="h-full w-full origin-left rounded-full transition-transform duration-500"
-          style={{
-            transform: `scaleX(${progressScale})`,
-            background: "var(--color-action)",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
 
 function SidebarChildLink({
   child,
@@ -639,13 +373,6 @@ export default function LeftSidebar() {
   const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
   const text = sidebarText[currentLanguage];
 
-  const currentMenu = useMemo(
-    () => getSidebarMenu(currentLanguage),
-    [currentLanguage]
-  );
-
-  const [activeId, setActiveId] = useState<ActiveSectionId | null>(null);
-  const [openGroup, setOpenGroup] = useState<OpenGroup>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   /* H-01 — the rail is a permanent fixture at ≥1536px and an off-canvas drawer
@@ -693,97 +420,6 @@ export default function LeftSidebar() {
         "connected-os-sidebar-navigate",
         handleDrawerClose
       );
-  }, []);
-
-  useEffect(() => {
-    const handleActiveSection = (event: Event) => {
-      const customEvent = event as CustomEvent<{ id?: ActiveSectionId }>;
-      const id = customEvent.detail?.id;
-
-      if (!id) return;
-
-      if (allSectionIds.includes(id)) {
-        setActiveId(id);
-        setOpenGroup(getGroupById(id));
-      }
-    };
-
-    window.addEventListener("connected-os-active-section", handleActiveSection);
-
-    return () =>
-      window.removeEventListener(
-        "connected-os-active-section",
-        handleActiveSection
-      );
-  }, []);
-
-  /* Main-Banner awareness ---------------------------------------------------
-     While the hero (#intro) fills the viewport and no hub section is locked,
-     all three dropdown groups stay closed and no child reads as selected — so
-     a refresh or a reverse scroll back to the banner never leaves a stale open
-     group. This reuses the existing scroll engine: it only ever *clears*
-     state (the engine's connected-os-active-section event owns re-opening a
-     group), and it stands down for a beat after a deliberate navigation so it
-     can never fight a programmatic scroll. */
-  useEffect(() => {
-    const intro = document.getElementById("intro");
-    if (!intro) return;
-
-    let navGuardUntil = 0;
-    const markNavigation = () => {
-      navGuardUntil = performance.now() + 1200;
-    };
-
-    let frame = 0;
-    const evaluate = () => {
-      frame = 0;
-      if (performance.now() < navGuardUntil) return;
-
-      const viewportHeight =
-        window.innerHeight || document.documentElement.clientHeight;
-
-      // A hub section parked on screen owns the active state — never override it.
-      const anySectionLocked = Array.from(
-        document.querySelectorAll<HTMLElement>(".connected-scroll-section")
-      ).some((section) => {
-        const rect = section.getBoundingClientRect();
-        return rect.top <= 2 && rect.bottom >= viewportHeight - 2;
-      });
-      if (anySectionLocked) return;
-
-      const rect = intro.getBoundingClientRect();
-      const bannerDominant =
-        rect.top <= viewportHeight * 0.4 &&
-        rect.bottom >= viewportHeight * 0.5;
-
-      if (bannerDominant) {
-        setActiveId(null);
-        setOpenGroup(null);
-      }
-    };
-
-    const scheduleEvaluation = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(evaluate);
-    };
-
-    window.addEventListener("scroll", scheduleEvaluation, { passive: true });
-    window.addEventListener("resize", scheduleEvaluation, { passive: true });
-    window.addEventListener("connected-os-scroll-to-section", markNavigation);
-    window.addEventListener("connected-os-sidebar-navigate", markNavigation);
-
-    scheduleEvaluation();
-
-    return () => {
-      window.removeEventListener("scroll", scheduleEvaluation);
-      window.removeEventListener("resize", scheduleEvaluation);
-      window.removeEventListener(
-        "connected-os-scroll-to-section",
-        markNavigation
-      );
-      window.removeEventListener("connected-os-sidebar-navigate", markNavigation);
-      if (frame) cancelAnimationFrame(frame);
-    };
   }, []);
 
   return (
@@ -860,30 +496,6 @@ export default function LeftSidebar() {
                 the dashboard rail. Logged in → only Dashboard; logged out →
                 Log In + Registration. */}
             <SidebarAccountSection />
-          </div>
-
-          <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
-            {/* Dashboard-style inner section header: a rounded, icon-led row. */}
-            <div className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2.5">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-action-tint)] text-[var(--color-action)]">
-                <FiCompass aria-hidden size={17} />
-              </span>
-
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
-                  {text.menu}
-                </p>
-                <p className={`${sidebarTitleTextClass} truncate text-[var(--color-primary)]`}>
-                  {text.theK12Os}
-                </p>
-              </div>
-            </div>
-
-            <ActiveStatusCard
-              activeId={activeId}
-              currentMenu={currentMenu}
-              language={currentLanguage}
-            />
           </div>
 
           {/* Native rail nav, now driven by the complete Shikkha Chat Apps
