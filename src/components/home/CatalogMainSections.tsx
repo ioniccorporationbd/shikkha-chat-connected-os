@@ -6,6 +6,7 @@ import HubSceneStage, {
 import CatalogFeaturePanel from "@/components/showcase/catalog/CatalogFeaturePanel";
 import CatalogFeatureScene from "@/components/showcase/catalog/CatalogFeatureScene";
 import RoleAccessPanel from "@/components/showcase/catalog/RoleAccessPanel";
+import RoleAccessScene from "@/components/showcase/catalog/RoleAccessScene";
 import { buildCatalogBannerContent } from "@/components/showcase/catalog/catalogBanners";
 import {
   catalogFeaturePanelId,
@@ -40,14 +41,22 @@ export default function CatalogMainSections() {
         const scenes: HubScene[] = category.features.map((feature, featureIndex) => ({
           id: catalogFeaturePanelId(category.id, feature.id),
           title: feature.title.bn,
-          node: (
-            <CatalogFeatureScene
-              category={category}
-              feature={feature}
-              index={index}
-              featureIndex={featureIndex}
-            />
-          ),
+          node:
+            category.id === "role-access" ? (
+              <RoleAccessScene
+                category={category}
+                feature={feature}
+                index={index}
+                featureIndex={featureIndex}
+              />
+            ) : (
+              <CatalogFeatureScene
+                category={category}
+                feature={feature}
+                index={index}
+                featureIndex={featureIndex}
+              />
+            ),
         }));
 
         return (

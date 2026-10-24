@@ -10,7 +10,12 @@ import {
   type ShowcaseCategory,
   type ShowcaseFeature,
 } from "@/lib/feature-showcase";
-import { visibleRouteTotal, visibleMenuGroups } from "@/lib/role-route-docs";
+import { roleRouteEntries, visibleRouteTotal, visibleMenuGroups } from "@/lib/role-route-docs";
+import {
+  roleRouteFocusCardId,
+  setRoleRouteFocus,
+  useRoleRouteFocus,
+} from "@/lib/role-route-selection";
 import {
   ROLE_ACCESS_TEXT,
   roleAccessGuide,
@@ -19,6 +24,12 @@ import {
 
 import { SHOWCASE_ICONS } from "./icons";
 import { catalogFeaturePanelId } from "./sceneGroups";
+
+/** Localized copy for the "selected sub-route" card. */
+const ROLE_ACCESS_FOCUS_TEXT = {
+  selected: { bn: "নির্বাচিত সাব-রুট", en: "Selected sub-route" },
+  close: { bn: "নির্বাচন বাতিল করুন", en: "Clear selection" },
+} as const;
 
 /*
  * -------------------------------------------------------------------------
@@ -50,6 +61,7 @@ export default function RoleAccessPanel({
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
   const guide = roleAccessGuide(feature.id as RoleAccessKey);
+  const focus = useRoleRouteFocus();
 
   if (!guide) {
     return null;
@@ -57,6 +69,14 @@ export default function RoleAccessPanel({
 
   const t = ROLE_ACCESS_TEXT;
   const routeCount = visibleRouteTotal(guide);
+
+  // The circle clicked in the middle scene of THIS role, if any. Only its title
+  // and the work it does are shown — never its internal path.
+  const focusedEntry =
+    focus?.roleKey === guide.key
+      ? (roleRouteEntries(guide).find((entry) => entry.item.path === focus.path) ??
+        null)
+      : null;
 
   const workflowRows = guide.workflows.map((step, index) => ({
     title: `${index + 1}. ${step.title[lang]}`,
@@ -66,6 +86,41 @@ export default function RoleAccessPanel({
 
   return (
     <div className="max-w-[560px]">
+      {/* Selected sub-route — appears when a circle is clicked in the middle
+          scene of this role. Title + what the route does; no path shown. */}
+      {focusedEntry ? (
+        <div
+          id={roleRouteFocusCardId(guide.key)}
+          className="mb-5 scroll-mt-32 rounded-[24px] border-[2px] border-[var(--color-primary)] bg-[var(--color-white)] p-5 shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_14%,transparent)]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="section-label-badge">
+              {focusedEntry.group.title[lang]}
+            </p>
+            <button
+              type="button"
+              onClick={() => setRoleRouteFocus(guide.key, null)}
+              aria-label={ROLE_ACCESS_FOCUS_TEXT.close[lang]}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[var(--color-border-soft)] text-[15px] leading-none text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
+            >
+              ×
+            </button>
+          </div>
+
+          <h3 className="mt-2.5 text-[20px] leading-snug font-black text-[var(--color-primary)]">
+            {focusedEntry.item.label[lang]}
+          </h3>
+          <p className="capability-text mt-2 text-[color-mix(in_srgb,var(--color-black)_72%,var(--color-primary))]">
+            {focusedEntry.item.description[lang]}
+          </p>
+
+          <p className="mt-3 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
+            <span className="h-[3px] w-[3px] rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
+            {ROLE_ACCESS_FOCUS_TEXT.selected[lang]} · {guide.title[lang]}
+          </p>
+        </div>
+      ) : null}
+
       <SectionPanel
         id={catalogFeaturePanelId(category.id, feature.id)}
         variant="dashboard"

@@ -201,10 +201,31 @@ export default function FeatureShowcase() {
                       return (
                         <div key={guide.key}>
                           <div className="flex items-center gap-1">
-                            <Link
-                              href={guide.dashboardRoute}
-                              onClick={closeRail}
-                              className={[ROW, "min-w-0 flex-1 py-2"].join(" ")}
+                            {/* Clicking a role brings the MIDDLE stage to that
+                                role's radial map (main route at the centre,
+                                its sub-routes as circles). The chevron below
+                                still expands the plain route list; the role's
+                                own /dashboard page stays reachable from the
+                                docs footer ("all roles, all routes"). */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRoleExpanded(true);
+                                setActiveFeatureId(guide.key);
+                                navigateToSection(
+                                  catalogFeaturePanelId(
+                                    ROLE_SECTION_ID,
+                                    guide.key,
+                                  ),
+                                );
+                              }}
+                              className={[
+                                ROW,
+                                "min-w-0 flex-1 py-2",
+                                activeFeatureId === guide.key
+                                  ? "is-active"
+                                  : "",
+                              ].join(" ")}
                             >
                               <span className={ROW_LABEL}>
                                 <span className="truncate font-semibold tracking-[-0.01em]">
@@ -214,7 +235,7 @@ export default function FeatureShowcase() {
                               <span className="shrink-0 text-[11px] font-semibold opacity-60">
                                 {routeTotal}
                               </span>
-                            </Link>
+                            </button>
 
                             <button
                               type="button"
