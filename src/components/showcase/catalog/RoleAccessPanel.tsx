@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import SectionPanel from "@/components/hubs/shared/SectionPanel";
@@ -46,9 +46,19 @@ const DETAIL_TEXT = {
 } as const;
 
 /** How long a deliberate click shields the scroll-sync from overriding it. */
-const CLICK_LOCK_MS = 800;
+const CLICK_LOCK_MS = 1600;
 /** Half-height of the band around the viewport centre that may claim focus. */
 const SYNC_BAND_PX = 280;
+
+/** The vertical line the rail reads at: the middle of what is still visible
+ *  under the pinned detail card (plain viewport centre when it is not pinned). */
+function readingLine(slot: DOMRect, pane: DOMRect | null, vh: number) {
+  const pinnedBottom = pane ? Math.min(pane.bottom, vh) : vh / 2;
+  return Math.min(
+    Math.max((Math.max(pinnedBottom, slot.top) + vh) / 2, vh * 0.5),
+    vh * 0.92,
+  );
+}
 
 /*
  * -------------------------------------------------------------------------
@@ -90,6 +100,8 @@ export default function RoleAccessPanel({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const clickLockRef = useRef(0);
   const announcedRef = useRef("");
+  const flashTimerRef = useRef(0);
+  const [flashPath, setFlashPath] = useState<string | null>(null);
 
   const guideKey = guide?.key ?? "";
   const panelId = catalogFeaturePanelId(category.id, feature.id);
@@ -124,12 +136,10 @@ export default function RoleAccessPanel({
       // pinned detail card. Falls back to the plain viewport centre when the
       // card is not pinned (phones).
       const pane = root.querySelector<HTMLElement>("[data-role-focus-card]");
-      const pinnedBottom = pane
-        ? Math.min(pane.getBoundingClientRect().bottom, vh)
-        : vh / 2;
-      const line = Math.min(
-        Math.max((Math.max(pinnedBottom, sr.top) + vh) / 2, vh * 0.5),
-        vh * 0.92,
+      const line = readingLine(
+        sr,
+        pane ? pane.getBoundingClientRect() : null,
+        vh,
       );
       if (sr.top > line || sr.bottom < line) {
         // Out of this role: allow a later re-entry to re-announce the scene.
@@ -180,6 +190,47 @@ export default function RoleAccessPanel({
       if (raf) cancelAnimationFrame(raf);
     };
   }, [guideKey, panelId]);
+
+  // A ring-card click in the middle stage: bring that route's chip onto the
+  // rail's reading line and flash it, so the click lands the reader on the
+  // section (row + pinned details together) instead of changing state silently.
+  useEffect(() => {
+    if (!guideKey) return;
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ role?: string; path?: string }>).detail;
+      if (!detail?.path) return;
+      if (detail.role && detail.role !== guideKey) return;
+      const root = rootRef.current;
+      if (!root) return;
+
+      clickLockRef.current = performance.now();
+      setFlashPath(detail.path);
+      window.clearTimeout(flashTimerRef.current);
+      flashTimerRef.current = window.setTimeout(() => setFlashPath(null), 1800);
+
+      const row = root.querySelector<HTMLElement>(
+        `[data-role-route-row="${detail.path}"]`,
+      );
+      if (!row) return;
+      const slotEl = root.closest(".right-panel-slot") ?? root;
+      const pane = root.querySelector<HTMLElement>("[data-role-focus-card]");
+      const line = readingLine(
+        slotEl.getBoundingClientRect(),
+        pane ? pane.getBoundingClientRect() : null,
+        window.innerHeight || 0,
+      );
+      const r = row.getBoundingClientRect();
+      const delta = (r.top + r.bottom) / 2 - line;
+      if (Math.abs(delta) > 8) {
+        window.scrollBy({ top: delta, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("connected-os-open-route", onOpen);
+    return () => {
+      window.removeEventListener("connected-os-open-route", onOpen);
+      window.clearTimeout(flashTimerRef.current);
+    };
+  }, [guideKey]);
 
   if (!guide) {
     return null;
@@ -441,6 +492,9 @@ export default function RoleAccessPanel({
                         isActive
                           ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]"
                           : "border-[var(--color-border-soft)] bg-transparent hover:border-[var(--color-primary)]",
+                        flashPath === item.path
+                          ? "shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                          : "",
                       ].join(" ")}
                     >
                       <span

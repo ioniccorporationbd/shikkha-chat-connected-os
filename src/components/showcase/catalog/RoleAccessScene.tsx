@@ -273,18 +273,27 @@ export default function RoleAccessScene({
             >
               <button
                 type="button"
-                onClick={() => setRoleRouteFocus(guide.key, entry.item.path)}
+                onClick={() => {
+                  setRoleRouteFocus(guide.key, entry.item.path);
+                  // Same gesture as the other sections' cards: the rail jumps to
+                  // this route's row and flashes it.
+                  window.dispatchEvent(
+                    new CustomEvent("connected-os-open-route", {
+                      detail: { role: guide.key, path: entry.item.path },
+                    }),
+                  );
+                }}
                 data-role-ring-card={entry.item.path}
                 aria-label={entry.item.label[lang]}
                 title={entry.item.label[lang]}
                 style={{ height: size.h }}
-                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[16px] border-[2px] border-[var(--color-primary)] bg-[var(--color-white)] p-[5px] text-center shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] outline-none transition-shadow hover:shadow-[0_20px_44px_color-mix(in_srgb,var(--color-primary)_20%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[16px] bg-[var(--color-white)] p-2 text-center shadow-[0_10px_26px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] outline-none transition-shadow hover:shadow-[0_18px_38px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
-                <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[11px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-1.5 text-center">
+                <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden text-center">
                   <span
                     aria-hidden="true"
                     className={`shrink-0 leading-none text-[var(--color-primary)] ${
-                      isMedium ? "text-[22px]" : "text-[16px]"
+                      isMedium ? "text-[32px]" : "text-[26px]"
                     }`}
                   >
                     {Icon ? <Icon /> : null}
