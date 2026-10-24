@@ -9,7 +9,6 @@ import {
   SHOWCASE_TEXT,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
-import { visibleRouteTotal } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
@@ -219,9 +218,6 @@ export default function FeatureShowcase() {
                               <span className="truncate font-semibold tracking-[-0.01em]">
                                 {guide.title[language]}
                               </span>
-                            </span>
-                            <span className="shrink-0 text-[11px] font-semibold opacity-60">
-                              {visibleRouteTotal(guide)}
                             </span>
                           </button>
                         </div>
