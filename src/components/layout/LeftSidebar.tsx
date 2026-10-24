@@ -4,11 +4,10 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import { FiArrowRight, FiAward, FiBriefcase, FiChevronDown, FiCompass, FiGrid, FiHeadphones, FiHome, FiMenu, FiX } from "react-icons/fi";
+import { FiAward, FiBriefcase, FiCompass, FiGrid, FiHome, FiMenu, FiX } from "react-icons/fi";
 import SidebarAuthButton from "@/components/auth/SidebarAuthButton";
 import SidebarRegisterButton from "@/components/auth/SidebarRegisterButton";
 import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
-import DashboardLanguageToggle from "@/components/dashboard/DashboardLanguageToggle";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 import FeatureShowcase from "@/components/showcase/FeatureShowcase";
@@ -113,22 +112,16 @@ const cardShadowClass =
 const sidebarText = {
   bn: {
     logoHome: "শিক্ষা চ্যাট হোম",
-    languageMode: "ভাষা নির্বাচন",
-    interfaceTitle: "বাংলা ইন্টারফেস",
     currentlyViewing: "বর্তমানে দেখছেন",
     theK12Os: "কে–টুয়েলভ অপারেটিং সিস্টেম",
     talkToExpert: "বিশেষজ্ঞের সাথে কথা বলুন",
-    helpDesk: "হেল্প ডেস্ক",
     overview: "সারসংক্ষেপ",
     menu: "মেনু",
     bannerTitle: "সংযুক্ত শিক্ষা সিস্টেম",
     bannerSubtitle: "শিক্ষা চ্যাট সংযুক্ত ওএস",
     closeMenu: "মেনু বন্ধ করুন",
-    toggleLanguage: "ভাষা পরিবর্তন করুন",
     bangla: "বাংলা",
     english: "English",
-    bnShort: "বাংলা",
-    enShort: "English",
     groups: {
       home: "হোম কানেকশন",
       student: "শিক্ষার্থী অর্জন",
@@ -168,22 +161,16 @@ const sidebarText = {
   },
   en: {
     logoHome: "Shikkha Chat home page",
-    languageMode: "Language Mode",
-    interfaceTitle: "English Interface",
     currentlyViewing: "Currently viewing",
     theK12Os: "The K-12 Operating System",
     talkToExpert: "Talk to an Expert",
-    helpDesk: "Help Desk",
     overview: "Overview",
     menu: "Menu",
     bannerTitle: "Connected Education System",
     bannerSubtitle: "Shikkha Chat Connected OS",
     closeMenu: "Close menu",
-    toggleLanguage: "Change language",
     bangla: "বাংলা",
     english: "English",
-    bnShort: "বাংলা",
-    enShort: "English",
     groups: {
       home: "Home Connections",
       student: "Student Achievement",
@@ -614,52 +601,6 @@ function SidebarChildLink({
   );
 }
 
-function LanguageSection() {
-  const { language } = useLanguage();
-  const currentLanguage = (language === "en" ? "en" : "bn") as LanguageCode;
-  const isBangla = currentLanguage === "bn";
-  const text = sidebarText[currentLanguage];
-
-  return (
-    <div
-      className={`mt-4 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}
-    >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className={`${sidebarSubtitleTextClass} text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]`}>
-            {text.languageMode}
-          </p>
-
-          <h3
-            className={`${sidebarTitleTextClass} mt-1 text-[var(--color-primary)]`}
-          >
-            {text.interfaceTitle}
-          </h3>
-        </div>
-
-        <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_40%,var(--color-white))] px-3 py-1 text-[12px] font-semibold leading-[1.2] tracking-[-0.01em] text-[var(--color-primary)]">
-          {isBangla ? text.bnShort : text.enShort}
-        </span>
-      </div>
-
-      {/* Exactly the Dashboard account-dropdown control: ONE single toggle,
-          never a separate bespoke segmented switch. */}
-      <DashboardLanguageToggle variant="full" />
-
-      {/* Help Desk lives in the SAME section as the language control. */}
-      <div className="mt-3 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-3">
-        <Link href="/help-desk" className={sidebarRowClass}>
-          <span className={[sidebarRowLabelClass, "font-semibold"].join(" ")}>
-            <FiHeadphones className={sidebarRowIconClass} />
-            <span className="truncate">{text.helpDesk}</span>
-          </span>
-          <FiArrowRight className="shrink-0 text-[16px] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5" />
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function SidebarLink({
   title,
   href,
@@ -920,7 +861,6 @@ export default function LeftSidebar() {
                 Log In + Registration. */}
             <SidebarAccountSection />
           </div>
-          <LanguageSection />
 
           <div className={`mt-5 rounded-2xl border bg-[var(--color-white)] p-3.5 ${cardBorderClass} ${cardShadowClass}`}>
             {/* Dashboard-style inner section header: a rounded, icon-led row. */}

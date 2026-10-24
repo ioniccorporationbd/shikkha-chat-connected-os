@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiChevronRight, FiGrid, FiLogIn, FiUserPlus } from "react-icons/fi";
+import { FiChevronRight, FiGlobe, FiGrid, FiLogIn, FiUserPlus } from "react-icons/fi";
 
 import { authCopyFor } from "@/lib/auth/messages";
 import { registerCopyFor } from "@/lib/auth/register-messages";
@@ -35,7 +35,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
  * nothing. Icon sizes are passed as props for the same reason.
  */
 export default function SidebarAccountSection() {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const authCopy = authCopyFor(language);
   const registerCopy = registerCopyFor(language);
 
@@ -53,6 +53,37 @@ export default function SidebarAccountSection() {
   const secondaryLabel =
     "inline-flex min-w-0 flex-1 items-center gap-3 text-[13px] font-medium leading-snug";
 
+  // Language switch — it used to live in its own sidebar card (heading, badge,
+  // toggle, Help Desk row) that has been removed. The same single toggle now
+  // sits directly ABOVE the account action and wears the Log In button's skin
+  // (`secondaryButton` + `secondaryLabel`), so it reads as one of the account
+  // buttons instead of a card of its own. The trailing chip shows the language
+  // a click will switch TO, so the control stays self-describing without a
+  // heading above it.
+  const isBangla = language !== "en";
+  const languageLabel = isBangla ? "বাংলা" : "English";
+  const nextLanguageLabel = isBangla ? "English" : "বাংলা";
+  const languageAria = isBangla ? "Switch language to English" : "ভাষা বাংলায় পরিবর্তন করুন";
+
+  const languageButton = (
+    <button
+      type="button"
+      data-no-translate="true"
+      aria-label={languageAria}
+      title={languageAria}
+      onClick={() => setLanguage(isBangla ? "en" : "bn")}
+      className={secondaryButton}
+    >
+      <span className={secondaryLabel}>
+        <FiGlobe aria-hidden size={16} className="shrink-0" />
+        <span className="truncate">{languageLabel}</span>
+      </span>
+      <span className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2 text-[11px] font-semibold leading-[16px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+        {nextLanguageLabel}
+      </span>
+    </button>
+  );
+
   if (status === "authenticated" && user) {
     const name = user.full_name || user.name;
 
@@ -62,6 +93,8 @@ export default function SidebarAccountSection() {
         data-no-translate="true"
         className="flex flex-col gap-2"
       >
+        {languageButton}
+
         <Link
           href={dashboardPathFor(user)}
           title={`${authCopy.signedInAs}: ${name}`}
@@ -87,6 +120,8 @@ export default function SidebarAccountSection() {
       data-no-translate="true"
       className="flex flex-col gap-2"
     >
+      {languageButton}
+
       <Link href={LOGIN_PATH} className={secondaryButton}>
         <span className={secondaryLabel}>
           <FiLogIn aria-hidden size={16} className="shrink-0" />
