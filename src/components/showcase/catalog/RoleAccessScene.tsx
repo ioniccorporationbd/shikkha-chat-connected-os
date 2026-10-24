@@ -5,17 +5,41 @@ import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ShowcaseCategory, ShowcaseFeature } from "@/lib/feature-showcase";
-import { focusedRouteEntry, roleRouteEntries } from "@/lib/role-route-docs";
+import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
+import { roleRouteEntries } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES, type RoleAccessKey } from "@/lib/role-routes";
-import { setRoleRouteFocus, useRoleRouteFocus } from "@/lib/role-route-selection";
 
 import { SHOWCASE_ICONS } from "./icons";
+import { catalogFeaturePanelId } from "./sceneGroups";
+
+const ROLE_SECTION_ID = "role-access";
+
+/* Icon of each role, taken from the same role rows the left sidebar's
+   "Role-based Dashboards" dropdown renders (FEATURE_SHOWCASE ▸ role-access). */
+const ROLE_ICON: Record<string, string> = Object.fromEntries(
+  (FEATURE_SHOWCASE.find((c) => c.id === ROLE_SECTION_ID)?.features ?? []).map((f) => [
+    f.id,
+    f.icon,
+  ]),
+);
+
+/* Same navigation gesture the left dropdown's role rows use: close the mobile
+   drawer, scroll the page to the role's own section, mark it active. */
+function navigateToSection(id: string) {
+  window.dispatchEvent(new CustomEvent("connected-os-sidebar-navigate"));
+  window.dispatchEvent(
+    new CustomEvent("connected-os-scroll-to-section", { detail: { id } }),
+  );
+  window.dispatchEvent(
+    new CustomEvent("connected-os-active-section", { detail: { id } }),
+  );
+}
 
 const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
 
 /* Card footprints — one BIG card in the central room, and EVERY card on the
    surrounding ring sharing one identical footprint (same height AND width, so
-   the ring reads as a single frame around the selected route). */
+   the ring reads as a single frame around the selected role). */
 const BIG = { w: 250, h: 208 };
 
 /* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
@@ -23,9 +47,9 @@ const BIG = { w: 250, h: 208 };
 const RING_RX = 36;
 const RING_RY = 38;
 
-/* EVERY other sub-route of the role is drawn on the ring — nothing is hidden.
-   The cards shrink in even steps as the ring gets denser, and each bucket keeps
-   one identical footprint, so the ring always reads as a single frame. */
+/* Ring cards share one footprint per bucket, so the ring always reads as a
+   single frame. The role ring holds the seven OTHER roles, which lands on the
+   first bucket (152x132). */
 const RING_BUCKETS = [
   { max: 8, w: 152, h: 132, icon: 30, fs: 0 },
   { max: 9, w: 140, h: 122, icon: 28, fs: 14 },
@@ -39,15 +63,6 @@ function ringCardSize(n: number): RingCardSpec {
   return RING_BUCKETS.find((bucket) => n <= bucket.max) ?? RING_BUCKETS[RING_BUCKETS.length - 1];
 }
 
-/* One ring holds up to RING_ONE_MAX cards; beyond that the stage grows a second,
-   wider orbit so a 29-route role still shows EVERY route around the selection.
-   Geometry below is overlap-free for every count from 1 to 29 routes. */
-const RING_ONE_MAX = 14;
-const INNER_MAX = 8;
-const INNER_RING = { rx: 26.5, ry: 30 };
-const OUTER_RING = { rx: 44.2, ry: 43.6 };
-const INNER_CARD: RingCardSpec = { w: 122, h: 106, icon: 24, fs: 12 };
-const OUTER_CARD: RingCardSpec = { w: 84, h: 74, icon: 18, fs: 10 };
 
 const TRAVEL_H = 340;
 const TRAVEL_V = 380;
@@ -87,16 +102,16 @@ function ringOffset(dir: number, ang: number) {
  * as School & Institution Management:
  *
  *   • a bordered central FRAME (the "room") holding the biggest card — here the
- *     SELECTED sub-route of the role (label, menu group, role icon);
- *   • a RING of smaller cards around it, starting at the right and walking
- *     anticlockwise, carrying EVERY other sub-route of the role in catalogue
- *     order (the ring shrinks its cards in even steps as it gets denser);
+ *     SELECTED ROLE itself, i.e. "route one" of this section;
+ *   • a RING of the OTHER seven roles around it, starting at the right and
+ *     walking anticlockwise, in exactly the order the left sidebar's
+ *     "Role-based Dashboards" dropdown lists them — pick "route three" and it
+ *     takes the centre while routes 1, 2, 4, 5… ring it;
  *   • the same staggered, single-direction reveal as every other section.
  *
- * Clicking a ring card selects that sub-route: the centre card becomes it and
- * the right rail shows what the route does. Selection is shared through a tiny
- * external store, so the two stay in step in both directions — ring click →
- * rail, rail scroll → centre card.
+ * Clicking a ring role jumps STRAIGHT to that role's own section of the page
+ * (its middle stage + its right rail), the same gesture the left dropdown's
+ * role row performs.
  *
  * The route PATH is never printed: cards carry labels only.
  * -------------------------------------------------------------------------
@@ -115,7 +130,6 @@ export default function RoleAccessScene({
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
   const reduce = useReducedMotion();
-  const focus = useRoleRouteFocus();
 
   const guide = useMemo(
     () => ROLE_ACCESS_GUIDES.find((entry) => entry.key === (feature.id as RoleAccessKey)),
@@ -148,56 +162,33 @@ export default function RoleAccessScene({
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const active = useMemo(
-    () => (guide ? focusedRouteEntry(guide, focus) : null),
-    [guide, focus],
-  );
-
-
+  // The ring = the other seven roles, in the dropdown's own order. Selecting a
+  // role (its own panel) re-centres the ring on it: "route three" in the middle,
+  // routes 1, 2, 4, 5… around it.
   const ring = useMemo(() => {
-    if (!guide || !active) return [];
-    // Every OTHER route of the role, in catalogue order: route 1 sits in the
-    // centre, routes 2…n ring it; select route 3 and route 3 takes the centre
-    // while 1, 2, 4, 5… ring it. Nothing is dropped.
-    const items = roleRouteEntries(guide).filter(
-      (entry) => entry.item.path !== active.item.path,
-    );
-    const n = items.length;
-    // Same 3dp rounding as every other stage: identical strings on server and
-    // client, so no hydration mismatch for the inline style.
-    const round3 = (v: number) => Math.round(v * 1000) / 1000;
-    const place = (
-      slice: typeof items,
-      ringIndex: { rx: number; ry: number },
-      size: RingCardSpec,
-      phase = 0,
-    ) =>
-      slice.map((entry, i) => {
-        const ang = ((i + phase) / Math.max(slice.length, 1)) * Math.PI * 2;
-        return {
-          entry,
-          i,
-          x: round3(50 + ringIndex.rx * Math.cos(ang)),
-          y: round3(50 - ringIndex.ry * Math.sin(ang)),
-          ang,
-          size,
-        };
-      });
+    if (!guide) return [];
+    const items = ROLE_ACCESS_GUIDES.filter((entry) => entry.key !== guide.key);
+    const size = ringCardSize(items.length + 1);
+    return items.map((entry, i) => {
+      const ang = (i / Math.max(items.length, 1)) * Math.PI * 2;
+      return {
+        entry,
+        i,
+        x: r3(50 + RING_RX * Math.cos(ang)),
+        y: r3(50 - RING_RY * Math.sin(ang)),
+        ang,
+        size,
+        icon: ROLE_ICON[entry.key] ?? feature.icon,
+      };
+    });
+  }, [guide, feature.icon]);
 
-    if (n <= RING_ONE_MAX) {
-      return place(items, { rx: RING_RX, ry: RING_RY }, ringCardSize(n));
-    }
-    // Dense role (e.g. 29 admin routes): an inner orbit plus a wider outer one,
-    // phase-shifted half a step so the two rings never line up radially.
-    return [
-      ...place(items.slice(0, INNER_MAX), INNER_RING, INNER_CARD),
-      ...place(items.slice(INNER_MAX), OUTER_RING, OUTER_CARD, 0.5),
-    ];
-  }, [guide, active]);
+  if (!guide) return null;
 
-  if (!guide || !active) return null;
-
-  const Icon = SHOWCASE_ICONS[feature.icon];
+  const Icon = SHOWCASE_ICONS[ROLE_ICON[guide.key] ?? feature.icon];
+  const routeCount = roleRouteEntries(guide).length;
+  const routeCountLabel =
+    lang === "en" ? `${routeCount} routes` : `${routeCount}টি রুট`;
 
   const SUB_DIRS = [2, 3, 0, 1, 5] as const;
   const dir =
@@ -258,7 +249,7 @@ export default function RoleAccessScene({
         animate={shown ? "visible" : "hidden"}
         className="relative h-full w-full"
       >
-        {/* Central room — the biggest card = the SELECTED sub-route. */}
+        {/* Central room — the biggest card = the SELECTED role. */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={roomVariants} className="relative">
             {category?.title?.[lang] ? (
@@ -280,16 +271,16 @@ export default function RoleAccessScene({
                   {Icon ? <Icon /> : null}
                 </span>
                 <motion.span
-                  key={active.item.path}
+                  key={guide.key}
                   initial={reduce ? { opacity: 1 } : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: reduce ? 0 : 0.3, ease: PREMIUM_EASE }}
                   className="card-title line-clamp-2 max-w-[210px] text-center"
                 >
-                  {active.item.label[lang]}
+                  {guide.title[lang]}
                 </motion.span>
                 <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
-                  {active.group.title[lang]}
+                  {routeCountLabel}
                 </span>
               </div>
             </div>
@@ -297,11 +288,12 @@ export default function RoleAccessScene({
         </div>
 
         {/* Ring of neighbouring sub-routes (same menu group first). */}
-        {ring.map(({ entry, i, x, y, ang, size }) => {
+        {ring.map(({ entry, i, x, y, ang, size, icon }) => {
+          const RingIcon = SHOWCASE_ICONS[icon];
 
           return (
             <motion.div
-              key={entry.item.path}
+              key={entry.key}
               variants={ringVariants(i, ang)}
               className="cf-scatter-card absolute z-20"
               style={{
@@ -315,18 +307,14 @@ export default function RoleAccessScene({
               <button
                 type="button"
                 onClick={() => {
-                  setRoleRouteFocus(guide.key, entry.item.path);
-                  // Same gesture as the other sections' cards: the rail jumps to
-                  // this route's row and flashes it.
-                  window.dispatchEvent(
-                    new CustomEvent("connected-os-open-route", {
-                      detail: { role: guide.key, path: entry.item.path },
-                    }),
-                  );
+                  // Straight to that role's own section (instant scroll handled
+                  // by the section engine) — its stage re-centres on it and its
+                  // right rail shows that role's details.
+                  navigateToSection(catalogFeaturePanelId(ROLE_SECTION_ID, entry.key));
                 }}
-                data-role-ring-card={entry.item.path}
-                aria-label={entry.item.label[lang]}
-                title={entry.item.label[lang]}
+                data-role-ring-card={entry.key}
+                aria-label={entry.title[lang]}
+                title={entry.title[lang]}
                 style={{ height: `${size.h}px` }}
                 className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
@@ -334,7 +322,7 @@ export default function RoleAccessScene({
                   className="connected-icon-float mb-[6px] leading-none text-[var(--color-primary)]"
                   style={{ fontSize: `${size.icon}px` }}
                 >
-                  {Icon ? <Icon /> : null}
+                  {RingIcon ? <RingIcon /> : null}
                 </span>
                 <span
                   className="card-title line-clamp-2 text-center font-normal"
@@ -343,7 +331,7 @@ export default function RoleAccessScene({
                     ...(size.fs ? { fontSize: `${size.fs}px`, lineHeight: 1.2 } : {}),
                   }}
                 >
-                  {entry.item.label[lang]}
+                  {entry.title[lang]}
                 </span>
               </button>
             </motion.div>
