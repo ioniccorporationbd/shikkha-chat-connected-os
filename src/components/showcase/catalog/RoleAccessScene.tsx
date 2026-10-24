@@ -17,7 +17,7 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
    surrounding ring sharing one identical footprint (same height AND width, so
    the ring reads as a single frame around the selected route). */
 const BIG = { w: 250, h: 208 };
-const RING_CARD = { w: 158, h: 146 };
+const RING_CARD = { w: 152, h: 132 };
 
 /* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
    other Connected OS catalog ring. */
@@ -36,6 +36,10 @@ const REVEAL_LEAD_S = 0.08;
 const REVEAL_CARD_S = 0.42;
 const REVEAL_SPAN_S = Math.max(REVEAL_TOTAL_S - REVEAL_LEAD_S - REVEAL_CARD_S, 0.1);
 
+// Round to 3dp — framer-motion serialises SSR transforms to 3dp, so feeding
+// full-precision numbers here makes the client's inline style differ from the
+// server markup and React logs a hydration mismatch.
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
 function ringOffset(dir: number, ang: number) {
   const c = Math.cos(ang);
   const s = Math.sin(ang);
@@ -49,9 +53,9 @@ function ringOffset(dir: number, ang: number) {
     case 3:
       return { x: 0, y: TRAVEL_V };
     case 4:
-      return { x: c * 150, y: -s * 150 };
+      return { x: r3(c * 150), y: r3(-s * 150) };
     default:
-      return { x: -c * 300, y: s * 300 };
+      return { x: r3(-c * 300), y: r3(s * 300) };
   }
 }
 
@@ -141,11 +145,14 @@ export default function RoleAccessScene({
     const n = items.length;
     return items.map((entry, i) => {
       const ang = n ? (i / n) * Math.PI * 2 : 0;
+      // Same 3dp rounding as every other stage: identical strings on server
+      // and client, so no hydration mismatch for the inline style.
+      const round3 = (v: number) => Math.round(v * 1000) / 1000;
       return {
         entry,
         i,
-        x: 50 + RING_RX * Math.cos(ang),
-        y: 50 - RING_RY * Math.sin(ang),
+        x: round3(50 + RING_RX * Math.cos(ang)),
+        y: round3(50 - RING_RY * Math.sin(ang)),
         ang,
       };
     });
@@ -230,9 +237,9 @@ export default function RoleAccessScene({
             >
               <div
                 aria-live="polite"
-                className="relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center"
+                className="group relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center"
               >
-                <span className="text-[46px] leading-none text-[var(--color-primary)]">
+                <span className="text-[46px] leading-none text-[var(--color-primary)] transition-transform duration-300 group-hover:scale-110">
                   {Icon ? <Icon /> : null}
                 </span>
                 <motion.span
@@ -267,8 +274,6 @@ export default function RoleAccessScene({
                 marginLeft: `${-size.w / 2}px`,
                 marginTop: `${-size.h / 2}px`,
                 width: `${size.w}px`,
-                transition:
-                  "left .55s cubic-bezier(.22,1,.36,1), top .55s cubic-bezier(.22,1,.36,1)",
               }}
             >
               <button
@@ -287,18 +292,13 @@ export default function RoleAccessScene({
                 aria-label={entry.item.label[lang]}
                 title={entry.item.label[lang]}
                 style={{ height: `${size.h}px` }}
-                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[18px] bg-[var(--color-white)] p-2 text-center shadow-[0_10px_26px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] outline-none transition-shadow hover:shadow-[0_18px_38px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+                className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
-                <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden text-center">
-                  <span
-                    aria-hidden="true"
-                    className="shrink-0 text-[32px] leading-none text-[var(--color-primary)]"
-                  >
-                    {Icon ? <Icon /> : null}
-                  </span>
-                  <span className="card-title line-clamp-3 max-w-[126px]">
-                    {entry.item.label[lang]}
-                  </span>
+                <span className="connected-icon-float mb-[6px] text-[30px] leading-none text-[var(--color-primary)]">
+                  {Icon ? <Icon /> : null}
+                </span>
+                <span className="card-title line-clamp-2 max-w-[132px] text-center font-normal">
+                  {entry.item.label[lang]}
                 </span>
               </button>
             </motion.div>

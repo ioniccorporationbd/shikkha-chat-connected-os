@@ -65,6 +65,10 @@ const TRAVEL_H = 340;
 const TRAVEL_V = 380;
 const TRAVEL_OUT = 150;
 const TRAVEL_IN = 300;
+// Round to 3dp — framer-motion serialises SSR transforms to 3dp, so feeding
+// full-precision numbers here makes the client's inline style differ from the
+// server markup and React logs a hydration mismatch.
+const r3 = (v: number) => Math.round(v * 1000) / 1000;
 function ringOffset(dir: number, ang: number) {
   const c = Math.cos(ang);
   const s = Math.sin(ang);
@@ -78,9 +82,9 @@ function ringOffset(dir: number, ang: number) {
     case 3:
       return { x: 0, y: TRAVEL_V };
     case 4:
-      return { x: c * TRAVEL_OUT, y: -s * TRAVEL_OUT };
+      return { x: r3(c * TRAVEL_OUT), y: r3(-s * TRAVEL_OUT) };
     default:
-      return { x: -c * TRAVEL_IN, y: s * TRAVEL_IN };
+      return { x: r3(-c * TRAVEL_IN), y: r3(s * TRAVEL_IN) };
   }
 }
 
