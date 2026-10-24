@@ -177,8 +177,11 @@ export default function CatalogFeatureScene({
     const n = items.length;
     return items.map((item, i) => {
       const ang = n ? (i / n) * Math.PI * 2 : 0; // 0 = right, + = anticlockwise (up)
-      const x = 50 + RING_RX * Math.cos(ang);
-      const y = 50 - RING_RY * Math.sin(ang);
+      // Round to 3dp: the same value must stringify identically on the server
+      // and the client, or React logs a hydration mismatch for the inline style.
+      const round3 = (v: number) => Math.round(v * 1000) / 1000;
+      const x = round3(50 + RING_RX * Math.cos(ang));
+      const y = round3(50 - RING_RY * Math.sin(ang));
       return { item, i, ang, x, y };
     });
   }, [siblings]);
@@ -307,9 +310,9 @@ export default function CatalogFeatureScene({
                   style={{
                     left: `${x}%`,
                     top: `${y}%`,
-                    marginLeft: -size.w / 2,
-                    marginTop: -size.h / 2,
-                    width: size.w,
+                    marginLeft: `${-size.w / 2}px`,
+                    marginTop: `${-size.h / 2}px`,
+                    width: `${size.w}px`,
                   }}
                 >
                   <button
@@ -317,7 +320,7 @@ export default function CatalogFeatureScene({
                     onClick={() => scrollToPanel(tileId)}
                     aria-label={item.title[lang]}
                     title={item.title[lang]}
-                    style={{ height: size.h }}
+                    style={{ height: `${size.h}px` }}
                     className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
                   >
                     <span

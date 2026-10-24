@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { LuCheck } from "react-icons/lu";
 
 import SectionPanel from "@/components/hubs/shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -241,10 +242,6 @@ export default function RoleAccessPanel({
   const entries = roleRouteEntries(guide);
   const active = focusedRouteEntry(guide, focus) ?? entries[0];
   const activeIndex = entries.findIndex((entry) => entry.item.path === active.item.path);
-  const siblingsInGroup = entries.filter(
-    (entry) =>
-      entry.group.key === active.group.key && entry.item.path !== active.item.path,
-  );
   const groups = visibleMenuGroups(guide);
 
   const workflowRows = guide.workflows.map((step, index) => ({
@@ -252,10 +249,15 @@ export default function RoleAccessPanel({
     description: step.body[lang],
   }));
 
+  // The whole rail is ONE card in the homepage's own panel language
+  // (SectionPanel dashboard variant): icon tile + pill header, description,
+  // supporting paragraph, tick-row capabilities, meta rows — and this role's
+  // live sub-route / workflow / route index extended INSIDE the same surface,
+  // so the section reads exactly like every other section's right rail.
   return (
     <div className="max-w-[560px]" ref={rootRef}>
       <SectionPanel
-        id={catalogFeaturePanelId(category.id, feature.id)}
+        id={panelId}
         variant="dashboard"
         pill={category.title[lang]}
         title={guide.title[lang]}
@@ -264,265 +266,182 @@ export default function RoleAccessPanel({
         icon={SHOWCASE_ICONS[feature.icon]}
         showButtons={false}
         capabilities={guide.tips.map((tip) => tip[lang])}
-        stats={[
-          { value: String(routeCount), label: t.routesLabel[lang] },
-          { value: String(guide.workflows.length), label: t.workflowLabel[lang] },
-          { value: String(guide.signingRoles.length), label: t.signingLabel[lang] },
+        rows={[
           {
-            value: String(groups.length),
-            label: t.groupLabel[lang],
+            title: t.accessLabel[lang],
+            meta: [
+              { label: t.dashboardLabel[lang], value: guide.dashboardRoute },
+              {
+                label: SHOWCASE_TEXT.statusLabel[lang],
+                value: showcaseStatusLabel(feature, lang),
+              },
+              { label: t.signingLabel[lang], value: guide.signingRoles.join(", ") },
+              { label: t.routesLabel[lang], value: String(routeCount) },
+              { label: t.groupLabel[lang], value: String(groups.length) },
+            ],
           },
         ]}
-        rows={[]}
-      />
-
-      {/* Pinned detail card — the rail's answer to a School & Institution style
-          card: it always describes the sub-route currently on the middle stage,
-          so scene and rail can never disagree. Pinned on desktop only; on phones
-          the rail is the page, so it simply flows. The opaque wrapper keeps the
-          route chips from peeking around the card's rounded corners. */}
-      <div
-        data-role-focus-card={guide.key}
-        className="mb-5 rounded-[24px] bg-[var(--color-white)] lg:sticky lg:top-[82px] lg:z-30"
       >
-        <div className="relative rounded-[24px] border-[2px] border-[var(--color-primary)] bg-[var(--color-white)] p-5 shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_14%,transparent)] lg:max-h-[76vh] lg:overflow-y-auto lg:overscroll-contain lg:pr-4">
-          <div className="flex items-start justify-between gap-3">
-            <p className="section-label-badge">{active.group.title[lang]}</p>
-            <div className="flex items-center gap-2">
-              <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
-                {DETAIL_TEXT.subRoute[lang]} {activeIndex + 1}/{routeCount}
-              </span>
-              <button
-                type="button"
-                onClick={(event) => selectRoute(entries[0].item.path, event.timeStamp)}
-                aria-label={DETAIL_TEXT.reset[lang]}
-                title={DETAIL_TEXT.reset[lang]}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[var(--color-border-soft)] text-[13px] leading-none text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
-              >
-                ↺
-              </button>
-            </div>
-          </div>
-
-          <h3 className="mt-2.5 text-[20px] leading-snug font-black text-[var(--color-primary)]">
-            {active.item.label[lang]}
-          </h3>
-          <p className="capability-text mt-2 text-[color-mix(in_srgb,var(--color-black)_74%,var(--color-primary))]">
-            {active.item.description[lang]}
-          </p>
-          <p className="capability-text mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[color-mix(in_srgb,var(--color-black)_52%,var(--color-primary))]">
-            <span className="font-semibold text-[var(--color-primary)]">{active.group.title[lang]}</span>
-            <span aria-hidden="true">·</span>
-            <span>
-              {DETAIL_TEXT.inGroup[lang]} {active.group.items.length} {DETAIL_TEXT.subRoute[lang]}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="font-semibold text-[var(--color-primary)]">{guide.dashboardRoute}</span>
-          </p>
-
-          {siblingsInGroup.length ? (
-            <div className="mt-4 border-t border-[var(--color-border-soft)] pt-3.5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
-                {DETAIL_TEXT.moreInGroup[lang]}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {siblingsInGroup.slice(0, 4).map((entry) => (
-                  <button
-                    key={entry.item.path}
-                    type="button"
-                    onClick={(event) => selectRoute(entry.item.path, event.timeStamp)}
-                    className="capability-text rounded-full border border-[var(--color-border-soft)] px-2.5 py-1 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                  >
-                    {entry.item.label[lang]}
-                  </button>
-                ))}
+        {/* Live sub-route card — always shows the route currently on the
+            middle stage, in the same bordered-card language as the meta rows
+            above it, so scene and rail can never disagree. */}
+        <div data-role-focus-card={guide.key} className="mt-6 max-w-[560px]">
+          <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="section-label-badge">{active.group.title[lang]}</p>
+              <div className="flex items-center gap-2">
+                <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
+                  {DETAIL_TEXT.subRoute[lang]} {activeIndex + 1}/{routeCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={(event) => selectRoute(entries[0].item.path, event.timeStamp)}
+                  aria-label={DETAIL_TEXT.reset[lang]}
+                  title={DETAIL_TEXT.reset[lang]}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[var(--color-border-soft)] text-[13px] leading-none text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
+                >
+                  ↺
+                </button>
               </div>
             </div>
-          ) : null}
 
-          <div className="mt-4 border-t border-[var(--color-border-soft)] pt-3.5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
-              {DETAIL_TEXT.workflow[lang]}
+            <h3 className="section-description mt-2.5 text-[var(--color-primary)]">
+              {active.item.label[lang]}
+            </h3>
+            <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
+              {active.item.description[lang]}
             </p>
-            <ul className="mt-2 grid gap-2">
-              {workflowRows.slice(0, 2).map((row) => (
-                <li
-                  key={row.title}
-                  className="rounded-xl bg-[color-mix(in_srgb,var(--color-secondary)_10%,transparent)] p-2.5"
-                >
-                  <p className="capability-text font-semibold text-[var(--color-primary)]">{row.title}</p>
-                  <p className="capability-text mt-1 line-clamp-2 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
-                    {row.description}
-                  </p>
-                </li>
+
+            <dl className="mt-2.5 space-y-1">
+              {[
+                {
+                  label: DETAIL_TEXT.inGroup[lang],
+                  value: `${active.group.items.length} ${DETAIL_TEXT.subRoute[lang]}`,
+                },
+                {
+                  label: DETAIL_TEXT.whoCanUse[lang],
+                  value: guide.signingRoles.join(", "),
+                },
+                {
+                  label: t.dashboardLabel[lang],
+                  value: guide.dashboardRoute,
+                },
+              ].map((row) => (
+                <div key={row.label} className="flex gap-2">
+                  <dt className="capability-text shrink-0 font-semibold text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
+                    {row.label}:
+                  </dt>
+                  <dd className="capability-text min-w-0 break-all text-[var(--color-primary)]">
+                    {row.value}
+                  </dd>
+                </div>
               ))}
-            </ul>
-          </div>
+            </dl>
 
-          <div className="mt-4 border-t border-[var(--color-border-soft)] pt-3.5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
-              {DETAIL_TEXT.whoCanUse[lang]}
-            </p>
-            <p className="capability-text mt-1.5 font-semibold text-[var(--color-primary)]">
-              {guide.signingRoles.join(", ")}
-            </p>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border-soft)] pt-3.5">
             <Link
               href={active.item.path}
-              className="capability-text inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
+              className="capability-text mt-3 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
             >
               {DETAIL_TEXT.docs[lang]}
               <span aria-hidden="true">→</span>
             </Link>
-            <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
-              <span className="h-[3px] w-[3px] rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
-              {DETAIL_TEXT.selected[lang]} · {guide.title[lang]}
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* Route index — every verified route of the role, grouped like the app's
-          sidebar. The chips are the scroll-sync targets for the middle stage. */}
-      <div className="mt-6">
-        <p className="section-label-badge">{t.routesLabel[lang]}</p>
-        <h3 className="section-description mt-3 font-semibold text-[var(--color-primary)]">
-          {DETAIL_TEXT.index[lang]}
-        </h3>
-        <p className="capability-text mt-2 text-[color-mix(in_srgb,var(--color-black)_62%,var(--color-primary))]">
-          {DETAIL_TEXT.indexLead[lang]}
-        </p>
-
-        <div className="mt-3 grid gap-3">
-          <details className="rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-              <span className="section-description font-semibold text-[var(--color-primary)]">
-                {t.accessLabel[lang]}
-              </span>
-              <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
-                3
-              </span>
-            </summary>
-            <ul className="mt-3 grid gap-2.5">
-              {[
-                { label: t.dashboardLabel[lang], value: guide.dashboardRoute },
-                {
-                  label: SHOWCASE_TEXT.statusLabel[lang],
-                  value: showcaseStatusLabel(feature, lang),
-                },
-                {
-                  label: t.signingLabel[lang],
-                  value: guide.signingRoles.join(", "),
-                },
-              ].map((row) => (
-                <li
-                  key={row.label}
-                  className="rounded-xl border border-[var(--color-border-soft)] p-3"
-                >
-                  <p className="capability-text text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
-                    {row.label}
-                  </p>
-                  <p className="capability-text mt-1 break-words font-semibold text-[var(--color-primary)]">
-                    {row.value}
-                  </p>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href={guide.dashboardRoute}
-              className="capability-text mt-3 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
-            >
-              {t.openRoute[lang]}
-              <span aria-hidden="true">→</span>
-            </Link>
-          </details>
-
-          <details className="rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-              <span className="section-description font-semibold text-[var(--color-primary)]">
-                {t.workflowLabel[lang]}
-              </span>
-              <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
-                {guide.workflows.length}
-              </span>
-            </summary>
-            <ul className="mt-3 grid gap-2.5">
-              {workflowRows.map((row) => (
-                <li
-                  key={row.title}
-                  className="rounded-xl border border-[var(--color-border-soft)] p-3"
-                >
-                  <p className="capability-text font-semibold text-[var(--color-primary)]">
-                    {row.title}
-                  </p>
-                  <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
-                    {row.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </div>
-
-        <div className="mt-4 grid gap-4">
-          {groups.map((group) => (
-            <div key={group.key}>
-              <div className="flex items-center justify-between gap-3">
-                <p className="capability-text font-semibold uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
-                  {group.title[lang]}
+        {/* The role's real workflow, in the same bordered card. */}
+        <div className="mt-3 max-w-[560px] rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4">
+          <h3 className="section-description text-[var(--color-primary)]">
+            {DETAIL_TEXT.workflow[lang]}
+          </h3>
+          <ul className="mt-2 grid gap-2">
+            {workflowRows.map((row) => (
+              <li key={row.title}>
+                <p className="capability-text font-semibold text-[var(--color-primary)]">
+                  {row.title}
                 </p>
-                <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
-                  {group.items.length}
-                </span>
-              </div>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {group.items.map((item) => {
-                  const isActive = item.path === active.item.path;
-                  return (
-                    <button
-                      key={item.path}
-                      type="button"
-                      data-role-route-row={item.path}
-                      aria-pressed={isActive}
-                      onClick={(event) => selectRoute(item.path, event.timeStamp)}
-                      className={[
-                        "flex min-h-[54px] items-center gap-2 rounded-xl border px-3 py-2 text-left transition",
-                        isActive
-                          ? "border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]"
-                          : "border-[var(--color-border-soft)] bg-transparent hover:border-[var(--color-primary)]",
-                        flashPath === item.path
-                          ? "shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
-                          : "",
-                      ].join(" ")}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={[
-                          "h-1.5 w-1.5 shrink-0 rounded-full",
-                          isActive ? "bg-[var(--color-primary)]" : "bg-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-white))]",
-                        ].join(" ")}
-                      />
-                      <span className="capability-text font-semibold leading-snug text-[var(--color-primary)]">
-                        {item.label[lang]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                <p className="capability-text mt-1 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
+                  {row.description}
+                </p>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="capability-text mt-4 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
-        >
-          {t.allRoutes[lang]}
-          <span aria-hidden="true">→</span>
-        </Link>
-      </div>
+        {/* Route index — every verified route, grouped like the app's sidebar,
+            as the panel's own tick rows (the scroll-sync targets). */}
+        <div className="mt-6 max-w-[560px]">
+          <p className="section-label-badge">{t.routesLabel[lang]}</p>
+          <h3 className="section-description mt-3 text-[var(--color-primary)]">
+            {DETAIL_TEXT.index[lang]}
+          </h3>
+          <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_62%,var(--color-primary))]">
+            {DETAIL_TEXT.indexLead[lang]}
+          </p>
+
+          <div className="mt-3 grid gap-3">
+            {groups.map((group) => (
+              <div key={group.key}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="capability-text font-semibold uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
+                    {group.title[lang]}
+                  </p>
+                  <span className="capability-text shrink-0 rounded-full border border-[var(--color-border-soft)] px-2 py-0.5 text-[color-mix(in_srgb,var(--color-black)_60%,var(--color-primary))]">
+                    {group.items.length}
+                  </span>
+                </div>
+                <div className="mt-2 grid gap-2">
+                  {group.items.map((item) => {
+                    const isActive = item.path === active.item.path;
+                    return (
+                      <button
+                        key={item.path}
+                        type="button"
+                        data-role-route-row={item.path}
+                        aria-pressed={isActive}
+                        onClick={(event) => selectRoute(item.path, event.timeStamp)}
+                        className={[
+                          "sc-hc-tick-row w-full items-center text-left",
+                          isActive
+                            ? "!border-[var(--color-primary)] !bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+                            : "",
+                          flashPath === item.path
+                            ? "shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-action)_30%,transparent)]"
+                            : "",
+                        ].join(" ")}
+                      >
+                        <span aria-hidden="true" className="sc-hc-tick-tile">
+                          {isActive ? (
+                            <LuCheck className="h-3.5 w-3.5" />
+                          ) : (
+                            <span className="h-[3px] w-[3px] rounded-full bg-[var(--color-white)]" />
+                          )}
+                        </span>
+                        <span
+                          className={`capability-text font-semibold leading-snug ${
+                            isActive
+                              ? "text-[var(--color-primary)]"
+                              : "text-[color-mix(in_srgb,var(--color-black)_75%,var(--color-primary))]"
+                          }`}
+                        >
+                          {item.label[lang]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="capability-text mt-4 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
+          >
+            {t.allRoutes[lang]}
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </SectionPanel>
     </div>
   );
 }

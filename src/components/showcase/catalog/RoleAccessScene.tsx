@@ -55,13 +55,6 @@ function ringOffset(dir: number, ang: number) {
   }
 }
 
-const SCENE_TEXT = {
-  hint: {
-    bn: "বৃত্তের সাব-রুটে ক্লিক করুন — ডান পাশে সেই রুটের কাজ বিস্তারিত দেখাবে",
-    en: "Click a sub-route on the ring — its work opens in detail on the right",
-  },
-} as const;
-
 /*
  * -------------------------------------------------------------------------
  * ROLE ACCESS MIDDLE SCENE — School & Institution Management layout
@@ -85,6 +78,7 @@ const SCENE_TEXT = {
  * -------------------------------------------------------------------------
  */
 export default function RoleAccessScene({
+  category,
   feature,
   index = 0,
   featureIndex = 0,
@@ -223,6 +217,13 @@ export default function RoleAccessScene({
         {/* Central room — the biggest card = the SELECTED sub-route. */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={roomVariants} className="relative">
+            {category?.title?.[lang] ? (
+              <div className="absolute left-1/2 top-[-54px] z-20 -translate-x-1/2">
+                <span className="hc-scene-pill inline-flex h-[40px] min-w-[260px] items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[var(--color-primary)] bg-[var(--color-white)] px-[34px] text-center text-[13px] font-black uppercase leading-[37px] tracking-[0.12em] text-[var(--color-primary)] shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]">
+                  {category.title[lang]}
+                </span>
+              </div>
+            ) : null}
             <div
               className="cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[18px] shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
               style={{ width: BIG.w + 36, height: BIG.h + 36 }}
@@ -231,7 +232,7 @@ export default function RoleAccessScene({
                 aria-live="polite"
                 className="relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center"
               >
-                <span className="text-[42px] leading-none text-[var(--color-primary)]">
+                <span className="text-[46px] leading-none text-[var(--color-primary)]">
                   {Icon ? <Icon /> : null}
                 </span>
                 <motion.span
@@ -264,9 +265,9 @@ export default function RoleAccessScene({
               style={{
                 left: `${x}%`,
                 top: `${y}%`,
-                marginLeft: -size.w / 2,
-                marginTop: -size.h / 2,
-                width: size.w,
+                marginLeft: `${-size.w / 2}px`,
+                marginTop: `${-size.h / 2}px`,
+                width: `${size.w}px`,
                 transition:
                   "left .55s cubic-bezier(.22,1,.36,1), top .55s cubic-bezier(.22,1,.36,1)",
               }}
@@ -286,8 +287,8 @@ export default function RoleAccessScene({
                 data-role-ring-card={entry.item.path}
                 aria-label={entry.item.label[lang]}
                 title={entry.item.label[lang]}
-                style={{ height: size.h }}
-                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[16px] bg-[var(--color-white)] p-2 text-center shadow-[0_10px_26px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] outline-none transition-shadow hover:shadow-[0_18px_38px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+                style={{ height: `${size.h}px` }}
+                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[18px] bg-[var(--color-white)] p-2 text-center shadow-[0_10px_26px_color-mix(in_srgb,var(--color-primary)_9%,transparent)] outline-none transition-shadow hover:shadow-[0_18px_38px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
                 <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden text-center">
                   <span
@@ -311,13 +312,6 @@ export default function RoleAccessScene({
           );
         })}
 
-        {/* Reader hint — no paths, just what a click does. */}
-        <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 hidden -translate-x-1/2 lg:block">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-soft)] bg-[var(--color-white)]/85 px-4 py-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-black)_62%,var(--color-primary))] backdrop-blur">
-            <span className="h-1 w-1 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
-            {SCENE_TEXT.hint[lang]}
-          </span>
-        </div>
       </motion.div>
     </div>
   );

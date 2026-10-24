@@ -1,6 +1,7 @@
 "use client";
 
 import type { IconType } from "react-icons";
+import type { ReactNode } from "react";
 import { LuCheck } from "react-icons/lu";
 import { motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -51,6 +52,12 @@ type SectionPanelProps = {
    * Connections, Student Achievement and Operational Excellence rails.
    */
   variant?: "default" | "dashboard";
+  /**
+   * Optional extra content rendered INSIDE the card surface, after the stats —
+   * lets a panel extend the same card (e.g. the role-access rail's live
+   * sub-route detail + route index) instead of stacking a look-alike box.
+   */
+  children?: ReactNode;
 };
 
 const panelText = {
@@ -104,6 +111,7 @@ export default function SectionPanel({
   productDetailsText,
   saveProductText,
   variant = "default",
+  children,
 }: SectionPanelProps) {
   const { language } = useLanguage();
   const reduceMotion = useReducedMotion();
@@ -376,6 +384,9 @@ export default function SectionPanel({
           ) : null}
         </motion.div>
       ) : null}
+
+      {/* Panel-specific extension (rendered inside the same card surface). */}
+      {children}
     </>
   );
 
