@@ -13,11 +13,11 @@ import { SHOWCASE_ICONS } from "./icons";
 
 const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
 
-/* Card footprints — the SAME hierarchy as the School & Institution section:
-   one MAIN card, one MEDIUM ring card, the rest SMALL. */
+/* Card footprints — one BIG card in the central room, and EVERY card on the
+   surrounding ring sharing one identical footprint (same height AND width, so
+   the ring reads as a single frame around the selected route). */
 const BIG = { w: 250, h: 208 };
-const MEDIUM = { w: 158, h: 146 };
-const SMALL = { w: 112, h: 104 };
+const RING_CARD = { w: 158, h: 146 };
 
 /* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
    other Connected OS catalog ring. */
@@ -254,8 +254,7 @@ export default function RoleAccessScene({
 
         {/* Ring of neighbouring sub-routes (same menu group first). */}
         {ring.map(({ entry, i, x, y, ang }) => {
-          const size = i === 0 ? MEDIUM : SMALL;
-          const isMedium = i === 0;
+          const size = RING_CARD;
 
           return (
             <motion.div
@@ -293,17 +292,11 @@ export default function RoleAccessScene({
                 <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden text-center">
                   <span
                     aria-hidden="true"
-                    className={`shrink-0 leading-none text-[var(--color-primary)] ${
-                      isMedium ? "text-[32px]" : "text-[26px]"
-                    }`}
+                    className="shrink-0 text-[32px] leading-none text-[var(--color-primary)]"
                   >
                     {Icon ? <Icon /> : null}
                   </span>
-                  <span
-                    className={`card-title line-clamp-3 ${
-                      isMedium ? "max-w-[126px]" : "max-w-[90px]"
-                    }`}
-                  >
+                  <span className="card-title line-clamp-3 max-w-[126px]">
                     {entry.item.label[lang]}
                   </span>
                 </span>
