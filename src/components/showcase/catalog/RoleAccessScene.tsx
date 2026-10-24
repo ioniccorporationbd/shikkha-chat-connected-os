@@ -17,17 +17,37 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
    surrounding ring sharing one identical footprint (same height AND width, so
    the ring reads as a single frame around the selected route). */
 const BIG = { w: 250, h: 208 };
-const RING_CARD = { w: 152, h: 132 };
 
 /* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
    other Connected OS catalog ring. */
 const RING_RX = 36;
 const RING_RY = 38;
 
-/* Only the neighbouring sub-routes are drawn on the ring (same menu group
-   first). The complete list lives in the right rail, so the stage never turns
-   into a wall of 29 cards — the middle keeps the School & Institution calm. */
-const MAX_RING = 8;
+/* EVERY other sub-route of the role is drawn on the ring — nothing is hidden.
+   The cards shrink in even steps as the ring gets denser, and each bucket keeps
+   one identical footprint, so the ring always reads as a single frame. */
+const RING_BUCKETS = [
+  { max: 8, w: 152, h: 132, icon: 30, fs: 0 },
+  { max: 9, w: 140, h: 122, icon: 28, fs: 14 },
+  { max: 10, w: 130, h: 114, icon: 26, fs: 13 },
+  { max: 11, w: 122, h: 106, icon: 24, fs: 12 },
+  { max: 12, w: 114, h: 100, icon: 22, fs: 12 },
+  { max: Infinity, w: 106, h: 92, icon: 20, fs: 11 },
+] as const;
+type RingCardSpec = { w: number; h: number; icon: number; fs: number };
+function ringCardSize(n: number): RingCardSpec {
+  return RING_BUCKETS.find((bucket) => n <= bucket.max) ?? RING_BUCKETS[RING_BUCKETS.length - 1];
+}
+
+/* One ring holds up to RING_ONE_MAX cards; beyond that the stage grows a second,
+   wider orbit so a 29-route role still shows EVERY route around the selection.
+   Geometry below is overlap-free for every count from 1 to 29 routes. */
+const RING_ONE_MAX = 14;
+const INNER_MAX = 8;
+const INNER_RING = { rx: 26.5, ry: 30 };
+const OUTER_RING = { rx: 44.2, ry: 43.6 };
+const INNER_CARD: RingCardSpec = { w: 122, h: 106, icon: 24, fs: 12 };
+const OUTER_CARD: RingCardSpec = { w: 84, h: 74, icon: 18, fs: 10 };
 
 const TRAVEL_H = 340;
 const TRAVEL_V = 380;
@@ -69,8 +89,8 @@ function ringOffset(dir: number, ang: number) {
  *   • a bordered central FRAME (the "room") holding the biggest card — here the
  *     SELECTED sub-route of the role (label, menu group, role icon);
  *   • a RING of smaller cards around it, starting at the right and walking
- *     anticlockwise, carrying the role's neighbouring sub-routes (same menu
- *     group first, capped at MAX_RING);
+ *     anticlockwise, carrying EVERY other sub-route of the role in catalogue
+ *     order (the ring shrinks its cards in even steps as it gets denser);
  *   • the same staggered, single-direction reveal as every other section.
  *
  * Clicking a ring card selects that sub-route: the centre card becomes it and
@@ -136,26 +156,43 @@ export default function RoleAccessScene({
 
   const ring = useMemo(() => {
     if (!guide || !active) return [];
-    const entries = roleRouteEntries(guide).filter(
+    // Every OTHER route of the role, in catalogue order: route 1 sits in the
+    // centre, routes 2…n ring it; select route 3 and route 3 takes the centre
+    // while 1, 2, 4, 5… ring it. Nothing is dropped.
+    const items = roleRouteEntries(guide).filter(
       (entry) => entry.item.path !== active.item.path,
     );
-    const sameGroup = entries.filter((entry) => entry.group.key === active.group.key);
-    const others = entries.filter((entry) => entry.group.key !== active.group.key);
-    const items = [...sameGroup, ...others].slice(0, MAX_RING);
     const n = items.length;
-    return items.map((entry, i) => {
-      const ang = n ? (i / n) * Math.PI * 2 : 0;
-      // Same 3dp rounding as every other stage: identical strings on server
-      // and client, so no hydration mismatch for the inline style.
-      const round3 = (v: number) => Math.round(v * 1000) / 1000;
-      return {
-        entry,
-        i,
-        x: round3(50 + RING_RX * Math.cos(ang)),
-        y: round3(50 - RING_RY * Math.sin(ang)),
-        ang,
-      };
-    });
+    // Same 3dp rounding as every other stage: identical strings on server and
+    // client, so no hydration mismatch for the inline style.
+    const round3 = (v: number) => Math.round(v * 1000) / 1000;
+    const place = (
+      slice: typeof items,
+      ringIndex: { rx: number; ry: number },
+      size: RingCardSpec,
+      phase = 0,
+    ) =>
+      slice.map((entry, i) => {
+        const ang = ((i + phase) / Math.max(slice.length, 1)) * Math.PI * 2;
+        return {
+          entry,
+          i,
+          x: round3(50 + ringIndex.rx * Math.cos(ang)),
+          y: round3(50 - ringIndex.ry * Math.sin(ang)),
+          ang,
+          size,
+        };
+      });
+
+    if (n <= RING_ONE_MAX) {
+      return place(items, { rx: RING_RX, ry: RING_RY }, ringCardSize(n));
+    }
+    // Dense role (e.g. 29 admin routes): an inner orbit plus a wider outer one,
+    // phase-shifted half a step so the two rings never line up radially.
+    return [
+      ...place(items.slice(0, INNER_MAX), INNER_RING, INNER_CARD),
+      ...place(items.slice(INNER_MAX), OUTER_RING, OUTER_CARD, 0.5),
+    ];
   }, [guide, active]);
 
   if (!guide || !active) return null;
@@ -260,8 +297,7 @@ export default function RoleAccessScene({
         </div>
 
         {/* Ring of neighbouring sub-routes (same menu group first). */}
-        {ring.map(({ entry, i, x, y, ang }) => {
-          const size = RING_CARD;
+        {ring.map(({ entry, i, x, y, ang, size }) => {
 
           return (
             <motion.div
@@ -294,10 +330,19 @@ export default function RoleAccessScene({
                 style={{ height: `${size.h}px` }}
                 className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
-                <span className="connected-icon-float mb-[6px] text-[30px] leading-none text-[var(--color-primary)]">
+                <span
+                  className="connected-icon-float mb-[6px] leading-none text-[var(--color-primary)]"
+                  style={{ fontSize: `${size.icon}px` }}
+                >
                   {Icon ? <Icon /> : null}
                 </span>
-                <span className="card-title line-clamp-2 max-w-[132px] text-center font-normal">
+                <span
+                  className="card-title line-clamp-2 text-center font-normal"
+                  style={{
+                    maxWidth: `${size.w - 16}px`,
+                    ...(size.fs ? { fontSize: `${size.fs}px`, lineHeight: 1.2 } : {}),
+                  }}
+                >
                   {entry.item.label[lang]}
                 </span>
               </button>
