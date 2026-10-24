@@ -2414,3 +2414,16 @@ html[data-lang="en"] .language-toggle-knob {
     animation: none;
   }
 }
+
+/* ============================================================
+   Role route documentation pages (src/app/dashboard)
+   The unlayered `a { color: inherit }` reset outranks Tailwind's
+   text-* utilities, so the "current route" pill is declared here.
+   ============================================================ */
+.role-doc-pill-active,
+.role-doc-pill-active:hover,
+.role-doc-pill-active:focus-visible {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+}

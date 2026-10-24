@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import SectionPanel from "@/components/hubs/shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
@@ -131,6 +133,13 @@ export default function RoleAccessPanel({
                 </li>
               ))}
             </ul>
+            <Link
+              href={guide.dashboardRoute}
+              className="capability-text mt-3 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
+            >
+              {t.openRoute[lang]}
+              <span aria-hidden="true">→</span>
+            </Link>
           </details>
 
           <details className="rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4">
@@ -175,25 +184,35 @@ export default function RoleAccessPanel({
 
               <ul className="mt-3 grid gap-2.5">
                 {group.items.map((item) => (
-                  <li
-                    key={`${group.title[lang]}-${item.path}`}
-                    className="rounded-xl border border-[var(--color-border-soft)] p-3"
-                  >
-                    <p className="capability-text font-semibold text-[var(--color-primary)]">
-                      {item.label[lang]}
-                    </p>
-                    <p className="capability-text mt-1 break-all text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
-                      {item.path}
-                    </p>
-                    <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
-                      {item.description[lang]}
-                    </p>
+                  <li key={`${group.title[lang]}-${item.path}`}>
+                    <Link
+                      href={item.path}
+                      className="block rounded-xl border border-[var(--color-border-soft)] p-3 transition hover:border-[var(--color-primary)]"
+                    >
+                      <p className="capability-text font-semibold text-[var(--color-primary)]">
+                        {item.label[lang]}
+                      </p>
+                      <p className="capability-text mt-1 break-all text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
+                        {item.path}
+                      </p>
+                      <p className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]">
+                        {item.description[lang]}
+                      </p>
+                    </Link>
                   </li>
                 ))}
               </ul>
             </details>
           ))}
         </div>
+
+        <Link
+          href="/dashboard"
+          className="capability-text mt-4 inline-flex items-center gap-1 font-semibold text-[var(--color-primary)] hover:underline"
+        >
+          {t.allRoutes[lang]}
+          <span aria-hidden="true">→</span>
+        </Link>
       </div>
     </div>
   );

@@ -17,9 +17,10 @@
  *   AI Pathshala  /dashboard/<role>/ai-pathshala/<slug>
  *   report        /dashboard/<role>/reports/<slug>
  *
- * Route strings are INFORMATIONAL ONLY here (they belong to the Shikkha Chat Apps
- * app, not to Connected OS) — the showcase renders them as text, never as an
- * href, so no link can 404 inside Connected OS.
+ * Every path below is ALSO a real page of Connected OS (see
+ * src/app/dashboard/**): the /dashboard hub, a page per role and a page per
+ * route, each explaining the work the route does in Shikkha Chat Apps. The
+ * strings here stay identical to the app's own routes.
  */
 
 import type { LocalizedText } from "@/lib/feature-showcase";
@@ -607,9 +608,11 @@ export const ROLE_ACCESS_TEXT = {
   groupLabel: { bn: "গ্রুপ", en: "Groups" },
   accessLabel: { bn: "ড্যাশবোর্ড ও অ্যাক্সেস", en: "Dashboard & access" },
   note: {
-    bn: "এই রুটগুলো Shikkha Chat Apps অ্যাপের নিজস্ব ড্যাশবোর্ডের; Connected OS-এ এগুলো তথ্য হিসেবে দেখানো হচ্ছে, তাই কোনো লিংক ভাঙে না।",
-    en: "These routes belong to the Shikkha Chat Apps dashboard; Connected OS shows them as information, so no link can break.",
+    bn: "এই রুটগুলো Shikkha Chat Apps অ্যাপের নিজস্ব ড্যাশবোর্ডের — Connected OS-এ হুবহু একই নামে খোলা যায়, প্রতিটি পেজে অ্যাপে ওই রুটের কাজ ব্যাখ্যা করা আছে।",
+    en: "These are Shikkha Chat Apps dashboard routes — connected OS opens them under the exact same names, and every page explains the work the route does in the app.",
   },
+  openRoute: { bn: "এই রুট খুলুন", en: "Open this route" },
+  allRoutes: { bn: "সব ভূমিকার সব রুট", en: "All roles, all routes" },
   roleTabLabel: { bn: "ভূমিকা বেছে নিন", en: "Choose a role" },
 } as const;
 
