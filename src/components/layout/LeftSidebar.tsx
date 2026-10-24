@@ -88,8 +88,6 @@ const sidebarRowIndexClass =
 const sidebarText = {
   bn: {
     logoHome: "শিক্ষা চ্যাট হোম",
-    currentlyViewing: "বর্তমানে দেখছেন",
-    theK12Os: "কে–টুয়েলভ অপারেটিং সিস্টেম",
     talkToExpert: "বিশেষজ্ঞের সাথে কথা বলুন",
     overview: "সারসংক্ষেপ",
     menu: "মেনু",
@@ -137,8 +135,6 @@ const sidebarText = {
   },
   en: {
     logoHome: "Shikkha Chat home page",
-    currentlyViewing: "Currently viewing",
-    theK12Os: "The K-12 Operating System",
     talkToExpert: "Talk to an Expert",
     overview: "Overview",
     menu: "Menu",

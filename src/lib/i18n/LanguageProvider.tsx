@@ -26,6 +26,9 @@ const translations: Record<string, string> = {
     "বাড়ি, শ্রেণিকক্ষ ও কেন্দ্রীয় অফিসকে যুক্ত করুন",
   "UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE":
     "বাড়ি, শ্রেণিকক্ষ এবং কেন্দ্রীয় অফিসকে একসাথে যুক্ত করুন",
+  "Nursery to Masters — the Complete Solution by Shikkha Chat":
+    "নার্সারি থেকে মাস্টার্স — শিক্ষা চ্যাটের সম্পূর্ণ সমাধান",
+  "Nursery to Masters": "নার্সারি থেকে মাস্টার্স",
   "The K–12 Connected Operating System": "কে–টুয়েলভ সংযুক্ত অপারেটিং সিস্টেম",
   "The K-12 Connected Operating System": "কে–টুয়েলভ সংযুক্ত অপারেটিং সিস্টেম",
   "The K–12 OS": "কে–টুয়েলভ অপারেটিং সিস্টেম",
