@@ -1,81 +1,99 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ShowcaseCategory, ShowcaseFeature } from "@/lib/feature-showcase";
-import { roleRouteEntries, visibleRouteTotal } from "@/lib/role-route-docs";
-import { ROLE_ACCESS_GUIDES, type RoleAccessKey } from "@/lib/role-routes";
 import {
-  roleRouteFocusCardId,
-  setRoleRouteFocus,
-  useRoleRouteFocus,
-} from "@/lib/role-route-selection";
+  focusedRouteEntry,
+  roleRouteEntries,
+  visibleRouteTotal,
+} from "@/lib/role-route-docs";
+import { ROLE_ACCESS_GUIDES, type RoleAccessKey } from "@/lib/role-routes";
+import { setRoleRouteFocus, useRoleRouteFocus } from "@/lib/role-route-selection";
 
 import { SHOWCASE_ICONS } from "./icons";
 
-/*
- * -------------------------------------------------------------------------
- * ROLE ACCESS MIDDLE SCENE — the role's routes as a RADIAL MAP
- *
- * Used only by the "Role-based Dashboards" catalog section. Where every other
- * section puts a big card in the "room" and its sibling features on a ring,
- * this scene answers one question: for THIS role, what can I open?
- *
- *   • CENTRE  → the role itself (its main dashboard route, shown as a circle).
- *   • AROUND  → every real sub-route of that role as a small circle, laid out on
- *               one to three elliptical orbits (sidebar modules, AI Pathshala
- *               items, reports), in the same right → anticlockwise order the
- *               rest of the Connected OS rings use.
- *   • CLICK a circle → the RIGHT rail of the same role highlights that
- *               sub-route and describes what it does. Its internal path is not
- *               printed anywhere — only the title and the work.
- *
- * Routes come from `@/lib/role-routes` (generated from the real Shikkha Chat
- * Apps dashboard), so no circle is invented.
- * -------------------------------------------------------------------------
- */
+const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
 
-type Ring = { rx: number; ry: number };
+/* Card footprints — the SAME hierarchy as the School & Institution section:
+   one MAIN card, one MEDIUM ring card, the rest SMALL. */
+const BIG = { w: 250, h: 208 };
+const MEDIUM = { w: 152, h: 132 };
+const SMALL = { w: 104, h: 92 };
 
-/** Orbit plans, as percentages of the stage. Chosen so 29 circles still fit. */
-function ringPlan(count: number): Ring[] {
-  if (count <= 8) return [{ rx: 34, ry: 24 }];
-  if (count <= 20) return [{ rx: 27, ry: 15 }, { rx: 40, ry: 26 }];
-  return [{ rx: 24, ry: 13 }, { rx: 34, ry: 21 }, { rx: 44, ry: 29 }];
+/* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
+   other Connected OS catalog ring. */
+const RING_RX = 36;
+const RING_RY = 38;
+
+/* Only the neighbouring sub-routes are drawn on the ring (same menu group
+   first). The complete list lives in the right rail, so the stage never turns
+   into a wall of 29 cards — the middle keeps the School & Institution calm. */
+const MAX_RING = 8;
+
+const TRAVEL_H = 340;
+const TRAVEL_V = 380;
+const REVEAL_TOTAL_S = 1.0;
+const REVEAL_LEAD_S = 0.08;
+const REVEAL_CARD_S = 0.42;
+const REVEAL_SPAN_S = Math.max(REVEAL_TOTAL_S - REVEAL_LEAD_S - REVEAL_CARD_S, 0.1);
+
+function ringOffset(dir: number, ang: number) {
+  const c = Math.cos(ang);
+  const s = Math.sin(ang);
+  switch (dir) {
+    case 0:
+      return { x: TRAVEL_H, y: 0 };
+    case 1:
+      return { x: -TRAVEL_H, y: 0 };
+    case 2:
+      return { x: 0, y: -TRAVEL_V };
+    case 3:
+      return { x: 0, y: TRAVEL_V };
+    case 4:
+      return { x: c * 150, y: -s * 150 };
+    default:
+      return { x: -c * 300, y: s * 300 };
+  }
 }
-
-/** Split `count` circles over `rings.length` orbits, the extras on outer ones. */
-function ringCounts(count: number, rings: number): number[] {
-  const base = Math.floor(count / rings);
-  const extra = count - base * rings;
-  return Array.from({ length: rings }, (_, i) => base + (i >= rings - extra ? 1 : 0));
-}
-
-/** Kill the "(English hint)" part of a bilingual label so circles stay small. */
-function shortLabel(label: string): string {
-  return label.replace(/\([^)]*\)/g, "").replace(/\s{2,}/g, " ").trim();
-}
-
-const GROUP_TINTS = [
-  "color-mix(in srgb, var(--color-primary) 90%, var(--color-white))",
-  "color-mix(in srgb, var(--color-secondary) 85%, var(--color-primary))",
-  "color-mix(in srgb, var(--color-action) 85%, var(--color-primary))",
-];
 
 const SCENE_TEXT = {
-  centreLabel: { bn: "মূল রুট", en: "Main route" },
   hint: {
-    bn: "কেন্দ্রে মূল রুট · চারপাশে এই ভূমিকার সাব-রুট — যেকোনো বৃত্তে ক্লিক করুন",
-    en: "Main route at the centre · this role's sub-routes around it — click any circle",
+    bn: "বৃত্তের সাব-রুটে ক্লিক করুন — ডান পাশে সেই রুটের কাজ বিস্তারিত দেখাবে",
+    en: "Click a sub-route on the ring — its work opens in detail on the right",
   },
-  circleAria: { bn: "সাব-রুট দেখুন", en: "Show sub-route" },
-  resetAria: { bn: "নির্বাচন বাতিল", en: "Clear selection" },
+  routes: { bn: "রুট", en: "routes" },
 } as const;
 
+/*
+ * -------------------------------------------------------------------------
+ * ROLE ACCESS MIDDLE SCENE — School & Institution Management layout
+ *
+ * The Role-based Dashboards section now uses the SAME middle layout language
+ * as School & Institution Management:
+ *
+ *   • a bordered central FRAME (the "room") holding the biggest card — here the
+ *     SELECTED sub-route of the role (label, menu group, role icon);
+ *   • a RING of smaller cards around it, starting at the right and walking
+ *     anticlockwise, carrying the role's neighbouring sub-routes (same menu
+ *     group first, capped at MAX_RING);
+ *   • the same staggered, single-direction reveal as every other section.
+ *
+ * Clicking a ring card selects that sub-route: the centre card becomes it and
+ * the right rail shows what the route does. Selection is shared through a tiny
+ * external store, so the two stay in step in both directions — ring click →
+ * rail, rail scroll → centre card.
+ *
+ * The route PATH is never printed: cards carry labels only.
+ * -------------------------------------------------------------------------
+ */
 export default function RoleAccessScene({
   category,
   feature,
+  index = 0,
+  featureIndex = 0,
 }: {
   category: ShowcaseCategory;
   feature: ShowcaseFeature;
@@ -84,6 +102,7 @@ export default function RoleAccessScene({
 }) {
   const { language } = useLanguage();
   const lang = language === "en" ? "en" : "bn";
+  const reduce = useReducedMotion();
   const focus = useRoleRouteFocus();
 
   const guide = useMemo(
@@ -91,56 +110,103 @@ export default function RoleAccessScene({
     [feature.id],
   );
 
-  const entries = useMemo(() => (guide ? roleRouteEntries(guide) : []), [guide]);
-  const orbits = useMemo(() => {
-    const plan = ringPlan(entries.length);
-    const counts = ringCounts(entries.length, plan.length);
-    const starts: number[] = [];
-    counts.forEach((count, ringIndex) => {
-      starts.push(ringIndex === 0 ? 0 : starts[ringIndex - 1] + counts[ringIndex - 1]);
-    });
-    return plan.map((ring, ringIndex) => {
-      const slice = entries.slice(starts[ringIndex], starts[ringIndex] + counts[ringIndex]);
-      const n = slice.length;
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  // Reveal when the section enters the viewport — same per-frame visibility
+  // measure every catalog scene uses (cheap, layout-shift proof).
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    let raf = 0;
+    let cur = false;
+    const tick = () => {
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || 0;
+      const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      const ratio = visible / Math.max(r.height, 1);
+      const next = ratio >= 0.25 ? true : ratio < 0.1 ? false : cur;
+      if (next !== cur) {
+        cur = next;
+        setShown(next);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const active = useMemo(
+    () => (guide ? focusedRouteEntry(guide, focus) : null),
+    [guide, focus],
+  );
+
+  const total = guide ? visibleRouteTotal(guide) : 0;
+
+  const ring = useMemo(() => {
+    if (!guide || !active) return [];
+    const entries = roleRouteEntries(guide).filter(
+      (entry) => entry.item.path !== active.item.path,
+    );
+    const sameGroup = entries.filter((entry) => entry.group.key === active.group.key);
+    const others = entries.filter((entry) => entry.group.key !== active.group.key);
+    const items = [...sameGroup, ...others].slice(0, MAX_RING);
+    const n = items.length;
+    return items.map((entry, i) => {
+      const ang = n ? (i / n) * Math.PI * 2 : 0;
       return {
-        ring,
-        items: slice.map((entry, i) => {
-          // 0 rad = right, growing anticlockwise (same as the other rings);
-          // odd orbits are nudged half a step so circles never stack vertically.
-          const ang = (i / Math.max(n, 1)) * Math.PI * 2 + (ringIndex % 2 ? Math.PI / Math.max(n, 1) : 0);
-          return {
-            ...entry,
-            left: 50 + ring.rx * Math.cos(ang),
-            top: 50 - ring.ry * Math.sin(ang),
-          };
-        }),
+        entry,
+        i,
+        x: 50 + RING_RX * Math.cos(ang),
+        y: 50 - RING_RY * Math.sin(ang),
+        ang,
       };
     });
-  }, [entries]);
+  }, [guide, active]);
 
-  if (!guide) return null;
+  if (!guide || !active) return null;
 
-  const CentreIcon = SHOWCASE_ICONS[feature.icon];
-  const total = visibleRouteTotal(guide);
-  const selectedPath = focus?.roleKey === guide.key ? focus.path : null;
+  const Icon = SHOWCASE_ICONS[feature.icon];
 
-  const focusRoute = (path: string) => {
-    setRoleRouteFocus(guide.key, path);
-    // Bring the right-rail description card into view. Alignment (not
-    // centring) is deliberate: the sync engine marks whichever panel sits at
-    // the viewport centre as active, so a small upward nudge keeps THIS role's
-    // panel at the centre — the middle map must not switch to a neighbour.
-    window.requestAnimationFrame(() => {
-      const card = document.getElementById(roleRouteFocusCardId(guide.key));
-      if (!card) return;
-      const rect = card.getBoundingClientRect();
-      const top = Math.max(0, window.scrollY + rect.top - 104);
-      window.scrollTo({ top, behavior: "smooth" });
-    });
+  const SUB_DIRS = [2, 3, 0, 1, 5] as const;
+  const dir =
+    SUB_DIRS[
+      (((featureIndex + index) % SUB_DIRS.length) + SUB_DIRS.length) % SUB_DIRS.length
+    ];
+  const step = reduce ? 0 : REVEAL_SPAN_S / Math.max(ring.length, 1);
+
+  const pageVariants: Variants = { hidden: {}, visible: {} };
+  const roomVariants: Variants = {
+    hidden: reduce ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, y: 16 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      transition: { duration: reduce ? 0 : 0.5, ease: PREMIUM_EASE },
+    },
+  };
+  const ringVariants = (i: number, ang: number): Variants => {
+    const off = ringOffset(dir, ang);
+    return {
+      hidden: reduce ? { opacity: 1, x: 0, y: 0 } : { opacity: 0, x: off.x, y: off.y },
+      visible: {
+        opacity: 1,
+        x: 0,
+        y: 0,
+        transition: {
+          duration: reduce ? 0 : REVEAL_CARD_S,
+          ease: PREMIUM_EASE,
+          delay: reduce ? 0 : REVEAL_LEAD_S + i * step,
+        },
+      },
+    };
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_9%,var(--color-white))]">
+    <div
+      ref={rootRef}
+      className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_9%,var(--color-white))]"
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffffff]/70 opacity-90 blur-[88px]"
@@ -154,86 +220,100 @@ export default function RoleAccessScene({
         className="pointer-events-none absolute bottom-[10%] right-[12%] h-[280px] w-[280px] rounded-full bg-[var(--color-secondary)]/12 blur-[94px]"
       />
 
-      <div className="absolute left-1/2 top-3 z-30 -translate-x-1/2">
-        <span className="hc-scene-pill inline-flex h-[34px] items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[var(--color-primary)] bg-[var(--color-white)] px-5 text-[11px] font-black uppercase leading-[31px] tracking-[0.1em] text-[var(--color-primary)] shadow-[0_16px_44px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] sm:px-6">
-          {category.title[lang]}
-        </span>
-      </div>
+      <motion.div
+        variants={pageVariants}
+        initial="hidden"
+        animate={shown ? "visible" : "hidden"}
+        className="relative h-full w-full"
+      >
+        {/* Central room — the biggest card = the SELECTED sub-route. */}
+        <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+          <motion.div variants={roomVariants} className="relative">
+            <div className="absolute left-1/2 top-[-54px] z-20 -translate-x-1/2">
+              <span className="hc-scene-pill inline-flex h-[40px] min-w-[260px] items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[var(--color-primary)] bg-[var(--color-white)] px-[34px] text-center text-[13px] font-black uppercase leading-[37px] tracking-[0.12em] text-[var(--color-primary)] shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]">
+                {category.title[lang]} · {guide.title[lang]} · {total} {SCENE_TEXT.routes[lang]}
+              </span>
+            </div>
 
-      {/* Centre — the role's MAIN route, always the same circle. */}
-      <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
-        <button
-          type="button"
-          onClick={() => setRoleRouteFocus(guide.key, null)}
-          aria-label={`${guide.title[lang]} — ${SCENE_TEXT.resetAria[lang]}`}
-          className="grid h-[132px] w-[132px] place-items-center rounded-full border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] px-2 text-center shadow-[0_28px_80px_color-mix(in_srgb,var(--color-primary)_18%,transparent)] transition hover:border-[var(--color-action)] sm:h-[168px] sm:w-[168px]"
-        >
-          <span className="flex flex-col items-center gap-1">
-            <span className="text-[30px] leading-none text-[var(--color-primary)] sm:text-[40px]">
-              {CentreIcon ? <CentreIcon /> : null}
-            </span>
-            <span className="line-clamp-2 px-1 text-[11px] font-black leading-tight text-[var(--color-primary)] sm:text-[13px]">
-              {guide.title[lang]}
-            </span>
-            <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-[var(--color-action)] sm:text-[9px]">
-              {SCENE_TEXT.centreLabel[lang]} · {total}
-            </span>
-          </span>
-        </button>
-      </div>
+            <div
+              className="cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[18px] shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
+              style={{ width: BIG.w + 36, height: BIG.h + 36 }}
+            >
+              <div
+                aria-live="polite"
+                className="relative flex h-full w-full flex-col items-center justify-center gap-2 rounded-[20px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-4 text-center"
+              >
+                <span className="text-[42px] leading-none text-[var(--color-primary)]">
+                  {Icon ? <Icon /> : null}
+                </span>
+                <motion.span
+                  key={active.item.path}
+                  initial={reduce ? { opacity: 1 } : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: reduce ? 0 : 0.3, ease: PREMIUM_EASE }}
+                  className="card-title line-clamp-2 max-w-[210px] text-center"
+                >
+                  {active.item.label[lang]}
+                </motion.span>
+                <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
+                  {active.group.title[lang]}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
-      {/* Orbits — every real sub-route of this role, one circle each. */}
-      {orbits.map(({ items }, ringIndex) =>
-        items.map(({ group, item, left, top }) => {
-          const groupIndex = visibleGroupIndex(guide, group.key);
-          const selected = selectedPath === item.path;
+        {/* Ring of neighbouring sub-routes (same menu group first). */}
+        {ring.map(({ entry, i, x, y, ang }) => {
+          const size = i === 0 ? MEDIUM : SMALL;
+          const isMedium = i === 0;
 
           return (
-            <button
-              key={`${ringIndex}-${item.path}`}
-              type="button"
-              aria-pressed={selected}
-              aria-label={`${shortLabel(item.label[lang])} — ${SCENE_TEXT.circleAria[lang]}`}
-              title={item.label[lang]}
-              onClick={() => focusRoute(item.path)}
+            <motion.div
+              key={entry.item.path}
+              variants={ringVariants(i, ang)}
+              className="cf-scatter-card absolute z-20"
               style={{
-                left: `clamp(40px, ${left}%, calc(100% - 40px))`,
-                top: `clamp(64px, ${top}%, calc(100% - 40px))`,
-                borderColor: GROUP_TINTS[groupIndex % GROUP_TINTS.length],
-                transform: `translate(-50%, -50%) scale(${selected ? 1.12 : 1})`,
+                left: `${x}%`,
+                top: `${y}%`,
+                marginLeft: -size.w / 2,
+                marginTop: -size.h / 2,
+                width: size.w,
+                transition:
+                  "left .55s cubic-bezier(.22,1,.36,1), top .55s cubic-bezier(.22,1,.36,1)",
               }}
-              className={[
-                "absolute z-20 grid h-[54px] w-[54px] place-items-center overflow-hidden rounded-full border-[2px] bg-[var(--color-white)] px-1 text-center transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:z-40 hover:!scale-110 sm:h-[76px] sm:w-[76px]",
-                selected
-                  ? "shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-primary)_28%,transparent),0_18px_44px_color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
-                  : "shadow-[0_10px_26px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
-              ].join(" ")}
             >
-              <span className="line-clamp-3 text-[7.5px] font-semibold leading-[1.06] text-[var(--color-primary)] sm:text-[9.5px]">
-                {shortLabel(item.label[lang])}
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute bottom-[6px] h-[4px] w-[4px] rounded-full"
-                style={{ background: GROUP_TINTS[groupIndex % GROUP_TINTS.length] }}
-              />
-            </button>
+              <button
+                type="button"
+                onClick={() => setRoleRouteFocus(guide.key, entry.item.path)}
+                data-role-ring-card={entry.item.path}
+                aria-label={entry.item.label[lang]}
+                title={entry.item.label[lang]}
+                style={{ height: size.h }}
+                className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+              >
+                <span
+                  className={`card-title text-center font-normal ${
+                    isMedium
+                      ? "line-clamp-3 max-w-[132px]"
+                      : "line-clamp-3 max-w-[96px]"
+                  }`}
+                >
+                  {entry.item.label[lang]}
+                </span>
+              </button>
+            </motion.div>
           );
-        }),
-      )}
+        })}
 
-      <p className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-[86%] -translate-x-1/2 text-center text-[10px] font-semibold leading-snug text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))] sm:text-[11px]">
-        {SCENE_TEXT.hint[lang]}
-      </p>
+        {/* Reader hint — no paths, just what a click does. */}
+        <div className="pointer-events-none absolute bottom-6 left-1/2 z-20 hidden -translate-x-1/2 lg:block">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-soft)] bg-[var(--color-white)]/85 px-4 py-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-black)_62%,var(--color-primary))] backdrop-blur">
+            <span className="h-1 w-1 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />
+            {SCENE_TEXT.hint[lang]}
+          </span>
+        </div>
+      </motion.div>
     </div>
   );
-}
-
-/** Stable order index of a menu group inside the role's visible groups. */
-function visibleGroupIndex(
-  guide: (typeof ROLE_ACCESS_GUIDES)[number],
-  groupKey: string,
-): number {
-  const key = guide.menuGroups.findIndex((group) => group.key === groupKey);
-  return key < 0 ? 0 : key;
 }

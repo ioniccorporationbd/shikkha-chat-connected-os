@@ -82,6 +82,25 @@ export function visibleRouteTotal(guide: RoleAccessGuide): number {
   return roleRouteEntries(guide).length;
 }
 
+/**
+ * The sub-route currently "on stage" for a role: the focused one when the focus
+ * store points at this role, otherwise the role's first sub-route. Both the
+ * middle scene and the right rail resolve it through this function, so the
+ * centre card and the detail card can never disagree.
+ */
+export function focusedRouteEntry(
+  guide: RoleAccessGuide,
+  focus: { roleKey: string; path: string } | null,
+): { group: RoleMenuGroup; item: RoleRouteItem } | null {
+  const entries = roleRouteEntries(guide);
+  if (!entries.length) return null;
+  const match =
+    focus && focus.roleKey === guide.key
+      ? entries.find((entry) => entry.item.path === focus.path)
+      : undefined;
+  return match ?? entries[0];
+}
+
 /** Localized copy for the /dashboard documentation pages. */
 export const ROLE_DOC_TEXT = {
   badge: { bn: "ভূমিকা অনুযায়ী ড্যাশবোর্ড", en: "Role-based dashboards" },
