@@ -361,7 +361,7 @@ export default function LandingHeroBanner() {
             variants={textItem}
             className="text-balance text-[34px] font-black leading-[1.04] tracking-[-0.03em] text-[var(--sc-primary)] sm:text-[40px] md:text-[46px] lg:text-[54px]"
           >
-            Nursery -Masters Complete Solution Shikkha Chat
+            Nursery - Masters Complete Solution Shikkha Chat
           </motion.h1>
 
           <motion.p
