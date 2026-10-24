@@ -26,14 +26,15 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  *     Each main section starts that cycle at a different phase, so neighbouring
  *     sections read differently. In one or two sections only, the big centre
  *     card additionally drops in top/bottom.
- *   • Sizes follow a single hierarchy: the MAIN card is the biggest, exactly ONE
- *     ring card is a MEDIUM size, and every other card is SMALL.
+ *   • Sizes follow a single hierarchy: the MAIN card is the biggest and EVERY
+ *     ring card shares one identical footprint (same height and width), so the
+ *     ring reads as one even frame around the centre card.
  *
  * Section handling by feature count (the few-card sections read deliberately):
  *   • 1 card  → a single BIG card on its own.
- *   • 2 cards → BIG card in the middle + one MEDIUM card outside (right).
- *   • 3 cards → BIG inside + MEDIUM middle + the rest SMALL outside.
- *   • 4 cards → BIG inside + MEDIUM middle + the rest (two) SMALL outside.
+ *   • 2 cards → BIG card in the middle + one ring card outside (right).
+ *   • 3 cards → BIG inside + ring cards outside, all the same size.
+ *   • 4 cards → BIG inside + ring cards outside, all the same size.
  *   • 5+      → the full circular ring. (Every section now uses the SAME card
  *               design — the flat in-room grid variation was removed so the
  *               busy sections match every other card on the page.)
@@ -43,10 +44,10 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
  * -------------------------------------------------------------------------
  */
 
-// Card footprints (px). MAIN = biggest; one ring card = MEDIUM; rest = SMALL.
+// Card footprints (px). MAIN = the big card in the room; every ring card
+// shares ONE footprint so the ring frames the centre evenly.
 const BIG = { w: 250, h: 208 };
-const MEDIUM = { w: 152, h: 132 };
-const SMALL = { w: 104, h: 92 };
+const RING_CARD = { w: 152, h: 132 };
 
 // The secondary ring sits on an ellipse around the central frame, starting at
 // the RIGHT and running anticlockwise (right → top → left → bottom).
@@ -171,7 +172,7 @@ export default function CatalogFeatureScene({
   const BIG_DROP = 150; // px the centre card travels when it drops in
 
   // The ring = the section's other features, laid out on an ellipse that starts
-  // at the RIGHT (i = 0, the MEDIUM card) and walks ANTICLOCKWISE from there.
+  // at the RIGHT (i = 0) and walks ANTICLOCKWISE from there.
   const ring = useMemo(() => {
     const items = siblings;
     const n = items.length;
@@ -294,13 +295,12 @@ export default function CatalogFeatureScene({
           </motion.div>
         </div>
 
-        {/* Ring of the section's other features — a MEDIUM card first (at the
-            right), then the SMALL cards, spanning in circularly anticlockwise. */}
+        {/* Ring of the section's other features — every card the same size,
+            starting at the right and spanning circularly anticlockwise. */}
         {ring.map(({ item, i, ang, x, y }) => {
               const Icon = SHOWCASE_ICONS[item.icon];
               const tileId = catalogFeaturePanelId(category.id, item.id);
-              const size = i === 0 ? MEDIUM : SMALL;
-              const isMedium = i === 0;
+              const size = RING_CARD;
 
               return (
                 <motion.div
@@ -323,18 +323,10 @@ export default function CatalogFeatureScene({
                     style={{ height: `${size.h}px` }}
                     className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
                   >
-                    <span
-                      className={`connected-icon-float mb-[6px] leading-none text-[var(--color-primary)] ${
-                        isMedium ? "text-[30px]" : "text-[22px]"
-                      }`}
-                    >
+                    <span className="connected-icon-float mb-[6px] text-[30px] leading-none text-[var(--color-primary)]">
                       <Icon />
                     </span>
-                    <span
-                      className={`card-title line-clamp-2 text-center font-normal ${
-                        isMedium ? "max-w-[132px]" : "max-w-[96px]"
-                      }`}
-                    >
+                    <span className="card-title line-clamp-2 max-w-[132px] text-center font-normal">
                       {item.title[lang]}
                     </span>
                   </button>
