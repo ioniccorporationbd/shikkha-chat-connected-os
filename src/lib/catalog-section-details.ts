@@ -288,6 +288,39 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
     ],
     audience: { bn: "সবার জন্য উন্মুক্ত (পাবলিক)", en: "Open to everyone (public)" },
   },
+  /* ---------------- Role access (source: app roles + rolePermissionMap) ---------------- */
+  "role-access": {
+    supporting: {
+      bn: "শিক্ষা চ্যাট অ্যাপসে একই প্ল্যাটফর্মে আটটি ড্যাশবোর্ড ভূমিকা চলে — অ্যাডমিন, শিক্ষার্থী, শিক্ষক, অভিভাবক, কনটেন্ট রিভিউয়ার, এআই নিরাপত্তা রিভিউয়ার, এনজিও অ্যাডমিন ও সরকারি কর্মকর্তা। প্রত্যেকের সাইডবার মডিউল, এআই পাঠশালা গ্রুপ ও রিপোর্ট মেনু আলাদা, আর কোন ভূমিকা কী দেখবে তা ERP ভূমিকা (rolePermissionMap) দিয়ে নিয়ন্ত্রিত হয়।",
+      en: "Shikkha Chat Apps runs eight dashboard roles on one platform — admin, student, teacher, parent, content reviewer, AI safety reviewer, NGO admin and government officer. Each role has its own sidebar modules, AI Pathshala group and reports menu, and what a role may see is gated by ERP roles (rolePermissionMap).",
+    },
+    capabilities: [
+      {
+        bn: "প্রত্যেক ভূমিকার আলাদা ড্যাশবোর্ড রুট — /dashboard/<role>",
+        en: "A separate dashboard route for every role — /dashboard/<role>",
+      },
+      {
+        bn: "ভূমিকা অনুযায়ী সাইডবার মডিউল, এআই পাঠশালা গ্রুপ ও রিপোর্ট মেনু",
+        en: "Role-specific sidebar modules, AI Pathshala group and reports menu",
+      },
+      {
+        bn: "কোন ভূমিকা কোন ড্যাশবোর্ড পাবে তা ERP ভূমিকা দিয়ে নিয়ন্ত্রিত",
+        en: "Which role gets which dashboard is gated by ERP roles",
+      },
+      {
+        bn: "প্রতিটি ভূমিকার নিজস্ব কাজের ধারা, ধাপে ধাপে ডকুমেন্টেড",
+        en: "Every role ships its own workflow, documented step by step",
+      },
+      {
+        bn: "সব রুট ও মেনু সরাসরি শিক্ষা চ্যাট অ্যাপসের সোর্স থেকে নেওয়া",
+        en: "Every route and menu is taken straight from the Shikkha Chat Apps source",
+      },
+    ],
+    audience: {
+      bn: "আটটি ড্যাশবোর্ড ভূমিকা",
+      en: "The eight dashboard roles",
+    },
+  },
 };
 
 /** Number of catalog categories (for the "section i / n" position line). */

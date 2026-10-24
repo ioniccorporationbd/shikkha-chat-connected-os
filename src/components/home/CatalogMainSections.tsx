@@ -5,6 +5,7 @@ import HubSceneStage, {
 } from "@/components/hubs/shared/HubSceneStage";
 import CatalogFeaturePanel from "@/components/showcase/catalog/CatalogFeaturePanel";
 import CatalogFeatureScene from "@/components/showcase/catalog/CatalogFeatureScene";
+import RoleAccessPanel from "@/components/showcase/catalog/RoleAccessPanel";
 import { buildCatalogBannerContent } from "@/components/showcase/catalog/catalogBanners";
 import {
   catalogFeaturePanelId,
@@ -17,7 +18,9 @@ import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
  * CATALOG MAIN SECTIONS
  *
  * The Connected OS homepage body: ONE main section per Shikkha Chat Apps
- * catalog category (15 sidebar dropdowns → 15 video-bannered main sections),
+ * catalog category (16 sidebar dropdowns → 16 video-bannered main sections;
+ * the 16th, "Role-based Dashboards", carries the eight dashboard roles with
+ * their real routes/menus/workflows in the right rail),
  * and inside each main section ONE sub-section per feature link.
  *
  *   • Every main section is introduced by a video banner and carries its own
@@ -68,10 +71,14 @@ export default function CatalogMainSections() {
                 <div className="min-h-full">
                   {category.features.map((feature) => (
                     <div key={feature.id} className="right-panel-slot">
-                      <CatalogFeaturePanel
-                        category={category}
-                        feature={feature}
-                      />
+                      {category.id === "role-access" ? (
+                        <RoleAccessPanel category={category} feature={feature} />
+                      ) : (
+                        <CatalogFeaturePanel
+                          category={category}
+                          feature={feature}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>

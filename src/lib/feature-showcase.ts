@@ -79,6 +79,7 @@ export type ShowcaseIconKey =
 /** Dashboard roles used by the source app (mirrors its AppRole union). */
 export type ShowcaseRole =
   | "admin"
+  | "student"
   | "teacher"
   | "parent"
   | "content-reviewer"
@@ -121,6 +122,7 @@ export type ShowcaseCategory = {
 /* ------------------------------------------------------------------ */
 
 const ADMIN: ShowcaseAccess = { kind: "role", roles: ["admin"] };
+const STUDENT: ShowcaseAccess = { kind: "role", roles: ["student"] };
 const TEACHER: ShowcaseAccess = { kind: "role", roles: ["teacher"] };
 const PARENT: ShowcaseAccess = { kind: "role", roles: ["parent"] };
 const CONTENT_REVIEWER: ShowcaseAccess = { kind: "role", roles: ["content-reviewer"] };
@@ -178,6 +180,7 @@ export const SHOWCASE_TEXT = {
   rolePublic: { bn: "সবার জন্য উন্মুক্ত", en: "Everyone" },
   roleAnyRole: { bn: "লগইন করা যেকোনো ব্যবহারকারী", en: "Any signed-in user" },
   roleAdmin: { bn: "স্কুল অ্যাডমিনিস্ট্রেটর", en: "School Administrator" },
+  roleStudent: { bn: "শিক্ষার্থী", en: "Student" },
   roleTeacher: { bn: "শিক্ষক", en: "Teacher" },
   roleParent: { bn: "অভিভাবক / গার্ডিয়ান", en: "Parent / Guardian" },
   roleContentReviewer: { bn: "কনটেন্ট রিভিউয়ার", en: "Content Reviewer" },
@@ -191,6 +194,8 @@ export function showcaseRoleName(role: ShowcaseRole, language: ShowcaseLanguage)
   switch (role) {
     case "admin":
       return SHOWCASE_TEXT.roleAdmin[language];
+    case "student":
+      return SHOWCASE_TEXT.roleStudent[language];
     case "teacher":
       return SHOWCASE_TEXT.roleTeacher[language];
     case "parent":
@@ -1291,6 +1296,109 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         },
         route: "/notices",
         access: PUBLIC,
+      },
+    ],
+  },
+  {
+    id: "role-access",
+    icon: "userCheck",
+    title: { bn: "ভূমিকা অনুযায়ী ড্যাশবোর্ড", en: "Role-based Dashboards" },
+    features: [
+      {
+        id: "admin",
+        icon: "layout",
+        title: { bn: "প্রশাসক / স্কুল অ্যাডমিন", en: "Administrator / School admin" },
+        description: {
+          bn: "প্রতিষ্ঠানের দায়িত্বপ্রাপ্ত ব্যক্তি। শিক্ষার্থী, শিক্ষক, ক্লাস, রুটিন, উপস্থিতি, ফি, ইউজার ও অনুমতি — সব আপনার হাতে।",
+          en: "The person in charge of the institution: students, teachers, classes, routine, attendance, fees, users and permissions.",
+        },
+        route: "/dashboard/admin",
+        access: ADMIN,
+        availability: "live",
+      },
+      {
+        id: "student",
+        icon: "graduation",
+        title: { bn: "শিক্ষার্থী", en: "Student" },
+        description: {
+          bn: "আপনি পড়বেন, অনুশীলন করবেন, কুইজ দেবেন এবং নিজের অগ্রগতি দেখবেন।",
+          en: "You study, practise, take quizzes and follow your own progress.",
+        },
+        route: "/dashboard/student",
+        access: STUDENT,
+        availability: "live",
+      },
+      {
+        id: "teacher",
+        icon: "userCheck",
+        title: { bn: "শিক্ষক", en: "Teacher" },
+        description: {
+          bn: "আপনার ক্লাসের শিক্ষার্থী, হাজিরা, পাঠ ও অগ্রগতির দায়িত্ব আপনার।",
+          en: "You own your class's students, attendance, lessons and progress.",
+        },
+        route: "/dashboard/teacher",
+        access: TEACHER,
+        availability: "live",
+      },
+      {
+        id: "parent",
+        icon: "parents",
+        title: { bn: "অভিভাবক", en: "Parent / Guardian" },
+        description: {
+          bn: "আপনি সন্তানের উপস্থিতি, ফলাফল, পড়ার সক্রিয়তা ও শিক্ষকের বার্তা দেখতে পাবেন।",
+          en: "You follow your child's attendance, results, study activity and teacher messages.",
+        },
+        route: "/dashboard/parent",
+        access: PARENT,
+        availability: "live",
+      },
+      {
+        id: "content-reviewer",
+        icon: "shield",
+        title: { bn: "কনটেন্ট রিভিউয়ার", en: "Content reviewer" },
+        description: {
+          bn: "AI Pathshala-র পাঠ, প্রশ্ন ও উপকরণ যাচাই করে অনুমোদন বা ফেরত পাঠানো আপনার কাজ।",
+          en: "You check lessons, questions and material for AI Pathshala and either approve them or send them back.",
+        },
+        route: "/dashboard/content-reviewer",
+        access: CONTENT_REVIEWER,
+        availability: "live",
+      },
+      {
+        id: "ai-safety-reviewer",
+        icon: "shieldAlert",
+        title: { bn: "AI নিরাপত্তা রিভিউয়ার", en: "AI safety reviewer" },
+        description: {
+          bn: "AI Tutor-এর ঝুঁকিপূর্ণ ব্যবহার, সতর্কবার্তা, তদন্ত ও নীতি দেখা আপনার দায়িত্ব।",
+          en: "You watch risky AI usage, safety events, investigations and policy.",
+        },
+        route: "/dashboard/ai-safety-reviewer",
+        access: AI_SAFETY,
+        availability: "live",
+      },
+      {
+        id: "ngo-admin",
+        icon: "globe",
+        title: { bn: "এনজিও অ্যাডমিন", en: "NGO admin" },
+        description: {
+          bn: "একাধিক প্রতিষ্ঠান নিয়ে চলা শিক্ষা প্রকল্পের তত্ত্বাবধান আপনার হাতে।",
+          en: "You oversee an education programme that runs across several institutions.",
+        },
+        route: "/dashboard/ngo-admin",
+        access: NGO,
+        availability: "live",
+      },
+      {
+        id: "government-officer",
+        icon: "landmark",
+        title: { bn: "সরকারি কর্মকর্তা", en: "Government officer" },
+        description: {
+          bn: "জেলা/উপজেলাভিত্তিক শিক্ষার চিত্র — ভর্তি, উপস্থিতি, ফলাফল, সমতা ও নিরাপত্তা দেখা আপনার কাজ।",
+          en: "You review the district-level picture: enrolment, attendance, outcomes, equity and safety.",
+        },
+        route: "/dashboard/government-officer",
+        access: GOV,
+        availability: "live",
       },
     ],
   },
