@@ -213,17 +213,43 @@ export default function RoleAccessPanel({
         `[data-role-route-row="${detail.path}"]`,
       );
       if (!row) return;
+
+      /* Where must the page stop so THIS row sits exactly on the reading
+         line? The line is a function of the scroll position (it is derived
+         from the detail card's bottom edge), so scroll-then-measure is a
+         moving target — and a caller that starts its own smooth scroll to the
+         section would fight it. Solve the fixed point in absolute page
+         coordinates instead and issue ONE scroll:
+
+             rowAbs - y = clamp((max(paneAbsBottom, slotAbsTop) - y + vh) / 2)
+
+         with both clamps (0.5vh / 0.92vh) applied while iterating. */
+      const yNow = window.scrollY;
+      const rowRect = row.getBoundingClientRect();
+      const rowAbs = yNow + (rowRect.top + rowRect.bottom) / 2;
       const slotEl = root.closest(".right-panel-slot") ?? root;
       const pane = root.querySelector<HTMLElement>("[data-role-focus-card]");
-      const line = readingLine(
-        slotEl.getBoundingClientRect(),
-        pane ? pane.getBoundingClientRect() : null,
-        window.innerHeight || 0,
+      const paneRect = pane ? pane.getBoundingClientRect() : null;
+      const slotRect = slotEl.getBoundingClientRect();
+      const vh = window.innerHeight || 0;
+      const mAbs = Math.max(
+        paneRect ? yNow + paneRect.bottom : 0,
+        yNow + slotRect.top,
       );
-      const r = row.getBoundingClientRect();
-      const delta = (r.top + r.bottom) / 2 - line;
-      if (Math.abs(delta) > 8) {
-        window.scrollBy({ top: delta, behavior: "smooth" });
+      const lineAt = (y: number) =>
+        Math.min(Math.max((mAbs - y + vh) / 2, vh * 0.5), vh * 0.92);
+      let target = rowAbs - lineAt(yNow);
+      for (let i = 0; i < 4; i += 1) {
+        const next = rowAbs - lineAt(target);
+        if (Math.abs(next - target) < 0.5) break;
+        target = next;
+      }
+      const maxScroll =
+        document.documentElement.scrollHeight - (window.innerHeight || 0);
+      target = Math.min(Math.max(target, 0), Math.max(maxScroll, 0));
+      if (Math.abs(target - yNow) > 8) {
+        clickLockRef.current = performance.now();
+        window.scrollTo({ top: target, behavior: "smooth" });
       }
     };
     window.addEventListener("connected-os-open-route", onOpen);

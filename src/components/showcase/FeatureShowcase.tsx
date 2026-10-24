@@ -12,6 +12,7 @@ import {
 } from "@/lib/feature-showcase";
 import { visibleMenuGroups, visibleRouteTotal } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
+import { setRoleRouteFocus, useRoleRouteFocus } from "@/lib/role-route-selection";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
 import {
@@ -103,6 +104,7 @@ export default function FeatureShowcase() {
   // by the page scroll). Role-based dashboards is deliberately NOT part of that
   // accordion: it is pinned first in the rail and stays expanded on its own so
   // the eight roles — and their sub-routes — are always one click away.
+  const roleRouteFocus = useRoleRouteFocus();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [roleExpanded, setRoleExpanded] = useState(true);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
@@ -280,9 +282,54 @@ export default function FeatureShowcase() {
                                         <li key={item.path}>
                                           <Link
                                             href={item.path}
-                                            title={item.path}
-                                            onClick={closeRail}
-                                            className={[ROW, "py-1.5"].join(" ")}
+                                            onClick={(event) => {
+                                              /* In-page link, exactly like
+                                                 every other rail dropdown
+                                                 row: selecting it drives the
+                                                 role's own section (middle
+                                                 stage + right rail) into
+                                                 view. The documentation page
+                                                 stays reachable via the row's
+                                                 real href (open in new tab). */
+                                              event.preventDefault();
+                                              const rolePanelId =
+                                                catalogFeaturePanelId(
+                                                  ROLE_SECTION_ID,
+                                                  guide.key,
+                                                );
+                                              setRoleRouteFocus(
+                                                guide.key,
+                                                item.path,
+                                              );
+                                              navigateToSection(rolePanelId);
+                                              // The role's own section takes it
+                                              // from here: it aligns the chosen
+                                              // row onto the rail's reading line
+                                              // once the page scroll settles.
+                                              window.dispatchEvent(
+                                                new CustomEvent(
+                                                  "connected-os-open-route",
+                                                  {
+                                                    detail: {
+                                                      role: guide.key,
+                                                      path: item.path,
+                                                    },
+                                                  },
+                                                ),
+                                              );
+                                            }}
+                                            aria-current={
+                                              roleRouteFocus?.path === item.path
+                                                ? "true"
+                                                : undefined
+                                            }
+                                            className={[
+                                              ROW,
+                                              "py-1.5",
+                                              roleRouteFocus?.path === item.path
+                                                ? "is-active"
+                                                : "",
+                                            ].join(" ")}
                                           >
                                             <span className={ROW_LABEL}>
                                               <span className="truncate font-medium tracking-[-0.01em]">
