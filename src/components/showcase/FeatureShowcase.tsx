@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -9,6 +10,8 @@ import {
   SHOWCASE_TEXT,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
+import { visibleMenuGroups, visibleRouteTotal } from "@/lib/role-route-docs";
+import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
 import {
@@ -38,6 +41,23 @@ const PANEL =
   "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
 const SUBLIST =
   "mt-1.5 ml-3 space-y-1 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5";
+const NESTED =
+  "mt-1 mb-1 ml-3 space-y-2 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5";
+
+const ROLE_SECTION_ID = "role-access";
+
+/**
+ * "Role-based dashboards" is pinned to the very top of the rail; the remaining
+ * catalog categories keep their existing order underneath it.
+ */
+const ORDERED_CATEGORIES = (() => {
+  const index = FEATURE_SHOWCASE.findIndex((c) => c.id === ROLE_SECTION_ID);
+  if (index <= 0) return FEATURE_SHOWCASE;
+
+  const reordered = [...FEATURE_SHOWCASE];
+  const [roleCategory] = reordered.splice(index, 1);
+  return [roleCategory, ...reordered];
+})();
 
 /**
  * Click a rail row → go to that section on the page. Fires the exact three
@@ -56,27 +76,37 @@ function navigateToSection(id: string) {
   );
 }
 
+/** Closes the mobile drawer before a real page navigation. */
+function closeRail() {
+  window.dispatchEvent(new CustomEvent("connected-os-sidebar-navigate"));
+}
+
 /**
  * The Complete Shikkha Chat Apps route catalog, rendered in the homepage rail's
- * OWN navigation language (15 category dropdowns / 87 numbered feature rows).
+ * OWN navigation language (category dropdowns / numbered feature rows).
  *
- * Following the old rail behaviour, clicking a dropdown link NAVIGATES to that
- * section: a category header scrolls to the category's video-bannered main
- * section, and a feature link scrolls to that feature's own middle + right
- * section. Scrolling the page also drives the rail back — the active section
- * opens its category and highlights the matching feature row.
+ * "Role-based dashboards" sits FIRST in the rail and is the only category that
+ * links out: expanding it lists the eight dashboard roles, and each role
+ * expands again into its own sub-routes (the app's sidebar modules, AI
+ * Pathshala and reports), every row opening its real documentation page under
+ * /dashboard. The role row is never repeated as one of its own sub-routes.
  *
- * Route values stay informational only — no feature links to a nonexistent
- * Connected OS page, so no entry 404s.
+ * Every other category keeps its original behaviour: clicking a header or a
+ * feature scrolls to that section of the page, and the page scroll drives the
+ * rail back (active section opens its category).
  */
 export default function FeatureShowcase() {
   const { language: rawLanguage } = useLanguage();
   const language: ShowcaseLanguage = rawLanguage === "en" ? "en" : "bn";
 
-  const [openCategory, setOpenCategory] = useState<string | null>(
-    FEATURE_SHOWCASE[0]?.id ?? null,
-  );
+  // The other categories behave like an accordion (one open at a time, driven
+  // by the page scroll). Role-based dashboards is deliberately NOT part of that
+  // accordion: it is pinned first in the rail and stays expanded on its own so
+  // the eight roles — and their sub-routes — are always one click away.
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
+  const [roleExpanded, setRoleExpanded] = useState(true);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+  const [openRole, setOpenRole] = useState<string | null>(null);
 
   // Follow the page: when the scroll-sync engine reports a catalog section as
   // the active one, open its category and highlight the feature row.
@@ -106,8 +136,9 @@ export default function FeatureShowcase() {
       aria-label={SHOWCASE_TEXT.heading[language]}
       className="mt-5 flex flex-col gap-1.5 sm:mt-6"
     >
-      {FEATURE_SHOWCASE.map((category) => {
-        const isOpen = openCategory === category.id;
+      {ORDERED_CATEGORIES.map((category) => {
+        const isRoleCategory = category.id === ROLE_SECTION_ID;
+        const isOpen = isRoleCategory ? roleExpanded : openCategory === category.id;
         const CategoryIcon = SHOWCASE_ICONS[category.icon];
         const panelId = `showcase-panel-${category.id}`;
         const categoryHoldsActive = category.features.some(
@@ -121,6 +152,13 @@ export default function FeatureShowcase() {
               aria-expanded={isOpen}
               aria-controls={panelId}
               onClick={() => {
+                if (isRoleCategory) {
+                  // Expand/collapse the role list; it never joins the accordion.
+                  setRoleExpanded(!roleExpanded);
+                  navigateToSection(catalogSectionId(category.id));
+                  return;
+                }
+
                 const opening = !isOpen;
                 setOpenCategory(opening ? category.id : null);
                 // Clicking a dropdown navigates to that category's main section.
@@ -153,41 +191,158 @@ export default function FeatureShowcase() {
               ].join(" ")}
             >
               <div className="overflow-hidden">
-                <div className={SUBLIST}>
-                  {category.features.map((feature, index) => {
-                    const isActive = activeFeatureId === feature.id;
+                {isRoleCategory ? (
+                  <div className={SUBLIST}>
+                    {ROLE_ACCESS_GUIDES.map((guide) => {
+                      const roleOpen = openRole === guide.key;
+                      const rolePanelId = `showcase-role-${guide.key}`;
+                      const routeTotal = visibleRouteTotal(guide);
 
-                    return (
-                      <div key={feature.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenCategory(category.id);
-                            setActiveFeatureId(feature.id);
-                            // Clicking a feature link navigates to its section —
-                            // it no longer expands an inline description panel
-                            // below the row.
-                            navigateToSection(
-                              catalogFeaturePanelId(category.id, feature.id),
-                            );
-                          }}
-                          className={[
-                            ROW,
-                            "py-2",
-                            isActive ? "is-active" : "",
-                          ].join(" ")}
-                        >
-                          <span className={ROW_LABEL}>
-                            <span className={ROW_INDEX}>{index + 1}</span>
-                            <span className="truncate font-medium tracking-[-0.01em]">
-                              {feature.title[language]}
+                      return (
+                        <div key={guide.key}>
+                          <div className="flex items-center gap-1">
+                            <Link
+                              href={guide.dashboardRoute}
+                              onClick={closeRail}
+                              className={[ROW, "min-w-0 flex-1 py-2"].join(" ")}
+                            >
+                              <span className={ROW_LABEL}>
+                                <span className="truncate font-semibold tracking-[-0.01em]">
+                                  {guide.title[language]}
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-[11px] font-semibold opacity-60">
+                                {routeTotal}
+                              </span>
+                            </Link>
+
+                            <button
+                              type="button"
+                              aria-expanded={roleOpen}
+                              aria-controls={rolePanelId}
+                              aria-label={guide.title[language]}
+                              onClick={() =>
+                                setOpenRole(roleOpen ? null : guide.key)
+                              }
+                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
+                            >
+                              <FiChevronDown
+                                aria-hidden
+                                className={[
+                                  CHEVRON,
+                                  roleOpen ? "rotate-180" : "",
+                                ].join(" ")}
+                              />
+                            </button>
+                          </div>
+
+                          {/* The role's own sub-routes only — the role itself
+                              is never repeated as one of its children. */}
+                          <div
+                            id={rolePanelId}
+                            className={[
+                              PANEL,
+                              roleOpen
+                                ? "grid-rows-[1fr] opacity-100"
+                                : "grid-rows-[0fr] opacity-0",
+                            ].join(" ")}
+                          >
+                            <div className="overflow-hidden">
+                              <div className={NESTED}>
+                                {visibleMenuGroups(guide).map((group) => (
+                                  <div key={group.key}>
+                                    <p className="px-3 pb-0.5 text-[11px] font-semibold tracking-[0.06em] text-[color-mix(in_srgb,var(--color-primary)_72%,var(--color-black))]">
+                                      {group.title[language]}
+                                    </p>
+                                    <ul className="mt-1 space-y-0.5">
+                                      {group.items.map((item) => (
+                                        <li key={item.path}>
+                                          <Link
+                                            href={item.path}
+                                            title={item.path}
+                                            onClick={closeRail}
+                                            className={[ROW, "py-1.5"].join(" ")}
+                                          >
+                                            <span className={ROW_LABEL}>
+                                              <span className="truncate font-medium tracking-[-0.01em]">
+                                                {item.label[language]}
+                                              </span>
+                                            </span>
+                                          </Link>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                ))}
+
+                                <Link
+                                  href="/dashboard"
+                                  onClick={closeRail}
+                                  className={[ROW, "py-1.5"].join(" ")}
+                                >
+                                  <span
+                                    className={[
+                                      ROW_LABEL,
+                                      "font-semibold",
+                                    ].join(" ")}
+                                  >
+                                    <span className="truncate">
+                                      {language === "bn"
+                                        ? "সব ভূমিকার সব রুট"
+                                        : "All roles, all routes"}
+                                    </span>
+                                  </span>
+                                  <span
+                                    aria-hidden
+                                    className="shrink-0 text-[12px]"
+                                  >
+                                    →
+                                  </span>
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className={SUBLIST}>
+                    {category.features.map((feature, index) => {
+                      const isActive = activeFeatureId === feature.id;
+
+                      return (
+                        <div key={feature.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenCategory(category.id);
+                              setActiveFeatureId(feature.id);
+                              // Clicking a feature link navigates to its section —
+                              // it no longer expands an inline description panel
+                              // below the row.
+                              navigateToSection(
+                                catalogFeaturePanelId(category.id, feature.id),
+                              );
+                            }}
+                            className={[
+                              ROW,
+                              "py-2",
+                              isActive ? "is-active" : "",
+                            ].join(" ")}
+                          >
+                            <span className={ROW_LABEL}>
+                              <span className={ROW_INDEX}>{index + 1}</span>
+                              <span className="truncate font-medium tracking-[-0.01em]">
+                                {feature.title[language]}
+                              </span>
                             </span>
-                          </span>
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

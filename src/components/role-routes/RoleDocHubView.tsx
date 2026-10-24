@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import RoleDocHeader from "@/components/role-routes/RoleDocHeader";
-import { ROLE_DOC_TEXT, roleRouteCount } from "@/lib/role-route-docs";
+import { ROLE_DOC_TEXT, visibleRouteTotal } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
 
 /**
@@ -31,7 +31,7 @@ export default function RoleDocHubView() {
 
         <ul className="mt-8 grid gap-4 sm:grid-cols-2">
           {ROLE_ACCESS_GUIDES.map((guide) => {
-            const routeTotal = roleRouteCount(guide);
+            const routeTotal = visibleRouteTotal(guide);
             return (
               <li key={guide.key}>
                 <Link

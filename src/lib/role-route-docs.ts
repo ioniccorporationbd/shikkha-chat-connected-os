@@ -48,17 +48,38 @@ export function roleRouteSegments(fullPath: string): string[] {
   return fullPath.replace(/^\/+/, "").split("/").filter(Boolean);
 }
 
+/**
+ * Menu groups with the role's own root route removed.
+ *
+ * A couple of app sidebars (e.g. AI Safety Reviewer) list a "Dashboard" row
+ * that points back at the role root, which would render the role as one of its
+ * own sub-routes. The rule for this documentation area: a role is shown once,
+ * and only its real sub-routes appear underneath it.
+ */
+export function visibleMenuGroups(guide: RoleAccessGuide): RoleMenuGroup[] {
+  return guide.menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.path !== guide.dashboardRoute),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
 /** Every route of a role, flattened with its group, in sidebar order. */
 export function roleRouteEntries(
   guide: RoleAccessGuide,
 ): { group: RoleMenuGroup; item: RoleRouteItem }[] {
-  return guide.menuGroups.flatMap((group) =>
+  return visibleMenuGroups(guide).flatMap((group) =>
     group.items.map((item) => ({ group, item })),
   );
 }
 
 export function roleRouteTotal(guide: RoleAccessGuide): number {
-  return roleRouteCount(guide);
+  return roleRouteEntries(guide).length;
+}
+
+export function visibleRouteTotal(guide: RoleAccessGuide): number {
+  return roleRouteEntries(guide).length;
 }
 
 /** Localized copy for the /dashboard documentation pages. */

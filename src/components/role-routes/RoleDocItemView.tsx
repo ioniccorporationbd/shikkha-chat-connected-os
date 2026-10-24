@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import RoleDocHeader from "@/components/role-routes/RoleDocHeader";
 import RoleRouteSideNav from "@/components/role-routes/RoleRouteSideNav";
-import { ROLE_DOC_TEXT, findRoleRoute, roleRouteEntries } from "@/lib/role-route-docs";
+import {
+  ROLE_DOC_TEXT,
+  findRoleRoute,
+  roleRouteEntries,
+  visibleMenuGroups,
+} from "@/lib/role-route-docs";
 
 const cardClass =
   "rounded-3xl border border-[var(--color-border-soft)] bg-[var(--color-surface)] p-5 sm:p-6";
@@ -110,7 +115,7 @@ export default function RoleDocItemView({ routePath }: { routePath: string }) {
               </p>
 
               <ul className="mt-3 space-y-3">
-                {guide.menuGroups.map((group_) => (
+                {visibleMenuGroups(guide).map((group_) => (
                   <li key={group_.key}>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
                       {group_.title[language]}

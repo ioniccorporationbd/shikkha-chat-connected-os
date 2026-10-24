@@ -10,10 +10,10 @@ import {
   type ShowcaseCategory,
   type ShowcaseFeature,
 } from "@/lib/feature-showcase";
+import { visibleRouteTotal, visibleMenuGroups } from "@/lib/role-route-docs";
 import {
   ROLE_ACCESS_TEXT,
   roleAccessGuide,
-  roleRouteCount,
   type RoleAccessKey,
 } from "@/lib/role-routes";
 
@@ -56,7 +56,7 @@ export default function RoleAccessPanel({
   }
 
   const t = ROLE_ACCESS_TEXT;
-  const routeCount = roleRouteCount(guide);
+  const routeCount = visibleRouteTotal(guide);
 
   const workflowRows = guide.workflows.map((step, index) => ({
     title: `${index + 1}. ${step.title[lang]}`,
@@ -81,7 +81,7 @@ export default function RoleAccessPanel({
           { value: String(guide.workflows.length), label: t.workflowLabel[lang] },
           { value: String(guide.signingRoles.length), label: t.signingLabel[lang] },
           {
-            value: String(guide.menuGroups.length),
+            value: String(visibleMenuGroups(guide).length),
             label: t.groupLabel[lang],
           },
         ]}
@@ -168,7 +168,7 @@ export default function RoleAccessPanel({
             </ul>
           </details>
 
-          {guide.menuGroups.map((group) => (
+          {visibleMenuGroups(guide).map((group) => (
             <details
               key={group.title[lang]}
               className="rounded-2xl border border-[var(--color-border-soft)] bg-transparent p-4"

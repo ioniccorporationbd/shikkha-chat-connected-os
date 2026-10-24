@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import { ROLE_DOC_TEXT, roleRouteEntries } from "@/lib/role-route-docs";
+import {
+  ROLE_DOC_TEXT,
+  roleRouteEntries,
+  visibleMenuGroups,
+} from "@/lib/role-route-docs";
 import { type RoleAccessGuide } from "@/lib/role-routes";
 
 /**
@@ -27,22 +31,17 @@ export default function RoleRouteSideNav({
         {ROLE_DOC_TEXT.routesInRole[language]}
       </p>
 
-      <Link
-        href={guide.dashboardRoute}
-        aria-current={activePath === guide.dashboardRoute ? "page" : undefined}
-        className={[
-          "mt-3 flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-[13px] font-semibold transition",
-          activePath === guide.dashboardRoute
-            ? "role-doc-pill-active"
-            : "text-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)]",
-        ].join(" ")}
-      >
-        <span className="truncate">{guide.dashboardRoute}</span>
-        <span className="shrink-0 text-[11px] opacity-80">{entries.length}</span>
-      </Link>
+      <div className="mt-3 flex items-center justify-between gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_6%,transparent)] px-3 py-2">
+        <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]">
+          {guide.title[language]}
+        </span>
+        <span className="shrink-0 text-[11px] font-semibold text-[var(--color-primary)] opacity-70">
+          {entries.length}
+        </span>
+      </div>
 
       <div className="mt-4 space-y-4">
-        {guide.menuGroups.map((group) => (
+        {visibleMenuGroups(guide).map((group) => (
           <div key={group.key}>
             <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-black)_45%,var(--color-primary))]">
               {group.title[language]}

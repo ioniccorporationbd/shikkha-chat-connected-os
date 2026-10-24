@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import RoleDocHeader from "@/components/role-routes/RoleDocHeader";
 import RoleRouteSideNav from "@/components/role-routes/RoleRouteSideNav";
-import { ROLE_DOC_TEXT, roleRouteCount } from "@/lib/role-route-docs";
+import {
+  ROLE_DOC_TEXT,
+  visibleMenuGroups,
+  visibleRouteTotal,
+} from "@/lib/role-route-docs";
 import { roleAccessGuide, type RoleAccessKey } from "@/lib/role-routes";
 
 const cardClass =
@@ -23,7 +27,7 @@ export default function RoleDocRoleView({ roleKey }: { roleKey: RoleAccessKey })
 
   if (!guide) return null;
 
-  const routeTotal = roleRouteCount(guide);
+  const routeTotal = visibleRouteTotal(guide);
 
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
@@ -65,7 +69,7 @@ export default function RoleDocRoleView({ roleKey }: { roleKey: RoleAccessKey })
             </div>
 
             <div className="mt-6 space-y-4">
-              {guide.menuGroups.map((group) => (
+              {visibleMenuGroups(guide).map((group) => (
                 <section key={group.key} className={cardClass}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h2 className="text-[17px] font-semibold text-[var(--color-primary)]">
