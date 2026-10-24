@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { FiChevronDown } from "react-icons/fi";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -10,9 +9,8 @@ import {
   SHOWCASE_TEXT,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
-import { visibleMenuGroups, visibleRouteTotal } from "@/lib/role-route-docs";
+import { visibleRouteTotal } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
-import { setRoleRouteFocus, useRoleRouteFocus } from "@/lib/role-route-selection";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
 import {
@@ -42,8 +40,6 @@ const PANEL =
   "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
 const SUBLIST =
   "mt-1.5 ml-3 space-y-1 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5";
-const NESTED =
-  "mt-1 mb-1 ml-3 space-y-2 border-l border-[color-mix(in_srgb,var(--color-primary)_15%,transparent)] pl-2.5";
 
 const ROLE_SECTION_ID = "role-access";
 
@@ -77,20 +73,16 @@ function navigateToSection(id: string) {
   );
 }
 
-/** Closes the mobile drawer before a real page navigation. */
-function closeRail() {
-  window.dispatchEvent(new CustomEvent("connected-os-sidebar-navigate"));
-}
-
 /**
  * The Complete Shikkha Chat Apps route catalog, rendered in the homepage rail's
  * OWN navigation language (category dropdowns / numbered feature rows).
  *
  * "Role-based dashboards" sits FIRST in the rail and is the only category that
- * links out: expanding it lists the eight dashboard roles, and each role
- * expands again into its own sub-routes (the app's sidebar modules, AI
- * Pathshala and reports), every row opening its real documentation page under
- * /dashboard. The role row is never repeated as one of its own sub-routes.
+ * links out: expanding it lists the eight dashboard roles as plain link rows —
+ * no per-role chevron and no nested dropdown. Clicking a role drives the page
+ * to that role's own section (middle stage + right rail), where every
+ * sub-route the old dropdown used to list is still listed and selectable
+ * (visibleMenuGroups(guide) in @/lib/role-route-docs drives that index).
  *
  * Every other category keeps its original behaviour: clicking a header or a
  * feature scrolls to that section of the page, and the page scroll drives the
@@ -104,11 +96,9 @@ export default function FeatureShowcase() {
   // by the page scroll). Role-based dashboards is deliberately NOT part of that
   // accordion: it is pinned first in the rail and stays expanded on its own so
   // the eight roles — and their sub-routes — are always one click away.
-  const roleRouteFocus = useRoleRouteFocus();
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [roleExpanded, setRoleExpanded] = useState(true);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
-  const [openRole, setOpenRole] = useState<string | null>(null);
 
   // Follow the page: when the scroll-sync engine reports a catalog section as
   // the active one, open its category and highlight the feature row.
@@ -196,180 +186,44 @@ export default function FeatureShowcase() {
                 {isRoleCategory ? (
                   <div className={SUBLIST}>
                     {ROLE_ACCESS_GUIDES.map((guide) => {
-                      const roleOpen = openRole === guide.key;
-                      const rolePanelId = `showcase-role-${guide.key}`;
-                      const routeTotal = visibleRouteTotal(guide);
-
                       return (
                         <div key={guide.key}>
-                          <div className="flex items-center gap-1">
-                            {/* Clicking a role brings the MIDDLE stage to that
-                                role's radial map (main route at the centre,
-                                its sub-routes as circles). The chevron below
-                                still expands the plain route list; the role's
-                                own /dashboard page stays reachable from the
-                                docs footer ("all roles, all routes"). */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRoleExpanded(true);
-                                setActiveFeatureId(guide.key);
-                                navigateToSection(
-                                  catalogFeaturePanelId(
-                                    ROLE_SECTION_ID,
-                                    guide.key,
-                                  ),
-                                );
-                              }}
-                              className={[
-                                ROW,
-                                "min-w-0 flex-1 py-2",
-                                activeFeatureId === guide.key
-                                  ? "is-active"
-                                  : "",
-                              ].join(" ")}
-                            >
-                              <span className={ROW_LABEL}>
-                                <span className="truncate font-semibold tracking-[-0.01em]">
-                                  {guide.title[language]}
-                                </span>
-                              </span>
-                              <span className="shrink-0 text-[11px] font-semibold opacity-60">
-                                {routeTotal}
-                              </span>
-                            </button>
-
-                            <button
-                              type="button"
-                              aria-expanded={roleOpen}
-                              aria-controls={rolePanelId}
-                              aria-label={guide.title[language]}
-                              onClick={() =>
-                                setOpenRole(roleOpen ? null : guide.key)
-                              }
-                              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]"
-                            >
-                              <FiChevronDown
-                                aria-hidden
-                                className={[
-                                  CHEVRON,
-                                  roleOpen ? "rotate-180" : "",
-                                ].join(" ")}
-                              />
-                            </button>
-                          </div>
-
-                          {/* The role's own sub-routes only — the role itself
-                              is never repeated as one of its children. */}
-                          <div
-                            id={rolePanelId}
+                          {/* One row per role — a plain link, no nested
+                              dropdown and no chevron. Clicking brings the
+                              MIDDLE stage to that role's radial map and the
+                              RIGHT rail to the role's own section; every
+                              sub-route the old dropdown listed is still
+                              reachable there (the rail's route index) and on
+                              the role's real /dashboard pages. The full
+                              catalogue stays in code: visibleMenuGroups(guide)
+                              in @/lib/role-route-docs. */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRoleExpanded(true);
+                              setActiveFeatureId(guide.key);
+                              navigateToSection(
+                                catalogFeaturePanelId(
+                                  ROLE_SECTION_ID,
+                                  guide.key,
+                                ),
+                              );
+                            }}
                             className={[
-                              PANEL,
-                              roleOpen
-                                ? "grid-rows-[1fr] opacity-100"
-                                : "grid-rows-[0fr] opacity-0",
+                              ROW,
+                              "w-full py-2",
+                              activeFeatureId === guide.key ? "is-active" : "",
                             ].join(" ")}
                           >
-                            <div className="overflow-hidden">
-                              <div className={NESTED}>
-                                {visibleMenuGroups(guide).map((group) => (
-                                  <div key={group.key}>
-                                    <p className="px-3 pb-0.5 text-[11px] font-semibold tracking-[0.06em] text-[color-mix(in_srgb,var(--color-primary)_72%,var(--color-black))]">
-                                      {group.title[language]}
-                                    </p>
-                                    <ul className="mt-1 space-y-0.5">
-                                      {group.items.map((item) => (
-                                        <li key={item.path}>
-                                          <Link
-                                            href={item.path}
-                                            onClick={(event) => {
-                                              /* In-page link, exactly like
-                                                 every other rail dropdown
-                                                 row: selecting it drives the
-                                                 role's own section (middle
-                                                 stage + right rail) into
-                                                 view. The documentation page
-                                                 stays reachable via the row's
-                                                 real href (open in new tab). */
-                                              event.preventDefault();
-                                              const rolePanelId =
-                                                catalogFeaturePanelId(
-                                                  ROLE_SECTION_ID,
-                                                  guide.key,
-                                                );
-                                              setRoleRouteFocus(
-                                                guide.key,
-                                                item.path,
-                                              );
-                                              navigateToSection(rolePanelId);
-                                              // The role's own section takes it
-                                              // from here: it aligns the chosen
-                                              // row onto the rail's reading line
-                                              // once the page scroll settles.
-                                              window.dispatchEvent(
-                                                new CustomEvent(
-                                                  "connected-os-open-route",
-                                                  {
-                                                    detail: {
-                                                      role: guide.key,
-                                                      path: item.path,
-                                                    },
-                                                  },
-                                                ),
-                                              );
-                                            }}
-                                            aria-current={
-                                              roleRouteFocus?.path === item.path
-                                                ? "true"
-                                                : undefined
-                                            }
-                                            className={[
-                                              ROW,
-                                              "py-1.5",
-                                              roleRouteFocus?.path === item.path
-                                                ? "is-active"
-                                                : "",
-                                            ].join(" ")}
-                                          >
-                                            <span className={ROW_LABEL}>
-                                              <span className="truncate font-medium tracking-[-0.01em]">
-                                                {item.label[language]}
-                                              </span>
-                                            </span>
-                                          </Link>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                ))}
-
-                                <Link
-                                  href="/dashboard"
-                                  onClick={closeRail}
-                                  className={[ROW, "py-1.5"].join(" ")}
-                                >
-                                  <span
-                                    className={[
-                                      ROW_LABEL,
-                                      "font-semibold",
-                                    ].join(" ")}
-                                  >
-                                    <span className="truncate">
-                                      {language === "bn"
-                                        ? "সব ভূমিকার সব রুট"
-                                        : "All roles, all routes"}
-                                    </span>
-                                  </span>
-                                  <span
-                                    aria-hidden
-                                    className="shrink-0 text-[12px]"
-                                  >
-                                    →
-                                  </span>
-                                </Link>
-                              </div>
-                            </div>
-                          </div>
+                            <span className={ROW_LABEL}>
+                              <span className="truncate font-semibold tracking-[-0.01em]">
+                                {guide.title[language]}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-[11px] font-semibold opacity-60">
+                              {visibleRouteTotal(guide)}
+                            </span>
+                          </button>
                         </div>
                       );
                     })}
