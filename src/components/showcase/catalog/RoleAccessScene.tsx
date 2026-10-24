@@ -5,11 +5,7 @@ import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import type { ShowcaseCategory, ShowcaseFeature } from "@/lib/feature-showcase";
-import {
-  focusedRouteEntry,
-  roleRouteEntries,
-  visibleRouteTotal,
-} from "@/lib/role-route-docs";
+import { focusedRouteEntry, roleRouteEntries } from "@/lib/role-route-docs";
 import { ROLE_ACCESS_GUIDES, type RoleAccessKey } from "@/lib/role-routes";
 import { setRoleRouteFocus, useRoleRouteFocus } from "@/lib/role-route-selection";
 
@@ -20,8 +16,8 @@ const PREMIUM_EASE = [0.22, 1, 0.36, 1] as const;
 /* Card footprints — the SAME hierarchy as the School & Institution section:
    one MAIN card, one MEDIUM ring card, the rest SMALL. */
 const BIG = { w: 250, h: 208 };
-const MEDIUM = { w: 152, h: 132 };
-const SMALL = { w: 104, h: 92 };
+const MEDIUM = { w: 158, h: 146 };
+const SMALL = { w: 112, h: 104 };
 
 /* Ring ellipse — starts at the RIGHT, runs anticlockwise, exactly like every
    other Connected OS catalog ring. */
@@ -64,7 +60,6 @@ const SCENE_TEXT = {
     bn: "বৃত্তের সাব-রুটে ক্লিক করুন — ডান পাশে সেই রুটের কাজ বিস্তারিত দেখাবে",
     en: "Click a sub-route on the ring — its work opens in detail on the right",
   },
-  routes: { bn: "রুট", en: "routes" },
 } as const;
 
 /*
@@ -90,12 +85,11 @@ const SCENE_TEXT = {
  * -------------------------------------------------------------------------
  */
 export default function RoleAccessScene({
-  category,
   feature,
   index = 0,
   featureIndex = 0,
 }: {
-  category: ShowcaseCategory;
+  category?: ShowcaseCategory;
   feature: ShowcaseFeature;
   index?: number;
   featureIndex?: number;
@@ -141,7 +135,6 @@ export default function RoleAccessScene({
     [guide, focus],
   );
 
-  const total = guide ? visibleRouteTotal(guide) : 0;
 
   const ring = useMemo(() => {
     if (!guide || !active) return [];
@@ -205,6 +198,7 @@ export default function RoleAccessScene({
   return (
     <div
       ref={rootRef}
+      data-scene-role={guide.key}
       className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_9%,var(--color-white))]"
     >
       <div
@@ -229,12 +223,6 @@ export default function RoleAccessScene({
         {/* Central room — the biggest card = the SELECTED sub-route. */}
         <div className="absolute left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
           <motion.div variants={roomVariants} className="relative">
-            <div className="absolute left-1/2 top-[-54px] z-20 -translate-x-1/2">
-              <span className="hc-scene-pill inline-flex h-[40px] min-w-[260px] items-center justify-center whitespace-nowrap rounded-full border-[1.5px] border-[var(--color-primary)] bg-[var(--color-white)] px-[34px] text-center text-[13px] font-black uppercase leading-[37px] tracking-[0.12em] text-[var(--color-primary)] shadow-[0_20px_54px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]">
-                {category.title[lang]} · {guide.title[lang]} · {total} {SCENE_TEXT.routes[lang]}
-              </span>
-            </div>
-
             <div
               className="cf-room rounded-[26px] border-[3px] border-[var(--color-primary)] bg-[var(--color-white)] p-[18px] shadow-[0_30px_90px_color-mix(in_srgb,var(--color-primary)_16%,transparent)]"
               style={{ width: BIG.w + 36, height: BIG.h + 36 }}
@@ -290,16 +278,24 @@ export default function RoleAccessScene({
                 aria-label={entry.item.label[lang]}
                 title={entry.item.label[lang]}
                 style={{ height: size.h }}
-                className="connected-spot hc-orbit-tile group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-[18px] px-[10px] py-[10px] text-center outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
+                className="connected-spot hc-orbit-tile group relative flex w-full items-stretch justify-center overflow-hidden rounded-[16px] border-[2px] border-[var(--color-primary)] bg-[var(--color-white)] p-[5px] text-center shadow-[0_14px_34px_color-mix(in_srgb,var(--color-primary)_12%,transparent)] outline-none transition-shadow hover:shadow-[0_20px_44px_color-mix(in_srgb,var(--color-primary)_20%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)]"
               >
-                <span
-                  className={`card-title text-center font-normal ${
-                    isMedium
-                      ? "line-clamp-3 max-w-[132px]"
-                      : "line-clamp-3 max-w-[96px]"
-                  }`}
-                >
-                  {entry.item.label[lang]}
+                <span className="flex w-full flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[11px] border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-1.5 text-center">
+                  <span
+                    aria-hidden="true"
+                    className={`shrink-0 leading-none text-[var(--color-primary)] ${
+                      isMedium ? "text-[22px]" : "text-[16px]"
+                    }`}
+                  >
+                    {Icon ? <Icon /> : null}
+                  </span>
+                  <span
+                    className={`card-title line-clamp-3 ${
+                      isMedium ? "max-w-[126px]" : "max-w-[90px]"
+                    }`}
+                  >
+                    {entry.item.label[lang]}
+                  </span>
                 </span>
               </button>
             </motion.div>
