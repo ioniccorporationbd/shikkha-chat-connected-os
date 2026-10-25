@@ -42,6 +42,7 @@ export default function ScrollLockedContentSection({
 }: ScrollLockedContentSectionProps) {
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
+  const settleRef = useRef<AbortController | null>(null);
 
   // Broadcast the rail panel nearest the viewport centre as the active section.
   // Pure, fully user-controlled document scrolling — no pin, no snap, no
@@ -126,16 +127,61 @@ export default function ScrollLockedContentSection({
       if (!target) return;
 
       const rect = target.getBoundingClientRect();
-      // Centre the target panel. The sync engine marks whichever panel sits at
-      // the viewport centre as active, so centring here keeps the clicked link,
-      // the middle scene and the highlighted rail row in lock-step (a top-offset
-      // scroll would leave a neighbouring panel at the centre and mark it).
+      const absTop = rect.top + window.scrollY;
+      const vh = window.innerHeight || 0;
+
+      // A SHORT panel is centred: the sync engine marks whichever panel sits at
+      // the viewport centre as active, so centring keeps the clicked link, the
+      // middle scene and the highlighted rail row in lock-step.
+      //
+      // A TALL panel (taller than the viewport — every role panel of Role-based
+      // Dashboards is) must instead open at its FIRST line: centring it would
+      // drop the reader in the middle of the list, so the rail appeared to
+      // start halfway down. Aligning its top with the viewport top still leaves
+      // this panel at the centre (it fills the viewport), so the middle scene
+      // and the rail stay in sync.
       const top =
-        rect.top +
-        window.scrollY +
-        rect.height / 2 -
-        (window.innerHeight || 0) / 2;
+        rect.height <= vh * 0.9
+          ? absTop + rect.height / 2 - vh / 2
+          : Math.max(absTop, 0);
       window.scrollTo({ top, behavior: "smooth" });
+
+      if (rect.height > vh * 0.9) {
+        // Tall panel: keep its first line pinned to the fold for a moment after
+        // the glide lands. Blocks ABOVE the rail settle a few pixels as the
+        // scene swaps and lazy rows measure themselves, and any of those shifts
+        // would drag the panel's opening line back above the fold — the exact
+        // "sidebar starts halfway down" symptom. Corrections only fire while
+        // the page is still, so they never fight the glide or a user scroll,
+        // and any real user input cancels the watch immediately.
+        settleRef.current?.abort();
+        const ac = new AbortController();
+        settleRef.current = ac;
+        for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) {
+          window.addEventListener(ev, () => ac.abort(), {
+            passive: true,
+            once: true,
+            signal: ac.signal,
+          });
+        }
+        const deadline = performance.now() + 2600;
+        let lastY = window.scrollY;
+        let still = 0;
+        const tick = () => {
+          if (ac.signal.aborted) return;
+          const y = window.scrollY;
+          still = Math.abs(y - lastY) < 1 ? still + 1 : 0;
+          lastY = y;
+          if (still > 5) {
+            const drift = target.getBoundingClientRect().top;
+            if (Math.abs(drift) > 1) {
+              window.scrollTo({ top: y + drift });
+            }
+          }
+          if (performance.now() < deadline) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
     };
 
     window.addEventListener(
