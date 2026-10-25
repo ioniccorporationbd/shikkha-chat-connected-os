@@ -152,10 +152,9 @@ export default function CatalogFeatureScene({
   }, []);
 
   const panelId = catalogFeaturePanelId(category.id, feature.id);
-  // PILOT (2026-10-17): only the School & Institution Management section swaps
-  // the redundant red category echo inside the main card for the Shikkha Chat
-  // logo. Other sections keep the red text until the result is approved.
-  const showBrandLogo = category.id === "school-management";
+  // Every section's centre (BIG) card carries the Shikkha Chat logo under its
+  // title, exactly like School & Institution Management does — the small red
+  // category echo it replaces was redundant with the pill above the card.
   const siblings = useMemo(
     () => category.features.filter((item) => item.id !== feature.id),
     [category.features, feature.id],
@@ -281,19 +280,13 @@ export default function CatalogFeatureScene({
                 <span className="card-title max-w-[210px] text-center">
                   {feature.title[lang]}
                 </span>
-                {showBrandLogo ? (
-                  <Image
-                    src="/images/logo.png"
-                    alt="Shikkha Chat"
-                    width={790}
-                    height={316}
-                    className="mt-1 h-auto w-[186px] object-contain"
-                  />
-                ) : (
-                  <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
-                    {category.title[lang]}
-                  </span>
-                )}
+                <Image
+                  src="/images/logo.png"
+                  alt="Shikkha Chat"
+                  width={790}
+                  height={316}
+                  className="mt-0.5 h-auto w-[176px] object-contain"
+                />
               </button>
             </div>
           </motion.div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -282,6 +283,13 @@ export default function RoleAccessScene({
                 <span className="text-[10px] font-normal uppercase tracking-[0.12em] text-[var(--color-action)] opacity-80">
                   {routeCountLabel}
                 </span>
+                <Image
+                  src="/images/logo.png"
+                  alt="Shikkha Chat"
+                  width={790}
+                  height={316}
+                  className="mt-0.5 h-auto w-[150px] object-contain"
+                />
               </div>
             </div>
           </motion.div>
