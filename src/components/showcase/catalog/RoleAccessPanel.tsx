@@ -12,6 +12,7 @@ import {
   type ShowcaseFeature,
 } from "@/lib/feature-showcase";
 import { roleRouteEntries, visibleRouteTotal } from "@/lib/role-route-docs";
+import { routeDescription } from "@/lib/role-route-descriptions";
 import {
   ROLE_ACCESS_TEXT,
   roleAccessGuide,
@@ -25,28 +26,33 @@ import { catalogFeaturePanelId } from "./sceneGroups";
 const DETAIL_TEXT = {
   listTitle: { bn: "এই ভূমিকার সব লিংক", en: "Every link of this role" },
   listLead: {
-    bn: "নম্বর ধরে সাজানো — প্রতিটি লিংকের নাম আর কাজ, এক নজরে।",
-    en: "Numbered in sidebar order — the name of each link and the work it does.",
+    bn: "নম্বর ধরে সাজানো — প্রতিটি লিংকের নাম আর সেই সেকশনের কাজ, সহজ ভাষায়।",
+    en: "Numbered in sidebar order — the name of each link and, in plain words, what that section does.",
   },
-  more: { bn: "আরো দেখুন", en: "See more" },
-  less: { bn: "কম দেখুন", en: "Show less" },
+  more: { bn: "রিড", en: "Read" },
+  less: { bn: "কম দেখান", en: "Show less" },
 } as const;
 
-/** Descriptions never run past this many lines before "See more" appears. */
+/** Descriptions are held to five lines; the rest sits behind the Read button. */
 const DESC_LINES = 5;
 
 /**
  * One numbered link of the role — number, title, and what the section does.
- * The description is capped at DESC_LINES lines; only when it truly overflows
- * does a small "See more" toggle appear, so short rows stay silent.
+ *
+ * The description is a proper short paragraph (five-plus lines) so a reader
+ * understands the section without opening the app. It is held to DESC_LINES
+ * lines; when the text runs longer, a small "Read" chip sits at the end of the
+ * fifth line (bottom-right of the clamped block) and reveals the rest in place.
  */
 function RouteDocRow({
   index,
+  path,
   title,
   description,
   lang,
 }: {
   index: number;
+  path: string;
   title: string;
   description: string;
   lang: "bn" | "en";
@@ -65,44 +71,68 @@ function RouteDocRow({
     return () => ro.disconnect();
   }, [open, description, lang]);
 
+  const rowSurface = "color-mix(in srgb, var(--color-primary) 3%, #ffffff)";
+
   return (
     <div
-      data-role-route-row={`${index}`}
-      className="sc-hc-tick-row w-full !items-start text-left"
+      data-role-route-row={path}
+      data-role-route-index={index}
+      className="group flex w-full items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_11%,transparent)] px-3.5 py-3 transition-colors hover:border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
+      style={{ background: rowSurface }}
     >
       <span
         aria-hidden="true"
-        className="sc-hc-tick-tile shrink-0 text-[12px] font-extrabold leading-none"
+        className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[#032521] text-[11.5px] font-extrabold leading-none text-white"
       >
         {index}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="section-description text-[var(--color-primary)]">{title}</p>
-        <p
-          ref={pRef}
-          className="capability-text mt-1.5 text-[color-mix(in_srgb,var(--color-black)_70%,var(--color-primary))]"
-          style={
-            open
-              ? undefined
-              : {
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: DESC_LINES,
-                  overflow: "hidden",
-                }
-          }
-        >
-          {description}
+        <p className="section-description !leading-snug text-[var(--color-primary)]">
+          {title}
         </p>
-        {overflow || open ? (
+        <div className="relative mt-1.5">
+          <p
+            ref={pRef}
+            className="capability-text text-[color-mix(in_srgb,var(--color-primary)_46%,var(--color-black))]"
+            style={
+              open
+                ? undefined
+                : {
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: DESC_LINES,
+                    overflow: "hidden",
+                  }
+            }
+          >
+            {description}
+          </p>
+          {overflow && !open ? (
+            /* Sits at the tail of line five and finishes the sentence with a
+               soft fade, so the "Read" chip never looks like a stray button. */
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-expanded={false}
+              className="absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-md pl-7 pr-1 text-[12px] font-bold leading-[1.6] text-[var(--color-action)] hover:underline"
+              style={{
+                background: `linear-gradient(to right, transparent, ${rowSurface} 32%)`,
+              }}
+            >
+              {DETAIL_TEXT.more[lang]}
+              <span aria-hidden="true">▾</span>
+            </button>
+          ) : null}
+        </div>
+        {open ? (
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            className="capability-text mt-1.5 inline-flex items-center gap-1 text-[12px] font-bold text-[var(--color-action)] hover:underline"
+            onClick={() => setOpen(false)}
+            aria-expanded
+            className="capability-text mt-1 inline-flex items-center gap-1 text-[12px] font-bold text-[var(--color-action)] hover:underline"
           >
-            {open ? DETAIL_TEXT.less[lang] : DETAIL_TEXT.more[lang]}
-            <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+            {DETAIL_TEXT.less[lang]}
+            <span aria-hidden="true">▴</span>
           </button>
         ) : null}
       </div>
@@ -197,8 +227,9 @@ export default function RoleAccessPanel({
               <li key={entry.item.path}>
                 <RouteDocRow
                   index={i + 1}
+                  path={entry.item.path}
                   title={entry.item.label[lang]}
-                  description={entry.item.description[lang]}
+                  description={routeDescription(entry.item.path, entry.item.description)[lang]}
                   lang={lang}
                 />
               </li>
