@@ -36,7 +36,9 @@ type RouterText = {
   openSection: string;
   siteHeading: string;
   siteSubheading: string;
+  moreModules: string;
   home: string;
+  rolePages: string;
   helpDesk: string;
   expert: string;
   brand: string;
@@ -55,7 +57,10 @@ const textContent: Record<ShowcaseLanguage, RouterText> = {
     openSection: "সেকশনে যান",
     siteHeading: "সাইট লিংক",
     siteSubheading: "পুরো ওয়েবসাইটের দ্রুত লিংক।",
+    moreModules:
+      "উপরের যে মডিউলগুলো দেখানো হয়েছে সেগুলো ছাড়াও প্ল্যাটফর্মে মোট আরও অনেক মডিউল রয়েছে।",
     home: "হোম",
+    rolePages: "রোল ড্যাশবোর্ড",
     helpDesk: "হেল্প ডেস্ক",
     expert: "বিশেষজ্ঞের সাথে কথা বলুন",
     brand: "শিক্ষা চ্যাট",
@@ -72,7 +77,10 @@ const textContent: Record<ShowcaseLanguage, RouterText> = {
     openSection: "Go to section",
     siteHeading: "Site links",
     siteSubheading: "Quick links across the whole website.",
+    moreModules:
+      "Beyond the modules shown above, the platform carries many more modules in total.",
     home: "Home",
+    rolePages: "Role Dashboards",
     helpDesk: "Help Desk",
     expert: "Talk to an Expert",
     brand: "Shikkha Chat",
@@ -198,6 +206,7 @@ export default function ProductRouterSection() {
   const siteLinks: Array<{ label: string; href: string; external?: boolean }> =
     [
       { label: t.home, href: "#top" },
+      { label: t.rolePages, href: "/dashboard", external: true },
       { label: t.helpDesk, href: "/help-desk", external: true },
       { label: t.expert, href: "#connect" },
     ];
@@ -254,6 +263,9 @@ export default function ProductRouterSection() {
             <p className="mt-2 text-[12px] font-bold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
               {FEATURE_SHOWCASE.length} {t.categorySuffix} ·{" "}
               {FEATURE_SHOWCASE_FEATURE_COUNT} {t.featureSuffix}
+            </p>
+            <p className="mx-auto mt-3 max-w-xl text-[13px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {t.moreModules}
             </p>
           </motion.div>
 
