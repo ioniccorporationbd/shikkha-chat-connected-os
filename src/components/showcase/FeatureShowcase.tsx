@@ -184,7 +184,7 @@ export default function FeatureShowcase() {
               <div className="overflow-hidden">
                 {isRoleCategory ? (
                   <div className={SUBLIST}>
-                    {ROLE_ACCESS_GUIDES.map((guide) => {
+                    {ROLE_ACCESS_GUIDES.map((guide, index) => {
                       return (
                         <div key={guide.key}>
                           {/* One row per role — a plain link, no nested
@@ -215,6 +215,10 @@ export default function FeatureShowcase() {
                             ].join(" ")}
                           >
                             <span className={ROW_LABEL}>
+                              {/* Serial number in the rail's own numbering
+                                  language — the same 1..N index every other
+                                  category's child links carry. */}
+                              <span className={ROW_INDEX}>{index + 1}</span>
                               <span className="truncate font-semibold tracking-[-0.01em]">
                                 {guide.title[language]}
                               </span>
