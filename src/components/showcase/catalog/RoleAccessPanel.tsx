@@ -29,7 +29,7 @@ const DETAIL_TEXT = {
     bn: "নম্বর ধরে সাজানো — প্রতিটি লিংকের নাম আর সেই সেকশনের কাজ, সহজ ভাষায়।",
     en: "Numbered in sidebar order — the name of each link and, in plain words, what that section does.",
   },
-  more: { bn: "রিড", en: "Read" },
+  more: { bn: "বিস্তারিত দেখুন", en: "View details" },
   less: { bn: "কম দেখান", en: "Show less" },
 } as const;
 
@@ -114,7 +114,7 @@ function RouteDocRow({
               {/* short fade so the truncated line melts into the chip */}
               <span
                 aria-hidden="true"
-                className="h-[22px] w-6"
+                className="h-[24px] w-9"
                 style={{
                   background: `linear-gradient(to right, transparent, ${rowSurface})`,
                 }}
@@ -123,7 +123,7 @@ function RouteDocRow({
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-expanded={false}
-                className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-1.5 text-[11.5px] font-bold leading-[1.7] text-[var(--color-action)] transition-colors hover:border-[color-mix(in_srgb,var(--color-action)_38%,transparent)]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-[3px] text-[12.5px] font-bold leading-[1.55] text-[var(--color-action)] transition-colors hover:border-[color-mix(in_srgb,var(--color-action)_38%,transparent)]"
                 style={{ background: rowSurface }}
               >
                 {DETAIL_TEXT.more[lang]}
@@ -190,7 +190,7 @@ export default function RoleAccessPanel({
   // (SectionPanel dashboard variant): icon tile + pill header, role summary,
   // meta rows — then the role's links, numbered 1 … N, as the panel's own rows.
   return (
-    <div className="max-w-[560px]">
+    <div className="w-full">
       <SectionPanel
         id={panelId}
         variant="dashboard"
@@ -217,7 +217,7 @@ export default function RoleAccessPanel({
         ]}
       >
         {/* The role's links — 1 … N, title + description, five lines cap. */}
-        <div className="mt-6 max-w-[560px]">
+        <div className="mt-6 w-full">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="section-description text-[var(--color-primary)]">
               {DETAIL_TEXT.listTitle[lang]}
