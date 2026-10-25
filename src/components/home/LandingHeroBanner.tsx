@@ -353,8 +353,7 @@ export default function LandingHeroBanner() {
             variants={textItem}
             className="mb-3 inline-flex items-center justify-center gap-2.5 rounded-full border border-[color-mix(in_srgb,var(--color-secondary-strong)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,transparent)] px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-secondary-strong)] backdrop-blur-sm md:text-[11.5px]"
           >
-            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--color-action)]" />
-            CONNECT HOME, CLASSROOM &amp; CENTRAL OFFICE
+            CONNECT HOME, CLASSROOM &amp; ADMIN OFFICE
           </motion.p>
 
           <motion.h1

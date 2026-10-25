@@ -22,10 +22,10 @@ type LanguageContextValue = {
 const LANGUAGE_STORAGE_KEY = "shikkha-chat-site-language";
 
 const translations: Record<string, string> = {
-  "CONNECT HOME, CLASSROOM & CENTRAL OFFICE":
-    "বাড়ি, শ্রেণিকক্ষ ও কেন্দ্রীয় অফিসকে যুক্ত করুন",
-  "UNIFY THE HOME, CLASSROOM, AND CENTRAL OFFICE":
-    "বাড়ি, শ্রেণিকক্ষ এবং কেন্দ্রীয় অফিসকে একসাথে যুক্ত করুন",
+  "CONNECT HOME, CLASSROOM & ADMIN OFFICE":
+    "বাড়ি, শ্রেণিকক্ষ ও প্রশাসনিক অফিসকে যুক্ত করুন",
+  "UNIFY THE HOME, CLASSROOM, AND ADMIN OFFICE":
+    "বাড়ি, শ্রেণিকক্ষ এবং প্রশাসনিক অফিসকে একসাথে যুক্ত করুন",
   "Nursery to Masters": "নার্সারি থেকে মাস্টার্স",
   "Nursery - Masters Complete Solution Shikkha Chat":
     "নার্সারি - মাস্টার্স কমপ্লিট সলিউশন শিক্ষা চ্যাট",
