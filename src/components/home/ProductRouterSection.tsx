@@ -264,9 +264,6 @@ export default function ProductRouterSection() {
               {FEATURE_SHOWCASE.length} {t.categorySuffix} ·{" "}
               {FEATURE_SHOWCASE_FEATURE_COUNT} {t.featureSuffix}
             </p>
-            <p className="mx-auto mt-3 max-w-xl text-[13px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-              {t.moreModules}
-            </p>
           </motion.div>
 
           {/* Category dropdowns — closed by default, one open at a time,
@@ -437,7 +434,10 @@ export default function ProductRouterSection() {
             variants={reveal.up}
             className="mt-3 rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-3.5 shadow-[0_16px_40px_-30px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:px-6"
           >
-            <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
+            <p className="text-center text-[15px] font-semibold leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+              {t.moreModules}
+            </p>
+            <div className="mt-3 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
               <p className="text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 © {year} {t.brand}. {t.rights}
               </p>
