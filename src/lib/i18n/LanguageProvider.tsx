@@ -36,12 +36,33 @@ const translations: Record<string, string> = {
   "The K–12 Operating System": "কে–টুয়েলভ অপারেটিং সিস্টেম",
   "The K-12 Operating System": "কে–টুয়েলভ অপারেটিং সিস্টেম",
 
+  "Connect your school, families and students on one advanced AI digital platform — see the details below.":
+    "আপনার স্কুল পরিবার ও শিক্ষার্থীর একটি অত্যাধুনিক Ai ডিজিটাল প্লাটফর্মে সংযুক্ত করুন - নিচে বিস্তারিত দেখুন",
   "Bring your school, families and every learner onto one connected platform — explore the system below.":
     "আপনার স্কুল, পরিবার ও প্রতিটি শিক্ষার্থীকে একটি সংযুক্ত প্ল্যাটফর্মে আনুন — নিচে সিস্টেমটি ঘুরে দেখুন।",
   "One connected platform for school, family and learning — tap a section to explore it.":
     "স্কুল, পরিবার ও শেখার জন্য একটি সংযুক্ত প্ল্যাটফর্ম — ঘুরে দেখতে যেকোনো সেকশনে ট্যাপ করুন।",
 
   "Request a Demo": "ডেমো রিকোয়েস্ট করুন",
+  "Your name": "আপনার নাম",
+  "Your designation": "আপনার পদবী",
+  "Institution name": "প্রতিষ্ঠানের নাম",
+  "Mobile number": "মোবাইল নাম্বার",
+  "e.g. Md. Rakib Hasan": "যেমন: মোঃ রাকিব হাসান",
+  "e.g. Principal": "যেমন: প্রধান শিক্ষক",
+  "e.g. City Model School": "যেমন: সিটি মডেল স্কুল",
+  "Please enter your name": "আপনার নাম লিখুন",
+  "Please enter your designation": "আপনার পদবী লিখুন",
+  "Please enter your institution name": "প্রতিষ্ঠানের নাম লিখুন",
+  "Please enter your mobile number": "মোবাইল নাম্বার লিখুন",
+  "Use a valid 11-digit mobile number": "সঠিক ১১ ডিজিটের মোবাইল নাম্বার দিন",
+  "Share four details and our team will call you back.": "চারটি তথ্য দিন, আমাদের টিম আপনাকে কল করবে।",
+  "Submit request": "সাবমিট করুন",
+  "Sending…": "পাঠানো হচ্ছে…",
+  "Request received": "অনুরোধ পাওয়া গেছে",
+  "Thank you! Our team will call you shortly to arrange the demo.": "ধন্যবাদ! ডেমো আয়োজনের জন্য আমাদের টিম শীঘ্রই আপনাকে কল করবে।",
+  "Close": "বন্ধ করুন",
+
   "Explore Features": "ফিচারসমূহ দেখুন",
 
   "Home Connections": "হোম কানেকশন",

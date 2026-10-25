@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import DemoRequestModal from "@/components/home/DemoRequestModal";
 import { FEATURE_SHOWCASE } from "@/lib/feature-showcase";
 import {
   catalogSectionId,
@@ -193,6 +194,7 @@ export default function LandingHeroBanner() {
   // While the Main Banner itself fills the viewport no group is "active" — the hero
   // shows all three graphics. Mirrors the sidebar's #intro rule.
   const [heroInView, setHeroInView] = useState(true);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   // Reveal the three people with a small spotlight pulse, one at a time.
   // Skipped entirely under `prefers-reduced-motion` (they render shown).
@@ -367,19 +369,21 @@ export default function LandingHeroBanner() {
             variants={textItem}
             className="mx-auto mt-4 max-w-[640px] text-pretty text-[15px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_66%,transparent)] md:text-[16.5px]"
           >
-            Bring your school, families and every learner onto one connected platform — explore the system below.
+            Connect your school, families and students on one advanced AI digital platform — see the details below.
           </motion.p>
 
           <motion.div
             variants={textItem}
             className="mt-6 flex flex-wrap items-center justify-center gap-3"
           >
-            <a className="mk-btn mk-btn--primary" href="#home-connections-content">
+            <button
+              type="button"
+              className="mk-btn mk-btn--primary"
+              onClick={() => setDemoOpen(true)}
+              aria-haspopup="dialog"
+            >
               Request a Demo
-            </a>
-            <a className="mk-btn mk-btn--ghost" href="#home-connections-content">
-              Explore Features
-            </a>
+            </button>
           </motion.div>
         </motion.div>
 
@@ -534,6 +538,8 @@ export default function LandingHeroBanner() {
           </div>
         </div>
       </div>
+
+      <DemoRequestModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </section>
   );
 }
