@@ -57,8 +57,7 @@ const textContent: Record<ShowcaseLanguage, RouterText> = {
     openSection: "সেকশনে যান",
     siteHeading: "সাইট লিংক",
     siteSubheading: "পুরো ওয়েবসাইটের দ্রুত লিংক।",
-    moreModules:
-      "উপরের যে মডিউলগুলো দেখানো হয়েছে সেগুলো ছাড়াও প্ল্যাটফর্মে মোট আরও অনেক মডিউল রয়েছে।",
+    moreModules: "উপরের মডিউলগুলো ছাড়াও আরও মডিউল আছে।",
     home: "হোম",
     rolePages: "রোল ড্যাশবোর্ড",
     helpDesk: "হেল্প ডেস্ক",
@@ -77,8 +76,7 @@ const textContent: Record<ShowcaseLanguage, RouterText> = {
     openSection: "Go to section",
     siteHeading: "Site links",
     siteSubheading: "Quick links across the whole website.",
-    moreModules:
-      "Beyond the modules shown above, the platform carries many more modules in total.",
+    moreModules: "There are more modules beyond the ones above.",
     home: "Home",
     rolePages: "Role Dashboards",
     helpDesk: "Help Desk",
@@ -393,6 +391,18 @@ export default function ProductRouterSection() {
                 </motion.div>
               );
             })}
+
+            {/* Fills the two empty slots of the last card row (16 modules in a
+                3-column grid leave columns 2-3 open) — so the "more modules"
+                line sits inside the grid itself, not in the bottom bar. */}
+            <motion.div
+              variants={reveal.up}
+              className="flex h-full min-h-[92px] items-center justify-center rounded-[18px] border border-dashed border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_5%,var(--color-white))] px-5 py-6 text-center sm:col-span-2 xl:col-span-2"
+            >
+              <p className="max-w-[36ch] text-[15px] font-semibold leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                {t.moreModules}
+              </p>
+            </motion.div>
           </div>
 
           {/* Whole-website links strip */}
@@ -434,10 +444,7 @@ export default function ProductRouterSection() {
             variants={reveal.up}
             className="mt-3 rounded-[18px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-3.5 shadow-[0_16px_40px_-30px_color-mix(in_srgb,var(--color-primary)_50%,transparent)] sm:px-6"
           >
-            <p className="text-center text-[15px] font-semibold leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
-              {t.moreModules}
-            </p>
-            <div className="mt-3 flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
+            <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
               <p className="text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 © {year} {t.brand}. {t.rights}
               </p>
