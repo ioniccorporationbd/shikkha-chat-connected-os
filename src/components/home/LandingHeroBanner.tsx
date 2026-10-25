@@ -323,15 +323,8 @@ export default function LandingHeroBanner() {
   const mapImageClass = (section: SectionKey) =>
     `object-contain object-top transition duration-500 [transition-timing-function:var(--ease-smooth)] group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5${isDimmed(section) ? " saturate-[0.45]" : ""}`;
 
-  // The people cut-outs are tall, so `object-contain` letterboxes them inside
-  // their slot. Nudging that letterbox (`object-left-bottom` / `object-right-
-  // bottom`) is what keeps each figure clear of the diagram card beside it —
-  // the orange guardian stands to the LEFT of Home Connections, the green and
-  // purple figures to the RIGHT — so no card or tile label is ever covered.
-  const peopleImageClass = (section: SectionKey) => {
-    const anchor = section === "orange" ? "object-left-bottom" : "object-right-bottom";
-    return `${anchor} object-contain drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)] transition duration-500${isDimmed(section) ? " saturate-[0.45]" : ""}`;
-  };
+  const peopleImageClass = (section: SectionKey) =>
+    `object-contain object-bottom drop-shadow-[0_22px_18px_rgba(15,23,42,0.16)] transition duration-500${isDimmed(section) ? " saturate-[0.45]" : ""}`;
 
   return (
     <section
