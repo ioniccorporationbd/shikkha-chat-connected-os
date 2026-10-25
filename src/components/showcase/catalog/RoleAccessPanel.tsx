@@ -77,7 +77,7 @@ function RouteDocRow({
     <div
       data-role-route-row={path}
       data-role-route-index={index}
-      className="group flex w-full items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_11%,transparent)] px-3.5 py-3 transition-colors hover:border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)]"
+      className="group flex w-full items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-3.5 py-3 transition-colors hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]"
       style={{ background: rowSurface }}
     >
       <span
@@ -110,18 +110,26 @@ function RouteDocRow({
           {overflow && !open ? (
             /* Sits at the tail of line five and finishes the sentence with a
                soft fade, so the "Read" chip never looks like a stray button. */
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-expanded={false}
-              className="absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-md pl-7 pr-1 text-[12px] font-bold leading-[1.6] text-[var(--color-action)] hover:underline"
-              style={{
-                background: `linear-gradient(to right, transparent, ${rowSurface} 32%)`,
-              }}
-            >
-              {DETAIL_TEXT.more[lang]}
-              <span aria-hidden="true">▾</span>
-            </button>
+            <span className="absolute bottom-0 right-0 flex items-end">
+              {/* short fade so the truncated line melts into the chip */}
+              <span
+                aria-hidden="true"
+                className="h-[22px] w-6"
+                style={{
+                  background: `linear-gradient(to right, transparent, ${rowSurface})`,
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-expanded={false}
+                className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-1.5 text-[11.5px] font-bold leading-[1.7] text-[var(--color-action)] transition-colors hover:border-[color-mix(in_srgb,var(--color-action)_38%,transparent)]"
+                style={{ background: rowSurface }}
+              >
+                {DETAIL_TEXT.more[lang]}
+                <span aria-hidden="true">▾</span>
+              </button>
+            </span>
           ) : null}
         </div>
         {open ? (
