@@ -77,7 +77,8 @@ function navigateToSection(id: string) {
  * OWN navigation language (category dropdowns / numbered feature rows).
  *
  * "Role-based dashboards" sits FIRST in the rail and is the only category that
- * links out: expanding it lists the eight dashboard roles as plain link rows —
+ * links out: it starts FOLDED, and expanding it (heading click) lists the eight
+ * dashboard roles as plain link rows —
  * no per-role chevron and no nested dropdown. Clicking a role drives the page
  * to that role's own section (middle stage + right rail), where every
  * sub-route the old dropdown used to list is still listed and selectable
@@ -93,10 +94,11 @@ export default function FeatureShowcase() {
 
   // The other categories behave like an accordion (one open at a time, driven
   // by the page scroll). Role-based dashboards is deliberately NOT part of that
-  // accordion: it is pinned first in the rail and stays expanded on its own so
-  // the eight roles — and their sub-routes — are always one click away.
+  // accordion: it is pinned first in the rail, but its eight roles stay FOLDED
+  // until the user clicks the heading — no scroll sync, section change or page
+  // refresh may reopen it (only a click on the heading, or on a role row, does).
   const [openCategory, setOpenCategory] = useState<string | null>(null);
-  const [roleExpanded, setRoleExpanded] = useState(true);
+  const [roleExpanded, setRoleExpanded] = useState(false);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
 
   // Follow the page: when the scroll-sync engine reports a catalog section as
