@@ -45,6 +45,7 @@ export default function ConversationComposer({
   disabled,
   disabledHint,
   requirementMode,
+  initialText,
 }: {
   copy: ConversationCopy;
   quoted: ConversationMessage | null;
@@ -54,8 +55,10 @@ export default function ConversationComposer({
   disabledHint?: string;
   /** Customer "additional requirement" wording; otherwise a normal message. */
   requirementMode?: boolean;
+  /** Text to seed the box with (a draft kept across a forced sign-in). */
+  initialText?: string;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText ?? "");
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

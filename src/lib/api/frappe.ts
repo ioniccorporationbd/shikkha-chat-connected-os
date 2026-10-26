@@ -30,6 +30,14 @@ export interface FrappeFailure {
   status: number;
   code: FrappeFailureCode;
   message: string;
+  /**
+   * Machine-readable sub-reason for an authentication failure, so a 401 can be
+   * diagnosed from the Network tab / server log without guessing:
+   * `session_expired` = Frappe itself dropped the session,
+   * `erp_rejected_session` = the ERP answered 401 but did not say the session
+   * expired (e.g. an `AuthenticationError` raised before the session lookup).
+   */
+  reason?: string;
 }
 
 export interface FrappeSuccess<T> {
@@ -186,6 +194,9 @@ function unwrapEnvelope<T>(payload: unknown): T {
   return envelope as T;
 }
 
+/** Fallback text when the ERP sent no readable message of its own. */
+export const DEFAULT_REJECTION_MESSAGE = "The ERP rejected the request. Please try again.";
+
 function normalizeFailure(
   response: Response,
   payload: unknown,
@@ -195,7 +206,7 @@ function normalizeFailure(
   const status = response.status;
   const record = (payload ?? {}) as Record<string, unknown>;
   const excType = typeof record.exc_type === "string" ? record.exc_type : "";
-  const message = extractMessage(payload, "The ERP rejected the request. Please try again.");
+  const message = extractMessage(payload, DEFAULT_REJECTION_MESSAGE);
   const host = erpHost();
 
   // A site that is down (bad vhost, failed migration, app not installed on the
@@ -223,11 +234,24 @@ function normalizeFailure(
   // unclassified it surfaced as an opaque 502 "ERP server returned an error",
   // the dead cookie survived, and every retry failed with the same message.
   if (status === 401 || excType === "SessionExpired" || Boolean(record.session_expired)) {
+    // Two different truths hide behind a 401, and the UI (and this log) must
+    // not pretend they are the same:
+    //  - `session_expired`: Frappe says the stored session is gone. Nothing the
+    //    customer can retry; send them to sign in again.
+    //  - `erp_rejected_session`: the ERP refused the request as unauthenticated
+    //    without claiming the session expired (e.g. `require_login()` raised
+    //    before the session lookup, or a single worker missed the session). That
+    //    can be transient, so the help-desk routes probe the session and retry
+    //    once before dropping the cookie.
+    const sessionGone = excType === "SessionExpired" || Boolean(record.session_expired);
+    const sessionMessage = "Your session has expired. Please sign in again.";
+
     return {
       ok: false,
       status: 401,
       code: "not_authenticated",
-      message: "Your session has expired. Please sign in again.",
+      reason: sessionGone ? "session_expired" : "erp_rejected_session",
+      message: sessionGone || message === DEFAULT_REJECTION_MESSAGE ? sessionMessage : message,
     };
   }
 
@@ -372,4 +396,49 @@ export function extractSid(setCookies: string[]): string | null {
   }
 
   return null;
+}
+
+/** What the ERP says about one forwarded `sid`. */
+export type PortalSessionState = "active" | "expired" | "unknown";
+
+/**
+ * Ask the ERP whether this exact `sid` is still a live session.
+ *
+ * Used only to *verify* a 401 before the portal throws the cookie away: a
+ * single unauthenticated answer is not proof that the customer has been
+ * signed out (a worker restart, a missed session read or a racing keep-alive
+ * can produce one). `shikkha_os.api.v1.auth.session` is the site's canonical
+ * probe — it also slides the session window while the portal is in use.
+ *
+ * Never throws: an unreachable ERP is `unknown`, not `expired`.
+ */
+export async function probePortalSession(sid: string): Promise<PortalSessionState> {
+  const result = await callFrappe<{ authenticated?: boolean }>(
+    "shikkha_os.api.v1.auth.session",
+    { sid }
+  );
+
+  if (result.ok) return result.data?.authenticated ? "active" : "expired";
+  if (result.status === 401) return "expired";
+  return "unknown";
+}
+
+/**
+ * Call the ERP, and when it answers 401 verify the session before accepting it.
+ *
+ * If the probe still sees the session, the 401 was transient and the call is
+ * retried exactly once. A retry is only ever made after a 401, which the ERP
+ * raises before writing anything (`security.require_login()` is the first step
+ * of every help-desk method), so the retry cannot duplicate a message.
+ */
+export async function callFrappeWithSessionCheck<T>(
+  method: string,
+  options: CallFrappeOptions & { sid: string }
+): Promise<FrappeResult<T>> {
+  const first = await callFrappe<T>(method, options);
+  if (first.ok || first.status !== 401) return first;
+
+  if ((await probePortalSession(options.sid)) !== "active") return first;
+
+  return callFrappe<T>(method, options);
 }

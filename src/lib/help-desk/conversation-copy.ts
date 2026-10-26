@@ -120,6 +120,8 @@ export interface ConversationCopy {
   sessionExpired: string;
   /** Action label on the ended-session card. */
   signInAgain: string;
+  /** Shown when the text the customer typed survived the sign-in round trip. */
+  draftSaved: string;
   composerClosed: string;
   composerRequirementPlaceholder: string;
   composerRequirementSend: string;
@@ -330,6 +332,7 @@ const bn: ConversationCopy = {
   composerFailed: "বার্তা পাঠানো যায়নি। আবার চেষ্টা করুন।",
   sessionExpired: "আপনার সেশন শেষ হয়েছে। আবার সাইন ইন করুন।",
   signInAgain: "সাইন ইন করুন",
+  draftSaved: "আপনার লেখা খসড়াটি সংরক্ষিত আছে — সাইন ইন করার পর একই টিকিটে ফিরে পাঠাতে পারবেন।",
   composerClosed: "ক্লোজড টিকিটে বার্তা পাঠানো যাবে না।",
   composerRequirementPlaceholder: "অতিরিক্ত রিকোয়ারমেন্ট লিখুন…",
   composerRequirementSend: "রিকোয়ারমেন্ট যোগ করুন",
@@ -532,6 +535,7 @@ const en: ConversationCopy = {
   composerFailed: "The message could not be sent. Please try again.",
   sessionExpired: "Your session has expired. Please sign in again.",
   signInAgain: "Sign in",
+  draftSaved: "Your unsent text is saved — after signing in you will return to this ticket and can send it.",
   composerClosed: "Messages cannot be sent on a closed ticket.",
   composerRequirementPlaceholder: "Describe the additional requirement…",
   composerRequirementSend: "Add requirement",

@@ -49,6 +49,44 @@ function isAuthFailure(error: unknown): boolean {
 }
 
 /**
+ * Draft safety across a forced sign-in.
+ *
+ * When a send is refused because the session ended, the text the customer
+ * typed must not be lost: it is kept in `sessionStorage` (tab-scoped, never
+ * sent anywhere) and handed back to the composer when this ticket reloads
+ * after login. It is cleared only once a message actually lands, so a retry
+ * after signing in cannot silently post a message twice.
+ */
+function draftKey(ticketId: string): string {
+  return `help-desk:draft:${ticketId}`;
+}
+
+function readDraft(ticketId: string): string {
+  try {
+    return window.sessionStorage.getItem(draftKey(ticketId)) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeDraft(ticketId: string, text: string): void {
+  try {
+    if (text.trim()) window.sessionStorage.setItem(draftKey(ticketId), text);
+    else window.sessionStorage.removeItem(draftKey(ticketId));
+  } catch {
+    // Storage disabled/blocked: the composer still holds the text for this page.
+  }
+}
+
+function clearDraft(ticketId: string): void {
+  try {
+    window.sessionStorage.removeItem(draftKey(ticketId));
+  } catch {
+    // Nothing to clean up when storage is unavailable.
+  }
+}
+
+/**
  * One ticket conversation — customer and employee use the same screen.
  *
  * Block A is the problem as the ERP stores it (`ProblemInfoCard`), block B the
@@ -98,6 +136,12 @@ export default function HelpDeskTicketThread({
   const pathname = usePathname();
 
   const [quoted, setQuoted] = useState<ConversationMessage | null>(null);
+  // Text recovered from a previous attempt that was cut short by a session end.
+  // Read synchronously (not in an effect) — it is only ever shown or seeded into
+  // the composer after the payload loads, so there is no hydration mismatch.
+  const [draft, setDraft] = useState<string>(() =>
+    typeof window === "undefined" ? "" : readDraft(ticketId)
+  );
   // Ticket-level pin: the ERP stores which message is pinned on the HD Ticket,
   // so this state is only ever a mirror of the server value.
   const [pinnedId, setPinnedId] = useState<string | null>(null);
@@ -200,10 +244,15 @@ export default function HelpDeskTicketThread({
           });
           setPayload(data);
           setQuoted(null);
+          clearDraft(ticketId);
+          setDraft("");
           toast.success(copy.composerRequirementSent, copy.conversationTitle);
           return true;
         } catch (err) {
           if (isAuthFailure(err)) {
+            // Nothing was written: keep what was typed for after sign-in.
+            writeDraft(ticketId, input.message);
+            setDraft(input.message);
             setExpired(true);
             toast.error(copy.sessionExpired);
             console.error("[help-desk] requirement rejected: session ended", ticketId);
@@ -224,13 +273,17 @@ export default function HelpDeskTicketThread({
         });
         setPayload(data);
         setQuoted(null);
+        clearDraft(ticketId);
+        setDraft("");
         toast.success(copy.composerSent);
         return true;
       } catch (err) {
         if (isAuthFailure(err)) {
           // Nothing was written by us and nothing will be: the ticket stays as
-          // it is, the draft stays in the box, and the customer is told the
-          // truth — the session ended, sign in again.
+          // it is, the draft is kept for the sign-in round trip, and the
+          // customer is told the truth — the session ended, sign in again.
+          writeDraft(ticketId, input.message);
+          setDraft(input.message);
           setExpired(true);
           toast.error(copy.sessionExpired);
           console.error("[help-desk] message rejected: session ended", ticketId);
@@ -350,7 +403,9 @@ export default function HelpDeskTicketThread({
   );
 
   // Where "sign in again" goes: back to this exact ticket after login.
-  const signInHref = `${LOGIN_PATH}?next=${encodeURIComponent(pathname || listHref)}`;
+  // `expired=1` lets the login page say why the customer is back here; `next`
+  // returns them to this exact ticket afterwards.
+  const signInHref = `${LOGIN_PATH}?next=${encodeURIComponent(pathname || listHref)}&expired=1`;
 
   const isSupport = payload?.isSupport ?? false;
   const canReply = payload?.canReply ?? false;
@@ -381,6 +436,9 @@ export default function HelpDeskTicketThread({
             <FiAlertCircle size={22} aria-hidden />
           </span>
           <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">{copy.sessionExpired}</p>
+          {draft ? (
+            <p className="mt-1.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">{copy.draftSaved}</p>
+          ) : null}
           <a
             href={signInHref}
             className="mt-3 inline-flex items-center rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
@@ -636,6 +694,9 @@ export default function HelpDeskTicketThread({
           {expired ? (
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3.5 py-3">
               <p className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.sessionExpired}</p>
+              {draft ? (
+                <p className="mt-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">{copy.draftSaved}</p>
+              ) : null}
               <a
                 href={signInHref}
                 className="mt-2 inline-flex items-center rounded-xl bg-[var(--color-action)] px-3 py-1.5 text-[11.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
@@ -650,6 +711,7 @@ export default function HelpDeskTicketThread({
               onClearQuote={() => setQuoted(null)}
               onSubmit={submitMessage}
               requirementMode={mode === "requirement" && canAddRequirement}
+              initialText={draft}
             />
           ) : (
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3.5 py-3">
