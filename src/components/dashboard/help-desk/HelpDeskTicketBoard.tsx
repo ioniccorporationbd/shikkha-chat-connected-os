@@ -236,10 +236,14 @@ export default function HelpDeskTicketBoard({
             setPage(1);
           }}
           disabled={!filtersActive}
-          className="mt-auto inline-flex h-10 items-center justify-center gap-1.5 self-start rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] px-3 text-[12px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-40 lg:self-end"
+          className={`mt-auto inline-flex h-10 items-center justify-center gap-2 self-start rounded-2xl border px-3.5 text-[12.5px] font-semibold outline-none transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2 lg:self-end ${
+            filtersActive
+              ? "border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))] text-[var(--color-action)] shadow-[0_12px_24px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_11%,var(--color-white))]"
+              : "cursor-not-allowed border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+          }`}
         >
-          <FiX size={13} aria-hidden />
-          {copy.filtersClear}
+          <FiX size={14} className="flex-none" aria-hidden />
+          <span className="whitespace-nowrap">{copy.filtersClear}</span>
         </button>
       </div>
 

@@ -8,6 +8,7 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
 
+import SubjectCell from "./SubjectCell";
 import TicketCard from "./TicketCard";
 import TicketCategoryChip from "./TicketCategoryChip";
 import TicketPriorityBadge from "./TicketPriorityBadge";
@@ -107,8 +108,9 @@ export default function TicketList({
                 </td>
                 <td className="whitespace-nowrap px-4 py-3.5 text-[13px] font-semibold text-[var(--color-primary)]">{ticket.id}</td>
                 <td className="max-w-[20rem] px-4 py-3.5 text-[13px] font-medium text-[var(--color-primary)]">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="truncate">{ticket.subject}</span>
+                  <span className="inline-flex max-w-full items-center gap-2">
+                    {/* 15 chars + full text in a hover/tap/focus popover. */}
+                    <SubjectCell subject={ticket.subject} />
                     {unseenIds?.has(ticket.id) ? (
                       <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
                         {copy.newReplyBadge}
