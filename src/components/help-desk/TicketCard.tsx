@@ -73,7 +73,7 @@ export default function TicketCard({
           <FiCalendar className="h-3.5 w-3.5" aria-hidden />
           <span className="font-semibold">{stamp === "resolved" ? copy.stampClosed : copy.stampCreated}</span>
           <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]" aria-hidden>·</span>
-          <span className="font-semibold tabular-nums">
+          <span className="font-semibold whitespace-nowrap tabular-nums">
             {formatDateTimeNumeric(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}
           </span>
         </span>

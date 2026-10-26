@@ -135,7 +135,7 @@ export default function TicketList({
                       // in Asia/Dhaka. A missing timestamp prints an em dash —
                       // never today's date, never a guessed clock time.
                       <span className="text-[12.5px] font-semibold tabular-nums text-[var(--color-primary)]">
-                        <time dateTime={iso || undefined}>{formatDateTimeNumeric(iso, language)}</time>
+                        <time className="whitespace-nowrap tabular-nums" dateTime={iso || undefined}>{formatDateTimeNumeric(iso, language)}</time>
                       </span>
                     );
                   })()}

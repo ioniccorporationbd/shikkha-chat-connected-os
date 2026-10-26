@@ -350,6 +350,17 @@ canvas {
   outline: none;
 }
 
+/* H-08 — Help Desk filter-row buttons.
+   `button { font: inherit }` further down this file is unlayered, so it beats
+   Tailwind's `text-[12.5px] font-semibold` utilities and the label fell back to
+   the inherited 12px/400. Type is therefore set here, where the class wins on
+   specificity. */
+.hd-filter-clear {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 /* =========================================================
    DATE / TIME CONTROLS
    One shared native-date system for every dashboard date
