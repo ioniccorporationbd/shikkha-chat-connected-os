@@ -21,7 +21,10 @@ const SEND_METHOD = "shikkha_os.api.v1.help_desk_messages.send_message";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const sid = readCookie(request, SESSION_COOKIE);
-  if (!sid) return jsonFail("Please sign in to continue.", "not_authenticated", 401);
+  // No sid means the portal session already ended (expiry, or a route cleared
+  // the dead cookie). Say that, so the composer does not read it as a random
+  // failure: the customer is told to sign in again, and nothing is sent.
+  if (!sid) return jsonFail("Your session has expired. Please sign in again.", "not_authenticated", 401);
 
   const { id } = await params;
   if (!id) return jsonFail("The ticket could not be found.", "not_found", 404);

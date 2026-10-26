@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FiAlertCircle, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
@@ -23,6 +24,7 @@ import {
 import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
+import { LOGIN_PATH } from "@/lib/auth/session";
 import { toast } from "@/lib/ui/toast";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
 
@@ -33,6 +35,18 @@ const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-pri
 // A support conversation should feel live; one tiny request every 15s per
 // open thread is the interval the team already expected here.
 const POLL_INTERVAL_MS = 15_000;
+
+/**
+ * Did the call fail because the portal session ended?
+ *
+ * The API routes answer a dead/expired `sid` with 401 + `not_authenticated`
+ * (and clear the cookie), so this is the one failure the composer must report
+ * as "sign in again" instead of a retryable send error.
+ */
+function isAuthFailure(error: unknown): boolean {
+  const err = error as { code?: string; status?: number } | null;
+  return err?.code === "not_authenticated" || err?.status === 401;
+}
 
 /**
  * One ticket conversation — customer and employee use the same screen.
@@ -78,6 +92,10 @@ export default function HelpDeskTicketThread({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [missing, setMissing] = useState(false);
+  // Session ended mid-page: shown as its own state so the customer is told to
+  // sign in again instead of reading a generic "load failed" card.
+  const [expired, setExpired] = useState(false);
+  const pathname = usePathname();
 
   const [quoted, setQuoted] = useState<ConversationMessage | null>(null);
   // Ticket-level pin: the ERP stores which message is pinned on the HD Ticket,
@@ -117,6 +135,7 @@ export default function HelpDeskTicketThread({
         setPayload(data);
         setPinnedId(data.ticket.pinnedMessageId ?? null);
         setError(false);
+        setExpired(false);
         setStatusValue((current) => current || data.currentStatus || "");
         if (data.unread > 0) {
           // Reading the thread clears the ERP's own unread marker for this user.
@@ -128,8 +147,15 @@ export default function HelpDeskTicketThread({
               console.error("[help-desk] mark read failed", ticketId, err);
             });
         }
-      } catch {
+      } catch (err) {
         if (!mounted.current) return;
+        if (isAuthFailure(err)) {
+          // A dead sid is not a load failure: every retry would fail the same
+          // way. Show the sign-in state (the route already dropped the cookie).
+          setExpired(true);
+          setError(false);
+          return;
+        }
         if (!silent) {
           setError(true);
           // Keep the surface diagnosable without a toast library dependency.
@@ -177,6 +203,12 @@ export default function HelpDeskTicketThread({
           toast.success(copy.composerRequirementSent, copy.conversationTitle);
           return true;
         } catch (err) {
+          if (isAuthFailure(err)) {
+            setExpired(true);
+            toast.error(copy.sessionExpired);
+            console.error("[help-desk] requirement rejected: session ended", ticketId);
+            return false;
+          }
           const text = err instanceof Error ? err.message : "";
           toast.error(text || copy.composerFailed);
           console.error("[help-desk] requirement failed", ticketId, err);
@@ -195,13 +227,22 @@ export default function HelpDeskTicketThread({
         toast.success(copy.composerSent);
         return true;
       } catch (err) {
+        if (isAuthFailure(err)) {
+          // Nothing was written by us and nothing will be: the ticket stays as
+          // it is, the draft stays in the box, and the customer is told the
+          // truth — the session ended, sign in again.
+          setExpired(true);
+          toast.error(copy.sessionExpired);
+          console.error("[help-desk] message rejected: session ended", ticketId);
+          return false;
+        }
         const text = err instanceof Error ? err.message : "";
         toast.error(text || copy.composerFailed);
         console.error("[help-desk] message send failed", ticketId, err);
         return false;
       }
     },
-    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, mode, ticketId]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, mode, ticketId]
   );
 
   const submitStatus = useCallback(async () => {
@@ -308,6 +349,9 @@ export default function HelpDeskTicketThread({
     [copy.forwardDone, copy.forwardFailed, copy.forwardPrefix, forwardSource, ticketId]
   );
 
+  // Where "sign in again" goes: back to this exact ticket after login.
+  const signInHref = `${LOGIN_PATH}?next=${encodeURIComponent(pathname || listHref)}`;
+
   const isSupport = payload?.isSupport ?? false;
   const canReply = payload?.canReply ?? false;
   const canAddRequirement = payload?.canAddRequirement ?? false;
@@ -320,6 +364,29 @@ export default function HelpDeskTicketThread({
           <div className="h-5 w-40 animate-pulse rounded bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))]" />
           <div className="mt-3 h-4 w-2/3 animate-pulse rounded bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]" />
           <div className="mt-6 h-40 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (expired && !payload) {
+    // The portal session ended while this page was open. The route already
+    // cleared the dead cookie, so the only useful action is signing in again —
+    // and coming straight back to this same ticket.
+    return (
+      <div className="flex flex-col gap-4">
+        <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
+        <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-8 text-center ${CARD_SHADOW}`}>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
+            <FiAlertCircle size={22} aria-hidden />
+          </span>
+          <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">{copy.sessionExpired}</p>
+          <a
+            href={signInHref}
+            className="mt-3 inline-flex items-center rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+          >
+            {copy.signInAgain}
+          </a>
         </div>
       </div>
     );
@@ -566,7 +633,17 @@ export default function HelpDeskTicketThread({
             </div>
           ) : null}
 
-          {canReply ? (
+          {expired ? (
+            <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3.5 py-3">
+              <p className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.sessionExpired}</p>
+              <a
+                href={signInHref}
+                className="mt-2 inline-flex items-center rounded-xl bg-[var(--color-action)] px-3 py-1.5 text-[11.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+              >
+                {copy.signInAgain}
+              </a>
+            </div>
+          ) : canReply ? (
             <ConversationComposer
               copy={copy}
               quoted={quoted}

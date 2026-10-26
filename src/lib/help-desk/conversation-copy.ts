@@ -116,6 +116,10 @@ export interface ConversationCopy {
   composerValidation: string;
   composerSent: string;
   composerFailed: string;
+  /** Shown when the portal session ended mid-conversation (dead sid cookie). */
+  sessionExpired: string;
+  /** Action label on the ended-session card. */
+  signInAgain: string;
   composerClosed: string;
   composerRequirementPlaceholder: string;
   composerRequirementSend: string;
@@ -324,6 +328,8 @@ const bn: ConversationCopy = {
   composerValidation: "আগে একটি বার্তা লিখুন।",
   composerSent: "বার্তা পাঠানো হয়েছে।",
   composerFailed: "বার্তা পাঠানো যায়নি। আবার চেষ্টা করুন।",
+  sessionExpired: "আপনার সেশন শেষ হয়েছে। আবার সাইন ইন করুন।",
+  signInAgain: "সাইন ইন করুন",
   composerClosed: "ক্লোজড টিকিটে বার্তা পাঠানো যাবে না।",
   composerRequirementPlaceholder: "অতিরিক্ত রিকোয়ারমেন্ট লিখুন…",
   composerRequirementSend: "রিকোয়ারমেন্ট যোগ করুন",
@@ -524,6 +530,8 @@ const en: ConversationCopy = {
   composerValidation: "Write a message first.",
   composerSent: "Message sent.",
   composerFailed: "The message could not be sent. Please try again.",
+  sessionExpired: "Your session has expired. Please sign in again.",
+  signInAgain: "Sign in",
   composerClosed: "Messages cannot be sent on a closed ticket.",
   composerRequirementPlaceholder: "Describe the additional requirement…",
   composerRequirementSend: "Add requirement",

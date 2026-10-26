@@ -215,6 +215,22 @@ function normalizeFailure(
     return { ok: false, status: 429, code: "rate_limited", message };
   }
 
+  // A dead or expired `sid` does not come back as an exception body: Frappe
+  // answers `{"session_expired":1,"exc_type":"SessionExpired"}` with HTTP 401
+  // (and a Guest request with no whitelisted method gets 403). Read that as the
+  // ended session it is — 401 + `not_authenticated` — so every API route clears
+  // the stale cookie and the UI can send the visitor back to sign in. Left
+  // unclassified it surfaced as an opaque 502 "ERP server returned an error",
+  // the dead cookie survived, and every retry failed with the same message.
+  if (status === 401 || excType === "SessionExpired" || Boolean(record.session_expired)) {
+    return {
+      ok: false,
+      status: 401,
+      code: "not_authenticated",
+      message: "Your session has expired. Please sign in again.",
+    };
+  }
+
   if (excType === "AuthenticationError") {
     return {
       ok: false,
