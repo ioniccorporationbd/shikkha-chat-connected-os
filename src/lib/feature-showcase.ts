@@ -174,8 +174,8 @@ export const SHOWCASE_TEXT = {
   sectionAudience: { bn: "বিভাগের ব্যবহারকারী", en: "Section audience" },
   sectionPosition: { bn: "অবস্থান", en: "Position" },
   infoNote: {
-    bn: "এই বৈশিষ্ট্যগুলো Shikkha Chat Apps অ্যাপে চলে; এখানে ক্রেতাদের সুবিধার জন্য তথ্য আকারে দেখানো হয়েছে।",
-    en: "These features run in the Shikkha Chat Apps application; shown here as information for customers.",
+    bn: "এই বৈশিষ্ট্যগুলো Shikkha Chat Apps অ্যাপে চলে; এখানে শুধু তথ্যের জন্য দেখানো হয়েছে।",
+    en: "These features run inside the Shikkha Chat Apps application; they are shown here for information only.",
   },
   rolePublic: { bn: "সবার জন্য উন্মুক্ত", en: "Everyone" },
   roleAnyRole: { bn: "লগইন করা যেকোনো ব্যবহারকারী", en: "Any signed-in user" },
@@ -291,7 +291,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "school",
         title: { bn: "শ্রেণি ও শাখা", en: "Classes & Sections" },
         description: {
-          bn: "শ্রেণি, গ্রুপ ও শাখা সহজে তৈরি করুন ও পরিচালনা করুন।",
+          bn: "শ্রেণি, গ্রুপ ও শাখা সহজে তৈরি ও পরিচালনা করুন।",
           en: "Manage classes, groups and sections in one place.",
         },
         route: "/dashboard/admin/classes",
@@ -386,7 +386,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "quiz",
         title: { bn: "অনলাইন কুইজ", en: "Online Quizzes" },
         description: {
-          bn: "উপলব্ধ কুইজ ও হোমওয়ার্কে অংশ নিন ও অনুশীলন করুন।",
+          bn: "উপলব্ধ কুইজ ও হোমওয়ার্কে অংশ নিন এবং অনুশীলন করুন।",
           en: "Participate in available quizzes and homework.",
         },
         route: roleQuizzes,
@@ -492,7 +492,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "book",
         title: { bn: "লেসন কনটেন্ট", en: "Lesson Content Management" },
         description: {
-          bn: "পাঠের কনটেন্ট তৈরি, সংগঠিত ও প্রকাশ করুন।",
+          bn: "পাঠের কনটেন্ট তৈরি করুন, সাজান ও প্রকাশ করুন।",
           en: "Create, organise and publish lesson content.",
         },
         route: "/dashboard/teacher/ai-pathshala/content",
@@ -512,9 +512,9 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "interventions",
         icon: "target",
-        title: { bn: "শেখার হস্তক্ষেপ", en: "Student Learning Interventions" },
+        title: { bn: "শিক্ষার্থীর শিখন-সহায়তা", en: "Student Learning Interventions" },
         description: {
-          bn: "প্রয়োজনীয় শিক্ষার্থীদের জন্য হস্তক্ষেপ পরিকল্পনা সাজান।",
+          bn: "প্রয়োজন থাকা শিক্ষার্থীদের জন্য সহায়তার পরিকল্পনা সাজান।",
           en: "Plan interventions to support students who need help.",
         },
         route: "/dashboard/teacher/ai-pathshala/interventions",
@@ -543,7 +543,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "graduation",
         title: { bn: "সন্তানের তালিকা", en: "Children" },
         description: {
-          bn: "আপনার সন্তানদের তালিকা ও তাদের তথ্য এক জায়গায়।",
+          bn: "আপনার সন্তানদের তথ্য এক জায়গায় দেখুন।",
           en: "See all your children and their details in one place.",
         },
         route: "/dashboard/parent/children",
@@ -554,7 +554,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "userCheck",
         title: { bn: "সন্তান সংযুক্ত করুন", en: "Child Linking" },
         description: {
-          bn: "সন্তানের অ্যাকাউন্ট ও তথ্য আপনার প্রোফাইলে যুক্ত করুন।",
+          bn: "সন্তানের রেকর্ড আপনার নিজের অ্যাকাউন্টের সাথে যুক্ত করুন।",
           en: "Connect your child's record to your own account.",
         },
         route: "/dashboard/parent/link-child",
@@ -598,7 +598,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "messages",
         title: { bn: "শিক্ষকের বার্তা", en: "Teacher Messages" },
         description: {
-          bn: "সন্তানের শিক্ষকদের সাথে যোগাযোগ ও বার্তা আদান-প্রদান।",
+          bn: "সন্তানের শিক্ষকদের সাথে নিয়মিত যোগাযোগ রাখুন।",
           en: "Stay in touch with your child's teachers.",
         },
         route: "/dashboard/parent/teacher-messages",
@@ -764,7 +764,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "enrollment-analytics",
         icon: "enrollment",
-        title: { bn: "ভর্তি অ্যানালিটিক্স", en: "Enrollment Analytics" },
+        title: { bn: "ভর্তি অ্যানালিটিক্স", en: "Enrolment Analytics" },
         description: {
           bn: "শিক্ষার্থী ভর্তির ধারা ও সংখ্যা বিশ্লেষণ করুন।",
           en: "Analyse enrolment trends and numbers.",
@@ -775,7 +775,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "equity-indicators",
         icon: "equity",
-        title: { bn: "সমন্বয় সূচক", en: "Equity Indicators" },
+        title: { bn: "সমতা সূচক", en: "Equity Indicators" },
         description: {
           bn: "শিক্ষায় অন্তর্ভুক্তি ও সমতার সূচক দেখুন।",
           en: "Track inclusion and equity indicators in education.",
@@ -786,9 +786,9 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "aggregated-reports",
         icon: "policy",
-        title: { bn: "সমন্বিত রিপোর্ট", en: "Aggregated Reports" },
+        title: { bn: "সমষ্টিগত রিপোর্ট", en: "Aggregated Reports" },
         description: {
-          bn: "নজরদারির জন্য সমন্বিত রিপোর্ট তৈরি ও ডাউনলোড করুন।",
+          bn: "নজরদারির জন্য সমষ্টিগত রিপোর্ট তৈরি ও ডাউনলোড করুন।",
           en: "Generate aggregated reports for oversight.",
         },
         route: "/dashboard/{role}/reports",
@@ -824,7 +824,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "messages",
         title: { bn: "চেয়ারম্যানের বাণী", en: "Message from Chairman" },
         description: {
-          bn: "পরিচালনা পরিষদের চেয়ারম্যানের বাণী।",
+          bn: "পরিচালনা পর্ষদের চেয়ারম্যানের বাণী।",
           en: "A message from the chairman.",
         },
         route: "/message-from-chairman",
@@ -833,9 +833,9 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "nav-principal",
         icon: "messages",
-        title: { bn: "প্রিন্সিপালের বাণী", en: "Message from Principal" },
+        title: { bn: "প্রধান শিক্ষকের বাণী", en: "Message from Principal" },
         description: {
-          bn: "প্রিন্সিপালের পক্ষ থেকে বার্তা।",
+          bn: "প্রধান শিক্ষকের পক্ষ থেকে বার্তা।",
           en: "A message from the principal.",
         },
         route: "/message-from-principal",
@@ -879,7 +879,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "graduation",
         title: { bn: "কোর্স", en: "Courses" },
         description: {
-          bn: "প্রতিষ্ঠানে অফার করা কোর্সসমূহ।",
+          bn: "প্রতিষ্ঠানে প্রদত্ত কোর্সসমূহ।",
           en: "Courses offered by the institution.",
         },
         route: "/courses",
@@ -1005,9 +1005,9 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "nav-co-curricular",
         icon: "sparkles",
-        title: { bn: "সহ-শিক্ষা কার্যক্রম", en: "Co-curricular Activities" },
+        title: { bn: "সহপাঠ কার্যক্রম", en: "Co-curricular Activities" },
         description: {
-          bn: "সহ-শিক্ষা ও সাংস্কৃতিক কার্যক্রম।",
+          bn: "সহপাঠ ও সাংস্কৃতিক কার্যক্রম।",
           en: "Co-curricular and cultural activities.",
         },
         route: "/co-curricular-activities",
@@ -1080,7 +1080,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         icon: "calendar",
         title: { bn: "ছুটির তালিকা", en: "Holiday List" },
         description: {
-          bn: "বছরের ছুটি ও অবকাশের তালিকা।",
+          bn: "বছরের ছুটির তালিকা।",
           en: "The yearly holiday list.",
         },
         route: "/list-of-holidays",
@@ -1089,7 +1089,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "nav-teachers-info",
         icon: "userCheck",
-        title: { bn: "শিক্ষকদের তথ্য", en: "Teachers Info" },
+        title: { bn: "শিক্ষকদের তথ্য", en: "Teachers Information" },
         description: {
           bn: "শিক্ষকদের পরিচিতি ও তথ্য।",
           en: "Information about the teachers.",
@@ -1100,7 +1100,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
       {
         id: "nav-student-info",
         icon: "users",
-        title: { bn: "শিক্ষার্থীদের তথ্য", en: "Students Info" },
+        title: { bn: "শিক্ষার্থীদের তথ্য", en: "Students Information" },
         description: {
           bn: "শিক্ষার্থীদের তথ্য ও নির্দেশনা।",
           en: "Information and guidance for students.",
@@ -1370,7 +1370,7 @@ export const FEATURE_SHOWCASE: readonly ShowcaseCategory[] = [
         title: { bn: "AI নিরাপত্তা রিভিউয়ার", en: "AI safety reviewer" },
         description: {
           bn: "AI Tutor-এর ঝুঁকিপূর্ণ ব্যবহার, সতর্কবার্তা, তদন্ত ও নীতি দেখা আপনার দায়িত্ব।",
-          en: "You watch risky AI usage, safety events, investigations and policy.",
+          en: "You watch for risky AI usage, safety events, investigations and policies.",
         },
         route: "/dashboard/ai-safety-reviewer",
         access: AI_SAFETY,

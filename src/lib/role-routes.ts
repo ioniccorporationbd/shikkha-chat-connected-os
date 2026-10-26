@@ -495,7 +495,7 @@ export const ROLE_ACCESS_GUIDES: readonly RoleAccessGuide[] = [
     workflows: [
       { title: { bn: "প্রকল্প তৈরি করুন", en: "Create the programme" }, body: { bn: "‘Programs’ → নতুন প্রকল্প (নাম, সময়কাল, লক্ষ্য) → সেভ।", en: "Programs → new programme (name, period, target) → save." } },
       { title: { bn: "প্রতিষ্ঠান যোগ করুন", en: "Add institutions" }, body: { bn: "‘Institutions’ ও ‘Schools’-এ অংশগ্রহণকারী প্রতিষ্ঠানগুলো যোগ করুন, তারপর ‘Learners’ ও ‘Teachers’ যুক্ত করুন।", en: "Add participating institutions under Institutions and Schools, then add Learners and Teachers." } },
-      { title: { bn: "হস্তক্ষেপ ও ফলাফল", en: "Interventions and outcomes" }, body: { bn: "‘Interventions’-এ সহায়তার কাজ লিখুন, ‘Learning Outcomes’-এ ফলাফল মাপুন — এ দুটিই প্রকল্পের প্রমাণ।", en: "Record the support work in Interventions and measure results in Learning Outcomes — together they are your evidence." } },
+      { title: { bn: "উদ্যোগ ও ফলাফল", en: "Interventions and outcomes" }, body: { bn: "‘Interventions’-এ সহায়তার কাজ লিখুন, ‘Learning Outcomes’-এ ফলাফল মাপুন — এ দুটিই প্রকল্পের প্রমাণ।", en: "Record the support work in Interventions and measure results in Learning Outcomes — together they are your evidence." } },
       { title: { bn: "প্রভাব দেখুন", en: "See the impact" }, body: { bn: "‘Impact Analytics’ ও রিপোর্ট তালিকা (Program Impact, Institution Coverage, Learning Outcomes, Beneficiary Reach) দিয়ে অগ্রগতি দেখুন।", en: "Use Impact Analytics and the reports (program impact, institution coverage, learning outcomes, beneficiary reach)." } },
       { title: { bn: "তথ্য রপ্তানি", en: "Export data" }, body: { bn: "‘Data Exports’ থেকে ফাইল নামিয়ে নিন — প্রতিবেদন বা দাতার কাছে পাঠানোর জন্য।", en: "Download files from Data Exports for reports or donors." } },
     ],
@@ -565,7 +565,7 @@ export const ROLE_ACCESS_GUIDES: readonly RoleAccessGuide[] = [
     ],
     tips: [
       { bn: "এই ড্যাশবোর্ড মূলত পড়ার জন্য — তথ্য বদলাতে হলে সংশ্লিষ্ট প্রতিষ্ঠানের অ্যাডমিনের সাথে যোগাযোগ করুন।", en: "This dashboard is mainly read-only — for a correction, contact the institution's administrator." },
-      { bn: "একই সূচক দুই এলাকার মধ্যে তুলনা করার সময় সময়কাল এক রাখুন, নাহলে সিদ্ধান্ত ভুল হয়।", en: "Keep the same period when comparing two areas, otherwise the conclusion misleads." },
+      { bn: "একই সূচক দুই এলাকার মধ্যে তুলনা করার সময় সময়কাল একই রাখুন, নাহলে সিদ্ধান্ত ভুল হয়।", en: "Keep the same period when comparing two areas, otherwise the conclusion misleads." },
     ],
   },
 ];

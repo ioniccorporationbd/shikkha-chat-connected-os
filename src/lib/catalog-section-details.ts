@@ -54,7 +54,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
         en: "Manage attendance, fees and routines — run daily attendance, fee collection and class routines",
       },
       {
-        bn: "কেন্দ্রীয় ড্যাশবোর্ড — প্রতিষ্ঠানের সার্বিক কার্যক্রমের এক নজরে ওভারভিউ",
+        bn: "কেন্দ্রীয় ড্যাশবোর্ড — প্রতিষ্ঠানের সার্বিক কার্যক্রম এক নজরে দেখুন",
         en: "Admin dashboard — a single-glance overview of all institution activity",
       },
     ],
@@ -72,7 +72,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
     capabilities: [
       { bn: "AI Tutor — নিজের ভাষায় প্রশ্ন করে পড়া বুঝে নিন", en: "AI Tutor — ask questions in your own language to understand lessons" },
       { bn: "পাঠ (Lessons) — ক্লাস ও অধ্যায়ভিত্তিক পাঠ ক্রম অনুযায়ী পড়া", en: "Lessons — read class- and chapter-wise lessons in order" },
-      { bn: "কুইজ ও মূল্যায়ন — Quizzes ও Assessments-এ সময়ের আগেই জমা দিন", en: "Quizzes and assessments — submit before time runs out" },
+      { bn: "কুইজ ও মূল্যায়ন — Quizzes ও Assessments-এ সময় শেষ হওয়ার আগে জমা দিন", en: "Quizzes and assessments — submit before time runs out" },
       { bn: "লেসন প্ল্যানার — পুরো সপ্তাহের পাঠ পরিকল্পনা সাজান", en: "Lesson planner — plan a whole week of lessons" },
       { bn: "অগ্রগতি ও অ্যানালিটিক্স — Progress ও Analytics-এ শেখার চিত্র", en: "Progress and analytics — track learning in Progress and Analytics" },
       { bn: "AI সমৃদ্ধ প্রশ্ন ও উপকরণ — বয়স-উপযোগী, রিভিউ-অনুমোদিত কনটেন্ট", en: "AI-rich questions and materials — age-appropriate, review-approved content" },
@@ -90,7 +90,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
       { bn: "হাজিরা দিন — উপস্থিতি, অনুপস্থিতি বা ছুটি চিহ্নিত করে সেভ করুন", en: "Take attendance — mark present, absent or leave and save" },
       { bn: "পাঠ ও কুইজ তৈরি করুন — Lessons, Quizzes, Assessments ও Lesson Planner", en: "Create lessons and quizzes — Lessons, Quizzes, Assessments and Lesson Planner" },
       { bn: "শিক্ষার্থীর দুর্বলতা খুঁজুন — Progress, কুইজ ফল ও Analytics থেকে শনাক্ত করুন", en: "Spot student weaknesses — identify from Progress, quiz results and Analytics" },
-      { bn: "হস্তক্ষেপ নিন — Interventions থেকে সহায়তার পরিকল্পনা নিন", en: "Take action — plan support from Interventions" },
+      { bn: "পদক্ষেপ নিন — Interventions থেকে সহায়তার পরিকল্পনা করুন", en: "Take action — plan support from Interventions" },
       { bn: "শিক্ষক-ক্লাস অ্যাসাইনমেন্ট — কোন ক্লাস ও বিষয় আপনার", en: "Teacher class assignment — which class and subject are yours" },
     ],
     audience: { bn: "শিক্ষক / ইনস্ট্রাক্টর", en: "Teacher / Instructor" },
@@ -106,7 +106,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
       { bn: "উপস্থিতি দেখুন — Attendance-এ দিন-ভিত্তিক উপস্থিতি", en: "See attendance — day-wise attendance in Attendance" },
       { bn: "ফলাফল দেখুন — Assessment Results ও Reports থেকে সারসংক্ষেপ", en: "See results — summaries from Assessment Results and Reports" },
       { bn: "পড়ার সক্রিয়তা — Study Activity দেখায় সন্তান কতটুকু পড়েছে", en: "Study activity — Study Activity shows how much the child studied" },
-      { bn: "Tutor Data — সহায়ক শিক্ষক ব্যবহারের ধরন", en: "Tutor data — how the AI tutor is being used" },
+      { bn: "Tutor Data — AI টিউটর কীভাবে ব্যবহৃত হচ্ছে", en: "Tutor data — how the AI tutor is being used" },
       { bn: "একাধিক সন্তান — সবাইকে আলাদা করে যোগ করা যায়", en: "Multiple children — each child can be linked separately" },
     ],
     audience: { bn: "অভিভাবক / গার্ডিয়ান", en: "Parent / Guardian" },
@@ -123,7 +123,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
       { bn: "Revision Requests — ছোট পরিবর্তন দরকার হলে সংশোধন চাওয়া", en: "Revision requests — ask for corrections for small changes" },
       { bn: "Guidelines — ভাষার মান, বয়স-উপযোগী বিষয়, ব্যক্তিগত তথ্য নয়", en: "Guidelines — language quality, age-appropriate content, no personal data" },
       { bn: "AI Review Queue ও Flagged AI Messages — সতর্কবার্তা দেখা", en: "AI review queue and flagged AI messages — review alerts" },
-      { bn: "AI Safety Events ও Escalations — শিশুর নিরাপত্তা সংক্রান্ত বিষয় সবচেয়ে আগে", en: "AI safety events and escalations — child-safety matters come first" },
+      { bn: "AI Safety Events ও Escalations — শিশুর নিরাপত্তা সংক্রান্ত বিষয় সর্বোচ্চ অগ্রাধিকার পায়", en: "AI safety events and escalations — child-safety matters come first" },
     ],
     audience: { bn: "কনটেন্ট রিভিউয়ার ও AI নিরাপত্তা রিভিউয়ার", en: "Content reviewer and AI safety reviewer" },
   },
@@ -136,7 +136,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
     capabilities: [
       { bn: "প্রকল্প তৈরি — Programs-এ নাম, সময়কাল ও লক্ষ্যসহ প্রকল্প", en: "Create programs — programs with name, duration and goal in Programs" },
       { bn: "প্রতিষ্ঠান যোগ — Institutions, Schools, Learners ও Teachers যুক্ত করুন", en: "Add institutions — add Institutions, Schools, Learners and Teachers" },
-      { bn: "হস্তক্ষেপ ও ফলাফল — Interventions ও Learning Outcomes-এ প্রমাণ রাখুন", en: "Interventions and outcomes — keep evidence in Interventions and Learning Outcomes" },
+      { bn: "উদ্যোগ ও ফলাফল — Interventions ও Learning Outcomes-এ প্রমাণ রাখুন", en: "Interventions and outcomes — keep evidence in Interventions and Learning Outcomes" },
       { bn: "জেলা ও এলাকা — Districts থেকে জেলা, তারপর প্রতিষ্ঠান", en: "Districts and regions — pick a district, then institutions" },
       { bn: "ভর্তি ও উপস্থিতি প্রবণতা — Enrollment ও Attendance-এ দ্রুত বোঝা যায়", en: "Enrolment and attendance trends — spot quickly in Enrollment and Attendance" },
       { bn: "সমতা ও নিরাপত্তা — Equity Indicators ও Safety Overview", en: "Equity and safety — Equity Indicators and Safety Overview" },
@@ -147,13 +147,13 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
   /* ---------------- Public site sections (source: src/app/* pages) ---------------- */
   "site-home": {
     supporting: {
-      bn: "বিদ্যালয়ের প্রধান পোর্টাল — নোটিশ, ইভেন্ট, গ্যালারী, পরিচিতি ও ভর্তি তথ্য এক জায়গায়।",
+      bn: "বিদ্যালয়ের প্রধান পোর্টাল — নোটিশ, ইভেন্ট, গ্যালারি, পরিচিতি ও ভর্তি তথ্য এক জায়গায়।",
       en: "The school's main portal — notices, events, gallery, about and admission information in one place.",
     },
     capabilities: [
       { bn: "নোটিশ বোর্ড — সর্বশেষ ঘোষণা ও আপডেট", en: "Notice board — latest announcements and updates" },
       { bn: "খবর ও ইভেন্ট — আসন্ন অনুষ্ঠান ও সাম্প্রতিক আপডেট", en: "News and events — upcoming events and recent updates" },
-      { bn: "ফটো ও ভিডিও গ্যালারী — অনুষ্ঠান ও ক্যাম্পাসের মুহূর্ত", en: "Photo and video gallery — moments from events and campus" },
+      { bn: "ফটো ও ভিডিও গ্যালারি — অনুষ্ঠান ও ক্যাম্পাসের মুহূর্ত", en: "Photo and video gallery — moments from events and campus" },
       { bn: "পরিচিতি — ইতিহাস, দৃষ্টিভঙ্গি ও পরিচালনা পর্ষদ", en: "About — history, vision and governing body" },
       { bn: "একাডেমিক তথ্য — সিলেবাস, রুটিন ও পাঠ পরিকল্পনা", en: "Academic info — syllabus, routine and lesson plans" },
       { bn: "ভর্তি ও যোগাযোগ — অনলাইন ভর্তি ও অফিস যোগাযোগ", en: "Admission and contact — online admission and office contact" },
@@ -187,8 +187,8 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
       { bn: "ক্লাস রুটিন — প্রভাতি শাখার শ্রেণিভিত্তিক সময়সূচি", en: "Class routine — class-wise schedule of the morning shift" },
       { bn: "পাঠ পরিকল্পনা (Lesson Plan) — শ্রেণিভিত্তিক পাঠের পরিকল্পনা", en: "Lesson plan — class-wise lesson planning" },
       { bn: "হোমওয়ার্ক ও লেকচার — শ্রেণিভিত্তিক হোমওয়ার্ক ও ক্লাস লেকচার", en: "Homework and lecture — class-wise homework and class lectures" },
-      { bn: "একাডেমিক ক্যালেন্ডার — কার্যদিবস, মূল্যায়ন ও অনুষ্ঠানের সময়সূচি", en: "Academic calendar — working days, assessments and events schedule" },
-      { bn: "কো-কারিকুলার কার্যক্রম — ক্রীড়া, সাংস্কৃতিক, বিতর্ক ও বিজ্ঞান মেলা", en: "Co-curricular activities — sports, cultural, debate and science fair" },
+      { bn: "একাডেমিক ক্যালেন্ডার — কার্যদিবস, মূল্যায়ন ও অনুষ্ঠানের সময়সূচি", en: "Academic calendar — working days, assessment dates and events" },
+      { bn: "সহপাঠ কার্যক্রম — ক্রীড়া, সাংস্কৃতিক, বিতর্ক ও বিজ্ঞান মেলা", en: "Co-curricular activities — sports, cultural, debate and science fair" },
     ],
     audience: { bn: "সবার জন্য উন্মুক্ত (পাবলিক)", en: "Open to everyone (public)" },
   },
@@ -216,7 +216,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
     },
     capabilities: [
       { bn: "অনলাইন ভর্তি — শিক্ষার্থী ও অভিভাবকের জন্য আলাদা তথ্য ফরম", en: "Online admission — separate info forms for student and guardian" },
-      { bn: "ফিস্ট ফ্যাক্টস — প্রতিষ্ঠার সাল, শিক্ষার্থী, শ্রেণি ও পরীক্ষার ধরন", en: "Fast facts — founding year, students, classes and exam types" },
+      { bn: "এক নজরে মূল তথ্য — প্রতিষ্ঠার সাল, শিক্ষার্থী, শ্রেণি ও পরীক্ষার ধরন", en: "Fast facts — founding year, students, classes and exam types" },
       { bn: "ফি ও পেমেন্ট — ভর্তি, মাসিক টিউশন, পরীক্ষা, সেশন, লাইব্রেরি/ল্যাব ফি", en: "Fees and payment — admission, monthly tuition, exam, session, library/lab fees" },
       { bn: "বৃত্তি — মেধা, প্রয়োজনভিত্তিক, উপস্থিতি, ক্রীড়া ও সাংস্কৃতিক বৃত্তি", en: "Scholarships — merit, need-based, attendance, sports and cultural scholarships" },
       { bn: "স্থানান্তর ও ছাড়পত্র — টিসি, ডকুমেন্ট যাচাই ও অফিস অনুমোদন", en: "Transfer and certificates — TC, document verification and office approval" },
@@ -247,7 +247,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
       en: "The institution at a glance, current recruitment circulars and recruitment exam results.",
     },
     capabilities: [
-      { bn: "অ্যাট আ গ্লান্স — প্রতিষ্ঠার সাল, মোট শিক্ষার্থী ও লাইব্রেরি বই", en: "At a glance — founding year, total students and library books" },
+      { bn: "এক নজরে — প্রতিষ্ঠার সাল, মোট শিক্ষার্থী ও লাইব্রেরির বই", en: "At a glance — founding year, total students and library books" },
       { bn: "নিয়োগ বিজ্ঞপ্তি — শিক্ষক ও প্রশাসনিক পদে চলমান পদ", en: "Employment circulars — current teacher and admin posts" },
       { bn: "আবেদন পদ্ধতি — নির্ধারিত ফরম পূরণ করে অফিসে জমা", en: "How to apply — fill the prescribed form and submit at the office" },
       { bn: "নির্বাচন প্রক্রিয়া — লিখিত, ডেমো ক্লাস/ব্যবহারিক ও সাক্ষাৎকার", en: "Selection process — written, demo class/practical and interview" },
@@ -265,7 +265,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
     capabilities: [
       { bn: "ঠিকানা — রমনা, ঢাকা-১০০০", en: "Address — Ramna, Dhaka-1000" },
       { bn: "অফিস সময় — শনিবার থেকে বৃহস্পতিবার, সকাল ৯টা – বিকাল ৪টা", en: "Office hours — Saturday to Thursday, 9:00 am – 4:00 pm" },
-      { bn: "ভর্তি সহায়তা — সকাল ১০:০০ – দুপুর ০২:০০", en: "Admission support — 10:00 am – 2:00 pm" },
+      { bn: "ভর্তি সহায়তা — সকাল ১০টা – দুপুর ২টা", en: "Admission support — 10:00 am – 2:00 pm" },
       { bn: "একাডেমিক সহায়তা — ক্লাসের দিনসমূহে শ্রেণি শিক্ষক ও অফিসের মাধ্যমে", en: "Academic support — via class teacher and office on class days" },
       { bn: "ফোন — অফিস সময়ে ফোন করে তথ্য জানুন", en: "Phone — call during office hours for information" },
       { bn: "ইমেইল — ভর্তি, একাডেমিক বা প্রশাসনিক বিষয়ে ইমেইল", en: "Email — for admission, academic or administrative matters" },
@@ -292,7 +292,7 @@ export const CATALOG_SECTION_DETAILS: Record<string, CatalogSectionDetail> = {
   "role-access": {
     supporting: {
       bn: "শিক্ষা চ্যাট অ্যাপসে একই প্ল্যাটফর্মে আটটি ড্যাশবোর্ড ভূমিকা চলে — অ্যাডমিন, শিক্ষার্থী, শিক্ষক, অভিভাবক, কনটেন্ট রিভিউয়ার, এআই নিরাপত্তা রিভিউয়ার, এনজিও অ্যাডমিন ও সরকারি কর্মকর্তা। প্রত্যেকের সাইডবার মডিউল, এআই পাঠশালা গ্রুপ ও রিপোর্ট মেনু আলাদা, আর কোন ভূমিকা কী দেখবে তা ERP ভূমিকা (rolePermissionMap) দিয়ে নিয়ন্ত্রিত হয়।",
-      en: "Shikkha Chat Apps runs eight dashboard roles on one platform — admin, student, teacher, parent, content reviewer, AI safety reviewer, NGO admin and government officer. Each role has its own sidebar modules, AI Pathshala group and reports menu, and what a role may see is gated by ERP roles (rolePermissionMap).",
+      en: "Shikkha Chat Apps ships eight dashboard roles on one platform — admin, student, teacher, parent, content reviewer, AI safety reviewer, NGO admin and government officer. Each role has its own sidebar modules, AI Pathshala group and reports menu, and what a role may see is gated by ERP roles (rolePermissionMap).",
     },
     capabilities: [
       {

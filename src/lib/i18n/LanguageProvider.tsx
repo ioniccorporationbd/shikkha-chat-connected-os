@@ -37,7 +37,7 @@ const translations: Record<string, string> = {
   "The K-12 Operating System": "কে–টুয়েলভ অপারেটিং সিস্টেম",
 
   "Connect your school, families and students on one advanced AI digital platform — see the details below.":
-    "আপনার স্কুল পরিবার ও শিক্ষার্থীর একটি অত্যাধুনিক Ai ডিজিটাল প্লাটফর্মে সংযুক্ত করুন - নিচে বিস্তারিত দেখুন",
+    "আপনার স্কুল পরিবার ও শিক্ষার্থীর একটি অত্যাধুনিক AI ডিজিটাল প্ল্যাটফর্মে সংযুক্ত করুন - নিচে বিস্তারিত দেখুন",
   "Bring your school, families and every learner onto one connected platform — explore the system below.":
     "আপনার স্কুল, পরিবার ও প্রতিটি শিক্ষার্থীকে একটি সংযুক্ত প্ল্যাটফর্মে আনুন — নিচে সিস্টেমটি ঘুরে দেখুন।",
   "One connected platform for school, family and learning — tap a section to explore it.":
