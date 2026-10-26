@@ -141,9 +141,8 @@ export default function MessageBubble({
     <div
       id={`msg-${message.id}`}
       className={[
-        "flex w-full scroll-mt-4 items-end gap-2",
+        "flex w-full min-w-0 scroll-mt-4 items-end gap-2",
         mine ? "justify-end" : "justify-start",
-        highlighted ? "rounded-2xl ring-2 ring-[color-mix(in_srgb,var(--color-action)_45%,transparent)] ring-offset-2" : "",
       ].join(" ")}
     >
       {selectMode ? (
@@ -161,7 +160,16 @@ export default function MessageBubble({
         </span>
       ) : null}
 
-      <div className={`group relative flex max-w-[min(32rem,86%)] flex-col ${mine ? "items-end" : "items-start"}`}>
+      <div
+        className={[
+          // The bubble column is the width of its content (`w-fit`) and only
+          // grows to the responsive cap, so a short "ok" never draws a box
+          // across the page. `min-w-0` keeps long unbroken tokens inside it.
+          "group relative flex w-fit min-w-0 max-w-[min(32rem,85%)] flex-col",
+          mine ? "items-end" : "items-start",
+          highlighted ? "rounded-2xl ring-2 ring-[color-mix(in_srgb,var(--color-action)_45%,transparent)] ring-offset-2" : "",
+        ].join(" ")}
+      >
         <div
           onClick={(event) => {
             if (selectMode) {
@@ -177,7 +185,7 @@ export default function MessageBubble({
             openMenu(event.clientX, event.clientY);
           }}
           className={[
-            "relative min-w-[7rem] max-w-full cursor-pointer rounded-[12px] px-3 py-1.5 text-[13.5px] leading-relaxed shadow-[0_1px_1px_rgba(16,24,40,0.05)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-1",
+            "relative w-fit min-w-[7rem] max-w-full cursor-pointer rounded-[12px] px-3 py-1.5 text-[13.5px] leading-relaxed shadow-[0_1px_1px_rgba(16,24,40,0.05)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-1",
             mine
               ? "rounded-br-[4px] bg-[color-mix(in_srgb,var(--color-action)_13%,var(--color-white))]"
               : "rounded-bl-[4px] bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))]",
