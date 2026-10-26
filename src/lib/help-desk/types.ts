@@ -227,6 +227,13 @@ export interface HelpDeskOptionType {
 /** What a conversation entry is: a plain message, an added requirement, or a resolution. */
 export type ConversationMessageKind = "message" | "requirement" | "resolution";
 
+/**
+ * ERP storage channel of one thread entry: `message` = `Communication`
+ * (email-style reply), `comment` = `Comment` (the row Frappe Helpdesk shows in
+ * its Comment tab / `#comment`).
+ */
+export type ConversationChannel = "message" | "comment";
+
 /** A file attached to one message (an existing ERP `File` record). */
 export interface ConversationAttachment {
   /** Public file URL from the ERP `File` record. */
@@ -254,6 +261,13 @@ export interface ConversationMessage {
   /** ISO timestamp. */
   createdAt: string;
   kind: ConversationMessageKind;
+  /**
+   * Which ERP channel the entry came from: `message` is a `Communication`
+   * (email-style reply), `comment` is a `Comment` row — the same record the
+   * Frappe Helpdesk desk/SPA render in their Comment tab. Defaults to
+   * `message` when the ERP omits it (older rows).
+   */
+  channel?: ConversationChannel;
   replyTo?: ConversationReplyRef | null;
   attachments: ConversationAttachment[];
   /** True when the signed-in user wrote this entry. */
