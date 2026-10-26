@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiCheckCircle, FiInbox, FiPlus, FiSearch, FiX } from "react-icons/fi";
 
+import DashboardDateField from "@/components/dashboard/DashboardDateField";
 import ListPagination from "@/components/dashboard/ListPagination";
 import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
 import { HelpDeskErrorState } from "@/components/help-desk/HelpDeskStates";
@@ -18,9 +19,10 @@ import { listTickets } from "@/lib/help-desk/service";
 import type { Ticket } from "@/lib/help-desk/types";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
+import { HELP_DESK_FIELD as FIELD_CLASS } from "./fields";
 
-/** Page sizes offered under the table: 10 (default), 20 and 50 only. */
-const ROWS_OPTIONS = [10, 20, 50] as const;
+/** Page sizes offered under the table: 10 (default), 20, 50, 100 and 500. */
+const ROWS_OPTIONS = [10, 20, 50, 100, 500] as const;
 const DEFAULT_ROWS = 10;
 
 export type TicketBoardVariant = "open" | "closed";
@@ -176,15 +178,16 @@ export default function HelpDeskTicketBoard({
           <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
             {copy.filtersFrom}
           </span>
-          <input
-            type="date"
+          {/* Same calendar as the Service panel's date range (DashboardDateField). */}
+          <DashboardDateField
             value={fromDate}
-            max={toDate || undefined}
-            onChange={(event) => {
-              setFromDate(event.target.value);
+            onChange={(next) => {
+              setFromDate(next);
               setPage(1);
             }}
-            className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+            ariaLabel={copy.filtersFrom}
+            max={toDate || undefined}
+            className={FIELD_CLASS}
           />
         </label>
 
@@ -192,15 +195,15 @@ export default function HelpDeskTicketBoard({
           <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
             {copy.filtersTo}
           </span>
-          <input
-            type="date"
+          <DashboardDateField
             value={toDate}
-            min={fromDate || undefined}
-            onChange={(event) => {
-              setToDate(event.target.value);
+            onChange={(next) => {
+              setToDate(next);
               setPage(1);
             }}
-            className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+            ariaLabel={copy.filtersTo}
+            min={fromDate || undefined}
+            className={FIELD_CLASS}
           />
         </label>
 
@@ -208,7 +211,7 @@ export default function HelpDeskTicketBoard({
           <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
             {copy.filtersTitle}
           </span>
-          <div className="flex h-9 items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5">
+          <div className="flex h-10 items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 transition focus-within:border-[color-mix(in_srgb,var(--color-primary)_46%,transparent)] focus-within:ring-2 focus-within:ring-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
             <FiSearch size={13} className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" aria-hidden />
             <input
               value={titleFilter}
@@ -217,7 +220,9 @@ export default function HelpDeskTicketBoard({
                 setPage(1);
               }}
               placeholder={copy.filtersTitlePlaceholder}
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+              /* `hd-field` replaces the global red :focus-visible ring with the
+                 neutral one defined in globals.css (H-06). */
+              className="hd-field min-w-0 flex-1 bg-transparent text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
             />
           </div>
         </label>
@@ -231,7 +236,7 @@ export default function HelpDeskTicketBoard({
             setPage(1);
           }}
           disabled={!filtersActive}
-          className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 self-start rounded-xl border border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] px-3 text-[12px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-40 lg:self-end"
+          className="mt-auto inline-flex h-10 items-center justify-center gap-1.5 self-start rounded-2xl border border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] px-3 text-[12px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-40 lg:self-end"
         >
           <FiX size={13} aria-hidden />
           {copy.filtersClear}

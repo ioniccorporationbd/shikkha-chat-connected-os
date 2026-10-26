@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FiCalendar, FiChevronRight } from "react-icons/fi";
 
-import { formatDate, formatTime } from "@/lib/help-desk/format";
+import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -73,8 +73,9 @@ export default function TicketCard({
           <FiCalendar className="h-3.5 w-3.5" aria-hidden />
           <span className="font-semibold">{stamp === "resolved" ? copy.stampClosed : copy.stampCreated}</span>
           <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]" aria-hidden>·</span>
-          <span>{formatDate(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}</span>
-          <span className="font-semibold tabular-nums">{formatTime(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}</span>
+          <span className="font-semibold tabular-nums">
+            {formatDateTimeNumeric(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}
+          </span>
         </span>
         <Link
           href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}

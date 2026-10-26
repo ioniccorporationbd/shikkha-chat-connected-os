@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FiChevronRight } from "react-icons/fi";
 
-import { formatDate, formatTime } from "@/lib/help-desk/format";
+import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -129,14 +129,12 @@ export default function TicketList({
                   {(() => {
                     const iso = stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt;
                     return (
-                      <>
-                        <span className="block text-[12.5px] font-semibold text-[var(--color-primary)]">
-                          {formatDate(iso, language)}
-                        </span>
-                        <span className="block text-[11.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-                          {formatTime(iso, language)}
-                        </span>
-                      </>
+                      // One stamp, straight from the ERP: `26/10/2026, 06:20 PM`
+                      // in Asia/Dhaka. A missing timestamp prints an em dash —
+                      // never today's date, never a guessed clock time.
+                      <span className="text-[12.5px] font-semibold tabular-nums text-[var(--color-primary)]">
+                        <time dateTime={iso || undefined}>{formatDateTimeNumeric(iso, language)}</time>
+                      </span>
                     );
                   })()}
                 </td>

@@ -7,10 +7,38 @@
 
 import type { TicketStatus } from "./types";
 
+/**
+ * Parse an ERP timestamp without guessing the timezone.
+ *
+ * Frappe stores `creation`/`modified` as a *naive* datetime in the site's
+ * business timezone (Asia/Dhaka) — "2026-10-26 18:20:00". Handing that to
+ * `new Date()` makes the browser read it in ITS OWN zone and then the Dhaka
+ * formatter shifts it by the difference, so a UTC visitor saw 00:20 and a
+ * Dhaka visitor saw 18:20 for the same row. Attaching the fixed +06:00 offset
+ * (Dhaka has never observed DST) turns the wall clock the ERP recorded into
+ * the instant it actually was, so every formatter below prints the time the
+ * ticket was really created.
+ *
+ * Strings that already carry an offset or `Z` are respected as-is.
+ */
+export function parseErpTimestamp(iso: string): Date {
+  const text = iso.trim();
+  const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+  if (naive.test(text)) {
+    return new Date(`${text.replace(" ", "T")}+06:00`);
+  }
+  return new Date(text);
+}
+
+/** Uppercase the day-period token (`pm` -> `PM`) without touching the digits. */
+function upperPeriod(text: string): string {
+  return text.replace(/\b(am|pm)\b/gi, (match) => match.toUpperCase());
+}
+
 /** Render an ISO timestamp as a readable date (locale follows the language). */
 export function formatDateTime(iso: string | undefined, language: string): string {
   if (!iso) return "—";
-  const date = new Date(iso);
+  const date = parseErpTimestamp(iso);
   if (Number.isNaN(date.getTime())) return "—";
 
   try {
@@ -31,10 +59,36 @@ export function formatDateTime(iso: string | undefined, language: string): strin
   }
 }
 
+/**
+ * The list column stamp, e.g. `26/10/2026, 06:20 PM` — day/month/year and a
+ * 12-hour clock, both from the ERP timestamp in Asia/Dhaka.
+ */
+export function formatDateTimeNumeric(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return upperPeriod(
+      new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Dhaka",
+      }).format(date),
+    );
+  } catch {
+    return date.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
 /** Render an ISO timestamp as a readable date only. */
 export function formatDate(iso: string | undefined, language: string): string {
   if (!iso) return "—";
-  const date = new Date(iso);
+  const date = parseErpTimestamp(iso);
   if (Number.isNaN(date.getTime())) return "—";
 
   try {
@@ -52,7 +106,7 @@ export function formatDate(iso: string | undefined, language: string): string {
 /** Time of day only, e.g. `08:10 PM` — the clock half of a chat-style stamp. */
 export function formatTime(iso: string | undefined, language: string): string {
   if (!iso) return "";
-  const date = new Date(iso);
+  const date = parseErpTimestamp(iso);
   if (Number.isNaN(date.getTime())) return "";
 
   try {
@@ -89,7 +143,7 @@ function dhakaDayKey(date: Date): string {
  */
 export function formatChatDay(iso: string | undefined, language: string): string {
   if (!iso) return "—";
-  const date = new Date(iso);
+  const date = parseErpTimestamp(iso);
   if (Number.isNaN(date.getTime())) return "—";
 
   const key = dhakaDayKey(date);

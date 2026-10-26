@@ -6,7 +6,9 @@ import { FiArrowRight, FiEye, FiInbox, FiRefreshCw, FiSearch, FiX } from "react-
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
 
 import ProblemDetailCard from "@/components/dashboard/help-desk/ProblemDetailCard";
+import DashboardDateField from "@/components/dashboard/DashboardDateField";
 import ListPagination from "@/components/dashboard/ListPagination";
+import { HELP_DESK_FIELD } from "@/components/dashboard/help-desk/fields";
 import { genericPaginationCopy } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import {
@@ -168,13 +170,15 @@ export default function ProblemQueue({
             </p>
           </div>
 
-          <label className="flex w-full items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 lg:w-80">
+          <label className="flex w-full items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 transition focus-within:border-[color-mix(in_srgb,var(--color-primary)_46%,transparent)] focus-within:ring-2 focus-within:ring-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] lg:w-80">
             <FiSearch size={14} className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" aria-hidden />
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder={copy.problemsSearch}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+              /* `hd-field` swaps the global red :focus-visible ring for the
+                 neutral one in globals.css (H-06). */
+              className="hd-field min-w-0 flex-1 bg-transparent text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
             />
           </label>
         </div>
@@ -186,15 +190,15 @@ export default function ProblemQueue({
             <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
               {copy.filtersFrom}
             </span>
-            <input
-              type="date"
+            <DashboardDateField
               value={fromDate}
-              max={toDate || undefined}
-              onChange={(event) => {
-                setFromDate(event.target.value);
+              onChange={(next) => {
+                setFromDate(next);
                 setPage(1);
               }}
-              className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              ariaLabel={copy.filtersFrom}
+              max={toDate || undefined}
+              className={HELP_DESK_FIELD}
             />
           </label>
 
@@ -202,15 +206,15 @@ export default function ProblemQueue({
             <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
               {copy.filtersTo}
             </span>
-            <input
-              type="date"
+            <DashboardDateField
               value={toDate}
-              min={fromDate || undefined}
-              onChange={(event) => {
-                setToDate(event.target.value);
+              onChange={(next) => {
+                setToDate(next);
                 setPage(1);
               }}
-              className="h-9 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 text-[12.5px] text-[var(--color-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              ariaLabel={copy.filtersTo}
+              min={fromDate || undefined}
+              className={HELP_DESK_FIELD}
             />
           </label>
 

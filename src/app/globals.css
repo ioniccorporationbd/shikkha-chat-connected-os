@@ -332,6 +332,17 @@ canvas {
   outline-offset: 2px;
 }
 
+/* H-06 — Help Desk filter fields.
+   Text inputs match `:focus-visible` even on a mouse click, so the rule above
+   painted the ticket search box with a red ring the moment it was clicked.
+   The field gets a neutral, quieter indicator instead: same 2px weight (so the
+   focus position is just as legible) but ink-coloured and inset inside the
+   field's own border, which already turns darker via focus-within. */
+.hd-field:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 52%, transparent);
+}
+
 /* =========================================================
    DATE / TIME CONTROLS
    One shared native-date system for every dashboard date
