@@ -120,9 +120,9 @@ export default function SubjectCell({ subject }: { subject: string }) {
           if (!pinned) hide();
         }}
         onClick={toggle}
-        /* `hd-field` gives it the same neutral focus indicator as the filter
-           inputs (globals.css H-06) instead of the global red ring. */
-        className="hd-field max-w-full cursor-default truncate rounded-md transition-colors focus-visible:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+        /* `hd-tint` drops the global red ring for a soft background tint
+           (globals.css H-07) — a 1px ink box around text reads as a border. */
+        className="hd-tint max-w-full cursor-default truncate rounded transition-colors focus-visible:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
       >
         {short}
       </span>

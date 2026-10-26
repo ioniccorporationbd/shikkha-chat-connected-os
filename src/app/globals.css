@@ -343,6 +343,13 @@ canvas {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
 
+/* H-07 — Text-only triggers (e.g. the truncated ticket subject).
+   Same problem as H-06, but a 1px ink box around a run of text reads as a
+   border, so the indicator here is a plain background tint added inline. */
+.hd-tint:focus-visible {
+  outline: none;
+}
+
 /* =========================================================
    DATE / TIME CONTROLS
    One shared native-date system for every dashboard date
