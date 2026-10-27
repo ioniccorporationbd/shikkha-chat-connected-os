@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FiCheckCircle, FiPlus, FiShield } from "react-icons/fi";
 
 import { HD_CARD } from "@/lib/help-desk/config";
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -64,7 +64,7 @@ export default function TicketSuccessCard({
             <TicketPriorityBadge priority={ticket.priority} copy={copy} />
           </dd>
         </div>
-        <Row label={copy.successCreated} value={formatDateTime(ticket.createdAt, language)} />
+        <Row label={copy.successCreated} value={formatDateTimeNumeric(ticket.createdAt, language)} />
         <Row
           label={copy.successContact}
           value={[ticket.contact.name, ticket.contact.email, ticket.contact.mobile].filter(Boolean).join(" · ")}

@@ -19,7 +19,7 @@ import NotificationBadge from "@/components/dashboard/help-desk/NotificationBadg
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { formatDateTime } from "@/lib/help-desk/format";
+import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import { useHelpDeskBadges } from "@/lib/help-desk/use-badges";
 import type { HelpDeskBadgeCounts } from "@/lib/help-desk/types";
 import {
@@ -286,7 +286,10 @@ export default function HelpDeskOverview({
                           aria-hidden
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-[var(--color-primary)]">
+                          <span
+                            className="block truncate text-[13px] font-semibold text-[var(--color-primary)]"
+                            title={ticket.subject}
+                          >
                             {ticket.subject}
                           </span>
                           <span className="block text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
@@ -360,7 +363,12 @@ function TicketRow({
       >
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[13.5px] font-semibold text-[var(--color-primary)]">{ticket.subject}</span>
+            <span
+              className="truncate text-[13.5px] font-semibold text-[var(--color-primary)]"
+              title={ticket.subject}
+            >
+              {ticket.subject}
+            </span>
             {showNew ? (
               <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
                 {copy.newReplyBadge}
@@ -368,7 +376,7 @@ function TicketRow({
             ) : null}
           </span>
           <span className="mt-0.5 block text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {ticket.id} · {formatDateTime(ticket.updatedAt, language)}
+            {ticket.id} · {formatDateTimeNumeric(ticket.updatedAt, language)}
           </span>
         </span>
         <TicketStatusBadge status={ticket.status} copy={copy} />
