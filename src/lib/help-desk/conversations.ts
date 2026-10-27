@@ -83,9 +83,19 @@ export async function listConversations(
 /**
  * One ticket conversation. Calling it also records the signed-in user's read
  * state (the ERP marks every message addressed to them as seen).
+ *
+ * Paging is opt-in and bounded by the ERP query, never by slicing here:
+ * `limit` returns only that many of the newest entries, `cursor` the page
+ * before a known cursor, `since` everything after one (a delta read).
  */
-export async function getConversation(ticketId: string): Promise<ConversationPayload | null> {
+export async function getConversation(
+  ticketId: string,
+  options: { limit?: number; cursor?: string | null; since?: string | null } = {}
+): Promise<ConversationPayload | null> {
   const query = new URLSearchParams({ language: currentLanguage() });
+  if (options.limit && options.limit > 0) query.set("limit", String(options.limit));
+  if (options.cursor) query.set("cursor", options.cursor);
+  if (options.since) query.set("since", options.since);
   try {
     return await request<ConversationPayload>(
       `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}?${query.toString()}`

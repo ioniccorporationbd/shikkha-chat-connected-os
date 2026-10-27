@@ -364,6 +364,20 @@ export interface ConversationPayload {
   currentStatus?: string;
   /** Every existing `HD Ticket Status` an employee may move the ticket to. */
   statuses?: { name: string; category: string }[];
+  /**
+   * Paging. A plain call still returns the whole thread (`paged: false`);
+   * passing `limit` switches the message list to one page and these fields
+   * describe where that page sits in the history.
+   */
+  paged?: boolean;
+  /** Older entries exist below this page — ask again with `next_cursor`. */
+  has_more?: boolean;
+  /** A `since=` read hit its window: more entries exist above this page. */
+  has_newer?: boolean;
+  /** Cursor to pass as `cursor=` for the next older page. */
+  next_cursor?: string | null;
+  /** Cursor of the newest loaded entry — pass as `since=` for a delta read. */
+  latest_cursor?: string | null;
   server_time: string;
 }
 

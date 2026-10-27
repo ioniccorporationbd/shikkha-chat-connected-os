@@ -12,7 +12,24 @@ function clip(text: string): { short: string; truncated: boolean } {
   return { short: `${chars.slice(0, SUBJECT_LIMIT).join("")}...`, truncated: true };
 }
 
-type Position = { top: number; left: number; maxWidth: number };
+/**
+ * Placement of the popover in viewport coordinates. `anchor: "top"` sits below
+ * the trigger, `anchor: "bottom"` flips above it when there is no room below.
+ */
+type Position = {
+  anchor: "top" | "bottom";
+  offset: number;
+  left: number;
+  maxWidth: number;
+  maxHeight: number;
+};
+
+/** Hard ceiling for the popover: beyond this the content scrolls inside it. */
+const POPOVER_MAX_HEIGHT = 300;
+/** Breathing room kept between the popover and the viewport edge. */
+const VIEWPORT_GAP = 12;
+/** Space needed below the trigger before the popover is allowed to drop down. */
+const MIN_ROOM_BELOW = 140;
 
 /**
  * A subject that shows its first 15 characters and reveals the whole line in a
@@ -45,9 +62,29 @@ export default function SubjectCell({ subject }: { subject: string }) {
     if (!el) return;
     clearTimer();
     const rect = el.getBoundingClientRect();
-    const maxWidth = Math.min(352, window.innerWidth - 24);
-    const left = Math.min(Math.max(12, rect.left), window.innerWidth - maxWidth - 12);
-    setPosition({ top: rect.bottom + 8, left, maxWidth });
+    const maxWidth = Math.min(352, window.innerWidth - VIEWPORT_GAP * 2);
+    // Never let the popover leave the viewport horizontally.
+    const left = Math.min(
+      Math.max(VIEWPORT_GAP, rect.left),
+      Math.max(VIEWPORT_GAP, window.innerWidth - maxWidth - VIEWPORT_GAP)
+    );
+    // Vertical: prefer below the trigger; flip above when a long subject would
+    // otherwise run off the bottom of the screen. Height is capped, and the
+    // content scrolls inside the popover (never the page).
+    const roomBelow = window.innerHeight - rect.bottom - VIEWPORT_GAP;
+    const roomAbove = rect.top - VIEWPORT_GAP;
+    const flip = roomBelow < MIN_ROOM_BELOW && roomAbove > roomBelow;
+    const maxHeight = Math.max(
+      96,
+      Math.min(POPOVER_MAX_HEIGHT, flip ? roomAbove : Math.max(roomBelow, 96))
+    );
+    setPosition({
+      anchor: flip ? "bottom" : "top",
+      offset: flip ? window.innerHeight - rect.top + 8 : rect.bottom + 8,
+      left,
+      maxWidth,
+      maxHeight,
+    });
   }, [clearTimer, truncated]);
 
   const hide = useCallback(() => {
@@ -133,8 +170,17 @@ export default function SubjectCell({ subject }: { subject: string }) {
           role="tooltip"
           onMouseEnter={clearTimer}
           onMouseLeave={scheduleHide}
-          style={{ top: position.top, left: position.left, maxWidth: position.maxWidth }}
-          className="fixed z-[90] block rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2 text-left text-[12.5px] font-medium leading-relaxed text-[var(--color-primary)] shadow-[0_18px_40px_-20px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          style={{
+            left: position.left,
+            maxWidth: position.maxWidth,
+            maxHeight: position.maxHeight,
+            ...(position.anchor === "top" ? { top: position.offset } : { bottom: position.offset }),
+          }}
+          /* Long text, Bangla/English and unbroken URLs all wrap: `break-words`
+             covers word boundaries, `overflow-wrap: anywhere` covers a single
+             endless token, and `whitespace-pre-wrap` keeps the author's own
+             line breaks. Anything taller than maxHeight scrolls inside. */
+          className="fixed z-[90] block overflow-y-auto overscroll-contain whitespace-pre-wrap break-words rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2 text-left text-[12.5px] font-medium leading-relaxed text-[var(--color-primary)] shadow-[0_18px_40px_-20px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] [overflow-wrap:anywhere]"
         >
           {subject}
         </span>

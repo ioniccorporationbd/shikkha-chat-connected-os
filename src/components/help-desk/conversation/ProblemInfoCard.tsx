@@ -9,7 +9,7 @@ import {
   type ConversationCopy,
 } from "@/lib/help-desk/conversation-copy";
 import { PRIORITY_TONE, STATUS_TONE } from "@/lib/help-desk/config";
-import { formatDateTime, formatFileSize } from "@/lib/help-desk/format";
+import { formatDateTime, formatDateTimeNumeric, formatFileSize } from "@/lib/help-desk/format";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, Ticket } from "@/lib/help-desk/types";
 
@@ -41,7 +41,9 @@ export default function ProblemInfoCard({
   const meta: { key: string; label: string; value: string }[] = [
     { key: "category", label: copy.problemCategory, value: categoryLabel },
     { key: "priority", label: copy.problemPriority, value: priorityLabel },
-    { key: "submitted", label: copy.problemSubmitted, value: formatDateTime(ticket.createdAt, language) },
+    // Creation stamp exactly as the ERP row stores it, in the same compact
+    // numeric form the ticket list uses, so both pages read identically.
+    { key: "submitted", label: copy.problemSubmitted, value: formatDateTimeNumeric(ticket.createdAt, language) },
     { key: "assigned", label: copy.problemAssigned, value: ticket.assignedAgent || "—" },
   ];
   if (ticket.department) {

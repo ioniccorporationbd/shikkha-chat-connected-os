@@ -211,8 +211,14 @@ export default function HelpDeskTicketBoard({
           <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
             {copy.filtersTitle}
           </span>
-          <div className="flex h-10 items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 transition focus-within:border-[color-mix(in_srgb,var(--color-primary)_46%,transparent)] focus-within:ring-2 focus-within:ring-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
-            <FiSearch size={13} className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" aria-hidden />
+          {/* Focus is shown by a soft tint and the icon darkening — never a
+              ring or a border, which read as a square box around the field. */}
+          <div className="group flex h-10 items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 transition-colors duration-150 focus-within:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))]">
+            <FiSearch
+              size={13}
+              className="flex-none text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-colors duration-150 group-focus-within:text-[var(--color-primary)]"
+              aria-hidden
+            />
             <input
               value={titleFilter}
               onChange={(event) => {
@@ -236,14 +242,15 @@ export default function HelpDeskTicketBoard({
             setPage(1);
           }}
           disabled={!filtersActive}
-          className={`hd-filter-clear mt-auto inline-flex h-10 items-center justify-center gap-2 self-start rounded-2xl border px-3.5 outline-none transition-[transform,background-color,border-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2 lg:self-end ${
+          className={`hd-filter-clear mt-auto inline-flex h-10 items-center justify-center gap-2 self-start rounded-2xl border px-4 outline-none transition-[transform,background-color,border-color,box-shadow,color] duration-150 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2 lg:self-end ${
             filtersActive
-              ? "border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))] text-[var(--color-action)] shadow-[0_12px_24px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_11%,var(--color-white))]"
-              : "cursor-not-allowed border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+              ? "border-[color-mix(in_srgb,var(--color-action)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_6%,var(--color-white))] text-[var(--color-action)] shadow-[0_12px_24px_-20px_color-mix(in_srgb,var(--color-action)_85%,transparent)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_11%,var(--color-white))] active:translate-y-0 active:bg-[color-mix(in_srgb,var(--color-action)_16%,var(--color-white))] active:shadow-none"
+              : "cursor-not-allowed border-dashed border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] shadow-none"
           }`}
+          aria-live="polite"
         >
-          <FiX size={14} className="flex-none" aria-hidden />
-          <span className="whitespace-nowrap">{copy.filtersClear}</span>
+          <FiX size={14} className={`flex-none ${filtersActive ? "" : "opacity-60"}`} aria-hidden />
+          <span className="whitespace-nowrap leading-none">{copy.filtersClear}</span>
         </button>
       </div>
 

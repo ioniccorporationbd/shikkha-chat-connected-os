@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiAlertCircle, FiChevronRight, FiRefreshCw } from "react-icons/fi";
+import { FiAlertCircle, FiChevronRight } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationHeader from "@/components/help-desk/conversation/ConversationHeader";
@@ -14,6 +14,7 @@ import ForwardMessageDialog from "@/components/help-desk/conversation/ForwardMes
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
+import { useTicketRealtime } from "@/lib/help-desk/use-ticket-realtime";
 import {
   addRequirement,
   getConversation,
@@ -57,6 +58,11 @@ function isAuthFailure(error: unknown): boolean {
  * after login. It is cleared only once a message actually lands, so a retry
  * after signing in cannot silently post a message twice.
  */
+/** Messages per conversation page (newest first page, then 20 at a time). */
+const PAGE_SIZE = 20;
+/** Slow safety-net poll while the realtime socket is up (belt and braces). */
+const LIVE_SAFETY_POLL_MS = 60_000;
+
 function draftKey(ticketId: string): string {
   return `help-desk:draft:${ticketId}`;
 }
@@ -159,6 +165,19 @@ export default function HelpDeskTicketThread({
   const [resolution, setResolution] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
 
+  // Paging: the immersive conversation route opens on the newest page instead
+  // of the whole history and fetches one older page as the reader scrolls up.
+  // The details route keeps the full thread — its timeline needs every row.
+  const [hasOlder, setHasOlder] = useState(false);
+  const [olderCursor, setOlderCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  // Newest payload, for the poll/ping handlers that must not close over a stale
+  // render (a timer fires between renders).
+  const payloadRef = useRef<ConversationPayload | null>(null);
+  useEffect(() => {
+    payloadRef.current = payload;
+  }, [payload]);
+
   const mounted = useRef(true);
 
   const load = useCallback(
@@ -168,7 +187,7 @@ export default function HelpDeskTicketThread({
         setError(false);
       }
       try {
-        const data = await getConversation(ticketId);
+        const data = await getConversation(ticketId, chatOnly ? { limit: PAGE_SIZE } : {});
         if (!mounted.current) return;
         if (!data) {
           setMissing(true);
@@ -177,6 +196,8 @@ export default function HelpDeskTicketThread({
         }
         setMissing(false);
         setPayload(data);
+        setHasOlder(Boolean(data.has_more));
+        setOlderCursor(data.next_cursor ?? null);
         setPinnedId(data.ticket.pinnedMessageId ?? null);
         setError(false);
         setExpired(false);
@@ -209,7 +230,7 @@ export default function HelpDeskTicketThread({
         if (mounted.current && !silent) setLoading(false);
       }
     },
-    [ticketId]
+    [chatOnly, ticketId]
   );
 
   useEffect(() => {
@@ -222,13 +243,109 @@ export default function HelpDeskTicketThread({
     };
   }, [load]);
 
-  // Light refresh so a reply that arrives while the page is open shows up.
+  /**
+   * Fold a fresh payload into what is already on screen.
+   *
+   * The write endpoints answer with the whole thread; on the paged route that
+   * must not throw away the history the reader scrolled back through. Only
+   * entries we do not already hold are added, keyed by the ERP row id, so the
+   * same message can never appear twice and the loaded window stays put.
+   */
+  const mergeThread = useCallback((incoming: ConversationPayload) => {
+    setPayload((current) => {
+      if (!current || !current.paged) return incoming;
+      const seen = new Set(current.messages.map((message) => message.id));
+      const added = incoming.messages.filter((message) => !seen.has(message.id));
+      const merged = added.length ? [...current.messages, ...added] : current.messages;
+      return {
+        ...incoming,
+        messages: merged,
+        // The page boundaries belong to what is loaded, not to the newest rows
+        // the server happened to send back.
+        paged: true,
+        has_more: current.has_more,
+        next_cursor: current.next_cursor,
+        has_newer: false,
+      };
+    });
+  }, []);
+
+  /**
+   * One older page, fetched by cursor straight from the ERP query.
+   *
+   * Scrolling up in a chat is reading backwards, so `cursor` walks towards the
+   * ticket's first message: 20 -> 40 -> 60 …, one request in flight, and never
+   * a re-read of history that is already loaded.
+   */
+  const loadOlder = useCallback(async () => {
+    if (!chatOnly || !hasOlder || loadingOlder || !olderCursor) return;
+    setLoadingOlder(true);
+    try {
+      const data = await getConversation(ticketId, { limit: PAGE_SIZE, cursor: olderCursor });
+      if (!mounted.current || !data) return;
+      setPayload((current) => {
+        if (!current) return data;
+        const seen = new Set(current.messages.map((message) => message.id));
+        const older = data.messages.filter((message) => !seen.has(message.id));
+        return { ...current, messages: [...older, ...current.messages] };
+      });
+      setHasOlder(Boolean(data.has_more));
+      setOlderCursor(data.next_cursor ?? null);
+    } catch (err) {
+      // Keep the page that is already on screen; the next scroll retries.
+      console.error("[help-desk] older page failed", ticketId, err);
+    } finally {
+      if (mounted.current) setLoadingOlder(false);
+    }
+  }, [chatOnly, hasOlder, loadingOlder, olderCursor, ticketId]);
+
+  /**
+   * Catch up after a live ping, a reconnect or a poll tick.
+   *
+   * The details route keeps its full read (its timeline is part of the page).
+   * The conversation route asks only for what is newer than the newest loaded
+   * entry, so a background refresh costs a handful of rows instead of the whole
+   * thread — and nothing already read is fetched again.
+   */
+  const refreshDelta = useCallback(async () => {
+    if (!mounted.current) return;
+    const current = payloadRef.current;
+    if (!current || !current.paged) {
+      void load(true);
+      return;
+    }
+    const since = current.latest_cursor ?? null;
+    try {
+      const data = await getConversation(ticketId, since ? { since } : { limit: PAGE_SIZE });
+      if (!mounted.current || !data) return;
+      mergeThread(data);
+    } catch {
+      // Silent: the interval or the next ping tries again.
+    }
+  }, [load, mergeThread, ticketId]);
+
+  // Frappe realtime, bridged server-side (see the stream route). `live` is false
+  // when the socket is unavailable, and the existing poll then keeps running at
+  // its usual cadence — no behaviour change, no new requirement that the ERP
+  // has realtime switched on.
+  const live = useTicketRealtime(ticketId, () => {
+    void refreshDelta();
+  });
+
+  // Fallback refresh so a reply that arrives while the page is open shows up
+  // even with realtime off. With a live socket this drops to a slow safety net
+  // (the ping does the real work), which keeps request volume down.
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible" && !statusBusy) void load(true);
-    }, POLL_INTERVAL_MS);
+    const timer = window.setInterval(
+      () => {
+        if (document.visibilityState !== "visible" || statusBusy) return;
+        if (live) void refreshDelta();
+        else void load(true);
+      },
+      live ? LIVE_SAFETY_POLL_MS : POLL_INTERVAL_MS
+    );
     return () => window.clearInterval(timer);
-  }, [load, statusBusy]);
+  }, [live, load, refreshDelta, statusBusy]);
 
   const messages = payload?.messages ?? [];
   const requirements = payload?.requirements ?? [];
@@ -242,7 +359,7 @@ export default function HelpDeskTicketThread({
             replyTo: input.replyTo,
             attachments: input.files,
           });
-          setPayload(data);
+          mergeThread(data);
           setQuoted(null);
           clearDraft(ticketId);
           setDraft("");
@@ -271,7 +388,7 @@ export default function HelpDeskTicketThread({
           replyTo: input.replyTo,
           attachments: input.files,
         });
-        setPayload(data);
+        mergeThread(data);
         setQuoted(null);
         clearDraft(ticketId);
         setDraft("");
@@ -295,7 +412,7 @@ export default function HelpDeskTicketThread({
         return false;
       }
     },
-    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, mode, ticketId]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, mergeThread, mode, ticketId]
   );
 
   const submitStatus = useCallback(async () => {
@@ -305,7 +422,7 @@ export default function HelpDeskTicketThread({
       // The backend writes the solution Communication before the status change,
       // inside one transaction, so a ticket can never close without its answer.
       const data = await setTicketStatus(ticketId, { status: statusValue, resolution });
-      setPayload(data);
+      mergeThread(data);
       setResolution("");
       toast.success(copy.statusUpdated);
     } catch (err) {
@@ -315,7 +432,7 @@ export default function HelpDeskTicketThread({
     } finally {
       setStatusBusy(false);
     }
-  }, [copy.statusFailed, copy.statusUpdated, resolution, statusBusy, statusValue, ticketId]);
+  }, [copy.statusFailed, copy.statusUpdated, mergeThread, resolution, statusBusy, statusValue, ticketId]);
 
   // Closed tickets reject replies in this ERP. The only permitted way back is an
   // explicit reopen — never a silent status change.
@@ -482,14 +599,6 @@ export default function HelpDeskTicketThread({
           <p className="mt-1 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
             {copy.conversationErrorHint}
           </p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)]"
-          >
-            <FiRefreshCw size={13} aria-hidden />
-            {copy.conversationRetry}
-          </button>
         </div>
       </div>
     );
@@ -528,14 +637,18 @@ export default function HelpDeskTicketThread({
             {ticket.id}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]"
-        >
-          <FiRefreshCw size={12} aria-hidden />
-          {copy.conversationRetry}
-        </button>
+        {live ? (
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+            data-thread-live
+          >
+            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-primary)] opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
+            </span>
+            {language === "bn" ? "লাইভ" : "Live"}
+          </span>
+        ) : null}
       </div>
 
       {chatOnly ? null : (
@@ -643,7 +756,10 @@ export default function HelpDeskTicketThread({
             messages={messages}
             loading={false}
             error={false}
-            onRetry={() => void load()}
+            hasOlder={chatOnly ? hasOlder : false}
+            loadingOlder={loadingOlder}
+            onLoadOlder={chatOnly ? () => void loadOlder() : undefined}
+            olderHint={language === "bn" ? "পুরোনো মেসেজ লোড হচ্ছে…" : "Loading older messages…"}
             onQuote={canReply ? (message) => setQuoted(message) : undefined}
             onPin={canReply ? (message) => void togglePin(message) : undefined}
             canPin={canReply}

@@ -36,8 +36,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!id) return jsonFail("The ticket could not be found.", "not_found", 404);
 
   const query = new URLSearchParams({ name: id });
-  const language = new URL(request.url).searchParams.get("language");
+  const search = new URL(request.url).searchParams;
+  const language = search.get("language");
   query.set("language", language === "en" ? "en" : "bn");
+  // Paging passthrough — the ERP applies the window in SQL. Absent params keep
+  // the old full-thread behaviour for every caller that does not ask for a page.
+  const limit = Number.parseInt(search.get("limit") ?? "", 10);
+  if (Number.isFinite(limit) && limit > 0) query.set("limit", String(Math.min(limit, 200)));
+  const cursor = search.get("cursor");
+  if (cursor) query.set("cursor", cursor);
+  const since = search.get("since");
+  if (since) query.set("since", since);
 
   const result = await callFrappeWithSessionCheck<ConversationPayload>(
     `${DETAIL_METHOD}?${query.toString()}`,

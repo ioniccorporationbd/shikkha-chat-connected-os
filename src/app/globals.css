@@ -338,9 +338,12 @@ canvas {
    The field gets a neutral, quieter indicator instead: same 2px weight (so the
    focus position is just as legible) but ink-coloured and inset inside the
    field's own border, which already turns darker via focus-within. */
-.hd-field:focus-visible {
+.hd-field:focus-visible,
+.hd-field:focus {
   outline: none;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 52%, transparent);
+  /* No ring and no border: the field's wrapper paints focus as a soft tint
+     (H-06). A box here is exactly the square the search bar must not have. */
+  box-shadow: none;
 }
 
 /* H-07 — Text-only triggers (e.g. the truncated ticket subject).

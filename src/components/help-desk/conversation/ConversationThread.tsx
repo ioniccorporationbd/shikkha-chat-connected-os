@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
@@ -35,6 +35,10 @@ export default function ConversationThread({
   loading,
   error,
   onRetry,
+  hasOlder = false,
+  loadingOlder = false,
+  onLoadOlder,
+  olderHint,
   onQuote,
   heightClass,
   bare = false,
@@ -54,7 +58,16 @@ export default function ConversationThread({
   messages: ConversationMessage[];
   loading: boolean;
   error: boolean;
-  onRetry: () => void;
+  /** Error recovery. Omitted where the page must not offer a retry action. */
+  onRetry?: () => void;
+  /** Older entries exist below this page (paged route only). */
+  hasOlder?: boolean;
+  /** An older page is in flight — drives the top indicator. */
+  loadingOlder?: boolean;
+  /** Ask for the next older page (scroll up). */
+  onLoadOlder?: () => void;
+  /** Label of the top "loading older messages" indicator. */
+  olderHint?: string;
   onQuote?: (message: ConversationMessage) => void;
   /** Override the panel height (the full-page route wants a taller thread). */
   heightClass?: string;
@@ -87,6 +100,12 @@ export default function ConversationThread({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastCount = useRef(0);
+  // Newest message seen so far: a change here is a *new* message, while the
+  // same newest id with more rows can only be an older page landing on top.
+  const lastId = useRef<string | null>(null);
+  // Geometry captured before each render, so an older page can be prepended
+  // without the viewport jumping: the reader keeps the bubble they were on.
+  const metrics = useRef({ height: 0, top: 0 });
   // Distance between the reader and the newest message, captured on scroll
   // BEFORE new bubbles grow the thread. The follow-on-append decision must use
   // this snapshot: reading the live DOM inside the effect sees the already
@@ -175,6 +194,14 @@ export default function ConversationThread({
 
     if (count === 0 || count === previous) return;
 
+    // An older page arrives above the reader, not a new message: keep the
+    // viewport exactly where it was (the layout effect below restores it) and
+    // never raise the "new messages" notice for it.
+    const newest = messages[count - 1]?.id ?? null;
+    const newestChanged = newest !== lastId.current;
+    lastId.current = newest;
+    if (!newestChanged && previous > 0) return;
+
     // First load of a thread: land on the newest message without animating.
     if (previous === 0) {
       bottomRef.current?.scrollIntoView({ block: "end" });
@@ -197,6 +224,28 @@ export default function ConversationThread({
     }
     // The gap snapshot lives in a ref; the effect only re-runs on data.
   }, [messages, loading, error]);
+
+  // Restore the reading position when an older page is prepended. A layout
+  // effect runs in the same frame as the DOM update, so the added height is
+  // compensated before anything is painted — the reader never sees a jump.
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const previous = metrics.current;
+    if (previous.height > 0 && node.scrollHeight > previous.height) {
+      node.scrollTop = previous.top + (node.scrollHeight - previous.height);
+    }
+    metrics.current = { height: node.scrollHeight, top: node.scrollTop };
+  }, [messages]);
+
+  // A short thread has nothing to scroll, so the "reached the top" trigger
+  // would never fire. While more pages exist and the panel does not overflow,
+  // keep asking for the next one until it either fills the panel or runs out.
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    if (!node || !hasOlder || loadingOlder) return;
+    if (node.scrollHeight <= node.clientHeight + 8) onLoadOlder?.();
+  }, [hasOlder, loadingOlder, messages, onLoadOlder]);
 
   // Jump requests from outside (pinned banner, etc.). The message must already
   // be in the thread; the banner only renders for loaded messages.
@@ -292,7 +341,11 @@ export default function ConversationThread({
         onScroll={(event) => {
           const node = event.currentTarget;
           bottomGap.current = node.scrollHeight - node.scrollTop - node.clientHeight;
+          metrics.current = { height: node.scrollHeight, top: node.scrollTop };
           if (pendingNew && atBottom()) setPendingNew(false);
+          // Reading upwards in a chat means asking for the page above; the
+          // caller de-duplicates while a page is already in flight.
+          if (hasOlder && !loadingOlder && node.scrollTop < 96) onLoadOlder?.();
         }}
         className={
           bare
@@ -317,14 +370,16 @@ export default function ConversationThread({
             <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
               {copy.conversationErrorHint}
             </p>
-            <button
-              type="button"
-              onClick={onRetry}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-            >
-              <FiRefreshCw size={13} aria-hidden />
-              {copy.conversationRetry}
-            </button>
+            {onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+              >
+                <FiRefreshCw size={13} aria-hidden />
+                {copy.conversationRetry}
+              </button>
+            ) : null}
           </div>
         ) : rows.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
@@ -337,6 +392,18 @@ export default function ConversationThread({
           </div>
         ) : (
           <div className="mt-auto flex flex-col gap-2.5">
+            {hasOlder || loadingOlder ? (
+              <div
+                className="flex items-center justify-center gap-1.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                data-thread-older
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] ${loadingOlder ? "animate-ping" : "opacity-40"}`}
+                  aria-hidden
+                />
+                {loadingOlder ? olderHint ?? copy.conversationLoading : "···"}
+              </div>
+            ) : null}
             {rows.map((row) => (
               <Fragment key={row.key}>
                 {row.dayLabel ? (
