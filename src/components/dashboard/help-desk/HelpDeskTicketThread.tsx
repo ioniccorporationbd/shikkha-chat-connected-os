@@ -171,6 +171,10 @@ export default function HelpDeskTicketThread({
   const [hasOlder, setHasOlder] = useState(false);
   const [olderCursor, setOlderCursor] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  // Hard lock on the older-page request: scroll events can arrive faster than a
+  // state commit, and two in-flight reads with the same cursor would fetch (and
+  // then double-count) the same page.
+  const olderInFlight = useRef(false);
   // Newest payload, for the poll/ping handlers that must not close over a stale
   // render (a timer fires between renders).
   const payloadRef = useRef<ConversationPayload | null>(null);
@@ -278,7 +282,8 @@ export default function HelpDeskTicketThread({
    * a re-read of history that is already loaded.
    */
   const loadOlder = useCallback(async () => {
-    if (!chatOnly || !hasOlder || loadingOlder || !olderCursor) return;
+    if (!chatOnly || !hasOlder || loadingOlder || olderInFlight.current || !olderCursor) return;
+    olderInFlight.current = true;
     setLoadingOlder(true);
     try {
       const data = await getConversation(ticketId, { limit: PAGE_SIZE, cursor: olderCursor });
@@ -295,6 +300,7 @@ export default function HelpDeskTicketThread({
       // Keep the page that is already on screen; the next scroll retries.
       console.error("[help-desk] older page failed", ticketId, err);
     } finally {
+      olderInFlight.current = false;
       if (mounted.current) setLoadingOlder(false);
     }
   }, [chatOnly, hasOlder, loadingOlder, olderCursor, ticketId]);
