@@ -1534,6 +1534,183 @@ const CUSTOMER_LINK_OPTIONS = {
 const createdCustomers = new Map();
 let customerCounter = 0;
 
+// --- Help Desk mock state (see the help_desk_messages handler below) -------- //
+// One thread, in memory, shared by both demo identities: the staff account sees
+// the customer's messages, the customer account sees support's — which is what
+// the "instant delivery" harness needs. `mock.hd.push` adds a message from the
+// other side so a Playwright run can prove the panel picks it up on its own.
+const HD_TICKET = "HD-2026-00001";
+const hdThreads = new Map();
+let hdMessageSeq = 0;
+
+function hdKey(message) {
+  return `${message.createdAt}|${message.id}`;
+}
+
+function hdAppend(ticket, author, body) {
+  const thread = hdThreads.get(ticket);
+  if (!thread) return null;
+  hdMessageSeq += 1;
+  const message = {
+    id: `HDMSG-${String(hdMessageSeq).padStart(5, "0")}`,
+    author,
+    authorName: author === "support" ? "Tamim Hasan" : "Nusrat Jahan",
+    body,
+    createdAt: new Date().toISOString(),
+    kind: "message",
+    channel: author === "support" ? "message" : "comment",
+    replyTo: null,
+    attachments: [],
+    isMine: false,
+    seen: false,
+    reactions: [],
+  };
+  thread.messages.push(message);
+  return message;
+}
+
+function hdUnread(support) {
+  const side = support ? "support" : "user";
+  let count = 0;
+  for (const thread of hdThreads.values()) {
+    count += thread.messages.filter((message) => message.author !== side).length;
+  }
+  return count;
+}
+
+function hdHeader(thread) {
+  const last = thread.messages[thread.messages.length - 1];
+  return {
+    id: thread.name,
+    subject: thread.subject,
+    category: thread.category,
+    priority: thread.priority,
+    description: thread.messages[0]?.body ?? "",
+    status: thread.status,
+    contact: { name: thread.customer, email: thread.customerEmail },
+    attachments: [],
+    messages: [],
+    createdAt: thread.submittedAt,
+    updatedAt: last?.createdAt ?? thread.submittedAt,
+    resolvedAt: thread.resolvedAt ?? undefined,
+    assignedAgent: "Tamim Hasan",
+    department: "Support",
+  };
+}
+
+function hdSummary(thread, support) {
+  const last = thread.messages[thread.messages.length - 1];
+  const side = support ? "support" : "user";
+  return {
+    ticketId: thread.name,
+    subject: thread.subject,
+    status: thread.status,
+    statusLabel: thread.currentStatus,
+    priority: thread.priority,
+    category: thread.category,
+    customer: thread.customer,
+    assignedAgent: "Tamim Hasan",
+    resolvedAt: thread.resolvedAt ?? undefined,
+    counterpart: thread.customerEmail,
+    lastMessage: last?.body ?? "",
+    lastSender: last?.authorName ?? thread.customer,
+    lastSenderRole: last?.author === "support" ? "support" : "customer",
+    lastMessageAt: last?.createdAt ?? thread.submittedAt,
+    submittedAt: thread.submittedAt,
+    updatedAt: last?.createdAt ?? thread.submittedAt,
+    messageCount: thread.messages.length,
+    unread: thread.messages.filter((message) => message.author !== side).length,
+  };
+}
+
+function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = {}) {
+  const thread = hdThreads.get(name);
+  if (!thread) return null;
+
+  const all = thread.messages.map((message) => ({
+    ...message,
+    isMine: (message.author === "support") === support,
+    seen: true,
+  }));
+
+  let messages = all;
+  let hasMore = false;
+  let hasNewer = false;
+  let nextCursor = null;
+
+  if (limit && since) {
+    const newer = all.filter((message) => hdKey(message) > since);
+    messages = newer.slice(0, limit);
+    hasNewer = newer.length > limit;
+  } else if (limit && cursor) {
+    const older = all.filter((message) => hdKey(message) < cursor);
+    messages = older.slice(-limit);
+    hasMore = older.length > limit;
+    nextCursor = messages.length ? hdKey(messages[0]) : null;
+  } else if (limit) {
+    messages = all.slice(-limit);
+    hasMore = all.length > limit;
+    nextCursor = messages.length ? hdKey(messages[0]) : null;
+  } else if (since) {
+    messages = all.filter((message) => hdKey(message) > since);
+  }
+
+  const latest = messages.length ? hdKey(messages[messages.length - 1]) : null;
+
+  return {
+    ticket: hdHeader(thread),
+    messages,
+    requirements: [],
+    timeline: [
+      {
+        id: "created",
+        type: "created",
+        at: thread.submittedAt,
+        author: "user",
+        authorName: thread.customer,
+        text: thread.subject,
+        attachments: 0,
+      },
+    ],
+    unread: thread.messages.filter((message) => message.author !== (support ? "support" : "user")).length,
+    statusCategory: thread.statusCategory,
+    isSupport: support,
+    canReply: true,
+    canAddRequirement: !support,
+    canChangeStatus: support,
+    currentStatus: thread.currentStatus,
+    statuses: support
+      ? [
+          { name: "Open", category: "Open" },
+          { name: "Resolved", category: "Resolved" },
+          { name: "Closed", category: "Closed" },
+        ]
+      : [],
+    paged: Boolean(limit),
+    has_more: hasMore,
+    has_newer: hasNewer,
+    next_cursor: nextCursor,
+    latest_cursor: latest,
+    server_time: "2026-10-28 10:00:00",
+  };
+}
+
+hdThreads.set(HD_TICKET, {
+  name: HD_TICKET,
+  subject: "পাসওয়ার্ড রিসেট করা যাচ্ছে না",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "login",
+  customer: "Nusrat Jahan",
+  customerEmail: "client@example.com",
+  submittedAt: new Date(Date.now() - 90 * 60_000).toISOString(),
+  resolvedAt: null,
+  messages: [],
+});
+hdAppend(HD_TICKET, "user", "আমার অ্যাকাউন্টে লগইন করা যাচ্ছে না, পাসওয়ার্ড রিসেটের ইমেইলও আসছে না।");
+
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
   const method = url.pathname.replace(/^\/api\/method\//, "");
@@ -2303,6 +2480,116 @@ const server = createServer(async (request, response) => {
       checked_in: logType === "IN",
       verified: true,
     });
+    return;
+  }
+
+  // --- Help Desk conversations (mirrors shikkha_os.api.v1.help_desk_messages.*) ---
+  // In-memory threads so a dev run can exercise the real panels end to end: the
+  // Playwright harness pushes a message through `mock.hd.push` (a dev-only
+  // control method) and then asserts the OTHER panel shows it without a reload.
+  // Nothing here touches the real ERP; shapes follow src/lib/help-desk/types.ts.
+  if (method === "mock.hd.push") {
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+    const ticket = String(data.ticket ?? "").trim();
+    const author = data.author === "support" ? "support" : "user";
+    const text = String(data.body ?? "").trim();
+    const row = hdThreads.get(ticket);
+    if (!row || !text) {
+      failure(response, 404, "ValidationError", "Unknown ticket or empty body.", "Help Desk");
+      return;
+    }
+    const message = hdAppend(ticket, author, text);
+    console.log(`[mock-frappe] HD PUSH ${ticket} ${author} ${text}`);
+    ok(response, message);
+    return;
+  }
+
+  if (method.startsWith("shikkha_os.api.v1.help_desk_messages.")) {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 403, "PermissionError", "You are not permitted to access this resource. Login to access", "Method Not Allowed");
+      return;
+    }
+    const support = account.kind === "staff";
+    const action = method.slice("shikkha_os.api.v1.help_desk_messages.".length);
+
+    if (action === "help_desk_badges") {
+      ok(response, {
+        role: support ? "employee" : "customer",
+        counts: support
+          ? { open_tickets: 0, solved_tickets: 0, new_problem: hdUnread(support), solve_problem: 0 }
+          : { open_tickets: hdUnread(support), solved_tickets: 0, new_problem: 0, solve_problem: 0 },
+        server_time: "2026-10-28 10:00:00",
+      });
+      return;
+    }
+
+    if (action === "list_conversations") {
+      const statuses = String(url.searchParams.get("statuses") ?? "").trim();
+      const page = Math.max(Number(url.searchParams.get("page") ?? "1") || 1, 1);
+      const pageSize = Math.max(Number(url.searchParams.get("page_size") ?? "10") || 10, 1);
+      const wanted = statuses
+        .split(/[,\s]+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+      const rows = [...hdThreads.values()]
+        .filter((thread) => {
+          if (!wanted.length) return true;
+          const isOpen = thread.statusCategory === "Open";
+          return wanted.some((key) => (key === "open" ? isOpen : key === "not_open" ? !isOpen : thread.status === key));
+        })
+        .map((thread) => hdSummary(thread, support))
+        .sort((a, b) => String(b.lastMessageAt).localeCompare(String(a.lastMessageAt)));
+      const start = (page - 1) * pageSize;
+      ok(response, {
+        conversations: rows.slice(start, start + pageSize),
+        total: rows.length,
+        unread: hdUnread(support),
+        page,
+        page_size: pageSize,
+        has_more: start + pageSize < rows.length,
+        isSupport: support,
+        server_time: "2026-10-28 10:00:00",
+      });
+      return;
+    }
+
+    if (action === "get_conversation") {
+      const name = String(url.searchParams.get("name") ?? "").trim();
+      const limit = Math.max(Number(url.searchParams.get("limit") ?? "0") || 0, 0);
+      const cursor = String(url.searchParams.get("cursor") ?? "").trim();
+      const since = String(url.searchParams.get("since") ?? "").trim();
+      const payload = hdConversation(name, support, { limit, cursor, since });
+      if (!payload) {
+        failure(response, 404, "DoesNotExistError", "The ticket could not be found.", "Not Found");
+        return;
+      }
+      ok(response, payload);
+      return;
+    }
+
+    if (action === "send_message") {
+      const body = await readBody(request);
+      const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+      const name = String(data.name ?? "").trim();
+      const text = String(data.message ?? "").trim();
+      if (!hdThreads.has(name) || !text) {
+        failure(response, 417, "ValidationError", "Message is required.", "Help Desk");
+        return;
+      }
+      hdAppend(name, support ? "support" : "user", text);
+      ok(response, hdConversation(name, support, {}));
+      return;
+    }
+
+    if (action === "mark_read") {
+      ok(response, { ok: true });
+      return;
+    }
+
+    failure(response, 404, "ValidationError", `Unknown help desk method ${action}.`, "Help Desk");
     return;
   }
 
