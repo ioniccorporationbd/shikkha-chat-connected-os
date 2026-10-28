@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { reportClientError } from "@/lib/log/report-error";
+
 /**
  * Live ticket updates, with the polling fallback kept intact.
  *
@@ -44,7 +46,24 @@ export function useTicketRealtime(ticketId: string, onPing: (kind: string) => vo
         pingRef.current("message");
       }
     };
-    const handleUnavailable = () => setLive(false);
+    // Realtime is an optimisation, never a requirement: when the bridge cannot
+    // reach ERP realtime the caller keeps polling, so this is reported (console
+    // + ERP Error Log) once per ticket instead of being swallowed silently —
+    // otherwise "the other side never sees my message" has no server-side trace.
+    const handleUnavailable = (event: MessageEvent) => {
+      setLive(false);
+      let reason = "unknown";
+      try {
+        reason = (JSON.parse(event.data ?? "{}") as { reason?: string }).reason ?? "unknown";
+      } catch {
+        /* keep the default */
+      }
+      reportClientError({
+        scope: "help-desk:realtime",
+        message: "Live ticket stream unavailable; falling back to polling.",
+        detail: { ticket: ticketId, reason },
+      });
+    };
 
     source.addEventListener("ready", handleReady);
     source.addEventListener("reconnecting", handleDown);

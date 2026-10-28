@@ -20,6 +20,7 @@ import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { listConversations } from "@/lib/help-desk/conversations";
 import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { ConversationSummary } from "@/lib/help-desk/types";
+import { reportClientError } from "@/lib/log/report-error";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
@@ -27,6 +28,13 @@ const ROWS_OPTIONS = [10, 20, 50] as const;
 
 /** How long the search box waits after the last keystroke before it queries. */
 const SEARCH_DEBOUNCE_MS = 320;
+
+/**
+ * How often the queue re-reads its page in the background (ms), so a new
+ * customer problem — or the newest message on one — appears without a manual
+ * reload. Only runs while the tab is visible.
+ */
+const QUEUE_REFRESH_MS = 6_000;
 
 /**
  * The employee's two problem worklists.
@@ -97,28 +105,46 @@ export default function ProblemQueue({
     return () => window.clearTimeout(timer);
   }, [titleInput]);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await listConversations({
-        search,
-        title: titleFilter,
-        fromDate,
-        toDate,
-        dateField: "created",
-        page,
-        pageSize: rowsPerPage,
-        includeEmpty: true,
-        statuses: mode === "open" ? "open" : "not_open",
-      });
-      setRows(data.conversations);
-      setTotal(data.total);
-      setError(false);
-    } catch {
-      setRows([]);
-      setTotal(0);
-      setError(true);
-    }
-  }, [fromDate, mode, page, rowsPerPage, search, titleFilter, toDate]);
+  const load = useCallback(
+    async (options: { silent?: boolean } = {}) => {
+      try {
+        const data = await listConversations({
+          search,
+          title: titleFilter,
+          fromDate,
+          toDate,
+          dateField: "created",
+          page,
+          pageSize: rowsPerPage,
+          includeEmpty: true,
+          statuses: mode === "open" ? "open" : "not_open",
+        });
+        setRows(data.conversations);
+        setTotal(data.total);
+        setError(false);
+      } catch (err) {
+        if (options.silent) {
+          // A background refresh must never blank a worklist the employee is
+          // reading: keep the last good rows and retry on the next tick.
+          reportClientError({
+            scope: "help-desk:queue-refresh",
+            message: "Background refresh of the problem queue failed.",
+            detail: { mode, page, error: err instanceof Error ? err.message : String(err) },
+          });
+          return;
+        }
+        setRows([]);
+        setTotal(0);
+        setError(true);
+        reportClientError({
+          scope: "help-desk:queue-load",
+          message: "Could not load the problem queue.",
+          detail: { mode, page, error: err instanceof Error ? err.message : String(err) },
+        });
+      }
+    },
+    [fromDate, mode, page, rowsPerPage, search, titleFilter, toDate]
+  );
 
   // Shared header reload → refetch this worklist (its data lives in local state).
   useReloadHandler(load);
@@ -130,6 +156,24 @@ export default function ProblemQueue({
     });
     return () => {
       active = false;
+    };
+  }, [load]);
+
+  // Live-ish queue: a customer message or a brand-new problem must appear in the
+  // employee's worklist without a manual reload. One small list read every few
+  // seconds (only while the tab is visible) — silent, so a hiccup never blanks
+  // the table — plus an immediate refresh when the tab regains focus.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load({ silent: true });
+    }, QUEUE_REFRESH_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [load]);
 

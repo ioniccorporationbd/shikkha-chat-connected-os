@@ -16,13 +16,24 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
+import { useTicketRealtime } from "@/lib/help-desk/use-ticket-realtime";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 
-/** How often the open card asks the ERP for new messages (ms). */
-const POLL_INTERVAL_MS = 30_000;
+/**
+ * How often the open card asks the ERP for new messages (ms).
+ *
+ * Two cadences: with the live socket connected the ping is what refreshes the
+ * thread and this is only a safety net; without it the card must still show a
+ * customer message within a few seconds, so the fallback poll is small. (It used
+ * to be 30s, which is exactly why the employee side looked like it "never got"
+ * the customer's message.)
+ */
+const POLL_INTERVAL_MS = 4_000;
+const LIVE_SAFETY_POLL_MS = 60_000;
 
 /**
  * The employee's "View details" card for one customer problem.
@@ -89,9 +100,16 @@ export default function ProblemDetailCard({
               console.error("[help-desk] mark read failed", ticketId, err);
             });
         }
-      } catch {
+      } catch (err) {
         if (!mounted.current) return;
-        if (!silent) setError(true);
+        if (!silent) {
+          setError(true);
+          reportClientError({
+            scope: "help-desk:problem-load",
+            message: "Could not load the problem conversation.",
+            detail: { ticket: ticketId, error: err instanceof Error ? err.message : String(err) },
+          });
+        }
       } finally {
         if (mounted.current && !silent) setLoading(false);
       }
@@ -108,13 +126,31 @@ export default function ProblemDetailCard({
     };
   }, [load]);
 
-  // A reply that arrives while the card stays open should show up without a click.
+  // Live updates: the same server-bridged realtime channel the full thread uses.
+  // A customer message re-reads the card the moment the ERP publishes it.
+  const live = useTicketRealtime(ticketId, () => {
+    void load(true);
+  });
+
+  // A reply that arrives while the card stays open must show up without a click
+  // — on a live socket the ping does the work and this is a slow safety net; on
+  // the polling fallback it is what delivers the message within a few seconds.
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible" && !statusBusy) void load(true);
-    }, POLL_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [load, statusBusy]);
+    const tick = () => {
+      if (document.visibilityState !== "visible" || statusBusy) return;
+      void load(true);
+    };
+    const timer = window.setInterval(tick, live ? LIVE_SAFETY_POLL_MS : POLL_INTERVAL_MS);
+    // Coming back to the tab catches up immediately instead of waiting a tick.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [live, load, statusBusy]);
 
   // Overlay behaviour: ESC closes, the page behind never scrolls, focus moves in.
   useEffect(() => {
@@ -151,6 +187,11 @@ export default function ProblemDetailCard({
         const text = err instanceof Error ? err.message : "";
         toast.error(text || copy.composerFailed);
         console.error("[help-desk] message send failed", ticketId, err);
+        reportClientError({
+          scope: "help-desk:problem-send",
+          message: "Sending a reply from the problem card failed.",
+          detail: { ticket: ticketId, error: text || String(err) },
+        });
         return false;
       }
     },
@@ -175,6 +216,11 @@ export default function ProblemDetailCard({
       const text = err instanceof Error ? err.message : "";
       toast.error(text || copy.statusFailed);
       console.error("[help-desk] status update failed", ticketId, err);
+      reportClientError({
+        scope: "help-desk:problem-status",
+        message: "Updating the problem status failed.",
+        detail: { ticket: ticketId, status: statusValue, error: text || String(err) },
+      });
     } finally {
       if (mounted.current) setStatusBusy(false);
     }

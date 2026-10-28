@@ -27,6 +27,7 @@ import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 import type {
   ConversationMessage,
@@ -37,10 +38,13 @@ import type {
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
-/** How often an open thread asks the ERP for new messages (ms). */
-// A support conversation should feel live; one tiny request every 15s per
-// open thread is the interval the team already expected here.
-const POLL_INTERVAL_MS = 15_000;
+/**
+ * How often an open thread asks the ERP for new messages (ms) while realtime is
+ * NOT connected. Small on purpose: a reply from the other side must land within
+ * a few seconds even when the socket bridge is unavailable, and a delta read is
+ * one tiny indexed query.
+ */
+const POLL_INTERVAL_MS = 4_000;
 
 /**
  * Did the call fail because the portal session ended?
@@ -262,6 +266,11 @@ export default function HelpDeskTicketThread({
           setError(true);
           // Keep the surface diagnosable without a toast library dependency.
           console.error("[help-desk] conversation load failed", ticketId);
+          reportClientError({
+            scope: "help-desk:thread-load",
+            message: "Could not load the ticket conversation.",
+            detail: { ticket: ticketId, error: err instanceof Error ? err.message : String(err) },
+          });
         }
       } finally {
         if (mounted.current && !silent) setLoading(false);
@@ -303,6 +312,9 @@ export default function HelpDeskTicketThread({
         has_more: current.has_more,
         next_cursor: current.next_cursor,
         has_newer: false,
+        // An empty delta answer carries no key; keep the one already tracked so
+        // the next poll still asks "newer than X" instead of re-reading history.
+        latest_cursor: incoming.latest_cursor ?? current.latest_cursor,
       };
     });
   }, []);
@@ -353,11 +365,31 @@ export default function HelpDeskTicketThread({
       void load(true);
       return;
     }
-    const since = current.latest_cursor ?? null;
+    // Delta read: only rows newer than the newest one on screen, one page at a
+    // time, repeating while the ERP says there is more. A ping therefore costs
+    // a handful of rows instead of the whole thread — which is what keeps the
+    // fast fallback poll cheap.
+    let cursor = current.latest_cursor ?? null;
     try {
-      const data = await getConversation(ticketId, since ? { since } : { limit: PAGE_SIZE });
-      if (!mounted.current || !data) return;
-      mergeThread(data);
+      for (let round = 0; round < 5; round += 1) {
+        const data = await getConversation(
+          ticketId,
+          cursor ? { limit: PAGE_SIZE, since: cursor } : { limit: PAGE_SIZE }
+        );
+        if (!mounted.current || !data) return;
+        if (round > 0 && !data.messages.length) break;
+        mergeThread(data);
+        if (data.unread > 0) {
+          void markConversationRead(ticketId)
+            .then(() => {
+              if (mounted.current) setPayload((prev) => (prev ? { ...prev, unread: 0 } : prev));
+            })
+            .catch(() => undefined);
+        }
+        if (!data.has_newer) break;
+        cursor = data.latest_cursor ?? null;
+        if (!cursor) break;
+      }
     } catch {
       // Silent: the interval or the next ping tries again.
     }
@@ -451,6 +483,11 @@ export default function HelpDeskTicketThread({
         const text = err instanceof Error ? err.message : "";
         toast.error(text || copy.composerFailed);
         console.error("[help-desk] message send failed", ticketId, err);
+        reportClientError({
+          scope: "help-desk:send",
+          message: "Sending a ticket message failed.",
+          detail: { ticket: ticketId, error: text || String(err) },
+        });
         return false;
       }
     },
@@ -471,6 +508,11 @@ export default function HelpDeskTicketThread({
       const text = err instanceof Error ? err.message : "";
       toast.error(text || copy.statusFailed);
       console.error("[help-desk] status update failed", ticketId, err);
+      reportClientError({
+        scope: "help-desk:status",
+        message: "Updating the ticket status failed.",
+        detail: { ticket: ticketId, status: statusValue, error: text || String(err) },
+      });
     } finally {
       setStatusBusy(false);
     }
