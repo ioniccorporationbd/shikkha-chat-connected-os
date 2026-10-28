@@ -229,27 +229,43 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
 }
 
 /**
- * The ticket exists; the SMS/e-mail copy did not go out.
+ * The ticket exists; a notification channel did not deliver.
  *
  * That is a delivery problem, not a submit problem - the customer must not be
  * told their ticket failed - so it is surfaced the way every other Help Desk
  * failure is: `[client-error]` in the browser console (with the ERP's own
- * reason) and a row in `/desk/system/error-log`.
+ * reason, per channel) and a row in `/desk/system/error-log`.
+ *
+ * A partial success is reported too: "SMS went out, the e-mail did not" used to
+ * pass silently because `sent` is true as soon as one channel works.
  */
 function reportNotification(notification: HelpDeskTicketPayload["notification"]): void {
-  if (!notification || notification.sent) return;
+  if (!notification) return;
+
+  const channels = Object.entries(notification.channels ?? {});
+  const failed = channels.filter(([, value]) => !value.sent).map(([name]) => name);
+  const nothingSent = !notification.sent;
+
+  if (!nothingSent && failed.length === 0) return;
 
   const detail = {
-    channel: notification.channel,
+    ticket: notification.ticket ?? null,
+    channels: Object.fromEntries(channels),
+    failed,
     sent: notification.sent,
     reason: notification.reason ?? null,
     route: "/api/help-desk/tickets",
   };
 
-  console.error("[help-desk] ticket saved but the customer notification failed", detail);
+  console.error(
+    "[help-desk] ticket saved but the customer notification did not fully deliver",
+    detail,
+  );
   reportClientError({
     scope: "help-desk:notify",
-    message: `Ticket created; ${notification.channel || "notification"} not delivered`,
+    message: `Ticket ${notification.ticket ?? "created"}; ${
+      failed.length ? `${failed.join(", ")} not delivered` : "notification not delivered"
+    }`,
     detail,
   });
 }

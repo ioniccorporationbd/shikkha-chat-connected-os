@@ -192,15 +192,18 @@ export interface HelpDeskTicketPayload {
   verified?: boolean;
   duplicate?: boolean;
   /**
-   * Outcome of the customer notification the ERP fires on create (SMS via the
-   * MiMSMS gateway when the customer picked "mobile", mail when "email").
-   * Absent on older backends. `sent: false` is reported to the console and the
-   * Error Log; it never blocks the ticket.
+   * Outcome of the customer notification the ERP fires on create: the ticket
+   * receipt mail plus an SMS when the customer picked a mobile.
+   * `reason` lists every channel that failed; `channels` carries each one's own
+   * verdict, because "the SMS arrived, the e-mail did not" is a real state the
+   * portal must be able to report. Never blocks the ticket.
    */
   notification?: {
     channel: string;
     sent: boolean;
     reason?: string | null;
+    channels?: Record<string, { sent: boolean; reason?: string }>;
+    ticket?: string;
   };
 }
 
