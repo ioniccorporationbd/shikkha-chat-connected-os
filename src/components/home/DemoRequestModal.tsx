@@ -17,6 +17,13 @@ type FormState = {
 
 type Errors = Partial<Record<keyof FormState, string>>;
 
+/** What `/api/demo-request` answers: `ok` on success, a reason when it fails. */
+type SubmitResponse = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+};
+
 const EMPTY_FORM: FormState = {
   name: "",
   designation: "",
@@ -36,10 +43,11 @@ const digitsOf = (value: string) => value.replace(/\D+/g, "");
  * the form never lingers on screen after a successful submit.
  */
 export default function DemoRequestModal({ open, onClose }: Props) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Errors>({});
-  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [failure, setFailure] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -50,6 +58,7 @@ export default function DemoRequestModal({ open, onClose }: Props) {
       setForm(EMPTY_FORM);
       setErrors({});
       setStatus("idle");
+      setFailure(null);
     }, 200);
   }, [onClose]);
 
@@ -74,7 +83,9 @@ export default function DemoRequestModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (status !== "sent") return;
-    closeTimer.current = setTimeout(resetAndClose, 1400);
+    // Long enough to actually read the thank-you, short enough that nobody
+    // sits waiting for the dialog to go away.
+    closeTimer.current = setTimeout(resetAndClose, 2400);
     return () => {
       if (closeTimer.current) clearTimeout(closeTimer.current);
     };
@@ -111,9 +122,13 @@ export default function DemoRequestModal({ open, onClose }: Props) {
     }
 
     setStatus("sending");
+    setFailure(null);
+
+    let response: Response | null = null;
+    let payload: SubmitResponse | null = null;
 
     try {
-      await fetch("/api/demo-request", {
+      response = await fetch("/api/demo-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,14 +137,34 @@ export default function DemoRequestModal({ open, onClose }: Props) {
           institution: form.institution.trim(),
           mobile: digitsOf(form.mobile),
           page: typeof window !== "undefined" ? window.location.pathname : "/",
+          language,
         }),
       });
-    } catch {
-      // A failed intake must not trap the visitor in the dialog; the lead is
-      // still shown the thank-you state and can be called back.
+      payload = (await response.json().catch(() => null)) as SubmitResponse | null;
+    } catch (error) {
+      // The network itself failed — surface it the same way as a refusal.
+      console.error("[demo-request] request failed before the server answered", error);
     }
 
-    setStatus("sent");
+    if (response?.ok && payload?.ok) {
+      setStatus("sent");
+      return;
+    }
+
+    // Requirement: a failure is reported in the browser console and, because
+    // the server writes a Frappe Error Log entry for the same request, it also
+    // shows up under Desk → Error Log. The form keeps every value so the
+    // visitor can simply press submit again.
+    console.error("[demo-request] demo request was not accepted", {
+      status: response?.status ?? null,
+      error: payload?.error ?? null,
+      message: payload?.message ?? null,
+      values: { ...form, mobile: digitsOf(form.mobile) },
+    });
+    // Always the visitor-facing line: the raw upstream text (Frappe internals,
+    // method paths) stays in the console and the Error Log, never in the dialog.
+    setFailure(t("We could not send your request. Please try again."));
+    setStatus("error");
   };
 
   const fields: Array<{
@@ -255,6 +290,15 @@ export default function DemoRequestModal({ open, onClose }: Props) {
                   ) : null}
                 </label>
               ))}
+
+              {status === "error" && failure ? (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[12.5px] leading-relaxed font-medium text-rose-700"
+                >
+                  {failure}
+                </p>
+              ) : null}
 
               <button
                 type="submit"

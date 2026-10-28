@@ -60,6 +60,7 @@ const translations: Record<string, string> = {
   "Submit request": "সাবমিট করুন",
   "Sending…": "পাঠানো হচ্ছে…",
   "Request received": "অনুরোধ পাওয়া গেছে",
+  "We could not send your request. Please try again.": "আপনার অনুরোধ পাঠানো যায়নি। আবার চেষ্টা করুন।",
   "Thank you! Our team will call you shortly to arrange the demo.": "ধন্যবাদ! ডেমো আয়োজনের জন্য আমাদের টিম শীঘ্রই আপনাকে কল করবে।",
   "Close": "বন্ধ করুন",
 
