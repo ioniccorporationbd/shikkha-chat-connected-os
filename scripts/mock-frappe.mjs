@@ -1547,7 +1547,7 @@ function hdKey(message) {
   return `${message.createdAt}|${message.id}`;
 }
 
-function hdAppend(ticket, author, body) {
+function hdAppend(ticket, author, body, options = {}) {
   const thread = hdThreads.get(ticket);
   if (!thread) return null;
   hdMessageSeq += 1;
@@ -1556,10 +1556,12 @@ function hdAppend(ticket, author, body) {
     author,
     authorName: author === "support" ? "Tamim Hasan" : "Nusrat Jahan",
     body,
-    createdAt: new Date().toISOString(),
+    // Dev-only: a harness may backdate a row to reproduce a real thread where
+    // the two channels' timestamps land out of order (or share one second).
+    createdAt: typeof options.at === "string" && options.at ? options.at : new Date().toISOString(),
     kind: "message",
     channel: author === "support" ? "message" : "comment",
-    replyTo: null,
+    replyTo: options.replyTo && typeof options.replyTo === "object" ? options.replyTo : null,
     attachments: [],
     isMine: false,
     seen: false,
@@ -2499,7 +2501,7 @@ const server = createServer(async (request, response) => {
       failure(response, 404, "ValidationError", "Unknown ticket or empty body.", "Help Desk");
       return;
     }
-    const message = hdAppend(ticket, author, text);
+    const message = hdAppend(ticket, author, text, { at: data.at, replyTo: data.replyTo });
     console.log(`[mock-frappe] HD PUSH ${ticket} ${author} ${text}`);
     ok(response, message);
     return;
