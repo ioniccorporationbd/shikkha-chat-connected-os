@@ -42,8 +42,14 @@ export default function ProblemInfoCard({
     { key: "category", label: copy.problemCategory, value: categoryLabel },
     { key: "priority", label: copy.problemPriority, value: priorityLabel },
     // Creation stamp exactly as the ERP row stores it, in the same compact
-    // numeric form the ticket list uses, so both pages read identically.
-    { key: "submitted", label: copy.problemSubmitted, value: formatDateTimeNumeric(ticket.createdAt, language) },
+    // numeric form the ticket list uses, so both pages read identically. If the
+    // row carries no creation stamp at all we name who submitted it rather than
+    // render an empty cell.
+    {
+      key: "submitted",
+      label: copy.problemSubmitted,
+      value: formatDateTimeNumeric(ticket.createdAt, language) || ticket.contact?.name || "—",
+    },
     { key: "assigned", label: copy.problemAssigned, value: ticket.assignedAgent || "—" },
   ];
   if (ticket.department) {

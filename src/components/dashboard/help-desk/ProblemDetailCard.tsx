@@ -8,6 +8,7 @@ import ConversationComposer, { type ComposerInput } from "@/components/help-desk
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
+import { resolveTicketHeader } from "@/lib/help-desk/ticket-view";
 import { helpDeskHomeFor } from "@/components/dashboard/help-desk/HelpDeskBackButton";
 import {
   getConversation,
@@ -324,7 +325,7 @@ export default function ProblemDetailCard({
           ) : (
             <div className="flex flex-col gap-4">
               <ProblemInfoCard
-                ticket={payload.ticket}
+                ticket={resolveTicketHeader(payload.ticket)}
                 copy={copy}
                 language={language}
                 requirements={payload.requirements}

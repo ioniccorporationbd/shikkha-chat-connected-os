@@ -27,6 +27,7 @@ import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/co
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
+import { missingTicketHeader, resolveTicketHeader } from "@/lib/help-desk/ticket-view";
 import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 import type {
@@ -34,6 +35,7 @@ import type {
   ConversationPayload,
   ConversationReaction,
   ConversationTimelineEvent,
+  Ticket,
 } from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
@@ -295,6 +297,34 @@ export default function HelpDeskTicketThread({
       window.clearTimeout(kickoff);
     };
   }, [load]);
+
+  // Both meta values blank on a ticket the desk shows filled is a data-mapping
+  // bug, not an empty ticket — say so once, in the console and in the ERP Error
+  // Log, with the shape of what actually arrived, instead of leaving two silent
+  // "—" cells on screen.
+  const metaWarned = useRef(false);
+  useEffect(() => {
+    if (!payload || metaWarned.current) return;
+    const header = payload.ticket;
+    if (!header || !missingTicketHeader(header)) return;
+    metaWarned.current = true;
+    const raw = header as unknown as Record<string, unknown>;
+    const detail = {
+      ticket: ticketId,
+      assignedAgent: header.assignedAgent ?? null,
+      createdAt: header.createdAt ?? null,
+      payloadKeys: Object.keys(raw).slice(0, 40),
+      hasAgent: raw.agent ?? null,
+      hasCustomer: raw.customer ?? null,
+      hasContact: raw.contact ?? null,
+    };
+    console.warn("[help-desk] ticket header is missing its assignee/submitted fields", ticketId, detail);
+    reportClientError({
+      scope: "help-desk:ticket-meta",
+      message: "The ticket header arrived without its Assigned employee / Submitted value.",
+      detail,
+    });
+  }, [payload, ticketId]);
 
   /**
    * Fold a fresh payload into what is already on screen.
@@ -767,6 +797,7 @@ export default function HelpDeskTicketThread({
 
   const ticket = payload!.ticket;
 
+
   const pinnedMessage = pinnedId ? messages.find((message) => message.id === pinnedId) ?? null : null;
 
   // The chat and the audit trail below it must read as ONE sequence: every
@@ -778,6 +809,12 @@ export default function HelpDeskTicketThread({
   // own dashboard. Rows that ARE messages (same Communication/Comment id) are
   // left out: the thread already draws them, in the same order.
   const timeline: ConversationTimelineEvent[] = payload!.timeline ?? [];
+
+  // --- "Assigned employee" / "Submitted" must never read blank -------------
+  // See resolveTicketHeader: the desk's Assignee / Customer values are resolved
+  // from whichever column actually holds them, so the portal shows the same
+  // thing the desk does on tickets it created itself.
+  const displayTicket: Ticket = resolveTicketHeader(ticket, timeline, messages);
   const messageIds = new Set(messages.map((message) => message.id));
   // The chat above and this timeline below must read as one sequence, so the
   // timeline's own position for a row travels down with it. `ConversationThread`
@@ -868,7 +905,7 @@ export default function HelpDeskTicketThread({
 
       {chatOnly ? null : (
         <ProblemInfoCard
-          ticket={ticket}
+          ticket={displayTicket}
           copy={copy}
           language={language}
           requirements={requirements}
@@ -936,7 +973,7 @@ export default function HelpDeskTicketThread({
       <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
         <ConversationHeader
           copy={copy}
-          ticket={ticket}
+          ticket={displayTicket}
           isSupport={isSupport}
           statusLabel={hdCopy.statuses[ticket.status] ?? ticket.status}
           unread={payload!.unread}

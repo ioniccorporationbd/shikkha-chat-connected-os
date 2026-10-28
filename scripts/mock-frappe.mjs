@@ -1587,6 +1587,13 @@ function hdUnread(support) {
 
 function hdHeader(thread) {
   const last = thread.messages[thread.messages.length - 1];
+  // `deskShaped` reproduces how a ticket created from the Desk actually arrives:
+  // the owner sits only in the plain `agent` link (Assignments empty), the
+  // submitter only in the `customer` column (no Contact row), and the header
+  // carries no creation stamp. The portal must still fill "Assigned employee"
+  // and "Submitted" from those columns, exactly as the Desk's Assignee/Customer
+  // fields do.
+  const desk = Boolean(thread.deskShaped);
   return {
     id: thread.name,
     subject: thread.subject,
@@ -1594,13 +1601,18 @@ function hdHeader(thread) {
     priority: thread.priority,
     description: thread.messages[0]?.body ?? "",
     status: thread.status,
-    contact: { name: thread.customer, email: thread.customerEmail },
+    contact: desk
+      ? { name: "", email: "" }
+      : { name: thread.customer, email: thread.customerEmail },
     attachments: [],
     messages: [],
-    createdAt: thread.submittedAt,
+    createdAt: desk ? null : thread.submittedAt,
     updatedAt: last?.createdAt ?? thread.submittedAt,
     resolvedAt: thread.resolvedAt ?? undefined,
-    assignedAgent: thread.agent || "Tamim Hasan",
+    assignedAgent: desk ? null : thread.agent || "Tamim Hasan",
+    agent: desk ? thread.agent || null : undefined,
+    customer: desk ? `HDC-${thread.name}` : undefined,
+    customerName: desk ? thread.customer : undefined,
     department: "Support",
   };
 }
@@ -1824,6 +1836,7 @@ hdThreads.set(HD_0491, {
   customer: HD_0491_CUSTOMER,
   customerEmail: "client@example.com",
   agent: HD_0491_AGENT,
+  deskShaped: true,
   submittedAt: "2026-10-28T11:58:00.000Z",
   resolvedAt: null,
   messages: [],
