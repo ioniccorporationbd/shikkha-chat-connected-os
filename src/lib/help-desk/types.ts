@@ -284,6 +284,13 @@ export interface ConversationMessage {
   body: string;
   /** ISO timestamp. */
   createdAt: string;
+  /**
+   * Position of this row in the ticket's full conversation timeline, when the
+   * ERP sent one. The chat must read in the same order as that timeline, so a
+   * position here outranks `createdAt` — two rows can share a second, and a
+   * channel merge can hand the same second over in either order.
+   */
+  sequence?: number;
   kind: ConversationMessageKind;
   /**
    * Which ERP channel the entry came from: `message` is a `Communication`

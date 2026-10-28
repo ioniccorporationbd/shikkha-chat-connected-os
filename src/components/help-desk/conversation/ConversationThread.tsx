@@ -27,6 +27,8 @@ export type ThreadSystemEvent = {
   authorName?: string;
   /** Which side the bubble sits on. Absent = chip. */
   side?: "mine" | "other";
+  /** Position in the ticket's full conversation timeline, when the ERP sent one. */
+  sequence?: number;
 };
 
 type ThreadRow =
@@ -34,6 +36,7 @@ type ThreadRow =
       kind: "message";
       key: string;
       at: string;
+      sequence?: number;
       message: ConversationMessage;
       dayLabel: string | null;
       /** Same side, same day, only moments after the row above it. */
@@ -43,6 +46,7 @@ type ThreadRow =
       kind: "event";
       key: string;
       at: string;
+      sequence?: number;
       label: string;
       body?: string;
       authorName?: string;
@@ -303,6 +307,7 @@ export default function ConversationThread({
       kind: "message",
       key: `m-${message.id}`,
       at: message.createdAt,
+      sequence: message.sequence,
       message,
       dayLabel: null,
       grouped: false,
@@ -316,6 +321,7 @@ export default function ConversationThread({
           kind: "event",
           key: `e-${event.id}`,
           at: event.at,
+          sequence: event.sequence,
           label: event.label,
           body: event.body,
           authorName: event.authorName,
@@ -334,9 +340,22 @@ export default function ConversationThread({
     // fractional precision; a prefix still sorts before its longer form), so the
     // sort is a string compare with the incoming position as a stable tie-break.
     // A row with no timestamp keeps its place at the end — never on top.
+    //
+    // When the ticket's full conversation timeline is on the page, its own
+    // position for a row outranks every timestamp: that section is the record
+    // the chat has to read in the same order as, and two rows can share one
+    // second. Rows without a position (no timeline, older ERP) fall back to the
+    // timestamp compare exactly as before.
     const position = new Map(entries.map((entry, index) => [entry.key, index]));
     const stamp = (row: ThreadRow) => (row.at ? String(row.at).replace(" ", "T") : "");
+    const ordered = (row: ThreadRow) =>
+      typeof row.sequence === "number" && Number.isFinite(row.sequence) ? row.sequence : null;
     entries.sort((a, b) => {
+      const firstOrder = ordered(a);
+      const secondOrder = ordered(b);
+      if (firstOrder !== null && secondOrder !== null && firstOrder !== secondOrder) {
+        return firstOrder - secondOrder;
+      }
       const first = stamp(a);
       const second = stamp(b);
       if (first && !second) return -1;
@@ -349,6 +368,10 @@ export default function ConversationThread({
     // timestamps put the quote first (a reply written before a slow customer
     // message landed, or two rows sharing one second), the reply is moved to sit
     // directly after its parent. Threading wins over a same-second tie.
+    //
+    // A row that carries its timeline position is left where the server put it:
+    // that order is the record, and moving the row would break the promise that
+    // the chat reads exactly like the timeline below it.
     const slot = new Map(entries.map((entry, index) => [entry.key, index]));
     const reindex = () => {
       slot.clear();
@@ -359,6 +382,7 @@ export default function ConversationThread({
       for (let index = 0; index < entries.length; index += 1) {
         const row = entries[index];
         if (row.kind !== "message") continue;
+        if (typeof row.sequence === "number") continue;
         const parentId = row.message.replyTo?.id;
         if (!parentId) continue;
         const parentKey = `m-${parentId}`;

@@ -1664,6 +1664,15 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
 
   const latest = messages.length ? hdKey(messages[messages.length - 1]) : null;
 
+  // Dev-only: a real thread can hand its messages over in the order the two
+  // channels were read (Communication block, then Comment block), which is not
+  // the conversation's order. The timeline below the chat is always canonical,
+  // so `payloadOrder: "reverse"` reproduces that mismatch on purpose: the chat
+  // must still read exactly like the timeline.
+  if (thread.payloadOrder === "reverse" && !limit) {
+    messages = messages.slice().reverse();
+  }
+
   // Mirror `_timeline`: the opening description, then one row per message, with
   // requirement/resolution labelled and the description's own Communication
   // promoted to `created` instead of listed twice.
@@ -1796,6 +1805,53 @@ hdAppend(HD_TIMELINE_TICKET, "user", "wwwwwwtwq4etw4e", { at: "2026-10-28T11:46:
 hdAppend(HD_TIMELINE_TICKET, "user", "aopriwhtopwtoprtopih", { at: "2026-10-28T11:46:40.000Z" });
 hdAppend(HD_TIMELINE_TICKET, "user", "yyyyyyyyyy", { at: "2026-10-28T11:48:00.000Z" });
 hdAppend(HD_TIMELINE_TICKET, "user", "masum,456", { at: "2026-10-28T11:49:00.000Z" });
+
+// --- Ticket 0491: the same rule, on a thread whose payload arrives scrambled --
+// Two of these rows share one second (12:05:30) and the endpoint hands the
+// messages over in reverse, the way a channel merge can: the chat still has to
+// read exactly like the audit trail below it, first message first.
+const HD_0491 = "0491";
+const HD_0491_CUSTOMER = "Tamim Hasan";
+const HD_0491_AGENT = "MD Shahzalal Amin Surker";
+hdThreads.set(HD_0491, {
+  name: HD_0491,
+  subject: "Payment not reflected in my account",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "payment",
+  customer: HD_0491_CUSTOMER,
+  customerEmail: "client@example.com",
+  agent: HD_0491_AGENT,
+  submittedAt: "2026-10-28T11:58:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  payloadOrder: "reverse",
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: "2026-10-28T11:58:00.000Z",
+      author: "user",
+      authorName: HD_0491_CUSTOMER,
+      text: "Payment not reflected in my account\nCategory: Payment\nPreferred contact: email",
+      attachments: 0,
+    },
+  ],
+});
+hdAppend(HD_0491, "support", "টিকিট তৈরি হয়েছে, বিষয়টি দেখছি।", {
+  at: "2026-10-28T12:00:00.000Z",
+  authorName: HD_0491_AGENT,
+});
+hdAppend(HD_0491, "user", "ধন্যবাদ, অপেক্ষা করছি।", { at: "2026-10-28T12:03:00.000Z" });
+hdAppend(HD_0491, "support", "আপনার পেমেন্টটি গেটওয়েতে দেখা যাচ্ছে না।", {
+  at: "2026-10-28T12:05:30.000Z",
+  authorName: HD_0491_AGENT,
+});
+// Same second as the row above - the tie that used to fall back to payload order.
+hdAppend(HD_0491, "user", "অনলাইন পেমেন্ট করে ছিলাম বিকাশ দিয়ে।", { at: "2026-10-28T12:05:30.000Z" });
+hdAppend(HD_0491, "user", "ট্রানজেকশন আইডি পাঠাচ্ছি।", { at: "2026-10-28T12:07:00.000Z" });
 
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.

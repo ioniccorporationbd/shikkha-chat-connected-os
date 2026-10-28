@@ -779,6 +779,17 @@ export default function HelpDeskTicketThread({
   // left out: the thread already draws them, in the same order.
   const timeline: ConversationTimelineEvent[] = payload!.timeline ?? [];
   const messageIds = new Set(messages.map((message) => message.id));
+  // The chat above and this timeline below must read as one sequence, so the
+  // timeline's own position for a row travels down with it. `ConversationThread`
+  // prefers that position over any timestamp, which is what makes the two lists
+  // agree row for row even when two entries share a second.
+  const sequenceById = new Map(timeline.map((event, index) => [event.id, index]));
+  const orderedMessages = sequenceById.size
+    ? messages.map((message) => {
+        const sequence = sequenceById.get(message.id);
+        return sequence === undefined ? message : { ...message, sequence };
+      })
+    : messages;
   const timelineLabels: Record<string, string> = {
     created: copy.timelineCreated,
     requirement: copy.timelineRequirement,
@@ -803,11 +814,13 @@ export default function HelpDeskTicketThread({
     // with rows it has not loaded yet: it keeps only the creation marker.
     .filter((event) => (chatOnly ? event.type === "created" || event.type === "status" : true))
     .map((event) => {
+      const sequence = sequenceById.get(event.id);
       if (event.type === "status") {
         const move = event.from || event.to ? `${statusWord(event.from)} → ${statusWord(event.to)}` : "";
         return {
           id: event.id,
           at: event.at,
+          sequence,
           label: move ? `${copy.timelineStatus}: ${move}` : copy.timelineStatus,
         };
       }
@@ -817,6 +830,7 @@ export default function HelpDeskTicketThread({
       return {
         id: event.id,
         at: event.at,
+        sequence,
         label: timelineLabels[event.type] ?? copy.timelineMessage,
         body: event.text,
         authorName: event.authorName,
@@ -948,7 +962,7 @@ export default function HelpDeskTicketThread({
             bare
             copy={copy}
             language={language}
-            messages={messages}
+            messages={orderedMessages}
             loading={false}
             error={false}
             hasOlder={chatOnly ? hasOlder : false}
