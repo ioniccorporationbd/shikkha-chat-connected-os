@@ -62,6 +62,7 @@ export default function MessageBubble({
   copy,
   language,
   pinned = false,
+  grouped = false,
   onQuote,
   onReact,
   onCopied,
@@ -75,6 +76,13 @@ export default function MessageBubble({
   onPin?: (message: ConversationMessage) => void;
   canPin?: boolean;
   pinned?: boolean;
+  /**
+   * Directly follows a bubble from the same side, on the same day, within a few
+   * minutes: the stamp (dot, name, separator) is dropped and the bubble tucks up
+   * under the previous one, the way a messenger collapses a run of one person's
+   * lines. The time stays, so nothing is lost.
+   */
+  grouped?: boolean;
   highlighted?: boolean;
   canDelete?: boolean;
   canForward?: boolean;
@@ -138,7 +146,11 @@ export default function MessageBubble({
   return (
     <div
       id={`msg-${message.id}`}
-      className={["group/msg flex w-full min-w-0 scroll-mt-4", mine ? "justify-end" : "justify-start"].join(" ")}
+      className={[
+        "group/msg flex w-full min-w-0 scroll-mt-4",
+        mine ? "justify-end" : "justify-start",
+        grouped ? "-mt-1.5" : "",
+      ].join(" ")}
     >
       <div
         className={[
@@ -149,78 +161,53 @@ export default function MessageBubble({
           mine ? "items-end" : "items-start",
         ].join(" ")}
       >
-        {/* Sender + time: the whole stamp sits above the bubble, mirrored on the
-            right for my own messages, so name, text and time read as one block.
-            The chevron that opens the message menu rides at the end of it. */}
-        <div className="flex max-w-full items-center gap-1.5 px-1">
-          <span
-            className={[
-              "h-[5px] w-[5px] flex-none rounded-full",
-              isSupport
-                ? "bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
-                : "bg-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]",
-            ].join(" ")}
-            aria-hidden
-          />
-          <span
-            className={[
-              "truncate text-[12px] font-semibold tracking-[0.01em]",
-              isSupport
-                ? "text-[color-mix(in_srgb,var(--color-action)_82%,var(--color-primary))]"
-                : "text-[color-mix(in_srgb,var(--color-primary)_86%,transparent)]",
-            ].join(" ")}
-          >
-            {mine ? copy.conversationYou : authorLabel}
-          </span>
-          <span
-            className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
-            aria-hidden
-          />
-          <time
-            dateTime={message.createdAt}
-            className="flex-none text-[10.5px] font-medium uppercase tabular-nums tracking-[0.03em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
-          >
-            {timeLabel}
-          </time>
-          {pinned ? (
-            <FiBookmark
-              size={10}
-              className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,transparent)]"
-              aria-label={copy.pinnedBar}
+        {/* Sender: only the first line of a run carries the name, mirrored on
+            the right for my own messages, the way a messenger labels a person
+            once and then simply stacks their lines. The chevron that opens the
+            message menu rides at the end of that line. */}
+        {grouped ? null : (
+          <div className="flex max-w-full items-center gap-1.5 px-1">
+            <span
+              className={[
+                "h-[5px] w-[5px] flex-none rounded-full",
+                isSupport
+                  ? "bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
+                  : "bg-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]",
+              ].join(" ")}
+              aria-hidden
             />
-          ) : null}
-          {mine ? (
-            message.seen ? (
-              <FiCheckCircle
-                size={11}
-                className="flex-none text-[color-mix(in_srgb,var(--color-action)_70%,transparent)]"
-                aria-hidden
-              />
-            ) : (
-              <FiCheck
-                size={11}
-                className="flex-none text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
-                aria-hidden
-              />
-            )
-          ) : null}
-          {canAct ? (
-            <MessageActionMenu
-              copy={copy}
-              mine={mine}
-              open={menuOpen}
-              onOpenChange={setMenuOpen}
-              onReply={onQuote ? () => onQuote(message) : undefined}
-              onReact={onReact ? toggleReaction : undefined}
-              onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
-            />
-          ) : null}
-          {copied ? (
-            <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
-              {copy.copied}
+            <span
+              className={[
+                "truncate text-[12px] font-semibold tracking-[0.01em]",
+                isSupport
+                  ? "text-[color-mix(in_srgb,var(--color-action)_82%,var(--color-primary))]"
+                  : "text-[color-mix(in_srgb,var(--color-primary)_86%,transparent)]",
+              ].join(" ")}
+            >
+              {mine ? copy.conversationYou : authorLabel}
             </span>
-          ) : null}
-        </div>
+            <span
+              className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
+              aria-hidden
+            />
+            {canAct ? (
+              <MessageActionMenu
+                copy={copy}
+                mine={mine}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                onReply={onQuote ? () => onQuote(message) : undefined}
+                onReact={onReact ? toggleReaction : undefined}
+                onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
+              />
+            ) : null}
+            {copied ? (
+              <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
+                {copy.copied}
+              </span>
+            ) : null}
+          </div>
+        )}
 
         <div
           onContextMenu={(event) => {
@@ -341,6 +328,57 @@ export default function MessageBubble({
               })}
             </ul>
           ) : null}
+
+          {/* Stamp inside the bubble, bottom-right: the time always, then the
+              delivery ticks for my own lines — and, on a grouped line, the
+              message menu, so it is still one hover away without a header row
+              pushing the bubbles apart. */}
+          <div className="mt-1 flex items-center justify-end gap-1">
+            {pinned ? (
+              <FiBookmark
+                size={10}
+                className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,transparent)]"
+                aria-label={copy.pinnedBar}
+              />
+            ) : null}
+            {grouped && canAct ? (
+              <MessageActionMenu
+                copy={copy}
+                mine={mine}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                onReply={onQuote ? () => onQuote(message) : undefined}
+                onReact={onReact ? toggleReaction : undefined}
+                onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
+              />
+            ) : null}
+            {grouped && copied ? (
+              <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
+                {copy.copied}
+              </span>
+            ) : null}
+            <time
+              dateTime={message.createdAt}
+              className="flex-none text-[10px] font-medium tabular-nums tracking-[0.02em] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+            >
+              {timeLabel}
+            </time>
+            {mine ? (
+              message.seen ? (
+                <FiCheckCircle
+                  size={11}
+                  className="flex-none text-[color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+                  aria-hidden
+                />
+              ) : (
+                <FiCheck
+                  size={11}
+                  className="flex-none text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+                  aria-hidden
+                />
+              )
+            ) : null}
+          </div>
         </div>
 
         {reactions.length > 0 ? (

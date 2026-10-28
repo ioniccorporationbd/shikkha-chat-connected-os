@@ -198,6 +198,10 @@ export default function HelpDeskTicketThread({
   const [mode, setMode] = useState<"message" | "requirement">("message");
   const [reopenBusy, setReopenBusy] = useState(false);
 
+  // Last load failure, shown under the retry card so a support question can be
+  // answered without opening devtools.
+  const [errorText, setErrorText] = useState("");
+
   const [statusValue, setStatusValue] = useState("");
   const [resolution, setResolution] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
@@ -241,6 +245,7 @@ export default function HelpDeskTicketThread({
         setOlderCursor(data.next_cursor ?? null);
         setPinnedId(data.ticket.pinnedMessageId ?? null);
         setError(false);
+        setErrorText("");
         setExpired(false);
         setStatusValue((current) => current || data.currentStatus || "");
         if (data.unread > 0) {
@@ -264,6 +269,7 @@ export default function HelpDeskTicketThread({
         }
         if (!silent) {
           setError(true);
+          setErrorText(err instanceof Error ? err.message : String(err));
           // Keep the surface diagnosable without a toast library dependency.
           console.error("[help-desk] conversation load failed", ticketId);
           reportClientError({
@@ -718,14 +724,41 @@ export default function HelpDeskTicketThread({
   }
 
   if (error && !payload) {
+    // A transport failure is retryable — the ticket is fine, the bytes were not.
+    // The button repeats the same read (which itself retries once) and keeps the
+    // reader on this ticket instead of sending them back to the list.
     return (
       <div className="flex flex-col gap-4">
         <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
         <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-8 text-center ${CARD_SHADOW}`}>
-          <p className="text-[14px] font-semibold text-[var(--color-primary)]">{copy.conversationErrorTitle}</p>
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] text-[var(--color-primary)]">
+            <FiAlertCircle size={22} aria-hidden />
+          </span>
+          <p className="mt-3 text-[14px] font-semibold text-[var(--color-primary)]">{copy.conversationErrorTitle}</p>
           <p className="mt-1 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
             {copy.conversationErrorHint}
           </p>
+          {errorText ? (
+            <p className="mx-auto mt-1.5 max-w-md text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {errorText}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? copy.conversationRetrying : copy.conversationRetry}
+            </button>
+            <a
+              href={listHref}
+              className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
+            >
+              {copy.back}
+            </a>
+          </div>
         </div>
       </div>
     );

@@ -17,8 +17,19 @@ export type ThreadSystemEvent = {
 };
 
 type ThreadRow =
-  | { kind: "message"; key: string; at: string; message: ConversationMessage; dayLabel: string | null }
+  | {
+      kind: "message";
+      key: string;
+      at: string;
+      message: ConversationMessage;
+      dayLabel: string | null;
+      /** Same side, same day, only moments after the row above it. */
+      grouped: boolean;
+    }
   | { kind: "event"; key: string; at: string; label: string; dayLabel: string | null };
+
+/** A run of one person's lines is collapsed only while they stay this close. */
+const GROUP_WINDOW_MS = 3 * 60 * 1000;
 
 /**
  * The scrollable ticket thread.
@@ -272,6 +283,7 @@ export default function ConversationThread({
       at: message.createdAt,
       message,
       dayLabel: null,
+      grouped: false,
     }));
 
     if (systemEvents?.length) {
@@ -334,11 +346,26 @@ export default function ConversationThread({
       if (!moved) break;
     }
 
+    // One pass sets the day separator and, with it, the run collapsing: two
+    // bubbles from the same person on the same day are one block, so the second
+    // one drops its name and tucks up under the first. Anything that breaks the
+    // run — a different author, a different day, a gap longer than a few minutes
+    // — starts a fresh block with a full stamp.
     const labels = entries.map((entry) => formatChatDay(entry.at, language));
-    return entries.map((entry, index) => ({
-      ...entry,
-      dayLabel: index === 0 || labels[index] !== labels[index - 1] ? labels[index] : null,
-    }));
+    return entries.map((entry, index) => {
+      const previous = index > 0 ? entries[index - 1] : null;
+      const dayLabel = index === 0 || labels[index] !== labels[index - 1] ? labels[index] : null;
+      let grouped = false;
+      if (entry.kind === "message" && previous && previous.kind === "message" && dayLabel === null) {
+        const sameSide = previous.message.isMine === entry.message.isMine;
+        const sameAuthor = previous.message.author === entry.message.author;
+        const previousAt = Date.parse(String(previous.at).replace(" ", "T"));
+        const currentAt = Date.parse(String(entry.at).replace(" ", "T"));
+        const closeEnough = Number.isFinite(previousAt) && Number.isFinite(currentAt) && currentAt - previousAt <= GROUP_WINDOW_MS;
+        grouped = sameSide && sameAuthor && closeEnough;
+      }
+      return { ...entry, dayLabel, grouped };
+    });
   }, [messages, language, systemEvents]);
 
   return (
@@ -474,6 +501,7 @@ export default function ConversationThread({
                     message={row.message}
                     copy={copy}
                     language={language}
+                    grouped={row.grouped}
                     onQuote={onQuote}
                     onJumpTo={jumpToMessage}
                     onPin={onPin}

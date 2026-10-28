@@ -98,13 +98,43 @@ export async function getConversation(
   if (options.cursor) query.set("cursor", options.cursor);
   if (options.since) query.set("since", options.since);
   try {
-    return await request<ConversationPayload>(
+    const payload = await request<ConversationPayload>(
       `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}?${query.toString()}`
     );
+    return payload ? alignConversation(payload) : payload;
   } catch (error) {
     if (error instanceof HelpDeskError && (error.status === 404 || error.status === 403)) return null;
     throw error;
   }
+}
+
+/**
+ * Put every bubble on the side of the room it belongs to.
+ *
+ * The ERP flags each row `isMine` by matching its `sender` / `owner` against the
+ * signed-in e-mail, which is exact only while the portal account is the account
+ * named on the row. A customer whose `Contact`/`User` e-mail differs from the
+ * `Communication.sender`, or a backend deployed before the flag existed, came
+ * back with every bubble on the left — his own comments included. The author
+ * *side* is what the room can actually see and is never ambiguous (`support` =
+ * a staff member wrote it, `user` = the customer wrote it), so the side is
+ * derived from it: the reader's own side sits on the right, the other party on
+ * the left. That holds in both dashboards without the backend having to know
+ * who is looking.
+ *
+ * A payload that does not say which side the reader is on is returned
+ * untouched, so an older backend keeps its own `isMine` as the only truth.
+ */
+export function alignConversation(payload: ConversationPayload): ConversationPayload {
+  const viewerIsSupport = typeof payload.isSupport === "boolean" ? payload.isSupport : null;
+  if (viewerIsSupport === null) return payload;
+
+  const messages = (Array.isArray(payload.messages) ? payload.messages : []).map((message) => ({
+    ...message,
+    isMine: message.author === "support" ? viewerIsSupport : !viewerIsSupport,
+  }));
+
+  return { ...payload, messages };
 }
 
 /** Resolve UI attachments to ERP `File` rows, uploading any browser file first. */
@@ -129,13 +159,17 @@ export interface SendMessageInput {
 /** Append one message to the conversation (customer or support employee). */
 export async function sendMessage(ticketId: string, input: SendMessageInput): Promise<ConversationPayload> {
   const attachments = await resolveAttachments(input.attachments);
-  return postJson<ConversationPayload>(`${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}/messages`, {
-    message: input.message.trim(),
-    replyTo: input.replyTo || null,
-    kind: input.kind || "message",
-    attachments,
-    language: currentLanguage(),
-  });
+  const payload = await postJson<ConversationPayload>(
+    `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}/messages`,
+    {
+      message: input.message.trim(),
+      replyTo: input.replyTo || null,
+      kind: input.kind || "message",
+      attachments,
+      language: currentLanguage(),
+    }
+  );
+  return alignConversation(payload);
 }
 
 /** Add an additional requirement — accepted only while the ticket is Open. */
@@ -144,7 +178,7 @@ export async function addRequirement(
   input: { message: string; replyTo?: string | null; attachments?: File[] }
 ): Promise<ConversationPayload> {
   const attachments = await resolveAttachments(input.attachments);
-  return postJson<ConversationPayload>(
+  const payload = await postJson<ConversationPayload>(
     `/api/help-desk/tickets/${encodeURIComponent(ticketId)}/requirements`,
     {
       message: input.message.trim(),
@@ -153,6 +187,7 @@ export async function addRequirement(
       language: currentLanguage(),
     }
   );
+  return alignConversation(payload);
 }
 
 /** Employee-side status transition (an existing `HD Ticket Status`). */
@@ -160,7 +195,7 @@ export async function setTicketStatus(
   ticketId: string,
   input: { status: string; resolution?: string }
 ): Promise<ConversationPayload> {
-  return postJson<ConversationPayload>(
+  const payload = await postJson<ConversationPayload>(
     `/api/help-desk/tickets/${encodeURIComponent(ticketId)}/status`,
     {
       status: input.status,
@@ -168,6 +203,7 @@ export async function setTicketStatus(
       language: currentLanguage(),
     }
   );
+  return alignConversation(payload);
 }
 
 /**

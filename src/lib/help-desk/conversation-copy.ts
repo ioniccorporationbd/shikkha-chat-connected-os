@@ -91,6 +91,7 @@ export interface ConversationCopy {
   conversationErrorTitle: string;
   conversationErrorHint: string;
   conversationRetry: string;
+  conversationRetrying: string;
   conversationEmpty: string;
   conversationYou: string;
   conversationSupport: string;
@@ -324,6 +325,7 @@ const bn: ConversationCopy = {
   conversationErrorTitle: "কথোপকথন লোড করা যায়নি",
   conversationErrorHint: "সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।",
   conversationRetry: "আবার চেষ্টা করুন",
+  conversationRetrying: "লোড হচ্ছে…",
   conversationEmpty: "এখনও কোনো বার্তা নেই। প্রথম বার্তাটি আপনিই পাঠাতে পারেন।",
   conversationYou: "আপনি",
   conversationSupport: "সাপোর্ট টিম",
@@ -541,6 +543,7 @@ const en: ConversationCopy = {
   conversationErrorTitle: "The conversation could not be loaded",
   conversationErrorHint: "Something went wrong with the connection. Please try again.",
   conversationRetry: "Try again",
+  conversationRetrying: "Loading…",
   conversationEmpty: "No messages yet. You can send the first one.",
   conversationYou: "You",
   conversationSupport: "Support team",

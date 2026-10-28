@@ -1713,6 +1713,10 @@ hdThreads.set(HD_TICKET, {
 });
 hdAppend(HD_TICKET, "user", "আমার অ্যাকাউন্টে লগইন করা যাচ্ছে না, পাসওয়ার্ড রিসেটের ইমেইলও আসছে না।");
 
+// Pristine copy of the seeded thread. A harness resets to this between runs so
+// repeated pushes cannot pile up duplicate rows in one long-lived mock process.
+const HD_SEED_MESSAGES = hdThreads.get(HD_TICKET).messages.map((message) => ({ ...message }));
+
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
   const method = url.pathname.replace(/^\/api\/method\//, "");
@@ -2490,6 +2494,15 @@ const server = createServer(async (request, response) => {
   // Playwright harness pushes a message through `mock.hd.push` (a dev-only
   // control method) and then asserts the OTHER panel shows it without a reload.
   // Nothing here touches the real ERP; shapes follow src/lib/help-desk/types.ts.
+  if (method === "mock.hd.reset") {
+    const thread = hdThreads.get(HD_TICKET);
+    thread.messages = HD_SEED_MESSAGES.map((message) => ({ ...message }));
+    hdMessageSeq = thread.messages.length;
+    console.log(`[mock-frappe] HD RESET ${HD_TICKET} (${thread.messages.length} seeded)`);
+    ok(response, { ok: true, messages: thread.messages.length });
+    return;
+  }
+
   if (method === "mock.hd.push") {
     const body = await readBody(request);
     const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};

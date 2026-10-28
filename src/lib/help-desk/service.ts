@@ -44,12 +44,49 @@ export function currentLanguage(): string {
   return lang.toLowerCase().startsWith("en") ? "en" : "bn";
 }
 
+/** A single GET is retried once before the reader is told the load failed. */
+const TRANSPORT_RETRIES = 1;
+
+function offline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * One portal call.
+ *
+ * A read is the only thing retried: a browser `fetch` that rejects before any
+ * byte came back (dev server recompiling, a proxy dropping the connection, a
+ * laptop that just woke) says nothing about the ticket, so a single quiet retry
+ * turns a spurious red box into a normal load. A write is never repeated here —
+ * the portal cannot know whether the ERP already committed it, and a duplicated
+ * ticket or reply is worse than an error the reader can retry himself.
+ */
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path, { cache: "no-store", ...init });
-  } catch {
-    throw new HelpDeskError("The portal could not reach the server. Please check your connection.", "network_error");
+  const method = String(init.method || "GET").toUpperCase();
+  const attempts = method === "GET" ? TRANSPORT_RETRIES + 1 : 1;
+
+  let response: Response | null = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      response = await fetch(path, { cache: "no-store", ...init });
+      break;
+    } catch {
+      response = null;
+      if (attempt < attempts) await sleep(400);
+    }
+  }
+
+  if (!response) {
+    throw new HelpDeskError(
+      offline()
+        ? "You appear to be offline. Check your connection and try again."
+        : "The portal could not reach the server. Please check your connection.",
+      "network_error"
+    );
   }
 
   let payload: unknown = null;
