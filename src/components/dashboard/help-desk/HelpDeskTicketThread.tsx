@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiAlertCircle, FiChevronRight } from "react-icons/fi";
+import { FiAlertCircle } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
+import ConversationActionLink from "@/components/dashboard/help-desk/ConversationActionLink";
 import ConversationHeader from "@/components/help-desk/conversation/ConversationHeader";
 import ConversationThread, { type ThreadSystemEvent } from "@/components/help-desk/conversation/ConversationThread";
 import PinnedMessageBanner from "@/components/help-desk/conversation/PinnedMessageBanner";
@@ -733,13 +733,7 @@ export default function HelpDeskTicketThread({
           unread={payload!.unread}
           actions={
             allConversationsHref ? (
-              <Link
-                href={allConversationsHref}
-                className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_14%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-              >
-                <FiChevronRight size={12} className="order-2" aria-hidden />
-                {copy.allConversations}
-              </Link>
+              <ConversationActionLink href={allConversationsHref} label={copy.allConversations} />
             ) : undefined
           }
         />

@@ -111,6 +111,14 @@ export interface ConversationCopy {
   composerReplyTo: (name: string) => string;
   composerCancelReply: string;
   composerAttach: string;
+  /** Emoji sheet: button label, dialog title and the three block headings. */
+  /** Accessible name of the picked-attachment strip. */
+  composerAttachedFiles: string;
+  composerEmoji: string;
+  composerEmojiTitle: string;
+  composerEmojiSmileys: string;
+  composerEmojiGestures: string;
+  composerEmojiObjects: string;
   composerRemoveFile: string;
   composerAttaching: string;
   composerValidation: string;
@@ -325,6 +333,12 @@ const bn: ConversationCopy = {
   composerReplyTo: (name) => `${name} এর বার্তার উত্তর দিচ্ছেন`,
   composerCancelReply: "উত্তর বাতিল করুন",
   composerAttach: "ফাইল সংযুক্ত করুন",
+  composerAttachedFiles: "সংযুক্ত ফাইল",
+  composerEmoji: "ইমোজি",
+  composerEmojiTitle: "ইমোজি বাছাই করুন",
+  composerEmojiSmileys: "মুখ",
+  composerEmojiGestures: "হাত ও অঙ্গভঙ্গি",
+  composerEmojiObjects: "চিহ্ন",
   composerRemoveFile: "ফাইল সরান",
   composerAttaching: "সংযুক্ত হচ্ছে…",
   composerValidation: "আগে একটি বার্তা লিখুন।",
@@ -528,6 +542,12 @@ const en: ConversationCopy = {
   composerReplyTo: (name) => `Replying to ${name}`,
   composerCancelReply: "Cancel reply",
   composerAttach: "Attach a file",
+  composerAttachedFiles: "Attached files",
+  composerEmoji: "Emoji",
+  composerEmojiTitle: "Pick an emoji",
+  composerEmojiSmileys: "Smileys",
+  composerEmojiGestures: "Hands",
+  composerEmojiObjects: "Symbols",
   composerRemoveFile: "Remove file",
   composerAttaching: "Attaching…",
   composerValidation: "Write a message first.",

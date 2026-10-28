@@ -349,8 +349,8 @@ export default function ConversationThread({
         }}
         className={
           bare
-            ? `flex flex-col gap-3 overflow-y-auto px-3.5 py-3 sm:px-4 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
-            : `flex flex-col gap-3 overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
+            ? `flex flex-col gap-3 overflow-y-auto hd-scrollbar-hidden px-3.5 py-3 sm:px-4 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
+            : `flex flex-col gap-3 overflow-y-auto hd-scrollbar-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
         }
       >
         {loading ? (

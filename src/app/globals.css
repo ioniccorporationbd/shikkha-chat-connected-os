@@ -346,6 +346,26 @@ canvas {
   box-shadow: none;
 }
 
+/* H-09 — Help Desk conversation composer.
+   Same reason as H-06: a textarea matches :focus-visible on a plain mouse
+   click, and the H-05 red box around a chat input reads as an error state.
+   The composer shell paints focus instead — a stronger frame and a soft
+   shadow — so the field itself carries no indicator at all. */
+/* Type size is deliberately not set here: the global text-scale rule
+   (`[class*="text-[13.5px]"]` -> --text-text-size) already matches the
+   textarea, so the composer tracks the reader's chosen size like every other
+   line of the app. The unlayered `textarea { font: inherit }` above resets
+   line-height though, and a chat input needs looser leading than a form
+   field. */
+.hd-composer-textarea {
+  line-height: 1.4;
+}
+.hd-composer-textarea:focus,
+.hd-composer-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* H-07 — Text-only triggers (e.g. the truncated ticket subject).
    Same problem as H-06, but a 1px ink box around a run of text reads as a
    border, so the indicator here is a plain background tint added inline. */
@@ -2458,4 +2478,20 @@ html[data-lang="en"] .language-toggle-knob {
   background: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
   color: #ffffff !important;
+}
+
+/* ============================================================
+   Help Desk conversation — scrollbar hidden, scrolling kept
+   The message history still scrolls with wheel/touch/trackpad;
+   only the visible bar is removed (WhatsApp-style surface).
+   ============================================================ */
+.hd-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overflow-x: hidden;
+}
+.hd-scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
