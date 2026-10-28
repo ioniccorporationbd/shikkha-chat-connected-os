@@ -19,6 +19,7 @@ import type {
   HelpDeskUploadedFile,
   Ticket,
 } from "./types";
+import { reportClientError } from "@/lib/log/report-error";
 
 const TICKETS_URL = "/api/help-desk/tickets";
 const OPTIONS_URL = "/api/help-desk/options";
@@ -185,7 +186,35 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     language: currentLanguage(),
   });
 
+  reportNotification(data.notification);
+
   return normaliseTicket(data.ticket);
+}
+
+/**
+ * The ticket exists; the SMS/e-mail copy did not go out.
+ *
+ * That is a delivery problem, not a submit problem - the customer must not be
+ * told their ticket failed - so it is surfaced the way every other Help Desk
+ * failure is: `[client-error]` in the browser console (with the ERP's own
+ * reason) and a row in `/desk/system/error-log`.
+ */
+function reportNotification(notification: HelpDeskTicketPayload["notification"]): void {
+  if (!notification || notification.sent) return;
+
+  const detail = {
+    channel: notification.channel,
+    sent: notification.sent,
+    reason: notification.reason ?? null,
+    route: "/api/help-desk/tickets",
+  };
+
+  console.error("[help-desk] ticket saved but the customer notification failed", detail);
+  reportClientError({
+    scope: "help-desk:notify",
+    message: `Ticket created; ${notification.channel || "notification"} not delivered`,
+    detail,
+  });
 }
 
 /**

@@ -191,6 +191,17 @@ export interface HelpDeskTicketPayload {
   ticket: Ticket;
   verified?: boolean;
   duplicate?: boolean;
+  /**
+   * Outcome of the customer notification the ERP fires on create (SMS via the
+   * MiMSMS gateway when the customer picked "mobile", mail when "email").
+   * Absent on older backends. `sent: false` is reported to the console and the
+   * Error Log; it never blocks the ticket.
+   */
+  notification?: {
+    channel: string;
+    sent: boolean;
+    reason?: string | null;
+  };
 }
 
 /** Server payload of `POST /api/help-desk/upload`. */
