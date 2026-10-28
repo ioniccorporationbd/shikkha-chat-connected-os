@@ -410,15 +410,26 @@ export default function HelpDeskTicketThread({
   // even with realtime off. With a live socket this drops to a slow safety net
   // (the ping does the real work), which keeps request volume down.
   useEffect(() => {
-    const timer = window.setInterval(
-      () => {
-        if (document.visibilityState !== "visible" || statusBusy) return;
-        if (live) void refreshDelta();
-        else void load(true);
-      },
-      live ? LIVE_SAFETY_POLL_MS : POLL_INTERVAL_MS
-    );
-    return () => window.clearInterval(timer);
+    const tick = () => {
+      if (document.visibilityState !== "visible" || statusBusy) return;
+      if (live) void refreshDelta();
+      else void load(true);
+    };
+    const timer = window.setInterval(tick, live ? LIVE_SAFETY_POLL_MS : POLL_INTERVAL_MS);
+    // Coming back to the tab (or the window) is the moment a reader expects the
+    // thread to be current, so ask right away instead of waiting out the
+    // interval — this is what makes an employee's reply appear the instant the
+    // customer returns to the page.
+    const onFocus = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [live, load, refreshDelta, statusBusy]);
 
   const messages = payload?.messages ?? [];

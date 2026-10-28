@@ -280,14 +280,58 @@ export default function ConversationThread({
         if (known.has(event.id)) continue;
         entries.push({ kind: "event", key: `e-${event.id}`, at: event.at, label: event.label, dayLabel: null });
       }
-      // An event with a missing timestamp is put first (it is normally the
-      // ticket-created marker); messages missing one keep their server order.
-      const time = (row: ThreadRow) => {
-        const value = new Date(row.at).getTime();
-        if (!Number.isNaN(value)) return value;
-        return row.kind === "event" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
-      };
-      entries.sort((a, b) => time(a) - time(b) || (a.kind === "message" ? -1 : 1));
+    }
+
+    // Sequence is the contract: the thread always reads oldest -> newest, no
+    // matter what order the ERP payload, a delta poll or a page merge handed the
+    // rows over in. Two channels feed the list (Communication + Comment) and a
+    // merge only ever appends, so the order has to be established here rather
+    // than trusted from upstream. Backend timestamps are ISO in one timezone,
+    // which compares correctly as a plain string (the two channels may differ in
+    // fractional precision; a prefix still sorts before its longer form), so the
+    // sort is a string compare with the incoming position as a stable tie-break.
+    // A row with no timestamp keeps its place at the end — never on top.
+    const position = new Map(entries.map((entry, index) => [entry.key, index]));
+    const stamp = (row: ThreadRow) => (row.at ? String(row.at).replace(" ", "T") : "");
+    entries.sort((a, b) => {
+      const first = stamp(a);
+      const second = stamp(b);
+      if (first && !second) return -1;
+      if (!first && second) return 1;
+      if (first !== second) return first < second ? -1 : 1;
+      return (position.get(a.key) ?? 0) - (position.get(b.key) ?? 0);
+    });
+
+    // A reply is never drawn above the message it answers. If the ERP's own
+    // timestamps put the quote first (a reply written before a slow customer
+    // message landed, or two rows sharing one second), the reply is moved to sit
+    // directly after its parent. Threading wins over a same-second tie.
+    const slot = new Map(entries.map((entry, index) => [entry.key, index]));
+    const reindex = () => {
+      slot.clear();
+      entries.forEach((entry, index) => slot.set(entry.key, index));
+    };
+    for (let pass = 0; pass < 4; pass += 1) {
+      let moved = false;
+      for (let index = 0; index < entries.length; index += 1) {
+        const row = entries[index];
+        if (row.kind !== "message") continue;
+        const parentId = row.message.replyTo?.id;
+        if (!parentId) continue;
+        const parentKey = `m-${parentId}`;
+        const parentIndex = slot.get(parentKey);
+        if (parentIndex === undefined || parentIndex < index) continue;
+        // Detach first, then re-index, so the parent's position is read from
+        // the list the row is actually going into (removing the row shifts
+        // every entry above the parent down by one).
+        entries.splice(index, 1);
+        reindex();
+        entries.splice((slot.get(parentKey) ?? entries.length - 1) + 1, 0, row);
+        reindex();
+        moved = true;
+        break;
+      }
+      if (!moved) break;
     }
 
     const labels = entries.map((entry) => formatChatDay(entry.at, language));
