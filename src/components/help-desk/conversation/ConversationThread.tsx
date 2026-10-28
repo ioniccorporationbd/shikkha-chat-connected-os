@@ -4,16 +4,29 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { formatChatDay } from "@/lib/help-desk/format";
+import { formatBubbleTime, formatChatDay } from "@/lib/help-desk/format";
 import type { ConversationMessage } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
 
-/** A real ticket event (opened / status changed / resolved) shown as a chip. */
+/**
+ * One row of the ticket's audit trail that has no bubble of its own.
+ *
+ * A pure event (status moved) is a centred chip. A row that carries a body is a
+ * message in everything but name — the ticket's opening description, or a
+ * requirement the ERP filed as an event — so it is drawn as a bubble on its
+ * author's side instead of as a label, which is what keeps the chat and the
+ * timeline below it reading in the same order.
+ */
 export type ThreadSystemEvent = {
   id: string;
   at: string;
   label: string;
+  /** Present when the row is a bubble rather than a chip. */
+  body?: string;
+  authorName?: string;
+  /** Which side the bubble sits on. Absent = chip. */
+  side?: "mine" | "other";
 };
 
 type ThreadRow =
@@ -26,7 +39,16 @@ type ThreadRow =
       /** Same side, same day, only moments after the row above it. */
       grouped: boolean;
     }
-  | { kind: "event"; key: string; at: string; label: string; dayLabel: string | null };
+  | {
+      kind: "event";
+      key: string;
+      at: string;
+      label: string;
+      body?: string;
+      authorName?: string;
+      side?: "mine" | "other";
+      dayLabel: string | null;
+    };
 
 /** A run of one person's lines is collapsed only while they stay this close. */
 const GROUP_WINDOW_MS = 3 * 60 * 1000;
@@ -290,7 +312,16 @@ export default function ConversationThread({
       const known = new Set(messages.map((message) => message.id));
       for (const event of systemEvents) {
         if (known.has(event.id)) continue;
-        entries.push({ kind: "event", key: `e-${event.id}`, at: event.at, label: event.label, dayLabel: null });
+        entries.push({
+          kind: "event",
+          key: `e-${event.id}`,
+          at: event.at,
+          label: event.label,
+          body: event.body,
+          authorName: event.authorName,
+          side: event.side,
+          dayLabel: null,
+        });
       }
     }
 
@@ -491,11 +522,73 @@ export default function ConversationThread({
                   </div>
                 ) : null}
                 {row.kind === "event" ? (
-                  <div className="my-0.5 flex justify-center" data-system-event={row.key}>
-                    <span className="max-w-[88%] rounded-full border border-[color-mix(in_srgb,var(--color-primary)_13%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-2.5 py-1 text-center text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_64%,transparent)]">
-                      {row.label}
-                    </span>
-                  </div>
+                  row.body && row.body.trim() ? (
+                    /* A timeline row that is really a message — the opening
+                       description, a requirement — drawn as a bubble on its
+                       author's side so the chat and the audit trail below it
+                       read as one sequence instead of two lists. */
+                    <div
+                      className={[
+                        "flex w-full min-w-0",
+                        row.side === "mine" ? "justify-end" : "justify-start",
+                      ].join(" ")}
+                      data-timeline-event={row.key}
+                    >
+                      <div
+                        className={[
+                          "flex w-fit min-w-0 max-w-[min(32rem,85%)] flex-col gap-1",
+                          row.side === "mine" ? "items-end" : "items-start",
+                        ].join(" ")}
+                      >
+                        <div className="flex max-w-full items-center gap-1.5 px-1">
+                          <span
+                            className={[
+                              "h-[5px] w-[5px] flex-none rounded-full",
+                              row.side === "mine"
+                                ? "bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
+                                : "bg-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]",
+                            ].join(" ")}
+                            aria-hidden
+                          />
+                          <span className="truncate text-[12px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-primary)_86%,transparent)]">
+                            {row.authorName ||
+                              (row.side === "mine" ? copy.conversationYou : copy.conversationSupport)}
+                          </span>
+                          <span
+                            className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
+                            aria-hidden
+                          />
+                          <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                            {row.label}
+                          </span>
+                        </div>
+                        <div
+                          className={[
+                            "w-fit max-w-full select-text rounded-2xl px-3.5 py-2 text-[13.75px] leading-[1.55] text-[var(--color-primary)] shadow-[0_1px_2px_rgba(16,24,40,0.06)]",
+                            row.side === "mine"
+                              ? "rounded-tr-[6px] bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
+                              : "rounded-tl-[6px] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]",
+                          ].join(" ")}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{row.body}</p>
+                          <div className="mt-1 flex items-center justify-end gap-1">
+                            <time
+                              dateTime={row.at}
+                              className="flex-none text-[10px] font-medium tabular-nums tracking-[0.02em] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+                            >
+                              {formatBubbleTime(row.at, language)}
+                            </time>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="my-0.5 flex justify-center" data-system-event={row.key}>
+                      <span className="max-w-[88%] rounded-full border border-[color-mix(in_srgb,var(--color-primary)_13%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-2.5 py-1 text-center text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_64%,transparent)]">
+                        {row.label}
+                      </span>
+                    </div>
+                  )
                 ) : (
                   <MessageBubble
                     message={row.message}

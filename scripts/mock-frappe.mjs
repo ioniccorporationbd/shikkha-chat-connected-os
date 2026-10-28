@@ -1554,12 +1554,17 @@ function hdAppend(ticket, author, body, options = {}) {
   const message = {
     id: `HDMSG-${String(hdMessageSeq).padStart(5, "0")}`,
     author,
-    authorName: author === "support" ? "Tamim Hasan" : "Nusrat Jahan",
+    authorName:
+      typeof options.authorName === "string" && options.authorName
+        ? options.authorName
+        : author === "support"
+          ? thread.agent || "Tamim Hasan"
+          : thread.customer || "Nusrat Jahan",
     body,
     // Dev-only: a harness may backdate a row to reproduce a real thread where
     // the two channels' timestamps land out of order (or share one second).
     createdAt: typeof options.at === "string" && options.at ? options.at : new Date().toISOString(),
-    kind: "message",
+    kind: typeof options.kind === "string" && options.kind ? options.kind : "message",
     channel: author === "support" ? "message" : "comment",
     replyTo: options.replyTo && typeof options.replyTo === "object" ? options.replyTo : null,
     attachments: [],
@@ -1595,7 +1600,7 @@ function hdHeader(thread) {
     createdAt: thread.submittedAt,
     updatedAt: last?.createdAt ?? thread.submittedAt,
     resolvedAt: thread.resolvedAt ?? undefined,
-    assignedAgent: "Tamim Hasan",
+    assignedAgent: thread.agent || "Tamim Hasan",
     department: "Support",
   };
 }
@@ -1611,7 +1616,7 @@ function hdSummary(thread, support) {
     priority: thread.priority,
     category: thread.category,
     customer: thread.customer,
-    assignedAgent: "Tamim Hasan",
+    assignedAgent: thread.agent || "Tamim Hasan",
     resolvedAt: thread.resolvedAt ?? undefined,
     counterpart: thread.customerEmail,
     lastMessage: last?.body ?? "",
@@ -1659,21 +1664,36 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
 
   const latest = messages.length ? hdKey(messages[messages.length - 1]) : null;
 
+  // Mirror `_timeline`: the opening description, then one row per message, with
+  // requirement/resolution labelled and the description's own Communication
+  // promoted to `created` instead of listed twice.
+  const timeline = (thread.timeline ?? []).map((row) => ({ ...row }));
+  for (const message of all) {
+    timeline.push({
+      id: message.id,
+      type:
+        message.kind === "requirement"
+          ? "requirement"
+          : message.kind === "resolution"
+            ? "resolution"
+            : message.id === thread.duplicateId
+              ? "created"
+              : "message",
+      at: message.createdAt,
+      author: message.author,
+      // Matches the ERP: a customer's own Communication carries no name, so the
+      // timeline shows "আপনি" for it.
+      authorName: message.author === "support" ? message.authorName : "",
+      text: message.body,
+      attachments: (message.attachments ?? []).length,
+    });
+  }
+
   return {
     ticket: hdHeader(thread),
     messages,
     requirements: [],
-    timeline: [
-      {
-        id: "created",
-        type: "created",
-        at: thread.submittedAt,
-        author: "user",
-        authorName: thread.customer,
-        text: thread.subject,
-        attachments: 0,
-      },
-    ],
+    timeline,
     unread: thread.messages.filter((message) => message.author !== (support ? "support" : "user")).length,
     statusCategory: thread.statusCategory,
     isSupport: support,
@@ -1712,10 +1732,77 @@ hdThreads.set(HD_TICKET, {
   messages: [],
 });
 hdAppend(HD_TICKET, "user", "আমার অ্যাকাউন্টে লগইন করা যাচ্ছে না, পাসওয়ার্ড রিসেটের ইমেইলও আসছে না।");
+// The seeded thread opens with its own event row, the way the ERP returns it.
+hdThreads.get(HD_TICKET).timeline = [
+  {
+    id: "created",
+    type: "created",
+    at: hdThreads.get(HD_TICKET).submittedAt,
+    author: "user",
+    authorName: hdThreads.get(HD_TICKET).customer,
+    text: hdThreads.get(HD_TICKET).subject,
+    attachments: 0,
+  },
+];
+
+// --- Ticket 0472: the customer's real thread ---------------------------------
+// Its chat must read exactly like the audit trail below it: the opening event,
+// the employee's row, the extra requirement and then the customer's messages,
+// in that order, with the customer on the right and the employee on the left
+// (mirrored on the employee's dashboard). Timestamps are the real ones
+// (28 Oct 2026, 05:12–05:49 PM Asia/Dhaka).
+const HD_TIMELINE_TICKET = "0472";
+const HD_0472_CUSTOMER = "Tamim Hasan";
+const HD_0472_AGENT = "MD Shahzalal Amin Surker";
+hdThreads.set(HD_TIMELINE_TICKET, {
+  name: HD_TIMELINE_TICKET,
+  subject: "xfg lhp[dffffffffffffffffffffffffffff ver",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "incident",
+  customer: HD_0472_CUSTOMER,
+  customerEmail: "client@example.com",
+  agent: HD_0472_AGENT,
+  submittedAt: "2026-10-28T11:12:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: "2026-10-28T11:12:00.000Z",
+      author: "user",
+      authorName: HD_0472_CUSTOMER,
+      text: "xfg lhp[dffffffffffffffffffffffffffff ver\nCategory: Incident\nPreferred contact: email",
+      attachments: 0,
+    },
+  ],
+});
+// The ERP promotes the description's own Communication to `created` — here the
+// employee's very first reply is that row, exactly as the live ticket shows it.
+const hd0472Reply = hdAppend(HD_TIMELINE_TICKET, "support", "qayayayayayay4ty4", {
+  at: "2026-10-28T11:14:00.000Z",
+  authorName: HD_0472_AGENT,
+});
+if (hd0472Reply) hdThreads.get(HD_TIMELINE_TICKET).duplicateId = hd0472Reply.id;
+hdAppend(HD_TIMELINE_TICKET, "user", "5ytertyasertaqa", {
+  at: "2026-10-28T11:20:00.000Z",
+  kind: "requirement",
+});
+hdAppend(HD_TIMELINE_TICKET, "user", "xdftudxztuy", { at: "2026-10-28T11:45:00.000Z" });
+hdAppend(HD_TIMELINE_TICKET, "user", "wwwwwwtwq4etw4e", { at: "2026-10-28T11:46:00.000Z" });
+hdAppend(HD_TIMELINE_TICKET, "user", "aopriwhtopwtoprtopih", { at: "2026-10-28T11:46:40.000Z" });
+hdAppend(HD_TIMELINE_TICKET, "user", "yyyyyyyyyy", { at: "2026-10-28T11:48:00.000Z" });
+hdAppend(HD_TIMELINE_TICKET, "user", "masum,456", { at: "2026-10-28T11:49:00.000Z" });
 
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
-const HD_SEED_MESSAGES = hdThreads.get(HD_TICKET).messages.map((message) => ({ ...message }));
+/** Every seeded thread's pristine rows, keyed by ticket name. */
+const HD_SEED_ALL = new Map(
+  [...hdThreads.values()].map((thread) => [thread.name, thread.messages.map((message) => ({ ...message }))]),
+);
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
@@ -2495,11 +2582,22 @@ const server = createServer(async (request, response) => {
   // control method) and then asserts the OTHER panel shows it without a reload.
   // Nothing here touches the real ERP; shapes follow src/lib/help-desk/types.ts.
   if (method === "mock.hd.reset") {
-    const thread = hdThreads.get(HD_TICKET);
-    thread.messages = HD_SEED_MESSAGES.map((message) => ({ ...message }));
-    hdMessageSeq = thread.messages.length;
-    console.log(`[mock-frappe] HD RESET ${HD_TICKET} (${thread.messages.length} seeded)`);
-    ok(response, { ok: true, messages: thread.messages.length });
+    let restored = 0;
+    for (const [name, seeded] of HD_SEED_ALL) {
+      const thread = hdThreads.get(name);
+      if (!thread) continue;
+      thread.messages = seeded.map((message) => ({ ...message }));
+      restored += thread.messages.length;
+    }
+    // Keep ids unique across every thread, not just the first one restored.
+    hdMessageSeq = Math.max(
+      hdMessageSeq,
+      ...hdThreads.values().flatMap((thread) =>
+        thread.messages.map((message) => Number(String(message.id).replace(/\D+/g, "")) || 0),
+      ),
+    );
+    console.log(`[mock-frappe] HD RESET ${HD_SEED_ALL.size} threads (${restored} seeded)`);
+    ok(response, { ok: true, messages: restored, threads: HD_SEED_ALL.size });
     return;
   }
 

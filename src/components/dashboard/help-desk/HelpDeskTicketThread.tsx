@@ -23,7 +23,7 @@ import {
   setMessageReaction,
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
-import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
+import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -33,6 +33,7 @@ import type {
   ConversationMessage,
   ConversationPayload,
   ConversationReaction,
+  ConversationTimelineEvent,
 } from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
@@ -768,21 +769,61 @@ export default function HelpDeskTicketThread({
 
   const pinnedMessage = pinnedId ? messages.find((message) => message.id === pinnedId) ?? null : null;
 
-  // The immersive route hides the timeline card, so it inherits the verified
-  // status/creation events as chips. Message-like events are skipped: they are
-  // already bubbles in this very thread.
-  const systemEvents: ThreadSystemEvent[] = chatOnly
-    ? (payload!.timeline ?? [])
-        .filter((event) => event.type === "created" || event.type === "status")
-        .map((event) => ({
+  // The chat and the audit trail below it must read as ONE sequence: every
+  // timeline row that is not already a bubble in this thread is folded in here,
+  // in its own place by timestamp. Status moves stay centred chips; a row that
+  // carries text (the opening description, a requirement the ERP filed as an
+  // event) becomes a bubble on its author's side — the customer's on the right
+  // for the customer, the employee's on the left, and mirrored on the employee's
+  // own dashboard. Rows that ARE messages (same Communication/Comment id) are
+  // left out: the thread already draws them, in the same order.
+  const timeline: ConversationTimelineEvent[] = payload!.timeline ?? [];
+  const messageIds = new Set(messages.map((message) => message.id));
+  const timelineLabels: Record<string, string> = {
+    created: copy.timelineCreated,
+    requirement: copy.timelineRequirement,
+    resolution: copy.timelineResolution,
+    message: isSupport ? copy.timelineReplyCustomer : copy.timelineMessage,
+  };
+  const statusWord = (value: string | undefined) => {
+    const key = String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return (
+      conversationStatusLabel[key as keyof typeof conversationStatusLabel]?.[language === "en" ? "en" : "bn"] ??
+      (value || "—")
+    );
+  };
+
+  const systemEvents: ThreadSystemEvent[] = timeline
+    .filter((event) => !messageIds.has(event.id))
+    // The immersive route pages its thread, so a full timeline would double up
+    // with rows it has not loaded yet: it keeps only the creation marker.
+    .filter((event) => (chatOnly ? event.type === "created" || event.type === "status" : true))
+    .map((event) => {
+      if (event.type === "status") {
+        const move = event.from || event.to ? `${statusWord(event.from)} → ${statusWord(event.to)}` : "";
+        return {
           id: event.id,
           at: event.at,
-          // A creation event is a marker, not a paragraph: the description is
-          // already the first bubble.
-          label: event.type === "created" ? copy.chatEventOpened : event.text,
-        }))
-        .filter((event) => Boolean(event.label))
-    : [];
+          label: move ? `${copy.timelineStatus}: ${move}` : copy.timelineStatus,
+        };
+      }
+      // Whose side: an incoming row ("user") is the customer's. The reader's own
+      // side is therefore the customer's when they are not support.
+      const mine = event.author === "user" ? !isSupport : isSupport;
+      return {
+        id: event.id,
+        at: event.at,
+        label: timelineLabels[event.type] ?? copy.timelineMessage,
+        body: event.text,
+        authorName: event.authorName,
+        side: mine ? ("mine" as const) : ("other" as const),
+      };
+    })
+    .filter((event) => Boolean(event.label) || Boolean(event.body));
 
   return (
     <div className="flex flex-col gap-4">
