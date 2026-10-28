@@ -14,6 +14,7 @@
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
   ConversationListPayload,
+  ConversationReaction,
   HelpDeskBadgesPayload,
   ConversationPayload,
   HelpDeskUploadedFile,
@@ -167,6 +168,24 @@ export async function setTicketStatus(
       language: currentLanguage(),
     }
   );
+}
+
+/**
+ * Toggle one emoji reaction on a message (`"<comm>"` or `"comment:<name>"`).
+ *
+ * The ERP stores the reaction on the message row itself and returns the fresh
+ * group list, so the caller can replace its local copy with the server truth.
+ */
+export async function setMessageReaction(
+  ticketId: string,
+  messageId: string,
+  emoji: string
+): Promise<ConversationReaction[]> {
+  const data = await postJson<{ message: string; reactions: ConversationReaction[] }>(
+    `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}/reactions`,
+    { message: messageId, emoji, language: currentLanguage() }
+  );
+  return data.reactions ?? [];
 }
 
 /** Record that this user has read the thread (idempotent). */

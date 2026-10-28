@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FiBookmark, FiCheck, FiCheckCircle, FiFileText } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
@@ -9,6 +9,7 @@ import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage } from "@/lib/help-desk/types";
 
 import ImageLightbox from "./ImageLightbox";
+import MessageActionMenu from "./MessageActionMenu";
 
 const IMAGE_EXT = /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i;
 const AUDIO_EXT = /\.(webm|mp3|m4a|wav|ogg|oga|aac|mp4)$/i;
@@ -17,12 +18,39 @@ const isImageFile = (mime: string, name: string) => (mime || "").startsWith("ima
 const isAudioFile = (mime: string, name: string) => (mime || "").startsWith("audio/") || AUDIO_EXT.test(name || "");
 
 /**
- * One message in a ticket conversation — read-only.
+ * Copy plain text, with the old `execCommand` fallback for browsers that deny
+ * the async clipboard (a non-secure origin, an older WebView).
+ */
+async function writeClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const node = document.createElement("textarea");
+      node.value = text;
+      node.style.position = "fixed";
+      node.style.opacity = "0";
+      document.body.appendChild(node);
+      node.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(node);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * One message in a ticket conversation.
  *
- * The thread is a record of what was said: nothing here reacts to a left click.
- * There is no action menu, no reply button, no highlight and no context menu;
- * the only things that stay clickable are the attachment affordances (open an
- * image, play a voice note, download a file) and selecting the text itself.
+ * The bubble itself is a record of what was said — clicking the text does
+ * nothing but select it. A small chevron on the header line opens the message
+ * menu (Reply / React / Copy): hidden until the row is hovered on desktop,
+ * always visible on touch, and also opened by long-press / right-click on the
+ * bubble. Emoji reactions collect in chips under the bubble; tapping a chip
+ * toggles your own reaction with exactly that emoji.
  *
  * Layout: a header line carries the sender's name and the message time
  * (Asia/Dhaka, straight from the ERP timestamp), then the bubble with the
@@ -34,12 +62,15 @@ export default function MessageBubble({
   copy,
   language,
   pinned = false,
+  onQuote,
+  onReact,
+  onCopied,
+  onCopyFailed,
 }: {
   message: ConversationMessage;
   copy: ConversationCopy;
   language: string;
-  /** Kept for call-site compatibility; the thread no longer offers actions. */
-  onQuote?: (message: ConversationMessage) => void;
+  /** Kept for call-site compatibility; the bubble no longer acts on a click. */
   onJumpTo?: (id: string) => void;
   onPin?: (message: ConversationMessage) => void;
   canPin?: boolean;
@@ -50,26 +81,64 @@ export default function MessageBubble({
   onDelete?: (message: ConversationMessage) => void;
   onForward?: (message: ConversationMessage) => void;
   onSelect?: (message: ConversationMessage) => void;
-  onCopied?: () => void;
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (message: ConversationMessage) => void;
+  /** Reply to this message (opens the composer's quote banner). */
+  onQuote?: (message: ConversationMessage) => void;
+  /** Toggle one emoji reaction on this message (the ERP persists it). */
+  onReact?: (message: ConversationMessage, emoji: string) => void;
+  /** Copied feedback (a toast on the page). */
+  onCopied?: () => void;
+  onCopyFailed?: () => void;
 }) {
   const mine = message.isMine;
   const isRequirement = message.kind === "requirement";
   const isResolution = message.kind === "resolution";
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<number | null>(null);
 
   const isSupport = isResolution || message.author === "support";
   const authorLabel = isResolution
     ? copy.conversationSupport
     : message.authorName || (message.author === "support" ? copy.conversationSupport : copy.conversationCustomer);
   const timeLabel = formatBubbleTime(message.createdAt, language);
+  const reactions = message.reactions ?? [];
+  const canAct = Boolean(onQuote || onReact || onCopied);
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+    },
+    []
+  );
+
+  const copyMessage = useCallback(async () => {
+    // Only the message text: no author, no timestamp, no formatting.
+    const ok = await writeClipboard(message.body ?? "");
+    if (!ok) {
+      onCopyFailed?.();
+      return;
+    }
+    setCopied(true);
+    if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 1600);
+    onCopied?.();
+  }, [message.body, onCopied, onCopyFailed]);
+
+  const toggleReaction = useCallback(
+    (emoji: string) => {
+      onReact?.(message, emoji);
+    },
+    [message, onReact]
+  );
 
   return (
     <div
       id={`msg-${message.id}`}
-      className={["flex w-full min-w-0 scroll-mt-4", mine ? "justify-end" : "justify-start"].join(" ")}
+      className={["group/msg flex w-full min-w-0 scroll-mt-4", mine ? "justify-end" : "justify-start"].join(" ")}
     >
       <div
         className={[
@@ -81,10 +150,9 @@ export default function MessageBubble({
         ].join(" ")}
       >
         {/* Sender + time: the whole stamp sits above the bubble, mirrored on the
-            right for my own messages, so name, text and time read as one block. */}
-        <div
-          className="flex max-w-full items-center gap-1.5 px-1"
-        >
+            right for my own messages, so name, text and time read as one block.
+            The chevron that opens the message menu rides at the end of it. */}
+        <div className="flex max-w-full items-center gap-1.5 px-1">
           <span
             className={[
               "h-[5px] w-[5px] flex-none rounded-full",
@@ -136,9 +204,33 @@ export default function MessageBubble({
               />
             )
           ) : null}
+          {canAct ? (
+            <MessageActionMenu
+              copy={copy}
+              mine={mine}
+              open={menuOpen}
+              onOpenChange={setMenuOpen}
+              onReply={onQuote ? () => onQuote(message) : undefined}
+              onReact={onReact ? toggleReaction : undefined}
+              onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
+            />
+          ) : null}
+          {copied ? (
+            <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
+              {copy.copied}
+            </span>
+          ) : null}
         </div>
 
         <div
+          onContextMenu={(event) => {
+            // Long-press on touch / right-click on the bubble opens the menu
+            // when the message allows actions; text selection keeps working
+            // otherwise.
+            if (!canAct) return;
+            event.preventDefault();
+            setMenuOpen(true);
+          }}
           className={[
             // Read-only surface: no cursor-pointer, no hover, no focus ring —
             // it is text in a bubble, not a button. `select-text` keeps the copy
@@ -187,7 +279,10 @@ export default function MessageBubble({
                 const image = isImageFile(file.fileType, file.fileName);
                 const audio = isAudioFile(file.fileType, file.fileName);
                 const key = `${file.url || file.fileName}-${index}`;
-                if (image) {
+                // No signed URL means the file could not be resolved for this
+                // viewer; fall through to the plain file row rather than an
+                // <img> with an empty src (the browser would re-fetch the page).
+                if (image && href) {
                   return (
                     <li key={key}>
                       <button
@@ -247,6 +342,31 @@ export default function MessageBubble({
             </ul>
           ) : null}
         </div>
+
+        {reactions.length > 0 ? (
+          <div className="flex max-w-full flex-wrap items-center gap-1 px-0.5">
+            {reactions.map((reaction) => (
+              <button
+                key={reaction.emoji}
+                type="button"
+                onClick={() => (onReact ? toggleReaction(reaction.emoji) : undefined)}
+                disabled={!onReact}
+                aria-label={`${reaction.emoji} ${reaction.count}`}
+                aria-pressed={reaction.mine}
+                className={[
+                  "inline-flex items-center gap-1 rounded-full border px-1.5 py-[1px] text-[11px] leading-[1.5] transition",
+                  reaction.mine
+                    ? "border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action)]"
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_90%,transparent)] text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]",
+                  onReact ? "hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]" : "cursor-default",
+                ].join(" ")}
+              >
+                <span aria-hidden>{reaction.emoji}</span>
+                <span className="font-semibold tabular-nums">{reaction.count}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {lightbox ? (

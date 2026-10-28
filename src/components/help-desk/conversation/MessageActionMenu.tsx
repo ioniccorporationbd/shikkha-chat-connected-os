@@ -1,182 +1,210 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import {
-  FiBookmark,
-  FiCheckSquare,
-  FiCopy,
-  FiCornerUpLeft,
-  FiCornerUpRight,
-  FiTrash2,
-} from "react-icons/fi";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FiChevronDown, FiCopy, FiCornerUpLeft, FiSmile } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 
-export type MessageMenuAction = "reply" | "copy" | "pin" | "forward" | "select" | "delete";
+/**
+ * The six reactions the Help Desk allows — deliberately small, the same set the
+ * ERP endpoint accepts. Anything else is rejected server-side.
+ */
+export const REACTION_EMOJI = ["👍", "❤️", "😂", "😮", "😢", "🙏"] as const;
 
-type Item = {
-  key: MessageMenuAction;
-  label: string;
-  icon: React.ReactNode;
-  danger?: boolean;
-  disabled?: boolean;
-};
+const MENU_WIDTH = 192;
+const MENU_HEIGHT = 136;
+const REACT_EXTRA_HEIGHT = 44;
 
 /**
- * WhatsApp-style message menu: a compact popover anchored where the reader
- * clicked. Only the actions the backend really supports are rendered, so no
- * dead buttons ever reach production.
+ * The small chevron a message carries plus its popover: Reply, React, Copy.
+ *
+ * Nothing here decides whether an action is allowed — the caller only renders
+ * the parts the ERP already lets this user do. The popover is drawn `fixed` and
+ * clamped to the viewport so the thread's scroll container can never cut it,
+ * and it closes on an outside press, Escape, scroll or resize; focus returns to
+ * the chevron on close so keyboard users never lose their place.
  */
 export default function MessageActionMenu({
   copy,
-  x,
-  y,
-  pinned = false,
-  canReply = false,
-  canCopy = false,
-  canPin = false,
-  canForward = false,
-  canDelete = false,
-  onAction,
-  onClose,
+  mine,
+  open,
+  onOpenChange,
+  onReply,
+  onReact,
+  onCopy,
 }: {
   copy: ConversationCopy;
-  x: number;
-  y: number;
-  pinned?: boolean;
-  canReply?: boolean;
-  canCopy?: boolean;
-  canPin?: boolean;
-  canForward?: boolean;
-  canDelete?: boolean;
-  onAction: (action: MessageMenuAction) => void;
-  onClose: () => void;
+  /** My own message: mirror the popover to the right edge. */
+  mine: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onReply?: () => void;
+  onReact?: (emoji: string) => void;
+  onCopy?: () => void;
 }) {
-  const panel = useRef<HTMLDivElement | null>(null);
-  const [pos, setPos] = useState({ left: x, top: y, ready: false });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const [reactOpen, setReactOpen] = useState(false);
 
-  const items: Item[] = [
-    ...(canReply
-      ? [{ key: "reply" as const, label: copy.replyAction, icon: <FiCornerUpLeft size={14} aria-hidden /> }]
-      : []),
-    ...(canCopy
-      ? [{ key: "copy" as const, label: copy.copyAction, icon: <FiCopy size={14} aria-hidden /> }]
-      : []),
-    ...(canPin
-      ? [
-          {
-            key: "pin" as const,
-            label: pinned ? copy.unpinAction : copy.pinAction,
-            icon: <FiBookmark size={14} aria-hidden className={pinned ? "fill-current" : undefined} />,
-          },
-        ]
-      : []),
-    ...(canForward
-      ? [
-          {
-            key: "forward" as const,
-            label: copy.forwardAction,
-            icon: <FiCornerUpRight size={14} aria-hidden />,
-          },
-        ]
-      : []),
-    ...(canReply ? [{ key: "select" as const, label: copy.selectAction, icon: <FiCheckSquare size={14} aria-hidden /> }] : []),
-    ...(canDelete
-      ? [{ key: "delete" as const, label: copy.deleteAction, icon: <FiTrash2 size={14} aria-hidden />, danger: true }]
-      : []),
-  ];
+  const close = useCallback(() => {
+    onOpenChange(false);
+    setReactOpen(false);
+    setPosition(null);
+  }, [onOpenChange]);
 
-  // Keep the panel inside the viewport: flip left/up when the click is near an
-  // edge, and never let it cover the whole screen.
+  // Measured on every open/resize: the popover is viewport-fixed, so the
+  // trigger's live box decides where it goes — above the chevron when the space
+  // below is short, and always inside the horizontal viewport.
+  const measure = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const height = MENU_HEIGHT + (reactOpen ? REACT_EXTRA_HEIGHT : 0);
+    let left = mine ? rect.right - MENU_WIDTH : rect.left;
+    left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth - MENU_WIDTH - 8));
+    let top = rect.bottom + 6;
+    if (top + height > window.innerHeight - 8) top = Math.max(8, rect.top - height - 6);
+    setPosition({ top, left });
+  }, [mine, reactOpen]);
+
   useLayoutEffect(() => {
-    const node = panel.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    const margin = 8;
-    let left = x;
-    let top = y;
-    if (left + rect.width + margin > window.innerWidth) left = window.innerWidth - rect.width - margin;
-    if (left < margin) left = margin;
-    if (top + rect.height + margin > window.innerHeight) top = y - rect.height;
-    if (top < margin) top = margin;
-    setPos({ left, top, ready: true });
-  }, [x, y]);
+    if (!open) return;
+    measure();
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open, measure]);
 
+  // Outside press, Escape, scroll. The scroll listener is capture-phase so a
+  // scroll of the thread (not just the window) also closes a stale popover.
   useEffect(() => {
-    const onPointer = (event: MouseEvent | TouchEvent) => {
-      const node = panel.current;
-      if (node && event.target instanceof Node && node.contains(event.target)) return;
-      onClose();
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (menuRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      close();
     };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopPropagation();
-        onClose();
-        return;
-      }
-      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-      const buttons = panel.current ? [...panel.current.querySelectorAll<HTMLButtonElement>("button")] : [];
-      if (!buttons.length) return;
-      event.preventDefault();
-      const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-      const next =
-        event.key === "ArrowDown"
-          ? buttons[(index + 1) % buttons.length]
-          : buttons[(index - 1 + buttons.length) % buttons.length];
-      next?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      close();
+      triggerRef.current?.focus();
     };
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("touchstart", onPointer, { passive: true });
-    document.addEventListener("keydown", onKey);
+    const onScroll = () => close();
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("scroll", onScroll, true);
     return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("touchstart", onPointer);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("scroll", onScroll, true);
     };
-  }, [onClose]);
+  }, [open, close]);
 
+  // Keyboard focus moves into the popover, so the items are reachable without a
+  // mouse the way a real menu behaves.
   useEffect(() => {
-    const first = panel.current?.querySelector<HTMLButtonElement>("button");
-    first?.focus();
-  }, []);
+    if (!open) return;
+    const timer = window.setTimeout(() => {
+      menuRef.current?.querySelector<HTMLButtonElement>("[data-menu-item]")?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
-  if (typeof document === "undefined") return null;
+  const pick = (action?: () => void) => {
+    if (action) action();
+    close();
+  };
 
-  return createPortal(
-    <div
-      ref={panel}
-      role="menu"
-      aria-label={copy.menuAria}
-      style={{ left: pos.left, top: pos.top }}
-      className={[
-        "fixed z-[80] min-w-[11.5rem] overflow-hidden rounded-xl bg-[var(--color-white)] py-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] ring-1 ring-[rgba(15,23,42,0.06)]",
-        pos.ready ? "opacity-100" : "opacity-0",
-      ].join(" ")}
-    >
-      {items.map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          role="menuitem"
-          onClick={() => {
-            onAction(item.key);
-            onClose();
-          }}
-          className={[
-            "flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] font-semibold transition focus-visible:outline-none focus-visible:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]",
-            item.danger
-              ? "text-[var(--color-action)] hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))]"
-              : "text-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]",
-          ].join(" ")}
+  const itemClass =
+    "flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] focus-visible:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] focus-visible:outline-none";
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => onOpenChange(!open)}
+        onContextMenu={(event) => {
+          // Long-press / right-click opens the menu instead of a browser menu.
+          event.preventDefault();
+          onOpenChange(true);
+        }}
+        aria-label={copy.menuAria}
+        title={copy.menuAria}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={[
+          "grid h-6 w-6 flex-none place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] transition",
+          "opacity-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] group-hover/msg:opacity-100",
+          // Touch screens have no hover: the chevron stays visible there.
+          "max-sm:opacity-100",
+          open
+            ? "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[var(--color-primary)] opacity-100"
+            : "hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] hover:text-[var(--color-primary)]",
+        ].join(" ")}
+      >
+        <FiChevronDown size={14} aria-hidden />
+      </button>
+
+      {open && position ? (
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label={copy.menuAria}
+          style={{ top: position.top, left: position.left, width: MENU_WIDTH }}
+          className="fixed z-[70] rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-1 shadow-[0_18px_40px_-22px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
         >
-          <span className={item.danger ? "text-[var(--color-action)]" : "text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"}>
-            {item.icon}
-          </span>
-          {item.label}
-        </button>
-      ))}
-    </div>,
-    document.body,
+          {onReply ? (
+            <button type="button" role="menuitem" data-menu-item onClick={() => pick(onReply)} className={itemClass}>
+              <FiCornerUpLeft size={14} className="flex-none opacity-70" aria-hidden />
+              {copy.replyAction}
+            </button>
+          ) : null}
+          {onReact ? (
+            <button
+              type="button"
+              role="menuitem"
+              data-menu-item
+              aria-expanded={reactOpen}
+              onClick={() => setReactOpen((value) => !value)}
+              className={itemClass}
+            >
+              <FiSmile size={14} className="flex-none opacity-70" aria-hidden />
+              {copy.reactAction}
+            </button>
+          ) : null}
+          {onCopy ? (
+            <button type="button" role="menuitem" data-menu-item onClick={() => pick(onCopy)} className={itemClass}>
+              <FiCopy size={14} className="flex-none opacity-70" aria-hidden />
+              {copy.copyAction}
+            </button>
+          ) : null}
+
+          {onReact && reactOpen ? (
+            <div
+              role="group"
+              aria-label={copy.reactionTitle}
+              className="mt-1 flex items-center justify-between gap-0.5 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-1 pt-1.5"
+            >
+              {REACTION_EMOJI.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => pick(() => onReact(emoji))}
+                  aria-label={`${copy.reactionTitle} ${emoji}`}
+                  className="grid h-7 w-7 flex-none place-items-center rounded-lg text-[15px] leading-none transition hover:scale-110 hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </>
   );
 }

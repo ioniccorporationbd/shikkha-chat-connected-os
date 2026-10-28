@@ -181,6 +181,16 @@ export interface ConversationCopy {
   copyEmpty: string;
   copyAction: string;
   copied: string;
+  /** Per-message action menu (React item) and the reaction sheet. */
+  reactAction: string;
+  reactionTitle: string;
+  reactionFailed: string;
+  copyFailed: string;
+  /** Attachment card status + the client-side validation messages. */
+  attachmentReady: string;
+  attachmentTooLarge: string;
+  attachmentWrongType: string;
+  attachmentTooMany: string;
   imageOpen: string;
   imageClose: string;
   imageDownload: string;
@@ -394,6 +404,14 @@ const bn: ConversationCopy = {
   copyEmpty: "এই বার্তায় কপি করার মতো লেখা নেই।",
   copyAction: "কপি",
   copied: "কপি হয়েছে",
+  reactAction: "রিঅ্যাক্ট",
+  reactionTitle: "রিঅ্যাকশন",
+  copyFailed: "কপি করা যায়নি",
+  reactionFailed: "রিঅ্যাক্ট করা যায়নি",
+  attachmentReady: "প্রস্তুত",
+  attachmentTooLarge: "প্রতিটি ফাইল সর্বোচ্চ ৫ MB হতে পারবে।",
+  attachmentWrongType: "এই ধরনের ফাইল সংযুক্ত করা যায় না।",
+  attachmentTooMany: "একসঙ্গে সর্বোচ্চ ৫টি ফাইল সংযুক্ত করা যাবে।",
   imageOpen: "ছবিটি বড় করে দেখুন",
   imageClose: "বন্ধ করুন",
   imageDownload: "ডাউনলোড",
@@ -603,6 +621,14 @@ const en: ConversationCopy = {
   copyEmpty: "This message has no text to copy.",
   copyAction: "Copy",
   copied: "Copied",
+  reactAction: "React",
+  reactionTitle: "Reaction",
+  copyFailed: "Could not copy",
+  reactionFailed: "Could not react",
+  attachmentReady: "Ready",
+  attachmentTooLarge: "Each file can be at most 5 MB.",
+  attachmentWrongType: "That file type cannot be attached.",
+  attachmentTooMany: "Attach at most 5 files at once.",
   imageOpen: "Open image",
   imageClose: "Close",
   imageDownload: "Download",

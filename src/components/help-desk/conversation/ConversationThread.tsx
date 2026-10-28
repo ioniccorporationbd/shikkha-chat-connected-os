@@ -52,6 +52,8 @@ export default function ConversationThread({
   onForward,
   canForward = false,
   onCopied,
+  onReact,
+  onCopyFailed,
 }: {
   copy: ConversationCopy;
   language: string;
@@ -96,6 +98,10 @@ export default function ConversationThread({
   canForward?: boolean;
   /** Confirmation toast after copying. */
   onCopied?: () => void;
+  /** Toggle one emoji reaction on a message (persisted by the ERP). */
+  onReact?: (message: ConversationMessage, emoji: string) => void;
+  /** The clipboard refused the write. */
+  onCopyFailed?: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -436,6 +442,8 @@ export default function ConversationThread({
                     onForward={onForward}
                     onSelect={enterSelectMode}
                     onCopied={onCopied}
+                    onCopyFailed={onCopyFailed}
+                    onReact={onReact}
                     selectMode={selectMode}
                     selected={selected.includes(row.message.id)}
                     onToggleSelect={toggleSelected}

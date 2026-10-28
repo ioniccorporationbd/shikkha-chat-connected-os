@@ -20,6 +20,7 @@ import {
   getConversation,
   markConversationRead,
   sendMessage,
+  setMessageReaction,
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor } from "@/lib/help-desk/conversation-copy";
@@ -27,7 +28,11 @@ import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
 import { toast } from "@/lib/ui/toast";
-import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
+import type {
+  ConversationMessage,
+  ConversationPayload,
+  ConversationReaction,
+} from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
@@ -44,6 +49,34 @@ const POLL_INTERVAL_MS = 15_000;
  * (and clear the cookie), so this is the one failure the composer must report
  * as "sign in again" instead of a retryable send error.
  */
+/**
+ * Local prediction of what the reaction chips become, so a tap answers at once.
+ * One reaction per person per message: my old emoji is dropped, the tapped one
+ * is added (or removed when it was already mine). The ERP's own list replaces
+ * this the moment the POST answers.
+ */
+function optimisticReactions(
+  current: ConversationReaction[],
+  emoji: string
+): ConversationReaction[] {
+  const hadMine = current.some((reaction) => reaction.emoji === emoji && reaction.mine);
+  const next = current.map((reaction) => ({
+    ...reaction,
+    count: reaction.mine ? Math.max(0, reaction.count - 1) : reaction.count,
+    mine: false,
+  }));
+  if (!hadMine) {
+    const target = next.find((reaction) => reaction.emoji === emoji);
+    if (target) {
+      target.count += 1;
+      target.mine = true;
+    } else {
+      next.push({ emoji, count: 1, mine: true });
+    }
+  }
+  return next.filter((reaction) => reaction.count > 0);
+}
+
 function isAuthFailure(error: unknown): boolean {
   const err = error as { code?: string; status?: number } | null;
   return err?.code === "not_authenticated" || err?.status === 401;
@@ -334,8 +367,11 @@ export default function HelpDeskTicketThread({
   // when the socket is unavailable, and the existing poll then keeps running at
   // its usual cadence — no behaviour change, no new requirement that the ERP
   // has realtime switched on.
-  const live = useTicketRealtime(ticketId, () => {
-    void refreshDelta();
+  const live = useTicketRealtime(ticketId, (kind) => {
+    // A reaction (or a reply quote) rewrites a row that is already on screen,
+    // so a tail-only delta fetch would never see it — re-read the page instead.
+    if (kind === "reaction") void load(true);
+    else void refreshDelta();
   });
 
   // Fallback refresh so a reply that arrives while the page is open shows up
@@ -523,6 +559,38 @@ export default function HelpDeskTicketThread({
       }
     },
     [copy.forwardDone, copy.forwardFailed, copy.forwardPrefix, forwardSource, ticketId]
+  );
+
+  // Emoji reactions: optimistic chip update, then the server's own group list.
+  // A failed write restores exactly what the page had before the tap.
+  const reactToMessage = useCallback(
+    async (message: ConversationMessage, emoji: string) => {
+      const previous = message.reactions ?? [];
+      const apply = (reactions: ConversationReaction[]) =>
+        setPayload((current) =>
+          current
+            ? {
+                ...current,
+                messages: current.messages.map((item) =>
+                  item.id === message.id ? { ...item, reactions } : item
+                ),
+              }
+            : current
+        );
+      apply(optimisticReactions(previous, emoji));
+      try {
+        const reactions = await setMessageReaction(ticketId, message.id, emoji);
+        if (!mounted.current) return;
+        apply(reactions);
+      } catch (err) {
+        if (!mounted.current) return;
+        apply(previous);
+        toast.error(copy.reactionFailed);
+        console.error("[help-desk] reaction failed", ticketId, message.id, err);
+        if (isAuthFailure(err)) setExpired(true);
+      }
+    },
+    [copy.reactionFailed, ticketId]
   );
 
   // Where "sign in again" goes: back to this exact ticket after login.
@@ -768,6 +836,8 @@ export default function HelpDeskTicketThread({
             onForward={canReply ? (message) => setForwardSource(message) : undefined}
             canForward={canReply}
             onCopied={() => toast.success(copy.copied)}
+            onCopyFailed={() => toast.error(copy.copyFailed)}
+            onReact={canReply ? (message, emoji) => void reactToMessage(message, emoji) : undefined}
             pinnedId={pinnedId}
             focus={focus}
             systemEvents={systemEvents}

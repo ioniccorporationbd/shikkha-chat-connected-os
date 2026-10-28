@@ -252,6 +252,16 @@ export interface ConversationReplyRef {
   body: string;
 }
 
+/**
+ * One emoji reaction group on a message: the emoji, how many people picked it
+ * and whether the signed-in user is one of them (so the chip can be toggled).
+ */
+export interface ConversationReaction {
+  emoji: string;
+  count: number;
+  mine: boolean;
+}
+
 /** One entry in a ticket's conversation, as returned by the ERP. */
 export interface ConversationMessage {
   id: string;
@@ -274,6 +284,8 @@ export interface ConversationMessage {
   isMine: boolean;
   /** Whether the *recipient* has read it (ERP `Communication.seen`). */
   seen: boolean;
+  /** Emoji reactions stored on this message row (empty/absent when none). */
+  reactions?: ConversationReaction[];
 }
 
 /** One Messages table row — a single ticket thread. */
