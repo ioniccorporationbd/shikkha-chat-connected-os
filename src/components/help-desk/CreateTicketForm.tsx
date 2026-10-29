@@ -478,6 +478,7 @@ export default function CreateTicketForm({
         <StepCard
           step={2}
           title={copy.fieldCategory}
+          hidden={!subjectOk}
           hint={copy.stepCategoryHint}
           open={subjectOk}
           done={categoryOk}
@@ -516,6 +517,7 @@ export default function CreateTicketForm({
         <StepCard
           step={3}
           title={copy.fieldPriority}
+          hidden={!categoryOk}
           hint={copy.stepPriorityHint}
           open={categoryOk}
           done={priorityOk}
@@ -541,6 +543,7 @@ export default function CreateTicketForm({
         <StepCard
           step={4}
           title={copy.fieldDescription}
+          hidden={!priorityOk}
           hint={copy.stepDescriptionHint}
           open={priorityOk}
           done={descriptionOk}
@@ -585,6 +588,7 @@ export default function CreateTicketForm({
         <StepCard
           step={5}
           title={copy.fieldDepartment}
+          hidden={!descriptionOk}
           hint={copy.stepDepartmentHint}
           open={descriptionOk}
           done={departmentOk}
@@ -620,6 +624,7 @@ export default function CreateTicketForm({
         <StepCard
           step={6}
           title={copy.contactStepTitle}
+          hidden={!departmentOk}
           hint={copy.contactStepHint}
           open={departmentOk}
           done={contactOk}
@@ -741,6 +746,7 @@ export default function CreateTicketForm({
         <StepCard
           step={7}
           title={copy.sectionOptional}
+          hidden={!(departmentOk && contactOk)}
           hint={copy.sectionOptionalHint}
           open={departmentOk && contactOk}
           done={false}
@@ -1019,6 +1025,7 @@ function StepCard({
   done,
   lockedHint,
   optionalLabel,
+  hidden,
   children,
 }: {
   step: number;
@@ -1028,10 +1035,18 @@ function StepCard({
   done: boolean;
   lockedHint?: string;
   optionalLabel?: string;
+  // Steps are revealed one at a time: anything not yet reached is not rendered at all.
+  hidden?: boolean;
   children: React.ReactNode;
 }) {
+  if (hidden) return null;
+
   return (
-    <section className={`${HD_CARD} overflow-hidden`} aria-label={title} aria-current={open && !done ? "step" : undefined}>
+    <section
+      className={`${HD_CARD} overflow-hidden motion-safe:animate-[shk-fade-in_0.26s_ease-out]`}
+      aria-label={title}
+      aria-current={open && !done ? "step" : undefined}
+    >
       <header className="flex items-start gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
         <span
           className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
