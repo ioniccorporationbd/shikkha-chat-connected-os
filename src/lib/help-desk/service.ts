@@ -20,6 +20,7 @@ import type {
   Ticket,
 } from "./types";
 import { reportClientError } from "@/lib/log/report-error";
+import { toast } from "@/lib/ui/toast";
 
 const TICKETS_URL = "/api/help-desk/tickets";
 const OPTIONS_URL = "/api/help-desk/options";
@@ -224,6 +225,24 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   });
 
   reportNotification(data.notification);
+
+  // Files the ERP refused to attach: the ticket exists, so this is not a submit
+  // failure — but the customer must never be left believing the file is there.
+  const missed = data.attachments_failed ?? [];
+  if (missed.length > 0) {
+    const bangla = currentLanguage() !== "en";
+    toast.warning(
+      bangla
+        ? `টিকেট তৈরি হয়েছে, তবে ${missed.length}টি ফাইল সংযুক্ত হয়নি: ${missed.join(", ")}`
+        : `The ticket was created, but ${missed.length} file(s) could not be attached: ${missed.join(", ")}`
+    );
+    console.error("[help-desk] ticket saved but attachments were not attached", { missed });
+    reportClientError({
+      scope: "help-desk:attach",
+      message: `Ticket created without ${missed.length} attachment(s): ${missed.join(", ")}`,
+      detail: { missed, route: TICKETS_URL },
+    });
+  }
 
   return normaliseTicket(data.ticket);
 }

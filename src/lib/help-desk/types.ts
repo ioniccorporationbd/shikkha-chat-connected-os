@@ -40,7 +40,7 @@ export type TicketCategoryId =
 export type MessageAuthor = "user" | "support" | "system";
 
 /** How the reporter prefers to be reached. */
-export type PreferredContact = "email" | "mobile";
+export type PreferredContact = "email" | "mobile" | "both";
 
 /** A file the reporter attached. Stored as metadata only (no real upload yet). */
 export interface TicketAttachment {
@@ -191,6 +191,8 @@ export interface HelpDeskTicketPayload {
   ticket: Ticket;
   verified?: boolean;
   duplicate?: boolean;
+  /** Attachments the ERP could not re-parent onto the new ticket. */
+  attachments_failed?: string[];
   /**
    * Outcome of the customer notification the ERP fires on create: the ticket
    * receipt mail plus an SMS when the customer picked a mobile.

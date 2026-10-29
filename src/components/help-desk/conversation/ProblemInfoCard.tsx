@@ -1,6 +1,7 @@
 "use client";
 
-import { FiCheckCircle, FiFileText, FiMail, FiPhone, FiUser } from "react-icons/fi";
+import { useState } from "react";
+import { FiCheckCircle, FiEye, FiFileText, FiMail, FiPhone, FiUser } from "react-icons/fi";
 
 import {
   conversationCategoryLabel,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/help-desk/conversation-copy";
 import { PRIORITY_TONE, STATUS_TONE } from "@/lib/help-desk/config";
 import { formatDateTime, formatDateTimeNumeric, formatFileSize } from "@/lib/help-desk/format";
+import AttachmentLightbox from "@/components/help-desk/AttachmentLightbox";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, Ticket } from "@/lib/help-desk/types";
 
@@ -37,6 +39,11 @@ export default function ProblemInfoCard({
   const statusLabel = conversationStatusLabel[ticket.status]?.[language === "en" ? "en" : "bn"] ?? ticket.status;
   const priorityLabel = conversationPriorityLabel[ticket.priority]?.[language === "en" ? "en" : "bn"] ?? ticket.priority;
   const categoryLabel = conversationCategoryLabel[ticket.category]?.[language === "en" ? "en" : "bn"] ?? ticket.category;
+
+  // Image attachments open in the same lightbox the New Ticket form uses, at
+  // the same authorised URL the thumbnail itself was loaded from — the preview
+  // never widens who can read a private file.
+  const [previewHref, setPreviewHref] = useState<{ href: string; name: string } | null>(null);
 
   const meta: { key: string; label: string; value: string }[] = [
     { key: "category", label: copy.problemCategory, value: categoryLabel },
@@ -108,29 +115,70 @@ export default function ProblemInfoCard({
           {copy.problemAttachments}
         </h3>
         {ticket.attachments?.length ? (
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
-            {ticket.attachments.map((file) => {
-              const href = attachmentUrl(file);
-              return (
-                <li key={file.id}>
-                  <a
-                    href={href ?? undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 transition hover:border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]"
-                  >
-                    <FiFileText size={13} className="text-[var(--color-primary)]" aria-hidden />
-                    <span className="max-w-[13rem] truncate text-[11.5px] font-semibold text-[var(--color-primary)]">
-                      {file.name}
-                    </span>
-                    <span className="text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                      {formatFileSize(file.size)}
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            {/* Image attachments: thumbnail preview first, click for full size */}
+            {ticket.attachments.some((file) => isImage(file)) ? (
+              <ul className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                {ticket.attachments.filter((file) => isImage(file)).map((file) => {
+                  const href = attachmentUrl(file);
+                  if (!href) return null;
+                  return (
+                    <li key={file.id} className="group relative">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewHref({ href, name: file.name })}
+                        aria-label={`${copy.problemAttachments}: ${file.name}`}
+                        className="block w-full overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                      >
+                        <span className="relative block aspect-square w-full bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={href}
+                            alt={file.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] opacity-0 transition group-hover:opacity-100">
+                            <FiEye className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
+                          </span>
+                        </span>
+                        <span className="block truncate px-1.5 py-1 text-[10px] font-semibold text-[var(--color-primary)]">
+                          {file.name}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+
+            {/* Everything else stays a compact download row */}
+            {ticket.attachments.some((file) => !isImage(file)) ? (
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                {ticket.attachments.filter((file) => !isImage(file)).map((file) => {
+                  const href = attachmentUrl(file);
+                  return (
+                    <li key={file.id}>
+                      <a
+                        href={href ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 transition hover:border-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]"
+                      >
+                        <FiFileText size={13} className="text-[var(--color-primary)]" aria-hidden />
+                        <span className="max-w-[13rem] truncate text-[11.5px] font-semibold text-[var(--color-primary)]">
+                          {file.name}
+                        </span>
+                        <span className="text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                          {formatFileSize(file.size)}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </>
         ) : (
           <p className="mt-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
             {copy.problemNoAttachments}
@@ -220,6 +268,21 @@ export default function ProblemInfoCard({
           </ul>
         )}
       </div>
+
+      {previewHref ? (
+        <AttachmentLightbox
+          src={previewHref.href}
+          alt={previewHref.name}
+          downloadHref={previewHref.href}
+          onClose={() => setPreviewHref(null)}
+        />
+      ) : null}
     </section>
   );
+}
+
+/** A Frappe file is previewable when either the stored name or MIME says image. */
+function isImage(file: { name: string; mime?: string }): boolean {
+  if (file.mime && file.mime.startsWith("image/")) return true;
+  return /\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(file.name);
 }

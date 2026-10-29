@@ -10,9 +10,11 @@ import {
   FiCheckCircle,
   FiClock,
   FiCreditCard,
+  FiEye,
   FiFileText,
   FiHelpCircle,
   FiInfo,
+  FiLock,
   FiMail,
   FiPaperclip,
   FiRefreshCw,
@@ -25,7 +27,6 @@ import {
   FiX,
 } from "react-icons/fi";
 
-import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { useAuthStore } from "@/lib/auth/store";
 import { HD_CARD, HD_INPUT, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { formatFileSize } from "@/lib/help-desk/format";
@@ -53,10 +54,15 @@ import type {
 } from "@/lib/help-desk/types";
 import { toast } from "@/lib/ui/toast";
 
+import AttachmentLightbox from "./AttachmentLightbox";
+import StepSelect, { type StepSelectOption } from "./StepSelect";
 import TicketSuccessCard from "./TicketSuccessCard";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_ATTACHMENTS = 3;
+/** Shortest subject that counts as "valid text" (step 1 gate). */
+const MIN_SUBJECT_LENGTH = 4;
+/** Backend hard limit (shikkha_os.api.v1.help_desk._MAX_ATTACHMENTS). */
+const MAX_ATTACHMENTS = 5;
 /** Backend hard limit (shikkha_os.api.v1.help_desk.upload_attachment). */
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPT =
@@ -71,16 +77,26 @@ const TYPE_ICONS: Record<TypeIconKey, typeof FiTool> = {
   generic: FiPaperclip,
 };
 
-type FieldErrors = Partial<Record<"name" | "email" | "subject" | "description", string>>;
+type FieldErrors = Partial<
+  Record<"name" | "email" | "mobile" | "subject" | "description" | "channels", string>
+>;
 type OptionsState = "loading" | "ready" | "error";
+type Channels = { mobile: boolean; email: boolean };
+
+const REVEAL =
+  "grid transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]";
 
 /**
- * The New Ticket form.
+ * The New Ticket form — a step-by-step, gate-kept wizard.
  *
- * Everything it *offers* is read from the ERP (`HD Ticket Type`,
- * `HD Ticket Priority`, `HD Team`) — there is no hard-coded option list in the
- * frontend. The ERP decides what a ticket can be filed under; this component
- * only decides how those rows look.
+ * Step order is the ERP-facing contract from the ticket spec:
+ *   Subject → Category → Priority → Description → Department
+ * and each step only opens once the one before it holds a valid value; all
+ * five must be filled before the ticket can be submitted. Changing an earlier
+ * answer re-validates everything downstream (a stale selection is dropped).
+ *
+ * Everything the form *offers* still comes from the ERP (`HD Ticket Type`,
+ * `HD Ticket Priority`, `HD Team`) — there is no hard-coded option list here.
  */
 export default function CreateTicketForm({
   copy,
@@ -106,12 +122,13 @@ export default function CreateTicketForm({
   const [priority, setPriority] = useState("");
   const [description, setDescription] = useState("");
   const [relatedRoute, setRelatedRoute] = useState("");
-  const [preferredContact, setPreferredContact] = useState<PreferredContact>("email");
+  const [channels, setChannels] = useState<Channels>({ mobile: false, email: false });
   const [team, setTeam] = useState("");
   const [attachments, setAttachments] = useState<TicketAttachment[]>([]);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Ticket | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [options, setOptions] = useState<HelpDeskOptions | null>(null);
   const [optionsState, setOptionsState] = useState<OptionsState>("loading");
@@ -120,6 +137,8 @@ export default function CreateTicketForm({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const prefilled = useRef(false);
+  /** Hard guard against double submits (double click / Enter + click). */
+  const submitLock = useRef(false);
 
   // Prefill name/email from the signed-in profile, once, when the session lands.
   // setState is deferred to a microtask so it never runs synchronously inside
@@ -135,8 +154,11 @@ export default function CreateTicketForm({
   }, [status, user, initialContact]);
 
   // Offer exactly what the ERP is configured for. Nothing is guessed locally:
-  // if the ERP has no categories the section says so, and if the call fails the
+  // if the ERP has no categories the step says so, and if the call fails the
   // customer gets an inline retry instead of stale hard-coded values.
+  //
+  // NOTE: nothing is auto-selected anymore — every step must be answered
+  // explicitly, so the wizard can gate the next step on a real choice.
   useEffect(() => {
     let alive = true;
     getOptions()
@@ -144,11 +166,12 @@ export default function CreateTicketForm({
         if (!alive) return;
         setOptions(payload);
         setOptionsState("ready");
+        // Drop selections the ERP no longer offers.
         setTicketType((current) =>
-          current && payload.categories.some((item) => item.value === current) ? current : payload.categories[0]?.value ?? ""
+          current && payload.categories.some((item) => item.value === current) ? current : ""
         );
         setPriority((current) =>
-          current && payload.priorities.some((item) => item.name === current) ? current : payload.priorities[0]?.name ?? ""
+          current && payload.priorities.some((item) => item.name === current) ? current : ""
         );
       })
       .catch((error) => {
@@ -171,6 +194,12 @@ export default function CreateTicketForm({
   const priorities: HelpDeskOptionPriority[] = useMemo(() => priorityChoices(options), [options]);
   const teams: string[] = useMemo(() => teamChoices(options), [options]);
 
+  // Cascade cleanup: a downstream value that is no longer offered by the ERP
+  // is treated as unset (derived, not stored), which re-locks the steps after
+  // it — the "previous step changed" contract — without an effect that writes
+  // state during render.
+  const teamValue = useMemo(() => (team && teams.includes(team) ? team : ""), [team, teams]);
+
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const next: TicketAttachment[] = [...attachments];
@@ -182,6 +211,15 @@ export default function CreateTicketForm({
       }
       if (file.size > MAX_FILE_BYTES) {
         toast.error(`${file.name}: ${formatFileSize(MAX_FILE_BYTES)}`);
+        continue;
+      }
+      // Duplicate guard: the same name+size+mime is never queued twice, so a
+      // double drop or a re-pick cannot upload the same bytes twice.
+      const duplicate = next.some(
+        (item) => item.name === file.name && item.size === file.size && item.mime === (file.type || "application/octet-stream")
+      );
+      if (duplicate) {
+        toast.info(copy.duplicateFile);
         continue;
       }
       next.push({
@@ -207,39 +245,85 @@ export default function CreateTicketForm({
     toast.info(copy.toastAttachRemoved);
   };
 
+  // ── Step gates ────────────────────────────────────────────────────────────
+  const subjectOk = subject.trim().length >= MIN_SUBJECT_LENGTH;
+  const categoryOk = subjectOk && Boolean(ticketType) && categories.some((item) => item.value === ticketType);
+  const priorityOk = categoryOk && Boolean(priority) && priorities.some((item) => item.name === priority);
+  const descriptionOk = priorityOk && description.trim().length >= MIN_DESCRIPTION_LENGTH;
+  const departmentOk = descriptionOk && Boolean(teamValue);
+
+  const emailValid = EMAIL_RE.test(email.trim());
+  const mobileDigits = mobile.replace(/\D/g, "");
+  const channelCount = Number(channels.mobile) + Number(channels.email);
+  const contactOk =
+    departmentOk &&
+    channelCount > 0 &&
+    Boolean(name.trim()) &&
+    (!channels.email || emailValid) &&
+    (!channels.mobile || mobileDigits.length >= 10);
+
+  const mandatoryDone = [subjectOk, categoryOk, priorityOk, descriptionOk, departmentOk].filter(Boolean).length;
+  const allDone = departmentOk && contactOk && optionsState === "ready";
+  const canSubmit = allDone && !submitting;
+
+  // Move keyboard focus to the step that just opened.
+  useEffect(() => {
+    if (!categoryOk) return;
+    document.querySelector<HTMLElement>("#hd-step-category button[role='combobox']")?.focus();
+  }, [categoryOk]);
+  useEffect(() => {
+    if (!priorityOk) return;
+    document.querySelector<HTMLElement>("#hd-step-priority button[role='combobox']")?.focus();
+  }, [priorityOk]);
+  useEffect(() => {
+    if (!descriptionOk) return;
+    document.getElementById("hd-description")?.focus();
+  }, [descriptionOk]);
+  useEffect(() => {
+    if (!departmentOk) return;
+    document.querySelector<HTMLElement>("#hd-step-department button[role='combobox']")?.focus();
+  }, [departmentOk]);
+
+  const preferredContact: PreferredContact =
+    channels.mobile && channels.email ? "both" : channels.mobile ? "mobile" : "email";
+
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
+    if (!subjectOk) next.subject = copy.errSubjectShort;
     if (!name.trim()) next.name = copy.errRequired;
-    if (!email.trim()) next.email = copy.errRequired;
-    else if (!EMAIL_RE.test(email.trim())) next.email = copy.errEmail;
-    if (!subject.trim()) next.subject = copy.errRequired;
-    if (description.trim().length < MIN_DESCRIPTION_LENGTH) next.description = copy.errDescriptionShort;
+    if (channelCount === 0) next.channels = copy.errContactMethod;
+    if (channels.email && !emailValid) next.email = email.trim() ? copy.errEmail : copy.errRequired;
+    if (channels.mobile && mobileDigits.length < 10) next.mobile = copy.errMobileRequired;
+    if (!descriptionOk) next.description = copy.errDescriptionShort;
     return next;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    // Double-submit guard: the button is disabled, but Enter/paste/assistive
+    // tech can still fire a second submit while the first is in flight.
+    if (submitLock.current) return;
+
     const found = validate();
     setErrors(found);
-
     if (Object.keys(found).length > 0) {
-      const first = found.description ?? found.subject ?? found.email ?? found.name;
-      toast.error(first || copy.toastValidation);
+      toast.error(found.subject ?? found.description ?? found.channels ?? found.email ?? found.name ?? copy.toastValidation);
       return;
     }
 
+    submitLock.current = true;
     setSubmitting(true);
     try {
       // Identity/ownership is decided by the ERP from the session cookie — the
       // form only sends what the customer typed, plus the ERP-configured names.
       const ticket = await createTicket({
         subject,
-        ticketType: ticketType || undefined,
-        priority: priority || undefined,
+        ticketType,
+        priority,
         description,
         contact: { name, email, mobile, preferredContact },
         relatedRoute,
-        department: team || undefined,
+        department: teamValue,
         attachments,
       });
 
@@ -258,11 +342,13 @@ export default function CreateTicketForm({
           stack: error instanceof Error ? error.stack?.slice(0, 1200) : undefined,
           ticketType,
           priority,
-          department: team || undefined,
+          department: teamValue,
+          preferredContact,
           attachments: attachments.length,
         },
       });
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
@@ -274,11 +360,11 @@ export default function CreateTicketForm({
     setRelatedRoute("");
     setAttachments([]);
     setErrors({});
-    setTicketType(categories[0]?.value ?? "");
-    setPriority(priorities[0]?.name ?? "");
-    setPreferredContact("email");
+    setTicketType("");
+    setPriority("");
+    setChannels({ mobile: false, email: false });
     setTeam("");
-    // Keep name/email (identity), keep mobile.
+    // Keep name/email/mobile (identity).
   };
 
   if (created) {
@@ -292,15 +378,329 @@ export default function CreateTicketForm({
   const selectedPriority = priorities.find((item) => item.name === priority) ?? null;
   const translatedCategories = copy.categories as unknown as Record<string, string>;
   const translatedPriorities = copy.priorities as unknown as Record<string, string>;
-  const priorityTone = selectedPriority?.id ? (PRIORITY_TONE as Record<string, string>)[selectedPriority.id] ?? "var(--color-primary)" : "var(--color-primary)";
-  const canSubmit = !submitting && optionsState !== "loading";
+  const priorityTone = selectedPriority?.id
+    ? (PRIORITY_TONE as Record<string, string>)[selectedPriority.id] ?? "var(--color-primary)"
+    : "var(--color-primary)";
+
+  const categoryOptions: StepSelectOption[] = categories.map((option) => ({
+    value: option.value,
+    label: typeLabel(option, translatedCategories),
+  }));
+  const priorityOptions: StepSelectOption[] = priorities.map((option) => ({
+    value: option.name,
+    label: priorityLabel(option, translatedPriorities),
+  }));
+  const departmentOptions: StepSelectOption[] = teams.map((option) => ({ value: option, label: option }));
+
+  const steps: { key: string; title: string; done: boolean }[] = [
+    { key: "subject", title: copy.fieldSubject, done: subjectOk },
+    { key: "category", title: copy.fieldCategory, done: categoryOk },
+    { key: "priority", title: copy.fieldPriority, done: priorityOk },
+    { key: "description", title: copy.fieldDescription, done: descriptionOk },
+    { key: "department", title: copy.fieldDepartment, done: departmentOk },
+  ];
+
+  const imageAttachments = attachments.filter((item) => Boolean(item.previewUrl));
 
   return (
     <form onSubmit={handleSubmit} noValidate className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
       <div className="min-w-0 space-y-5">
-        {/* Steps 1–2: identity + ticket details */}
-        <Section step={1} title={copy.sectionBasic} hint={copy.sectionBasicHint} copy={copy}>
-          <div className="grid gap-4 sm:grid-cols-3">
+        {/* Progress header */}
+        <div className={`${HD_CARD} p-4 sm:p-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+              {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "5")}
+            </p>
+            {optionsState === "ready" ? (
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                <FiShield className="h-3 w-3" aria-hidden />
+                {copy.liveBadge}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                mandatoryDone === 5 ? "bg-[var(--color-success)]" : "bg-[var(--color-primary)]"
+              }`}
+              style={{ width: `${(mandatoryDone / 5) * 100}%` }}
+            />
+          </div>
+
+          <ol className="mt-3 flex flex-wrap gap-1.5">
+            {steps.map((step, index) => (
+              <li
+                key={step.key}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition duration-300 ${
+                  step.done
+                    ? "border-[color-mix(in_srgb,var(--color-success)_38%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] text-[var(--color-success)]"
+                    : "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_58%,var(--color-white))]"
+                }`}
+              >
+                {step.done ? (
+                  <FiCheck className="h-3 w-3" aria-hidden />
+                ) : (
+                  <span className="tabular-nums">{index + 1}</span>
+                )}
+                <span className="truncate">{step.title}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* Step 1 — Subject (the only field open at first) */}
+        <StepCard step={1} title={copy.fieldSubject} hint={copy.stepSubjectHint} open done={subjectOk}>
+          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
+            <input
+              id="hd-subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={copy.phSubject}
+              className={HD_INPUT}
+              maxLength={140}
+              autoFocus
+            />
+            <span className="self-end text-[10.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_48%,var(--color-white))]">
+              {subject.length}/140
+            </span>
+          </Field>
+          {!subjectOk && subject.length > 0 ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-danger)_85%,var(--color-primary))]">
+              <FiAlertCircle className="h-3.5 w-3.5" aria-hidden />
+              {copy.errSubjectShort}
+            </p>
+          ) : null}
+        </StepCard>
+
+        {/* Step 2 — Category */}
+        <StepCard
+          step={2}
+          title={copy.fieldCategory}
+          hint={copy.stepCategoryHint}
+          open={subjectOk}
+          done={categoryOk}
+          lockedHint={copy.stepLocked}
+        >
+          {optionsState === "loading" ? (
+            <div className="h-[58px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" aria-busy="true" aria-label={copy.optionsLoading} />
+          ) : optionsState === "error" ? (
+            <OptionsError
+              copy={copy}
+              onRetry={() => {
+                setOptionsState("loading");
+                setOptionsNonce((n) => n + 1);
+              }}
+            />
+          ) : categories.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+              {copy.optionsEmptyType}
+            </p>
+          ) : (
+            <div id="hd-step-category">
+              <StepSelect
+                label={copy.fieldCategory}
+                placeholder={copy.selectPlaceholder}
+                searchPlaceholder={copy.searchOptions}
+                noMatchLabel={copy.noMatchOptions}
+                options={categoryOptions}
+                value={ticketType}
+                onChange={setTicketType}
+              />
+            </div>
+          )}
+        </StepCard>
+
+        {/* Step 3 — Priority */}
+        <StepCard
+          step={3}
+          title={copy.fieldPriority}
+          hint={copy.stepPriorityHint}
+          open={categoryOk}
+          done={priorityOk}
+          lockedHint={copy.stepLocked}
+        >
+          {priorities.length === 0 ? (
+            <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">{copy.optionsEmptyPriority}</p>
+          ) : (
+            <div id="hd-step-priority">
+              <StepSelect
+                label={copy.fieldPriority}
+                placeholder={copy.selectPlaceholder}
+                noMatchLabel={copy.noMatchOptions}
+                options={priorityOptions}
+                value={priority}
+                onChange={setPriority}
+              />
+            </div>
+          )}
+        </StepCard>
+
+        {/* Step 4 — Description */}
+        <StepCard
+          step={4}
+          title={copy.fieldDescription}
+          hint={copy.stepDescriptionHint}
+          open={priorityOk}
+          done={descriptionOk}
+          lockedHint={copy.stepLocked}
+        >
+          <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
+            <textarea
+              id="hd-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={copy.phDescription}
+              rows={6}
+              className={`${HD_INPUT} resize-y`}
+            />
+          </Field>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${descriptionDone ? "bg-[var(--color-success)]" : "bg-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-white))]"}`}
+                style={{ width: `${Math.min(100, (descriptionLength / MIN_DESCRIPTION_LENGTH) * 100)}%` }}
+              />
+            </div>
+            <span className={`inline-flex flex-none items-center gap-1 text-[11px] font-medium ${descriptionDone ? "text-[var(--color-success)]" : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]"}`}>
+              {descriptionDone ? (
+                <>
+                  <FiCheckCircle className="h-3 w-3" aria-hidden />
+                  {descriptionLength}
+                </>
+              ) : (
+                <>
+                  <span className="tabular-nums">{descriptionLength}/{MIN_DESCRIPTION_LENGTH}</span>
+                  <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]">
+                    · {copy.descriptionMinHint.replace("{count}", String(MIN_DESCRIPTION_LENGTH))}
+                  </span>
+                </>
+              )}
+            </span>
+          </div>
+        </StepCard>
+
+        {/* Step 5 — Department (last mandatory step) */}
+        <StepCard
+          step={5}
+          title={copy.fieldDepartment}
+          hint={copy.stepDepartmentHint}
+          open={descriptionOk}
+          done={departmentOk}
+          lockedHint={copy.stepLocked}
+        >
+          {teams.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+              {copy.optionsEmptyTeam}
+            </p>
+          ) : (
+            <div id="hd-step-department">
+              <StepSelect
+                label={copy.fieldDepartment}
+                placeholder={copy.selectPlaceholder}
+                searchPlaceholder={copy.searchOptions}
+                noMatchLabel={copy.noMatchOptions}
+                options={departmentOptions}
+                value={teamValue}
+                onChange={setTeam}
+              />
+            </div>
+          )}
+
+          {departmentOk ? (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[var(--color-success)]">
+              <FiCheckCircle className="h-3.5 w-3.5" aria-hidden />
+              {copy.stepComplete} — 5/5
+            </p>
+          ) : null}
+        </StepCard>
+
+        {/* Step 6 — Contact details (multi-channel) */}
+        <StepCard
+          step={6}
+          title={copy.contactStepTitle}
+          hint={copy.contactStepHint}
+          open={departmentOk}
+          done={contactOk}
+          lockedHint={copy.stepLocked}
+        >
+          <div>
+            <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
+            <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+              {copy.preferredContactHint}
+            </p>
+            <div role="group" aria-label={copy.fieldPreferredContact} className="grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  { id: "mobile" as const, label: copy.preferredMobile, hint: copy.preferredMobileHint, Icon: FiSmartphone },
+                  { id: "email" as const, label: copy.preferredEmail, hint: copy.preferredEmailHint, Icon: FiMail },
+                ]
+              ).map(({ id, label, hint, Icon }) => {
+                const selected = channels[id];
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={selected}
+                    onClick={() => {
+                      setChannels((current) => ({ ...current, [id]: !current[id] }));
+                      setErrors((current) => ({ ...current, channels: undefined }));
+                    }}
+                    className={`group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
+                      selected
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${
+                        selected ? "bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)]" : "bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]"
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block text-sm font-semibold leading-tight ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
+                        {label}
+                      </span>
+                      <span
+                        className={`mt-0.5 block truncate text-[11px] ${
+                          selected
+                            ? "text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]"
+                            : "text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]"
+                        }`}
+                      >
+                        {hint}
+                      </span>
+                    </span>
+                    {selected ? (
+                      <FiCheckCircle className="h-4 w-4 flex-none text-[var(--color-white)]" aria-hidden />
+                    ) : (
+                      <span className="h-4 w-4 flex-none rounded-[5px] border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))]" aria-hidden />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {channelCount === 2 ? (
+              <p className="mt-2 inline-flex items-start gap-1.5 rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3 py-2 text-[11px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_72%,var(--color-white))]">
+                <FiInfo className="mt-[1px] h-3.5 w-3.5 flex-none" aria-hidden />
+                {copy.contactBothNote}
+              </p>
+            ) : null}
+
+            {errors.channels ? (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-danger)]">
+                <FiAlertCircle className="h-3.5 w-3.5" aria-hidden />
+                {errors.channels}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
               <input
                 id="hd-name"
@@ -323,7 +723,7 @@ export default function CreateTicketForm({
                 autoComplete="email"
               />
             </Field>
-            <Field label={copy.fieldMobile} htmlFor="hd-mobile">
+            <Field label={copy.fieldMobile} error={errors.mobile} htmlFor="hd-mobile">
               <input
                 id="hd-mobile"
                 type="tel"
@@ -335,249 +735,18 @@ export default function CreateTicketForm({
               />
             </Field>
           </div>
+        </StepCard>
 
-          <div className="mt-5">
-            <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
-            <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
-              {copy.preferredContactHint}
-            </p>
-            <div role="radiogroup" aria-label={copy.fieldPreferredContact} className="grid gap-2 sm:grid-cols-2">
-              {([
-                { id: "email" as PreferredContact, label: copy.preferredEmail, hint: copy.preferredEmailHint, Icon: FiMail },
-                { id: "mobile" as PreferredContact, label: copy.preferredMobile, hint: copy.preferredMobileHint, Icon: FiSmartphone },
-              ]).map(({ id, label, hint, Icon }) => {
-                const selected = preferredContact === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setPreferredContact(id)}
-                    className={`group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
-                      selected
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${
-                        selected
-                          ? "bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)]"
-                          : "bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]"
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={`block text-sm font-semibold leading-tight ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
-                        {label}
-                      </span>
-                      <span
-                        className={`mt-0.5 block truncate text-[11px] ${
-                          selected
-                            ? "text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]"
-                            : "text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]"
-                        }`}
-                      >
-                        {hint}
-                      </span>
-                    </span>
-                    {selected ? (
-                      <FiCheckCircle className="h-4 w-4 flex-none text-[var(--color-white)]" aria-hidden />
-                    ) : (
-                      <span
-                        className="h-4 w-4 flex-none rounded-full border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))]"
-                        aria-hidden
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </Section>
-
-        <Section step={2} title={copy.sectionTicket} hint={copy.sectionTicketHint} copy={copy}>
-          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
-            <input
-              id="hd-subject"
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={copy.phSubject}
-              className={HD_INPUT}
-              maxLength={140}
-            />
-            <span className="self-end text-[10.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_48%,var(--color-white))]">
-              {subject.length}/140
-            </span>
-          </Field>
-
-          {/* Category — one card per configured `HD Ticket Type` */}
-          <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldCategory}</p>
-              {optionsState === "ready" ? (
-                <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
-                  <FiShield className="h-3 w-3" aria-hidden />
-                  {copy.liveBadge}
-                </span>
-              ) : null}
-            </div>
-
-            {optionsState === "loading" ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" aria-busy="true" aria-label={copy.optionsLoading}>
-                {[0, 1, 2].map((key) => (
-                  <div key={key} className="h-[46px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" />
-                ))}
-              </div>
-            ) : optionsState === "error" ? (
-              <OptionsError
-                copy={copy}
-                onRetry={() => {
-                  setOptionsState("loading");
-                  setOptionsNonce((n) => n + 1);
-                }}
-              />
-            ) : categories.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
-                {copy.optionsEmptyType}
-              </p>
-            ) : (
-              <div role="radiogroup" aria-label={copy.fieldCategory} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {categories.map((option) => {
-                  const selected = ticketType === option.value;
-                  const Icon = TYPE_ICONS[iconForType(option.value, option.key)];
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setTicketType(option.value)}
-                      className={`group relative flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
-                        selected
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-                          : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 flex-none ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
-                      <span className={`min-w-0 text-sm font-semibold leading-snug ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
-                        {typeLabel(option, translatedCategories)}
-                      </span>
-                      {selected ? (
-                        <FiCheckCircle className="ml-auto h-4 w-4 flex-none text-[var(--color-white)]" aria-hidden />
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Priority — one pill per configured `HD Ticket Priority` */}
-          <div className="mt-5">
-            <p className="mb-2 text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPriority}</p>
-            {optionsState === "loading" ? (
-              <div className="flex flex-wrap gap-2" aria-busy="true">
-                {[0, 1, 2, 3].map((key) => (
-                  <div key={key} className="h-[42px] w-24 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" />
-                ))}
-              </div>
-            ) : optionsState === "error" ? null : priorities.length === 0 ? (
-              <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">{copy.optionsEmptyPriority}</p>
-            ) : (
-              <div role="radiogroup" aria-label={copy.fieldPriority} className="flex flex-wrap gap-2">
-                {priorities.map((option) => {
-                  const selected = priority === option.name;
-                  return (
-                    <button
-                      key={option.name}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setPriority(option.name)}
-                      // Unselected priorities share one neutral card so the row
-                      // reads as a single choice group; selecting one paints it
-                      // brand ink. The severity colour still shows on the ticket
-                      // itself and in the summary panel.
-                      className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
-                        selected
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-                          : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
-                      }`}
-                    >
-                      <span
-                        className={`h-2 w-2 flex-none rounded-full ${
-                          selected
-                            ? "bg-[color-mix(in_srgb,var(--color-white)_85%,transparent)]"
-                            : "bg-[color-mix(in_srgb,var(--color-primary)_28%,var(--color-white))]"
-                        }`}
-                        aria-hidden
-                      />
-                      <span className={`text-sm font-semibold ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
-                        {priorityLabel(option, translatedPriorities)}
-                      </span>
-                      {selected ? <FiCheck className="h-3.5 w-3.5 text-[var(--color-white)]" aria-hidden /> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Description with a live progress meter toward the minimum */}
-          <div className="mt-5">
-            <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
-              <textarea
-                id="hd-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={copy.phDescription}
-                rows={6}
-                className={`${HD_INPUT} resize-y`}
-              />
-            </Field>
-            <div className="mt-2 flex items-center gap-3">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${descriptionDone ? "bg-[var(--color-success)]" : "bg-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-white))]"}`}
-                  style={{ width: `${Math.min(100, (descriptionLength / MIN_DESCRIPTION_LENGTH) * 100)}%` }}
-                />
-              </div>
-              <span className={`inline-flex flex-none items-center gap-1 text-[11px] font-medium ${descriptionDone ? "text-[var(--color-success)]" : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]"}`}>
-                {descriptionDone ? (
-                  <>
-                    <FiCheckCircle className="h-3 w-3" aria-hidden />
-                    {descriptionLength}
-                  </>
-                ) : (
-                  <>
-                    <span className="tabular-nums">{descriptionLength}/{MIN_DESCRIPTION_LENGTH}</span>
-                    <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]">
-                      · {copy.descriptionMinHint.replace("{count}", String(MIN_DESCRIPTION_LENGTH))}
-                    </span>
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-        </Section>
-
-        <Section step={3} title={copy.sectionOptional} hint={copy.sectionOptionalHint} copy={copy}>
+        {/* Step 7 — Optional: page URL + attachments */}
+        <StepCard
+          step={7}
+          title={copy.sectionOptional}
+          hint={copy.sectionOptionalHint}
+          open={departmentOk}
+          done={false}
+          lockedHint={copy.stepLocked}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={copy.fieldDepartment} htmlFor="hd-team">
-              <DashboardSelect
-                ariaLabel={copy.fieldDepartment}
-                value={team}
-                onChange={(value) => setTeam(value)}
-                options={[
-                  { value: "", label: teams.length ? "—" : copy.optionsEmptyTeam },
-                  ...teams.map((option) => ({ value: option, label: option })),
-                ]}
-              />
-            </Field>
             <Field label={copy.fieldRelatedRoute} htmlFor="hd-route">
               <input
                 id="hd-route"
@@ -588,6 +757,7 @@ export default function CreateTicketForm({
                 className={HD_INPUT}
               />
             </Field>
+            <div className="hidden sm:block" />
           </div>
 
           {/* Drop zone */}
@@ -640,41 +810,77 @@ export default function CreateTicketForm({
               </span>
             </button>
 
-            {attachments.length > 0 ? (
+            {/* Image thumbnails — click for the full-size lightbox */}
+            {imageAttachments.length > 0 ? (
+              <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {imageAttachments.map((file) => {
+                  const index = attachments.findIndex((item) => item.id === file.id);
+                  return (
+                    <li key={file.id} className="group relative">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewIndex(index)}
+                        aria-label={`${copy.previewLabel}: ${file.name}`}
+                        className="block w-full overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] transition duration-200 hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                      >
+                        <span className="relative block aspect-square w-full">
+                          <Image
+                            src={file.previewUrl as string}
+                            alt={file.name}
+                            fill
+                            sizes="160px"
+                            unoptimized
+                            className="object-cover"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] opacity-0 transition duration-200 group-hover:opacity-100">
+                            <FiEye className="h-5 w-5 text-[var(--color-white)]" aria-hidden />
+                          </span>
+                        </span>
+                        <span className="block truncate px-2 py-1.5 text-[10.5px] font-semibold text-[var(--color-primary)]">
+                          {file.name}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(file.id)}
+                        aria-label={`${copy.attachRemove}: ${file.name}`}
+                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-white)] shadow-[0_4px_10px_-4px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+                      >
+                        <FiX className="h-3.5 w-3.5 text-[var(--color-primary)]" aria-hidden />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+
+            {/* Non-image files keep the compact row style */}
+            {attachments.some((item) => !item.previewUrl) ? (
               <ul className="mt-3 space-y-2">
-                {attachments.map((file) => (
-                  <li
-                    key={file.id}
-                    className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-2.5"
-                  >
-                    {file.previewUrl ? (
-                      <Image
-                        src={file.previewUrl}
-                        alt={file.name}
-                        width={40}
-                        height={40}
-                        unoptimized
-                        className="h-10 w-10 flex-none rounded-xl object-cover"
-                      />
-                    ) : (
+                {attachments
+                  .filter((item) => !item.previewUrl)
+                  .map((file) => (
+                    <li
+                      key={file.id}
+                      className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[var(--color-white)] p-2.5"
+                    >
                       <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]">
                         <FiFileText className="h-5 w-5 text-[var(--color-primary)]" aria-hidden />
                       </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
-                      <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{formatFileSize(file.size)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(file.id)}
-                      aria-label={`${copy.attachRemove}: ${file.name}`}
-                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
-                    >
-                      <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
-                    </button>
-                  </li>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[var(--color-primary)]">{file.name}</p>
+                        <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{formatFileSize(file.size)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(file.id)}
+                        aria-label={`${copy.attachRemove}: ${file.name}`}
+                        className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+                      >
+                        <FiX className="h-4 w-4 text-[var(--color-primary)]" aria-hidden />
+                      </button>
+                    </li>
+                  ))}
               </ul>
             ) : null}
 
@@ -683,7 +889,7 @@ export default function CreateTicketForm({
               {copy.attachNote}
             </p>
           </div>
-        </Section>
+        </StepCard>
 
         {/* Actions */}
         <div className={`${HD_CARD} flex flex-col-reverse gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between`}>
@@ -694,14 +900,21 @@ export default function CreateTicketForm({
           >
             <span className="text-sm font-semibold text-[var(--color-primary)]">{copy.cancel}</span>
           </button>
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 shadow-[0_16px_30px_-16px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
-          >
-            <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
-            <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {!allDone ? (
+              <span className="hidden text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] sm:inline">
+                {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "5")}
+              </span>
+            ) : null}
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 shadow-[0_16px_30px_-16px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
+            >
+              <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
+              <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -738,6 +951,13 @@ export default function CreateTicketForm({
             </div>
 
             <div className="flex items-center justify-between gap-2">
+              <dt className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{copy.fieldDepartment}</dt>
+              <dd className="min-w-0 truncate text-xs font-semibold text-[var(--color-primary)]">
+                {teamValue || <span className="text-[color-mix(in_srgb,var(--color-primary)_50%,var(--color-white))]">{copy.summaryNone}</span>}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
               <dt className="text-xs text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{copy.summaryFiles}</dt>
               <dd className="text-xs font-semibold text-[var(--color-primary)]">{attachments.length}</dd>
             </div>
@@ -770,39 +990,88 @@ export default function CreateTicketForm({
           </button>
         </div>
       </aside>
+
+      {previewIndex !== null && attachments[previewIndex]?.previewUrl ? (
+        <AttachmentLightbox
+          src={attachments[previewIndex].previewUrl as string}
+          alt={attachments[previewIndex].name}
+          closeLabel={copy.close}
+          onClose={() => setPreviewIndex(null)}
+        />
+      ) : null}
     </form>
   );
 }
 
-/** A numbered card section: badge + title + hint, then the fields. */
-function Section({
+/**
+ * A numbered wizard card.
+ *
+ * Closed steps stay mounted (so their values survive) but are `inert`: the
+ * fieldset is disabled, the body collapses to zero height and a lock line
+ * explains what unlocks it. Opening a step animates the body in with the same
+ * 500ms `cubic-bezier(0.22,1,0.36,1)` used by the homepage pill dropdowns.
+ */
+function StepCard({
   step,
   title,
   hint,
-  copy,
+  open,
+  done,
+  lockedHint,
+  optionalLabel,
   children,
 }: {
   step: number;
   title: string;
   hint: string;
-  copy: HelpDeskCopy;
+  open: boolean;
+  done: boolean;
+  lockedHint?: string;
+  optionalLabel?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className={`${HD_CARD} p-5 sm:p-6`} aria-label={title}>
-      <header className="flex items-start gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] pb-4">
-        {/* Step badge: brand ink, NOT the action red — red is reserved for the
-            primary submit action and never used to "number" a step. */}
-        <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl bg-[var(--color-primary)] text-[11.5px] font-bold tabular-nums text-[var(--color-white)] shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-          {step}
+    <section className={`${HD_CARD} overflow-hidden`} aria-label={title} aria-current={open && !done ? "step" : undefined}>
+      <header className="flex items-start gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
+        <span
+          className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
+            done
+              ? "bg-[var(--color-success)] text-[var(--color-white)]"
+              : open
+                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
+                : "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] shadow-none"
+          }`}
+        >
+          {done ? <FiCheck className="h-3.5 w-3.5" aria-hidden /> : open ? step : <FiLock className="h-3 w-3" aria-hidden />}
         </span>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-bold leading-tight text-[var(--color-primary)]">{title}</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15px] font-bold leading-tight text-[var(--color-primary)]">
+            {title}
+            {optionalLabel ? (
+              <span className="ml-2 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-2 py-0.5 align-middle text-[10px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">
+                {optionalLabel}
+              </span>
+            ) : null}
+          </h2>
           <p className="mt-0.5 text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{hint}</p>
         </div>
-        <span className="sr-only">{copy.stepLabel.replace("{n}", String(step))}</span>
+        {done ? <FiCheckCircle className="mt-1 h-4 w-4 flex-none text-[var(--color-success)]" aria-hidden /> : null}
       </header>
-      <div className="mt-5">{children}</div>
+
+      <div className={`${REVEAL} ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+        <div className="min-h-0">
+          <fieldset disabled={!open} className="px-5 pb-5 disabled:opacity-100 sm:px-6 sm:pb-6">
+            {children}
+          </fieldset>
+        </div>
+      </div>
+
+      {!open && lockedHint ? (
+        <p className="flex items-center gap-1.5 px-5 pb-4 text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_48%,var(--color-white))] sm:px-6">
+          <FiLock className="h-3 w-3 flex-none" aria-hidden />
+          {lockedHint}
+        </p>
+      ) : null}
     </section>
   );
 }

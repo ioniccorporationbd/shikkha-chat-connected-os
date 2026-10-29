@@ -1535,6 +1535,13 @@ const createdCustomers = new Map();
 let customerCounter = 0;
 
 // --- Help Desk mock state (see the help_desk_messages handler below) -------- //
+// Tickets created through the mocked `help_desk.create_ticket` live here for the
+// length of the process; the wizard + list/detail pages read them back.
+const hdTicketList = [];
+const hdTickets = new Map();
+let hdTicketSeq = 0;
+let hdFileSeq = 0;
+
 // One thread, in memory, shared by both demo identities: the staff account sees
 // the customer's messages, the customer account sees support's — which is what
 // the "instant delivery" harness needs. `mock.hd.push` adds a message from the
@@ -1604,7 +1611,7 @@ function hdHeader(thread) {
     contact: desk
       ? { name: "", email: "" }
       : { name: thread.customer, email: thread.customerEmail },
-    attachments: [],
+    attachments: thread.attachments ?? [],
     messages: [],
     createdAt: desk ? null : thread.submittedAt,
     updatedAt: last?.createdAt ?? thread.submittedAt,
@@ -1613,7 +1620,7 @@ function hdHeader(thread) {
     agent: desk ? thread.agent || null : undefined,
     customer: desk ? `HDC-${thread.name}` : undefined,
     customerName: desk ? thread.customer : undefined,
-    department: "Support",
+    department: thread.department ?? "Support",
   };
 }
 
@@ -2742,6 +2749,213 @@ const server = createServer(async (request, response) => {
       checked_in: logType === "IN",
       verified: true,
     });
+    return;
+  }
+
+  // --- Help Desk tickets (mirrors shikkha_os.api.v1.help_desk.*) ------------ //
+  // Enough of the real contract to drive the New Ticket wizard end to end
+  // locally: the ERP-managed option lists, a private-file upload stub, ticket
+  // creation with the same five mandatory checks the backend now enforces, and
+  // the customer's list/detail reads. Shapes follow src/lib/help-desk/types.ts.
+  if (method.startsWith("shikkha_os.api.v1.help_desk.")) {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 403, "PermissionError", "You are not permitted to access this resource. Login to access", "Method Not Allowed");
+      return;
+    }
+    const hdAction = method.slice("shikkha_os.api.v1.help_desk.".length).split("?")[0];
+
+    if (hdAction === "options") {
+      ok(response, {
+        statuses: [
+          { name: "Open", category: "Open", label: "Open", color: "#3b82f6", enabled: 1 },
+          { name: "Replied", category: "Open", label: "Replied", color: "#f59e0b", enabled: 1 },
+          { name: "Resolved", category: "Resolved", label: "Resolved", color: "#22c55e", enabled: 1 },
+        ],
+        priorities: [
+          { id: "low", name: "Low" },
+          { id: "medium", name: "Medium" },
+          { id: "high", name: "High" },
+          { id: "urgent", name: "Urgent" },
+        ],
+        // Real label vocabulary from shikkha_os.api.v1.help_desk.CATEGORY_LABELS
+        types: ["Technical", "Payment", "Account", "Other"],
+        categories: [
+          { value: "Technical", key: "technical" },
+          { value: "Payment", key: "payment" },
+          { value: "Account", key: "account" },
+          { value: "Other", key: "other" },
+        ],
+        teams: ["Support", "Accounts", "Technical Team"],
+      });
+      return;
+    }
+
+    if (hdAction === "upload_attachment") {
+      const body = await readBody(request);
+      const name = String(body?.file_name ?? "attachment.png").replace(/[^\w.\-]+/g, "_");
+      const size = String(body?.content ?? "").length;
+      hdFileSeq += 1;
+      console.log(`[mock-frappe] HD UPLOAD ${name} (${size}b64)`);
+      ok(response, {
+        name,
+        url: `/private/files/mock-hd-${hdFileSeq}-${name}`,
+        size: size ? Math.ceil((size * 3) / 4) : 0,
+      });
+      return;
+    }
+
+    const hdBody = (await readBody(request)) || {};
+    const hdData = typeof hdBody.data === "object" && hdBody.data ? hdBody.data : hdBody;
+    const ownerKey = String(email).toLowerCase();
+
+    if (hdAction === "create_ticket") {
+      const text = (key) => String(hdData[key] ?? "").trim();
+      const contact = hdData.contact && typeof hdData.contact === "object" ? hdData.contact : {};
+      const preferred = String(contact.preferredContact ?? "").trim().toLowerCase();
+      const mobileDigits = String(contact.mobile ?? "").replace(/\D+/g, "");
+      const fail = (message) => failure(response, 417, "ValidationError", message, "Help Desk");
+
+      if (text("subject").length < 4) return fail("Please enter a subject (4-140 characters).");
+      if (!text("ticketType")) return fail("Please choose a valid category.");
+      if (!text("priority")) return fail("Please choose a valid priority.");
+      if (text("description").length < 15) return fail("Please describe the problem (15-8000 characters).");
+      if (!text("department")) return fail("Please choose a department.");
+      if (!["mobile", "email", "both"].includes(preferred)) return fail("Please choose at least one contact method (Mobile or Email).");
+      if (preferred !== "email" && mobileDigits.length < 10) return fail("Please enter a valid mobile number — or choose Email only.");
+
+      // Duplicate-submission guard, mirroring the backend's recent-duplicate rule.
+      const dupeKey = `${ownerKey}|${text("subject").toLowerCase()}|${text("description")}`;
+      const recent = hdTickets.get(dupeKey);
+      if (recent && Date.now() - recent.at < 60_000) {
+        ok(response, { ticket: recent.ticket, verified: true, duplicate: true, notification: null, attachments_failed: [] });
+        return;
+      }
+
+      hdTicketSeq += 1;
+      const typeKey =
+        { technical: "technical", payment: "payment", account: "account", "login & access": "login" }[
+          text("ticketType").toLowerCase()
+        ] ?? "other";
+      const id = `HD-2026-${String(hdTicketSeq).padStart(5, "0")}`;
+      const timestamp = new Date().toISOString();
+      const ticket = {
+        id,
+        subject: text("subject"),
+        category: typeKey,
+        ticketType: text("ticketType"),
+        priority: text("priority").toLowerCase(),
+        description: text("description"),
+        status: "open",
+        statusLabel: "Open",
+        contact: {
+          name: String(contact.name ?? "").trim() || account.profile?.full_name || email,
+          email: String(contact.email ?? "").trim() || email,
+          mobile: String(contact.mobile ?? "").trim() || null,
+          preferredContact: preferred,
+        },
+        relatedRoute: text("relatedRoute") || undefined,
+        department: text("department"),
+        attachments: (Array.isArray(hdData.attachments) ? hdData.attachments : []).map((file, index) => ({
+          id: `mock-file-${hdTicketSeq}-${index}`,
+          name: String(file?.name ?? `file-${index + 1}`),
+          size: 1024,
+          mime: /\.(png|jpe?g|webp|gif)$/i.test(String(file?.name ?? "")) ? "image/png" : "application/pdf",
+          url: String(file?.url ?? ""),
+        })),
+        messages: [],
+        pinnedMessageId: null,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        assignedAgent: undefined,
+        ownerKey,
+      };
+      hdTicketList.push({ ownerKey, support: account.kind === "staff", ticket });
+      hdTickets.set(dupeKey, { at: Date.now(), ticket });
+
+      // The ticket detail page reads the conversation API, so the created
+      // ticket also becomes a thread — with its attachments — exactly as the
+      // ERP would list them from `HD Ticket`.
+      hdThreads.set(id, {
+        name: id,
+        subject: ticket.subject,
+        category: ticket.category,
+        priority: ticket.priority,
+        status: "Open",
+        currentStatus: "Open",
+        statusCategory: "Open",
+        customer: ticket.contact.name,
+        customerEmail: ticket.contact.email || email,
+        agent: "Tamim Hasan",
+        department: ticket.department,
+        submittedAt: timestamp,
+        attachments: ticket.attachments,
+        messages: [
+          {
+            id: "HDMSG-00001",
+            author: "user",
+            authorName: ticket.contact.name,
+            body: ticket.description,
+            createdAt: timestamp,
+            kind: "message",
+            channel: "comment",
+            replyTo: null,
+            attachments: ticket.attachments,
+            isMine: false,
+            seen: false,
+            reactions: [],
+          },
+        ],
+      });
+      console.log(`[mock-frappe] HD TICKET ${id} ${preferred} files=${ticket.attachments.length}`);
+      ok(response, {
+        ticket,
+        verified: true,
+        notification: {
+          ticket: id,
+          sent: true,
+          channels: {
+            ...(preferred === "email" || preferred === "both" ? { email: { sent: true } } : {}),
+            ...(preferred === "mobile" || preferred === "both" ? { mobile: { sent: true } } : {}),
+          },
+        },
+        attachments_failed: [],
+      });
+      return;
+    }
+
+    if (hdAction === "list_tickets") {
+      const rows = hdTicketList
+        .filter((row) => row.ownerKey === ownerKey || row.support)
+        .map((row) => row.ticket)
+        .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+      ok(response, {
+        tickets: rows,
+        counts: { all: rows.length, open: rows.filter((t) => t.status === "open").length, resolved: 0 },
+        total: rows.length,
+        page: 1,
+        page_size: 500,
+        has_more: false,
+        server_time: new Date().toISOString(),
+      });
+      return;
+    }
+
+    if (hdAction === "get_ticket") {
+      const wanted = String(url.searchParams.get("name") ?? "").trim();
+      const row = hdTicketList.find(
+        (item) => item.ticket.id === wanted && (item.ownerKey === ownerKey || item.support),
+      );
+      if (!row) {
+        failure(response, 404, "DoesNotExistError", "Ticket not found.", "Help Desk");
+        return;
+      }
+      ok(response, { ticket: row.ticket });
+      return;
+    }
+
+    failure(response, 404, "DoesNotExistError", `Unknown help desk method ${hdAction}`, "Help Desk");
     return;
   }
 

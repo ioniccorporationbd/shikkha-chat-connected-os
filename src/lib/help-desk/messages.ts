@@ -80,6 +80,8 @@ export interface HelpDeskCopy {
   attachChoose: string;
   attachReplace: string;
   attachRemove: string;
+  close: string;
+  optionalBadge: string;
   attachNote: string;
   submit: string;
   submitting: string;
@@ -94,6 +96,33 @@ export interface HelpDeskCopy {
   sectionBasicHint: string;
   sectionTicketHint: string;
   sectionOptionalHint: string;
+
+  // Step-by-step mandatory form (New Ticket)
+  stepSubjectHint: string;
+  stepCategoryHint: string;
+  stepPriorityHint: string;
+  stepDescriptionHint: string;
+  stepDepartmentHint: string;
+  stepProgress: string;
+  stepLocked: string;
+  stepComplete: string;
+  stepIncomplete: string;
+  selectPlaceholder: string;
+  searchOptions: string;
+  noMatchOptions: string;
+  errSubjectShort: string;
+  errCategoryRequired: string;
+  errPriorityRequired: string;
+  errDepartmentRequired: string;
+  errContactMethod: string;
+  errMobileRequired: string;
+  preferredBoth: string;
+  preferredBothHint: string;
+  contactStepTitle: string;
+  contactStepHint: string;
+  contactBothNote: string;
+  previewLabel: string;
+  duplicateFile: string;
   stepLabel: string;
   liveBadge: string;
   attachDrop: string;
@@ -367,7 +396,7 @@ const bn: HelpDeskCopy = {
   fieldDescription: "সমস্যার বিবরণ",
   fieldRelatedRoute: "যে পেজে সমস্যা হয়েছে",
   fieldPreferredContact: "যোগাযোগের পছন্দের মাধ্যম",
-  fieldDepartment: "বিভাগ (ঐচ্ছিক)",
+  fieldDepartment: "বিভাগ",
   phName: "যেমন: আপনার পূর্ণ নাম",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",
@@ -386,6 +415,8 @@ const bn: HelpDeskCopy = {
   attachChoose: "ফাইল বাছুন",
   attachReplace: "ফাইল বদলান",
   attachRemove: "সরান",
+  close: "বন্ধ করুন",
+  optionalBadge: "ঐচ্ছিক",
   attachNote: "এখন ফাইল শুধু কাছাকাছি সময়ের জন্য দেখানো হচ্ছে; স্থায়ী আপলোড পরবর্তী ছাড়ে যোগ হবে।",
   submit: "টিকিট জমা দিন",
   submitting: "জমা হচ্ছে…",
@@ -399,6 +430,32 @@ const bn: HelpDeskCopy = {
   sectionBasicHint: "আপনার সাথে কীভাবে যোগাযোগ করা যাবে জানিয়ে দিন।",
   sectionTicketHint: "সমস্যাটি নির্দিষ্ট করে লিখুন — যত স্পষ্ট, তত দ্রুত সমাধান।",
   sectionOptionalHint: "প্রয়োজনে টিম, লিংক বা ফাইল যোগ করুন।",
+
+  stepSubjectHint: "সমস্যার সংক্ষিপ্ত শিরোনাম লিখুন — কমপক্ষে ৪ অক্ষর।",
+  stepCategoryHint: "আপনার সমস্যা কোন ধরনের, বেছে নিন।",
+  stepPriorityHint: "কতটা জরুরি, বেছে নিন।",
+  stepDescriptionHint: "কীভাবে সমস্যাটি দেখছেন, কখন হয়, কী প্রত্যাশা করছেন — লিখুন।",
+  stepDepartmentHint: "সংশ্লিষ্ট বিভাগ বেছে নিন — এখানেই বাধ্যতামূলক ধাপ শেষ।",
+  stepProgress: "ধাপ {done}/{total} সম্পন্ন",
+  stepLocked: "আগের ধাপটি পূরণ করলে এই ধাপ খুলবে।",
+  stepComplete: "সম্পূর্ণ",
+  stepIncomplete: "বাকি আছে",
+  selectPlaceholder: "নির্বাচন করুন",
+  searchOptions: "খুঁজুন…",
+  noMatchOptions: "কোনো মিল পাওয়া যায়নি",
+  errSubjectShort: "কমপক্ষে ৪ অক্ষরের বিষয় লিখুন।",
+  errCategoryRequired: "একটি ক্যাটাগরি নির্বাচন করুন।",
+  errPriorityRequired: "একটি প্রায়োরিটি নির্বাচন করুন।",
+  errDepartmentRequired: "একটি বিভাগ নির্বাচন করুন।",
+  errContactMethod: "যোগাযোগের অন্তত একটি মাধ্যম নির্বাচন করুন।",
+  errMobileRequired: "মোবাইল নম্বর দিন — অথবা শুধু ইমেইল নির্বাচন করুন।",
+  preferredBoth: "মোবাইল + ইমেইল",
+  preferredBothHint: "দুই মাধ্যমেই জানানো হবে",
+  contactStepTitle: "যোগাযোগের তথ্য",
+  contactStepHint: "আপনার সাথে কীভাবে যোগাযোগ করা যাবে জানিয়ে দিন — অন্তত একটি মাধ্যম বাছাই করুন।",
+  contactBothNote: "মোবাইল ও ইমেইল — দুই মাধ্যমেই একটি করে নোটিফিকেশন যাবে (ডুপ্লিকেট নয়)।",
+  previewLabel: "বড় করে দেখুন",
+  duplicateFile: "এই ফাইলটি ইতিমধ্যে সংযুক্ত আছে।",
   stepLabel: "ধাপ {n}",
   liveBadge: "ERP থেকে লাইভ",
   attachDrop: "ফাইল এখানে টেনে ছাড়ুন বা ক্লিক করুন",
@@ -667,7 +724,7 @@ const en: HelpDeskCopy = {
   fieldDescription: "Problem description",
   fieldRelatedRoute: "Page where it happened",
   fieldPreferredContact: "Preferred contact method",
-  fieldDepartment: "Department (optional)",
+  fieldDepartment: "Department",
   phName: "e.g. your full name",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",
@@ -686,6 +743,8 @@ const en: HelpDeskCopy = {
   attachChoose: "Choose file",
   attachReplace: "Replace file",
   attachRemove: "Remove",
+  close: "Close",
+  optionalBadge: "Optional",
   attachNote: "Files are only previewed locally for now; real upload arrives with the backend.",
   submit: "Submit ticket",
   submitting: "Submitting…",
@@ -699,6 +758,32 @@ const en: HelpDeskCopy = {
   sectionBasicHint: "Tell us how to reach you about this ticket.",
   sectionTicketHint: "Describe the issue precisely — clearer reports get faster fixes.",
   sectionOptionalHint: "Optionally add a team, a related link or files.",
+
+  stepSubjectHint: "Give the issue a short title — at least 4 characters.",
+  stepCategoryHint: "Pick the kind of issue you are facing.",
+  stepPriorityHint: "Choose how urgent this is.",
+  stepDescriptionHint: "What you see, when it happens, what you expect — write it out.",
+  stepDepartmentHint: "Pick the responsible department — this completes the mandatory steps.",
+  stepProgress: "Step {done}/{total} complete",
+  stepLocked: "Complete the previous step to unlock this one.",
+  stepComplete: "Complete",
+  stepIncomplete: "Pending",
+  selectPlaceholder: "Select an option",
+  searchOptions: "Search…",
+  noMatchOptions: "No matching option",
+  errSubjectShort: "Enter a subject of at least 4 characters.",
+  errCategoryRequired: "Select a category.",
+  errPriorityRequired: "Select a priority.",
+  errDepartmentRequired: "Select a department.",
+  errContactMethod: "Select at least one contact method.",
+  errMobileRequired: "Enter a mobile number — or choose Email only.",
+  preferredBoth: "Mobile + Email",
+  preferredBothHint: "Sent to both channels",
+  contactStepTitle: "Contact details",
+  contactStepHint: "Tell us how to reach you — pick at least one channel.",
+  contactBothNote: "Mobile and Email — one notification will be sent to each channel (no duplicates).",
+  previewLabel: "Open full preview",
+  duplicateFile: "This file is already attached.",
   stepLabel: "Step {n}",
   liveBadge: "Live from ERP",
   attachDrop: "Drag files here or click to browse",
