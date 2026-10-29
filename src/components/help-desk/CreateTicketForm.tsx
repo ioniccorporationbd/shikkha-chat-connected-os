@@ -742,7 +742,7 @@ export default function CreateTicketForm({
           step={7}
           title={copy.sectionOptional}
           hint={copy.sectionOptionalHint}
-          open={departmentOk}
+          open={departmentOk && contactOk}
           done={false}
           lockedHint={copy.stepLocked}
         >
