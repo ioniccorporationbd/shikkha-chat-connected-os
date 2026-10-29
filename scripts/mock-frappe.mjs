@@ -1909,6 +1909,63 @@ hdAppend(HD_0496, "support", "ওই অধ্যায়ের প্রশ্
 });
 hdAppend(HD_0496, "user", "এখন খুলছে, ধন্যবাদ!", { at: "2026-10-28T09:26:00.000Z", authorName: HD_0496_CUSTOMER });
 
+// 0510 — a different ticket with a different conversation. The portal must keep
+// the two apart: 0496's rows may never appear here, and nothing of 0510 may leak
+// back into 0496. The rows are also *inserted* out of order and one of them
+// carries a real `replyTo` (the quote the ERP would send for a linked reply), so
+// the thread has to be ordered by creation time and the explicit quote has to win
+// over the inferred pairing.
+const HD_0510 = "0510";
+const HD_0510_CUSTOMER = "Rafiqul Islam";
+const HD_0510_AGENT = "Sadia Afrin";
+hdThreads.set(HD_0510, {
+  name: HD_0510,
+  subject: "Refund not received for a cancelled course",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "payment",
+  customer: HD_0510_CUSTOMER,
+  customerEmail: "rafiqul@example.com",
+  agent: HD_0510_AGENT,
+  submittedAt: "2026-10-29T04:05:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0510, "user", "স্যার, কোর্স বাতিল করেছি কিন্তু টাকা ফেরত পাইনি।", {
+  at: "2026-10-29T04:20:00.000Z",
+  authorName: HD_0510_CUSTOMER,
+});
+hdAppend(HD_0510, "support", "অর্ডার নম্বরটা দেবেন? দেখে জানাচ্ছি।", {
+  at: "2026-10-29T04:22:00.000Z",
+  authorName: HD_0510_AGENT,
+});
+hdAppend(HD_0510, "user", "ORD-2026-1187", {
+  at: "2026-10-29T04:24:00.000Z",
+  authorName: HD_0510_CUSTOMER,
+  // Deliberately quotes the *first* comment, not the row above it: the ERP's own
+  // parent reference must win over the inferred "answers the previous message".
+  replyTo: {
+    id: "HDMSG-05100A",
+    author: "user",
+    authorName: HD_0510_CUSTOMER,
+    body: "স্যার, কোর্স বাতিল করেছি কিন্তু টাকা ফেরত পাইনি।",
+  },
+});
+hdAppend(HD_0510, "support", "பணம் ফেরতের রিকোয়েস্ট ব্যাংকে পাঠানো হয়েছে, ৩-৫ কর্মদিবস লাগবে।", {
+  at: "2026-10-29T04:30:00.000Z",
+  authorName: HD_0510_AGENT,
+});
+// Arrives last in the array but sits in the middle of the thread by time: the
+// chat must read it where the timeline puts it, not where the array does.
+hdAppend(HD_0510, "user", "ঠিক আছে, অপেক্ষা করছি।", {
+  at: "2026-10-29T04:26:00.000Z",
+  authorName: HD_0510_CUSTOMER,
+});
+hdThreads.get(HD_0510).payloadOrder = "reverse";
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */

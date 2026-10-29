@@ -113,6 +113,14 @@ export default function MessageBubble({
   const isResolution = message.kind === "resolution";
   // A real ERP quote beats the inferred pairing.
   const reply: ConversationReplyRef | undefined = message.replyTo ?? quoted;
+  // "আপনি" is the reader's own words: the quote names the reader only when the
+  // quoted comment was written by whoever has the screen open, not by whoever
+  // wrote this reply.
+  const quotedByViewer = reply
+    ? message.isMine
+      ? reply.author === message.author
+      : reply.author !== message.author
+    : false;
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -270,8 +278,10 @@ export default function MessageBubble({
                   className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,var(--color-primary))]"
                 />
                 <span className="truncate text-[10.5px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-action)_72%,var(--color-primary))]">
-                  {reply.authorName ||
-                    (reply.author === "support" ? copy.conversationSupport : copy.conversationCustomer)}
+                  {quotedByViewer
+                    ? copy.conversationYou
+                    : reply.authorName ||
+                      (reply.author === "support" ? copy.conversationSupport : copy.conversationCustomer)}
                 </span>
               </span>
               <span className="mt-0.5 line-clamp-2 block text-[11.5px] leading-[1.45] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">

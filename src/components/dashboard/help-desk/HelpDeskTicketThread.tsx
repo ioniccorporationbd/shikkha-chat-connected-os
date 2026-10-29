@@ -18,6 +18,7 @@ import { useTicketRealtime } from "@/lib/help-desk/use-ticket-realtime";
 import {
   addRequirement,
   getConversation,
+  orderConversation,
   markConversationRead,
   sendMessage,
   setMessageReaction,
@@ -228,6 +229,15 @@ export default function HelpDeskTicketThread({
 
   const mounted = useRef(true);
 
+  // A response belongs to the ticket it was asked for. Walking from 0496 to 0510
+  // leaves the first read in flight; without this it would land afterwards and
+  // paint 0496's messages under 0510's header.
+  const activeTicket = useRef(ticketId);
+  useEffect(() => {
+    activeTicket.current = ticketId;
+  }, [ticketId]);
+
+
   const load = useCallback(
     async (silent = false) => {
       if (!silent) {
@@ -236,7 +246,7 @@ export default function HelpDeskTicketThread({
       }
       try {
         const data = await getConversation(ticketId, chatOnly ? { limit: PAGE_SIZE } : {});
-        if (!mounted.current) return;
+        if (!mounted.current || activeTicket.current !== ticketId) return;
         if (!data) {
           setMissing(true);
           setPayload(null);
@@ -262,7 +272,7 @@ export default function HelpDeskTicketThread({
             });
         }
       } catch (err) {
-        if (!mounted.current) return;
+        if (!mounted.current || activeTicket.current !== ticketId) return;
         if (isAuthFailure(err)) {
           // A dead sid is not a load failure: every retry would fail the same
           // way. Show the sign-in state (the route already dropped the cookie).
@@ -304,6 +314,9 @@ export default function HelpDeskTicketThread({
   // "—" cells on screen.
   const metaWarned = useRef(false);
   useEffect(() => {
+    metaWarned.current = false;
+  }, [ticketId]);
+  useEffect(() => {
     if (!payload || metaWarned.current) return;
     const header = payload.ticket;
     if (!header || !missingTicketHeader(header)) return;
@@ -339,7 +352,9 @@ export default function HelpDeskTicketThread({
       if (!current || !current.paged) return incoming;
       const seen = new Set(current.messages.map((message) => message.id));
       const added = incoming.messages.filter((message) => !seen.has(message.id));
-      const merged = added.length ? [...current.messages, ...added] : current.messages;
+      // Re-establish the reading order instead of appending: a desk reply that
+      // answers an older comment can arrive after rows already on screen.
+      const merged = added.length ? orderConversation([...current.messages, ...added]) : current.messages;
       return {
         ...incoming,
         messages: merged,
@@ -374,7 +389,9 @@ export default function HelpDeskTicketThread({
         if (!current) return data;
         const seen = new Set(current.messages.map((message) => message.id));
         const older = data.messages.filter((message) => !seen.has(message.id));
-        return { ...current, messages: [...older, ...current.messages] };
+        // A threaded comment reply can be newer than the root comment its page
+        // was cut on, so the page is merged by time, never by position.
+        return { ...current, messages: orderConversation([...older, ...current.messages]) };
       });
       setHasOlder(Boolean(data.has_more));
       setOlderCursor(data.next_cursor ?? null);

@@ -86,6 +86,10 @@ export default function HelpDeskDashboard({
     // "see all messages" links keep working.
     return (
       <HelpDeskTicketThread
+        // One ticket is one room: remounting clears the previous ticket's
+        // messages, cursors, quote target and draft instead of resetting them
+        // field by field after the fact.
+        key={ticketId}
         language={language}
         ticketId={ticketId}
         listHref={links.tickets}
@@ -121,6 +125,7 @@ export default function HelpDeskDashboard({
   if (view === "problem" && ticketId) {
     return (
       <HelpDeskTicketThread
+        key={ticketId}
         language={language}
         ticketId={ticketId}
         listHref={links.problems}

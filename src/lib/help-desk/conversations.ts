@@ -125,16 +125,71 @@ export async function getConversation(
  * A payload that does not say which side the reader is on is returned
  * untouched, so an older backend keeps its own `isMine` as the only truth.
  */
+/**
+ * The one order a conversation is ever read in: creation time, oldest first.
+ *
+ * The ERP merges two channels (Comment and Communication) and, on the paged
+ * route, hands back one window at a time; a delta read returns only what is
+ * newer than the newest entry. Each of those arrives in its own shape, so the
+ * order is re-established here — once, for every path (first load, older page,
+ * poll delta, write response) — instead of trusting whichever list was merged
+ * last. `id` breaks a tie so two rows written in the same second still hold a
+ * stable order between refreshes.
+ */
+function orderByStamp<T>(items: T[], stampOf: (item: T) => { at?: string | null; id?: string }): T[] {
+  return items
+    .map((item) => {
+      const { at, id } = stampOf(item);
+      const text = String(at ?? "");
+      const parsed = Date.parse(text);
+      return {
+        item,
+        parsed: Number.isFinite(parsed) ? parsed : null,
+        text,
+        id: String(id ?? ""),
+      };
+    })
+    .sort((a, b) => {
+      // A row with a real timestamp always reads before one without.
+      if (a.parsed !== b.parsed) {
+        if (a.parsed === null) return 1;
+        if (b.parsed === null) return -1;
+        return a.parsed - b.parsed;
+      }
+      if (a.text !== b.text) return a.text < b.text ? -1 : 1;
+      if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+      return 0;
+    })
+    .map((entry) => entry.item);
+}
+
+export function orderConversation<T extends { createdAt?: string | null; id?: string }>(
+  messages: T[]
+): T[] {
+  return orderByStamp(messages, (message) => ({ at: message.createdAt, id: message.id }));
+}
+
 export function alignConversation(payload: ConversationPayload): ConversationPayload {
   const viewerIsSupport = typeof payload.isSupport === "boolean" ? payload.isSupport : null;
-  if (viewerIsSupport === null) return payload;
+  if (viewerIsSupport === null) {
+    // An older backend keeps its own `isMine`; the reading order still holds.
+    return { ...payload, messages: orderConversation(Array.isArray(payload.messages) ? payload.messages : []) };
+  }
 
-  const messages = (Array.isArray(payload.messages) ? payload.messages : []).map((message) => ({
-    ...message,
-    isMine: message.author === "support" ? viewerIsSupport : !viewerIsSupport,
-  }));
+  const messages = orderConversation(
+    (Array.isArray(payload.messages) ? payload.messages : []).map((message) => ({
+      ...message,
+      isMine: message.author === "support" ? viewerIsSupport : !viewerIsSupport,
+    }))
+  );
 
-  return { ...payload, messages };
+  // The chat is ordered by these events: an unsorted timeline would draw the
+  // bubbles out of time even when `messages` itself is right.
+  const timeline = Array.isArray(payload.timeline)
+    ? orderByStamp(payload.timeline, (event) => ({ at: event.at, id: event.id }))
+    : payload.timeline;
+
+  return { ...payload, messages, timeline };
 }
 
 /** Resolve UI attachments to ERP `File` rows, uploading any browser file first. */
