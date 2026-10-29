@@ -40,7 +40,8 @@ export default function CatalogMainSections() {
       {FEATURE_SHOWCASE.map((category, index) => {
         const scenes: HubScene[] = category.features.map((feature, featureIndex) => ({
           id: catalogFeaturePanelId(category.id, feature.id),
-          title: feature.title.bn,
+          // Bilingual: the floating stage label must follow the language toggle.
+          title: feature.title,
           node:
             category.id === "role-access" ? (
               <RoleAccessScene
