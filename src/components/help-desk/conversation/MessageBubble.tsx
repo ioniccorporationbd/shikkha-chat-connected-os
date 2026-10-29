@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FiBookmark, FiCheck, FiCheckCircle, FiFileText } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
 import { attachmentUrl } from "@/lib/help-desk/service";
-import type { ConversationMessage } from "@/lib/help-desk/types";
+import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
 import ImageLightbox from "./ImageLightbox";
 import MessageActionMenu from "./MessageActionMenu";
@@ -59,6 +59,8 @@ async function writeClipboard(text: string): Promise<boolean> {
  */
 export default function MessageBubble({
   message,
+  quoted,
+  onJumpTo,
   copy,
   language,
   pinned = false,
@@ -69,9 +71,15 @@ export default function MessageBubble({
   onCopyFailed,
 }: {
   message: ConversationMessage;
+  /**
+   * The comment this bubble answers, when the thread inferred the pairing (the
+   * ERP does not link Comment and Communication rows). An explicit
+   * `message.replyTo` always wins, so a real quote is never replaced.
+   */
+  quoted?: ConversationReplyRef;
   copy: ConversationCopy;
   language: string;
-  /** Kept for call-site compatibility; the bubble no longer acts on a click. */
+  /** Brings the quoted comment back into view: a reply is read with its comment. */
   onJumpTo?: (id: string) => void;
   onPin?: (message: ConversationMessage) => void;
   canPin?: boolean;
@@ -103,6 +111,8 @@ export default function MessageBubble({
   const mine = message.isMine;
   const isRequirement = message.kind === "requirement";
   const isResolution = message.kind === "resolution";
+  // A real ERP quote beats the inferred pairing.
+  const reply: ConversationReplyRef | undefined = message.replyTo ?? quoted;
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -243,18 +253,31 @@ export default function MessageBubble({
             </span>
           ) : null}
 
-          {message.replyTo ? (
-            /* A quoted message is context, not a control: plain block, no button,
-               no hover, no jump. */
-            <div className="mb-1.5 rounded-lg border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_70%,transparent)] px-2.5 py-1.5">
-              <p className="text-[10.5px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-action)_72%,var(--color-primary))]">
-                {message.replyTo.authorName ||
-                  (message.replyTo.author === "support" ? copy.conversationSupport : copy.conversationCustomer)}
-              </p>
-              <p className="line-clamp-2 text-[11.5px] leading-[1.45] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-                {message.replyTo.body}
-              </p>
-            </div>
+          {reply ? (
+            /* The comment this bubble answers, WhatsApp-style: who said it, then
+               a one-glance snippet, tied to the bubble it belongs to. Clicking
+               scrolls the pair into view together. */
+            <button
+              type="button"
+              onClick={() => onJumpTo?.(reply.id)}
+              title={reply.body}
+              className="mb-1.5 block w-full max-w-full cursor-pointer rounded-lg border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] px-2.5 py-1.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_35%,transparent)]"
+            >
+              <span className="flex items-center gap-1">
+                <FiCornerUpLeft
+                  size={10.5}
+                  aria-hidden
+                  className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,var(--color-primary))]"
+                />
+                <span className="truncate text-[10.5px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-action)_72%,var(--color-primary))]">
+                  {reply.authorName ||
+                    (reply.author === "support" ? copy.conversationSupport : copy.conversationCustomer)}
+                </span>
+              </span>
+              <span className="mt-0.5 line-clamp-2 block text-[11.5px] leading-[1.45] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {reply.body}
+              </span>
+            </button>
           ) : null}
 
           {message.body ? <p className="whitespace-pre-wrap break-words">{message.body}</p> : null}

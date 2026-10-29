@@ -1866,6 +1866,49 @@ hdAppend(HD_0491, "support", "আপনার পেমেন্টটি গে
 hdAppend(HD_0491, "user", "অনলাইন পেমেন্ট করে ছিলাম বিকাশ দিয়ে।", { at: "2026-10-28T12:05:30.000Z" });
 hdAppend(HD_0491, "user", "ট্রানজেকশন আইডি পাঠাচ্ছি।", { at: "2026-10-28T12:07:00.000Z" });
 
+// 0496 — the ticket where the thread reads as two one-sided columns: the
+// customer's rows on the right, support's on the left, nothing saying which
+// answer belongs to which comment. No row carries a `replyTo`; the pairing has
+// to be inferred from the order.
+const HD_0496 = "0496";
+const HD_0496_CUSTOMER = "Nusrat Jahan";
+const HD_0496_AGENT = "MD Shahzalal Amin Surker";
+hdThreads.set(HD_0496, {
+  name: HD_0496,
+  subject: "Cannot open the practice exam from my dashboard",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "high",
+  category: "technical",
+  customer: HD_0496_CUSTOMER,
+  customerEmail: "nusrat@example.com",
+  agent: HD_0496_AGENT,
+  submittedAt: "2026-10-28T09:10:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0496, "user", "hi", { at: "2026-10-28T09:10:00.000Z", authorName: HD_0496_CUSTOMER });
+hdAppend(HD_0496, "support", "hello", { at: "2026-10-28T09:12:00.000Z", authorName: HD_0496_AGENT });
+hdAppend(HD_0496, "user", "প্র্যাকটিস এক্সাম খুললে সাদা পেজ আসে, কিছু দেখায় না।", {
+  at: "2026-10-28T09:14:00.000Z",
+  authorName: HD_0496_CUSTOMER,
+});
+hdAppend(HD_0496, "support", "কোন ব্রাউজার আর কোন ক্লাসের এক্সাম, বলবেন?", {
+  at: "2026-10-28T09:16:00.000Z",
+  authorName: HD_0496_AGENT,
+});
+hdAppend(HD_0496, "user", "Chrome, ক্লাস নাইন, পদার্থবিজ্ঞান অধ্যায় ৩।", {
+  at: "2026-10-28T09:18:00.000Z",
+  authorName: HD_0496_CUSTOMER,
+});
+hdAppend(HD_0496, "support", "ওই অধ্যায়ের প্রশ্নপত্রে ফাইল আপলোড করছি, ৫ মিনিট পর আবার চেষ্টা করুন।", {
+  at: "2026-10-28T09:21:00.000Z",
+  authorName: HD_0496_AGENT,
+});
+hdAppend(HD_0496, "user", "এখন খুলছে, ধন্যবাদ!", { at: "2026-10-28T09:26:00.000Z", authorName: HD_0496_CUSTOMER });
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */

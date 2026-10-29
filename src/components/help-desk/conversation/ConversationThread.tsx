@@ -5,7 +5,7 @@ import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatBubbleTime, formatChatDay } from "@/lib/help-desk/format";
-import type { ConversationMessage } from "@/lib/help-desk/types";
+import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
 
@@ -41,6 +41,11 @@ type ThreadRow =
       dayLabel: string | null;
       /** Same side, same day, only moments after the row above it. */
       grouped: boolean;
+      /**
+       * The comment this row answers, when the ERP did not link the two itself.
+       * Pairing is inferred from the ordered thread, never from timestamps.
+       */
+      quoted?: ConversationReplyRef;
     }
   | {
       kind: "event";
@@ -401,6 +406,40 @@ export default function ConversationThread({
       if (!moved) break;
     }
 
+    // --- Which comment does this reply answer? -----------------------------
+    // The ERP stores a ticket's rows as a flat list: the Comment channel and the
+    // Communication channel each write their own rows, and neither links an
+    // answer to the comment it answers. Without that link the thread reads as
+    // two one-sided columns — a customer's "hi" on the right, support's "hello"
+    // on the left, nothing saying they belong together.
+    //
+    // So pair them the way the reader already understands a conversation: a row
+    // whose predecessor in this ordered thread came from the *other* side quotes
+    // that predecessor. Runs from one person never quote themselves, and an
+    // existing `replyTo` from the ERP always wins over the inference. The snippet
+    // is trimmed here (not in the bubble) so the quote strip can stay one block
+    // tall no matter how long the comment was.
+    const inferredQuotes = new Map<string, ConversationReplyRef>();
+    let previousMessage: Extract<ThreadRow, { kind: "message" }> | null = null;
+    for (const entry of entries) {
+      if (entry.kind !== "message") continue;
+      const current = entry;
+      if (previousMessage && !current.message.replyTo && previousMessage.message.isMine !== current.message.isMine) {
+        const text = String(previousMessage.message.body || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (text) {
+          inferredQuotes.set(current.key, {
+            id: previousMessage.message.id,
+            author: previousMessage.message.author,
+            authorName: previousMessage.message.authorName,
+            body: text.length > 140 ? `${text.slice(0, 140)}…` : text,
+          });
+        }
+      }
+      previousMessage = current;
+    }
+
     // One pass sets the day separator and, with it, the run collapsing: two
     // bubbles from the same person on the same day are one block, so the second
     // one drops its name and tucks up under the first. Anything that breaks the
@@ -419,7 +458,9 @@ export default function ConversationThread({
         const closeEnough = Number.isFinite(previousAt) && Number.isFinite(currentAt) && currentAt - previousAt <= GROUP_WINDOW_MS;
         grouped = sameSide && sameAuthor && closeEnough;
       }
-      return { ...entry, dayLabel, grouped };
+      return entry.kind === "message"
+        ? { ...entry, dayLabel, grouped, quoted: inferredQuotes.get(entry.key) }
+        : { ...entry, dayLabel };
     });
   }, [messages, language, systemEvents]);
 
@@ -616,6 +657,7 @@ export default function ConversationThread({
                 ) : (
                   <MessageBubble
                     message={row.message}
+                    quoted={row.quoted}
                     copy={copy}
                     language={language}
                     grouped={row.grouped}
