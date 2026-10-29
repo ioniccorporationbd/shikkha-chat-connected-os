@@ -4,13 +4,34 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 
-type Language = "bn" | "en";
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGE_COOKIE,
+  LANGUAGE_STORAGE_KEY,
+  normalizeLanguage,
+  type Language,
+} from "@/lib/i18n/language-config";
+
+// Re-exported so existing imports (`@/lib/i18n/LanguageProvider`) keep working.
+export { DEFAULT_LANGUAGE, LANGUAGE_COOKIE, LANGUAGE_STORAGE_KEY, normalizeLanguage };
+export type { Language };
+
+/**
+ * `useLayoutEffect` on the client, `useEffect` on the server render (where a
+ * layout effect is a no-op and React would warn). The translation pass must run
+ * BEFORE the browser paints the frame in which React committed new text, or the
+ * visitor sees the previous language first and the swap lands a frame later —
+ * the "text arrives late / flickers" symptom of the toggle.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 type LanguageContextValue = {
   language: Language;
@@ -18,8 +39,6 @@ type LanguageContextValue = {
   toggleLanguage: () => void;
   t: (text: string) => string;
 };
-
-const LANGUAGE_STORAGE_KEY = "shikkha-chat-site-language";
 
 const translations: Record<string, string> = {
   "CONNECT HOME, CLASSROOM & ADMIN OFFICE":
@@ -284,9 +303,6 @@ function translateText(text: string, language: Language) {
   return translations[normalized] ?? text;
 }
 
-/** The language the server renders. The client must start here too. */
-export const DEFAULT_LANGUAGE: Language = "bn";
-
 /**
  * The visitor's saved choice, or null when there is none.
  *
@@ -308,11 +324,45 @@ function readStoredLanguage(): Language | null {
   }
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
+/** One year; a UI preference, readable by the app's own server render. */
+const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function writeLanguageCookie(target: Document, language: Language) {
+  try {
+    target.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=${LANGUAGE_COOKIE_MAX_AGE}; samesite=lax`;
+  } catch {
+    // Cookie writes can throw when the store is disabled; the localStorage
+    // mirror still drives the current tab.
+  }
+}
+
+function readLanguageCookie(target: Document): Language | null {
+  try {
+    const match = target.cookie.match(
+      new RegExp(`(?:^|;\\s*)${LANGUAGE_COOKIE}=([^;]*)`)
+    );
+
+    return match ? normalizeLanguage(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function LanguageProvider({
+  children,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  children: ReactNode;
+  /** The language the server already rendered this request in. */
+  initialLanguage?: Language;
+}) {
   // Start from the server's language so the first client render matches the SSR
   // HTML; the visitor's saved choice is applied after mount (see the effect below).
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
   const originalTextRef = useRef(new WeakMap<Text, string>());
+  /** Text this provider last wrote into a node — lets the observer tell its own
+   *  writes apart from text React (or anything else) changed underneath it. */
+  const writtenTextRef = useRef(new WeakMap<Text, string>());
 
   const setLanguage = (nextLanguage: Language) => {
     setLanguageState(nextLanguage);
@@ -324,6 +374,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (typeof document !== "undefined") {
       document.documentElement.lang = nextLanguage;
       document.documentElement.dataset.lang = nextLanguage;
+      // Mirror the choice into the cookie the server reads, so the NEXT request
+      // is already rendered in this language instead of flipping after hydration.
+      writeLanguageCookie(document, nextLanguage);
     }
   };
 
@@ -337,19 +390,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [language]
   );
 
-  // Adopt the stored preference after hydration, never during it.
-  useEffect(() => {
+  // Adopt the stored preference after hydration, never during it. A LAYOUT
+  // effect so the re-render it triggers lands in the same frame as hydration —
+  // as a passive effect it painted the SSR language first and swapped later.
+  useIsomorphicLayoutEffect(() => {
     const stored = readStoredLanguage();
 
     if (stored && stored !== language) {
       setLanguageState(stored);
     }
+
+    // A visitor who toggled before the cookie existed (older build, cleared
+    // cookies): persist the choice for the next request right away.
+    if (stored && readLanguageCookie(document) !== stored) {
+      writeLanguageCookie(document, stored);
+    }
     // Mount-only on purpose: re-running this on every language change would
     // fight the toggle and the localStorage write in `setLanguage`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     document.documentElement.lang = language;
     document.documentElement.dataset.lang = language;
 
@@ -404,6 +464,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         }
 
         if (node.nodeValue !== originalValue) {
+          writtenTextRef.current.set(node, originalValue);
           node.nodeValue = originalValue;
         }
 
@@ -418,6 +479,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       const nextValue = originalValue.replace(normalized, translated);
 
       if (node.nodeValue !== nextValue) {
+        writtenTextRef.current.set(node, nextValue);
         node.nodeValue = nextValue;
       }
     };
@@ -436,6 +498,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
+        // Text changed IN PLACE. React rewrites an existing text node when only
+        // its string changed (no childList mutation), so without this branch any
+        // label that updates after mount — a count, a late API value, an
+        // expanded panel — kept the previous language until the next toggle.
+        if (mutation.type === "characterData") {
+          const node = mutation.target as Text;
+          const currentValue = node.nodeValue ?? "";
+
+          // Our own write echoing back: nothing to do.
+          if (writtenTextRef.current.get(node) === currentValue) continue;
+
+          // Someone else replaced the text, so the cached "original" is stale.
+          // Re-derive it before translating, or a known English phrase would be
+          // overwritten with the translation of the phrase it replaced.
+          originalText.delete(node);
+          writtenTextRef.current.delete(node);
+          applyToTextNode(node);
+          continue;
+        }
+
         for (const node of Array.from(mutation.addedNodes)) {
           if (node.nodeType === Node.TEXT_NODE) {
             applyToTextNode(node as Text);
@@ -452,7 +534,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: false,
+      characterData: true,
     });
 
     return () => observer.disconnect();

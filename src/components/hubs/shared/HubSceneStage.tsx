@@ -9,9 +9,14 @@ import {
 } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+
+/** Bilingual copy as authored in `@/lib/feature-showcase`. */
+export type HubSceneTitle = string | { bn: string; en: string };
+
 export type HubScene = {
   id: string;
-  title: string;
+  title: HubSceneTitle;
   node: ReactNode;
 };
 
@@ -108,7 +113,12 @@ export default function HubSceneStage({
     return found < 0 ? 0 : found;
   }, [scenes, activeId]);
 
-  const activeTitle = scenes[activeIndex]?.title ?? "";
+  const { language } = useLanguage();
+  const rawTitle = scenes[activeIndex]?.title ?? "";
+  // Bilingual titles (the catalog sections) are resolved here so the floating
+  // label follows the language toggle; plain string titles are passed through.
+  const activeTitle =
+    typeof rawTitle === "string" ? rawTitle : rawTitle[language] ?? rawTitle.bn;
 
   // On the pinned stage keep the active scene + its immediate neighbours
   // mounted (no remount at a boundary). Everywhere else, a single scene.

@@ -1,9 +1,14 @@
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Toaster from "@/components/ui/Toaster";
+import {
+  LANGUAGE_COOKIE,
+  normalizeLanguage,
+} from "@/lib/i18n/language-config";
 import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 
 export const metadata: Metadata = {
@@ -11,28 +16,37 @@ export const metadata: Metadata = {
   description: "Shikkha Chat Connected OS",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The visitor's language is decided HERE, before the HTML is written: the
+  // client mirrors its choice into a cookie (see LanguageProvider), so an
+  // English visitor gets English text in the very first paint instead of the
+  // Bangla SSR page being retranslated after hydration.
+  const language = normalizeLanguage(
+    (await cookies()).get(LANGUAGE_COOKIE)?.value
+  );
+
   return (
     // Light mode is the only supported theme (dark mode was removed). The
     // attribute is still written so any stale `data-theme` value left in a
     // user's storage is overridden, and the inline script in <head> clears the
     // retired preference key so nobody keeps a dark flag around.
     <html
-      lang="bn"
-      data-lang="bn"
+      lang={language}
+      data-lang={language}
       data-theme="light"
       translate="no"
       className="h-full antialiased"
       suppressHydrationWarning
     >
       {/*
-        The initial language is a deterministic constant ("bn") for both the
-        server render and the client's first render, so React compares the
-        <html> tree for real — no suppressHydrationWarning is needed there.
+        The initial language comes from the preference cookie, and that same
+        value is handed to LanguageProvider, so the server HTML and the client's
+        first render agree — React compares the <html> tree for real, and no
+        suppressHydrationWarning is needed there.
 
         Browser extensions still mutate the DOM we server-rendered:
         - Google Translate rewrites <html lang>/class and wraps text in <font>.
@@ -61,7 +75,13 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html:
               'try{localStorage.removeItem("shikkha-theme")}catch(e){}' +
-              'try{document.documentElement.setAttribute("data-theme","light");document.documentElement.style.colorScheme="light"}catch(e){}',
+              'try{document.documentElement.setAttribute("data-theme","light");document.documentElement.style.colorScheme="light"}catch(e){}' +
+              // Mirror an existing localStorage choice into the cookie the server
+              // reads, so the next navigation is rendered in that language from
+              // the start instead of waiting for hydration to retranslate.
+              'try{var l=localStorage.getItem("shikkha-chat-site-language");' +
+              'if((l==="en"||l==="bn")&&document.cookie.indexOf("shikkha-chat-site-language=")<0){' +
+              'document.cookie="shikkha-chat-site-language="+l+"; path=/; max-age=31536000; samesite=lax"}}catch(e){}',
           }}
         />
       </head>
@@ -70,7 +90,7 @@ export default function RootLayout({
         className="min-h-full w-full overflow-x-clip bg-[var(--background)] text-[var(--foreground)]"
       >
         <QueryProvider>
-          <LanguageProvider>
+          <LanguageProvider initialLanguage={language}>
             {/* Hydrates the auth store so the sidebar and the dashboard agree. */}
             <AuthBootstrap />
             {children}

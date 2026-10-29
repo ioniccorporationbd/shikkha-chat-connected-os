@@ -6,8 +6,6 @@ import Link from "next/link";
 import SectionPanel from "@/components/hubs/shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import {
-  showcaseStatusLabel,
-  SHOWCASE_TEXT,
   type ShowcaseCategory,
   type ShowcaseFeature,
 } from "@/lib/feature-showcase";
@@ -201,20 +199,6 @@ export default function RoleAccessPanel({
         icon={SHOWCASE_ICONS[feature.icon]}
         showButtons={false}
         capabilities={guide.tips.map((tip) => tip[lang])}
-        rows={[
-          {
-            title: t.accessLabel[lang],
-            meta: [
-              { label: t.dashboardLabel[lang], value: guide.dashboardRoute },
-              {
-                label: SHOWCASE_TEXT.statusLabel[lang],
-                value: showcaseStatusLabel(feature, lang),
-              },
-              { label: t.signingLabel[lang], value: guide.signingRoles.join(", ") },
-              { label: t.routesLabel[lang], value: String(routeCount) },
-            ],
-          },
-        ]}
       >
         {/* The role's links — 1 … N, title + description, five lines cap. */}
         <div className="mt-6 w-full">
