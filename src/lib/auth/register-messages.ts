@@ -44,6 +44,8 @@ export interface RegisterCopy {
   availabilityChecking: string;
   emailTaken: string;
   mobileTaken: string;
+  /** Shown when the digit-only field is not a complete BD mobile number. */
+  mobileInvalid: string;
   smsNotSent: string;
   emailNotSent: string;
   otpSentNotice: string;
@@ -97,6 +99,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     availabilityChecking: "যাচাই করা হচ্ছে…",
     emailTaken: "এই ইমেইল আগেই নেওয়া হয়েছে।",
     mobileTaken: "এই মোবাইল নম্বর আগেই নেওয়া হয়েছে।",
+    mobileInvalid: "সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন 01712345678)।",
     smsNotSent: "মোবাইলে SMS পাঠানো যায়নি — কোডটি ইমেইলে পাঠানো হয়েছে।",
     emailNotSent: "ইমেইলে পাঠানো যায়নি — কোডটি মোবাইলে SMS-এ পাঠানো হয়েছে।",
     otpSentNotice: "আপনার কোড পাঠানো হয়েছে।",
@@ -147,6 +150,7 @@ export const registerCopy: Record<"bn" | "en", RegisterCopy> = {
     availabilityChecking: "Checking…",
     emailTaken: "That email is already registered.",
     mobileTaken: "That mobile number is already registered.",
+    mobileInvalid: "Enter a valid Bangladeshi mobile number (e.g. 01712345678).",
     smsNotSent: "We could not send the SMS — the code went to your email instead.",
     emailNotSent: "We could not send the email — the code went to your mobile by SMS instead.",
     otpSentNotice: "A code has been sent to you.",

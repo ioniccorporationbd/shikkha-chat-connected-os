@@ -41,6 +41,7 @@ import type {
   SessionPayload,
 } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
@@ -167,7 +168,21 @@ export default function LoginForm() {
     const apiError = thrown as ApiError;
     const code = apiError?.code ?? "network_error";
     const message = apiError?.message ?? String(thrown);
-    console.error(`[login] ${code}: ${message}`);
+
+    // Real cause in the console *and* in the ERP Error Log
+    // (shikkha_os: portal client error). The identifier the caller typed is
+    // never attached, and neither is the password or the OTP code.
+    reportClientError({
+      scope: "auth:login",
+      message: `login ${step} failed: ${code}: ${message}`,
+      detail: {
+        step,
+        status: apiError?.status,
+        code,
+        language,
+      },
+    });
+
     toast.error(authErrorMessage(language, code, apiError?.message ?? ""));
     setBusy(false);
   }

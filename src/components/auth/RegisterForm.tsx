@@ -20,6 +20,7 @@ import AuthBrand from "@/components/auth/AuthBrand";
 import AuthCard from "@/components/auth/AuthCard";
 import OtpInput from "@/components/auth/OtpInput";
 import { ApiError, getJson, postJson } from "@/lib/api/http";
+import { isValidBdMobile, sanitizeBdMobile } from "@/lib/auth/mobile";
 import {
   registerCopyFor,
   registerErrorMessage,
@@ -34,6 +35,7 @@ import type {
   RegisterStartPayload,
 } from "@/lib/auth/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 
 const FIELD_CLASS =
@@ -143,11 +145,20 @@ export default function RegisterForm() {
         // console names the cause (e.g. code=upstream_error / not_configured)
         // instead of leaving only a bare 502 from axios.
         const apiError = thrown as ApiError;
-        console.error(
-          `[register] availability probe failed (${field}=${trimmed}): ` +
+        reportClientError({
+          scope: "auth:register:availability",
+          message:
+            `availability probe failed (${field}): ` +
             `status=${apiError?.status ?? "?"} code=${apiError?.code ?? "network_error"} ` +
-            `message=${apiError?.message ?? String(thrown)}`
-        );
+            `message=${apiError?.message ?? String(thrown)}`,
+          // The probed value is user data: masked, never raw.
+          detail: {
+            field,
+            value: field === "email" ? "***@" + (trimmed.split("@")[1] ?? "") : `***${trimmed.slice(-3)}`,
+            status: apiError?.status,
+            code: apiError?.code,
+          },
+        });
         if (field === "email") setEmailHint(null);
         else setMobileHint(null);
       }
@@ -161,8 +172,20 @@ export default function RegisterForm() {
     const message = apiError?.message ?? String(thrown);
 
     // Name the real cause in the console (code + portal/ERP message) so the
-    // only trace of a failure is not the generic axios line.
-    console.error(`[register] ${code}: ${message}`);
+    // only trace of a failure is not the generic axios line, and mirror the
+    // same diagnostic into the ERP Error Log (shikkha_os: portal client
+    // error). Only non-secret fields are attached - never the password, the
+    // OTP, a session cookie or a token.
+    reportClientError({
+      scope: "auth:register",
+      message: `register ${step} failed: ${code}: ${message}`,
+      detail: {
+        step,
+        status: apiError?.status,
+        code,
+        language,
+      },
+    });
 
     toast.error(registerErrorMessage(language, code, apiError?.message ?? ""));
     setBusy(false);
@@ -174,6 +197,14 @@ export default function RegisterForm() {
 
     if (!fullName.trim() || !email.trim() || !mobile.trim() || !password) {
       toast.warning(copy.errors.validation_error);
+      return;
+    }
+
+    // Server-side validation is unchanged; this only stops an obviously
+    // malformed number from being submitted (and names the exact problem).
+    if (!isValidBdMobile(mobile)) {
+      setMobileHint({ ok: false, text: copy.mobileInvalid });
+      toast.warning(copy.mobileInvalid);
       return;
     }
 
@@ -301,15 +332,37 @@ export default function RegisterForm() {
               <input
                 type="tel"
                 name="mobile"
-                autoComplete="tel"
+                autoComplete="tel-national"
                 required
-                inputMode="tel"
+                inputMode="numeric"
+                pattern="01[3-9][0-9]{8}"
+                maxLength={13}
                 value={mobile}
+                // Digits only, on typing and on paste: sanitizeBdMobile drops
+                // every non-digit (and normalises a pasted +880 prefix), so a
+                // letter or symbol can never land in the field at all.
                 onChange={(event) => {
-                  setMobile(event.target.value);
+                  setMobile(sanitizeBdMobile(event.target.value));
                   setMobileHint(null);
                 }}
-                onBlur={() => void checkAvailability("mobile", mobile)}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  setMobile(sanitizeBdMobile(event.clipboardData.getData("text")));
+                  setMobileHint(null);
+                }}
+                onBlur={() => {
+                  if (!mobile) {
+                    setMobileHint(null);
+                    return;
+                  }
+
+                  if (!isValidBdMobile(mobile)) {
+                    setMobileHint({ ok: false, text: copy.mobileInvalid });
+                    return;
+                  }
+
+                  void checkAvailability("mobile", mobile);
+                }}
                 placeholder={copy.mobilePlaceholder}
                 className={FIELD_CLASS}
               />
