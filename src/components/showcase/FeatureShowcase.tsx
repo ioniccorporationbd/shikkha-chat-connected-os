@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiChevronDown } from "react-icons/fi";
 
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -9,6 +9,7 @@ import {
   SHOWCASE_TEXT,
   type ShowcaseLanguage,
 } from "@/lib/feature-showcase";
+import { reportClientError } from "@/lib/log/report-error";
 import { ROLE_ACCESS_GUIDES } from "@/lib/role-routes";
 
 import { SHOWCASE_ICONS } from "./catalog/icons";
@@ -92,35 +93,108 @@ export default function FeatureShowcase() {
   const { language: rawLanguage } = useLanguage();
   const language: ShowcaseLanguage = rawLanguage === "en" ? "en" : "bn";
 
-  // The other categories behave like an accordion (one open at a time, driven
-  // by the page scroll). Role-based dashboards is deliberately NOT part of that
-  // accordion: it is pinned first in the rail, but its eight roles stay FOLDED
-  // until the user clicks the heading — no scroll sync, section change or page
-  // refresh may reopen it (only a click on the heading, or on a role row, does).
+  // Combined state: `openCategory` for the accordion categories, `roleExpanded`
+  // for the Role-based dashboards list. The section-focus engine keeps at most
+  // ONE of them open: over the hero both are shut; over a video banner only
+  // that section's dropdown opens (with no child link selected); inside a
+  // section's main content the matching child row lights up.
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   const [roleExpanded, setRoleExpanded] = useState(false);
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+  const focusRef = useRef<{ kind: string; categoryId: string | null }>({
+    kind: "hero",
+    categoryId: null,
+  });
 
-  // Follow the page: when the scroll-sync engine reports a catalog section as
-  // the active one, open its category and highlight the feature row.
+  // Follow the page: the section-focus engine (CatalogScrollFocus) reports
+  // whether the reader is over the hero, a section's video banner, or a
+  // section's main content.
   useEffect(() => {
-    const handleActiveSection = (event: Event) => {
-      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
-      if (!id) return;
+    const applyFocus = (focus: {
+      kind: string;
+      categoryId?: string | null;
+      featureId?: string | null;
+    }) => {
+      const categoryId = focus.categoryId ?? null;
+      focusRef.current = { kind: focus.kind, categoryId };
 
-      const parsed = parseCatalogFeaturePanelId(id);
-      if (!parsed) return;
+      if (focus.kind === "hero" || !categoryId) {
+        // Hero banner (or the footer): everything relaxed.
+        setOpenCategory(null);
+        setRoleExpanded(false);
+        setActiveFeatureId(null);
+        return;
+      }
 
-      setActiveFeatureId(parsed.featureId);
-      setOpenCategory(parsed.categoryId);
+      if (categoryId === ROLE_SECTION_ID) {
+        // Role list is the open dropdown; a child role only lights up once
+        // the reader is inside the content, never while on the video banner.
+        setOpenCategory(null);
+        setRoleExpanded(true);
+      } else {
+        setRoleExpanded(false);
+        setOpenCategory(categoryId);
+      }
+
+      setActiveFeatureId(focus.kind === "content" ? focus.featureId ?? null : null);
     };
 
+    const handleSectionFocus = (event: Event) => {
+      try {
+        const detail = (
+          event as CustomEvent<{
+            kind?: string;
+            categoryId?: string | null;
+            featureId?: string | null;
+          }>
+        ).detail;
+        if (!detail || !detail.kind) return;
+        applyFocus({
+          kind: detail.kind,
+          categoryId: detail.categoryId,
+          featureId: detail.featureId,
+        });
+      } catch (error) {
+        reportClientError({
+          scope: "homepage:sidebar-focus",
+          message: "Sidebar could not apply the section focus state",
+          detail: error instanceof Error ? error.message : String(error),
+        });
+      }
+    };
+
+    // Fallback: the rail inside a content section also broadcasts its nearest
+    // panel. Trust it only while THAT section's content is the focused region,
+    // so a neighbouring rail can never steal the highlight during a banner.
+    const handleActiveSection = (event: Event) => {
+      try {
+        const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+        if (!id) return;
+
+        const parsed = parseCatalogFeaturePanelId(id);
+        if (!parsed) return;
+
+        const focus = focusRef.current;
+        if (focus.kind !== "content" || focus.categoryId !== parsed.categoryId) {
+          return;
+        }
+
+        setActiveFeatureId(parsed.featureId);
+      } catch (error) {
+        reportClientError({
+          scope: "homepage:sidebar-focus",
+          message: "Sidebar could not follow the active rail panel",
+          detail: error instanceof Error ? error.message : String(error),
+        });
+      }
+    };
+
+    window.addEventListener("connected-os-section-focus", handleSectionFocus);
     window.addEventListener("connected-os-active-section", handleActiveSection);
-    return () =>
-      window.removeEventListener(
-        "connected-os-active-section",
-        handleActiveSection,
-      );
+    return () => {
+      window.removeEventListener("connected-os-section-focus", handleSectionFocus);
+      window.removeEventListener("connected-os-active-section", handleActiveSection);
+    };
   }, []);
 
   return (
@@ -146,14 +220,18 @@ export default function FeatureShowcase() {
               aria-controls={panelId}
               onClick={() => {
                 if (isRoleCategory) {
-                  // Expand/collapse the role list; it never joins the accordion.
-                  setRoleExpanded(!roleExpanded);
+                  // Expand/collapse the role list — the only other dropdown,
+                  // so opening it closes the accordion category.
+                  const opening = !roleExpanded;
+                  setRoleExpanded(opening);
+                  if (opening) setOpenCategory(null);
                   navigateToSection(catalogSectionId(category.id));
                   return;
                 }
 
                 const opening = !isOpen;
                 setOpenCategory(opening ? category.id : null);
+                if (opening) setRoleExpanded(false);
                 // Clicking a dropdown navigates to that category's main section.
                 if (opening) navigateToSection(catalogSectionId(category.id));
               }}
@@ -202,6 +280,7 @@ export default function FeatureShowcase() {
                             type="button"
                             onClick={() => {
                               setRoleExpanded(true);
+                              setOpenCategory(null);
                               setActiveFeatureId(guide.key);
                               navigateToSection(
                                 catalogFeaturePanelId(

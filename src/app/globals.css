@@ -2495,3 +2495,14 @@ html[data-lang="en"] .language-toggle-knob {
   height: 0;
   display: none;
 }
+
+/* Sidebar demo-request CTA (foot of the rail): brand background #032521 and a
+   label one step above the rail rows. Declared unlayered on purpose — the
+   global type scale and the `*` reset live unlayered too, so a Tailwind
+   utility layer could never win here. */
+.connected-sidebar .sidebar-demo-cta {
+  font-size: var(--text-title-size) !important; /* one step above the 16px rows */
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+

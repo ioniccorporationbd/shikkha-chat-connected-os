@@ -506,9 +506,13 @@ export default function LeftSidebar() {
           <FeatureShowcase />
 
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
+            {/* Demo-request CTA at the foot of the rail: background is the
+                brand primary #032521 (--color-primary); `.sidebar-demo-cta`
+                in globals.css lifts the label one type step above the rail
+                rows. The modal and its flow stay untouched. */}
             <Link
               href="#connect"
-              className="flex h-11 items-center justify-center rounded-2xl border border-[var(--color-action)] bg-[var(--color-action)] text-[13px] font-semibold text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[var(--color-action-hover)] sm:h-12"
+              className="sidebar-demo-cta flex h-12 items-center justify-center rounded-2xl border border-[#032521] bg-[#032521] text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,#032521_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[#06453c] sm:h-[56px]"
             >
               {text.talkToExpert}
             </Link>

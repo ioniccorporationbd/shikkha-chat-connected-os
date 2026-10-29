@@ -74,7 +74,7 @@ export default function CatalogMainSections() {
                 <HubSceneStage
                   scenes={scenes}
                   defaultActiveId={scenes[0].id}
-                  emitDefaultOnMount={index === 0}
+                  emitDefaultOnMount={false}
                 />
               }
               right={
