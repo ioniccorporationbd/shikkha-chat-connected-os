@@ -395,6 +395,8 @@ export interface ConversationPayload {
   requirements: ConversationMessage[];
   /** Every event on the ticket, oldest first (creation, replies, status). */
   timeline?: ConversationTimelineEvent[];
+  /** Files the ERP refused to link to this message (foreign or already used). */
+  attachments_failed?: string[];
   unread: number;
   statusCategory: string;
   isSupport: boolean;

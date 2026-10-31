@@ -42,7 +42,7 @@ import {
   type TypeIconKey,
 } from "@/lib/help-desk/options";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
-import { createTicket, getOptions } from "@/lib/help-desk/service";
+import { createTicket, getOptions, HelpDeskError } from "@/lib/help-desk/service";
 import { reportClientError } from "@/lib/log/report-error";
 import type {
   HelpDeskOptions,
@@ -344,6 +344,13 @@ export default function CreateTicketForm({
       setCreated(ticket);
       toast.success(copy.toastCreated.replace("{id}", ticket.id));
     } catch (error) {
+      // A server rejection means the ERP also discarded the files uploaded for
+      // this attempt, so the chips are dropped instead of leaving URLs that no
+      // longer resolve. A transport error keeps them: the upload may be intact.
+      if (error instanceof HelpDeskError && error.status > 0 && attachments.length > 0) {
+        setAttachments([]);
+        toast.warning(copy.attachmentsDiscarded);
+      }
       toast.error(error instanceof Error && error.message ? error.message : copy.toastLoadFailed);
       reportClientError({
         scope: "help-desk:create",

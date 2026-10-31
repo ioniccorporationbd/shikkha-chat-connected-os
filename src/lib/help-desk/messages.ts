@@ -85,6 +85,7 @@ export interface HelpDeskCopy {
   attachNote: string;
   /** Submit-button label while files are being uploaded (has {done}/{total}). */
   submittingAttachments: string;
+  attachmentsDiscarded: string;
   submit: string;
   submitting: string;
   cancel: string;
@@ -424,6 +425,8 @@ const bn: HelpDeskCopy = {
   attachNote:
     "ফাইল জমা দেওয়ার সঙ্গে সঙ্গেই Helpdesk-এ আপলোড হয় এবং টিকিটে সংযুক্ত থাকে — সাপোর্ট টিম ও আপনি টিকিটেই ছবিগুলো দেখতে পাবেন। ফাইলগুলো ব্যক্তিগত (private), শুধু আপনার টিকিটে অনুমোদিত ব্যক্তিরা খুলতে পারেন।",
   submittingAttachments: "সংযুক্তি আপলোড হচ্ছে… ({done}/{total})",
+  attachmentsDiscarded:
+    "টিকিট তৈরি হয়নি, তাই সংযুক্তিগুলোও সরিয়ে ফেলা হয়েছে — ফাইলগুলো আবার যোগ করে আবার জমা দিন।",
   submit: "টিকিট জমা দিন",
   submitting: "জমা হচ্ছে…",
   cancel: "বাতিল করুন",
@@ -755,6 +758,8 @@ const en: HelpDeskCopy = {
   attachNote:
     "Files upload to the Helpdesk the moment you submit and stay attached to the ticket — both you and the support team see them there. They are private: only people with access to your ticket can open them.",
   submittingAttachments: "Uploading attachments… ({done}/{total})",
+  attachmentsDiscarded:
+    "The ticket was not created, so its uploads were discarded too — add the files again and resubmit.",
   submit: "Submit ticket",
   submitting: "Submitting…",
   cancel: "Cancel",

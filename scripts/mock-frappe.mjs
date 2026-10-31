@@ -1542,6 +1542,68 @@ const hdTickets = new Map();
 let hdTicketSeq = 0;
 let hdFileSeq = 0;
 
+// `File` rows, exactly like the doctype the real portal writes to: an upload is a
+// private row owned by the caller and it stays unattached until a ticket or a
+// communication claims it. `attached_to_doctype` / `attached_to_name` are what the
+// Helpdesk agent's attachment view reads, so the mock keeps them honest.
+const hdFileList = [];
+const hdFilesByUrl = new Map();
+
+// The bytes the portal actually uploaded, so serving a File row returns the
+// real image (what the agent's preview/lightbox fetches), not a placeholder.
+const hdFileBytes = new Map();
+
+function hdFileRow({ name, url, fileName, size, owner }) {
+  const row = {
+    name,
+    file_url: url,
+    file_name: fileName,
+    file_size: size,
+    owner,
+    attached_to_doctype: "",
+    attached_to_name: "",
+  };
+  hdFileList.push(row);
+  hdFilesByUrl.set(url, row);
+  return row;
+}
+
+const hdFileUnattached = (row) => !row.attached_to_doctype && !row.attached_to_name;
+
+// The real backend only links Files that (a) the caller owns and (b) nothing has
+// claimed yet; anything else is reported back as `attachments_failed`. The mock
+// refuses exactly the same way, so a green run cannot hide an ownership hole.
+function hdResolveUploads(items, owner) {
+  const attached = [];
+  const failed = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const url = String(item?.url ?? "").trim();
+    if (!url) continue;
+    const label = String(item?.name ?? url.split("/").pop() ?? "attachment");
+    const row = hdFilesByUrl.get(url);
+    if (!row || row.owner !== owner || !hdFileUnattached(row)) {
+      failed.push(label);
+      continue;
+    }
+    attached.push({ row, label });
+  }
+  return { attached, failed };
+}
+
+// Mirrors `_discard_unattached_uploads`: a create that never produced a ticket
+// takes its own still-unclaimed uploads with it, so nothing is left orphaned.
+function hdDiscardUploads(items, owner) {
+  for (const item of Array.isArray(items) ? items : []) {
+    const url = String(item?.url ?? "").trim();
+    if (!url) continue;
+    const row = hdFilesByUrl.get(url);
+    if (!row || row.owner !== owner || !hdFileUnattached(row)) continue;
+    const index = hdFileList.indexOf(row);
+    if (index >= 0) hdFileList.splice(index, 1);
+    hdFilesByUrl.delete(url);
+  }
+}
+
 // One thread, in memory, shared by both demo identities: the staff account sees
 // the customer's messages, the customer account sees support's — which is what
 // the "instant delivery" harness needs. `mock.hd.push` adds a message from the
@@ -1984,6 +2046,15 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://127.0.0.1:${PORT}`);
   const method = url.pathname.replace(/^\/api\/method\//, "");
 
+  // Test-only view of the mocked `File` doctype: lets the Playwright/API suites
+  // assert the attachment mapping (attached_to_doctype / attached_to_name)
+  // without a live ERP.
+  if (url.pathname === "/__mock/files") {
+    response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+    response.end(JSON.stringify({ files: hdFileList }));
+    return;
+  }
+
   // The user picture the portal proxies through /api/auth/avatar. Serve any
   // site file path so a changed / uploaded picture resolves too (the real ERP
   // serves these from its own file store).
@@ -1992,12 +2063,16 @@ const server = createServer(async (request, response) => {
     url.pathname.startsWith("/files/") ||
     url.pathname.startsWith("/private/files/")
   ) {
+    // Serve the uploaded bytes when we have them (the ticket's real image);
+    // anything else (avatars and seeded files) falls back to the sample PNG.
+    const stored = hdFileBytes.get(url.pathname);
+    const payload = stored ?? AVATAR_BYTES;
     response.writeHead(200, {
       "content-type": "image/png",
-      "content-length": AVATAR_BYTES.length,
+      "content-length": payload.length,
       "cache-control": "no-store",
     });
-    response.end(AVATAR_BYTES);
+    response.end(payload);
     return;
   }
 
@@ -2796,13 +2871,30 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       const name = String(body?.file_name ?? "attachment.png").replace(/[^\w.\-]+/g, "_");
       const size = String(body?.content ?? "").length;
+      const bytes = size ? Math.ceil((size * 3) / 4) : 0;
+      const owner = String(email ?? "").toLowerCase();
+
+      // Mirrors `attachment_rules.reusable_upload`: a retried submit re-sends the
+      // same bytes, so the same File row is handed back instead of a duplicate.
+      const reusable = hdFileList.find(
+        (row) =>
+          row.owner === owner &&
+          row.file_name === name &&
+          row.file_size === bytes &&
+          hdFileUnattached(row),
+      );
+      if (reusable) {
+        console.log(`[mock-frappe] HD UPLOAD ${name} (reused)`);
+        ok(response, { name, url: reusable.file_url, size: bytes, reused: true });
+        return;
+      }
+
       hdFileSeq += 1;
+      const url = `/private/files/mock-hd-${hdFileSeq}-${name}`;
+      hdFileBytes.set(url, Buffer.from(String(body?.content ?? ""), "base64"));
+      hdFileRow({ name: `MOCKFILE-${String(hdFileSeq).padStart(5, "0")}`, url, fileName: name, size: bytes, owner });
       console.log(`[mock-frappe] HD UPLOAD ${name} (${size}b64)`);
-      ok(response, {
-        name,
-        url: `/private/files/mock-hd-${hdFileSeq}-${name}`,
-        size: size ? Math.ceil((size * 3) / 4) : 0,
-      });
+      ok(response, { name, url, size: bytes });
       return;
     }
 
@@ -2815,7 +2907,10 @@ const server = createServer(async (request, response) => {
       const contact = hdData.contact && typeof hdData.contact === "object" ? hdData.contact : {};
       const preferred = String(contact.preferredContact ?? "").trim().toLowerCase();
       const mobileDigits = String(contact.mobile ?? "").replace(/\D+/g, "");
-      const fail = (message) => failure(response, 417, "ValidationError", message, "Help Desk");
+      const fail = (message) => {
+        hdDiscardUploads(hdData.attachments, ownerKey);
+        return failure(response, 417, "ValidationError", message, "Help Desk");
+      };
 
       if (text("subject").length < 4) return fail("Please enter a subject (4-140 characters).");
       if (!text("ticketType")) return fail("Please choose a valid category.");
@@ -2829,7 +2924,28 @@ const server = createServer(async (request, response) => {
       const dupeKey = `${ownerKey}|${text("subject").toLowerCase()}|${text("description")}`;
       const recent = hdTickets.get(dupeKey);
       if (recent && Date.now() - recent.at < 60_000) {
-        ok(response, { ticket: recent.ticket, verified: true, duplicate: true, notification: null, attachments_failed: [] });
+        // The resubmit still carries this attempt's uploads: they go onto the
+        // ticket that actually exists, and anything left over is discarded.
+        const retryUploads = hdResolveUploads(hdData.attachments, ownerKey);
+        for (const entry of retryUploads.attached) {
+          entry.row.attached_to_doctype = "HD Ticket";
+          entry.row.attached_to_name = recent.ticket.id;
+          recent.ticket.attachments.push({
+            id: entry.row.name,
+            name: entry.row.file_name,
+            size: entry.row.file_size,
+            mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
+            url: entry.row.file_url,
+          });
+        }
+        hdDiscardUploads(hdData.attachments, ownerKey);
+        ok(response, {
+          ticket: recent.ticket,
+          verified: true,
+          duplicate: true,
+          notification: null,
+          attachments_failed: retryUploads.failed,
+        });
         return;
       }
 
@@ -2840,6 +2956,15 @@ const server = createServer(async (request, response) => {
         ] ?? "other";
       const id = `HD-2026-${String(hdTicketSeq).padStart(5, "0")}`;
       const timestamp = new Date().toISOString();
+
+      // Claim the uploaded Files exactly like `_attach_uploaded_files`: only the
+      // caller's unattached rows move, and each one records the ticket it now
+      // belongs to (what the agent's Helpdesk attachment panel reads).
+      const uploads = hdResolveUploads(hdData.attachments, ownerKey);
+      for (const entry of uploads.attached) {
+        entry.row.attached_to_doctype = "HD Ticket";
+        entry.row.attached_to_name = id;
+      }
       const ticket = {
         id,
         subject: text("subject"),
@@ -2857,12 +2982,12 @@ const server = createServer(async (request, response) => {
         },
         relatedRoute: text("relatedRoute") || undefined,
         department: text("department"),
-        attachments: (Array.isArray(hdData.attachments) ? hdData.attachments : []).map((file, index) => ({
-          id: `mock-file-${hdTicketSeq}-${index}`,
-          name: String(file?.name ?? `file-${index + 1}`),
-          size: 1024,
-          mime: /\.(png|jpe?g|webp|gif)$/i.test(String(file?.name ?? "")) ? "image/png" : "application/pdf",
-          url: String(file?.url ?? ""),
+        attachments: uploads.attached.map((entry, index) => ({
+          id: entry.row.name || `mock-file-${hdTicketSeq}-${index}`,
+          name: entry.row.file_name,
+          size: entry.row.file_size || 1024,
+          mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
+          url: entry.row.file_url,
         })),
         messages: [],
         pinnedMessageId: null,
@@ -2920,7 +3045,7 @@ const server = createServer(async (request, response) => {
             ...(preferred === "mobile" || preferred === "both" ? { mobile: { sent: true } } : {}),
           },
         },
-        attachments_failed: [],
+        attachments_failed: uploads.failed,
       });
       return;
     }
@@ -3075,8 +3200,26 @@ const server = createServer(async (request, response) => {
         failure(response, 417, "ValidationError", "Message is required.", "Help Desk");
         return;
       }
-      hdAppend(name, support ? "support" : "user", text);
-      ok(response, hdConversation(name, support, {}));
+      // Comment attachments: each message owns its File reference, so a file that
+      // already lives on the ticket (or on an earlier comment) is refused rather
+      // than silently re-parented away from the message that shows it.
+      const owner = String(email ?? "").toLowerCase();
+      const uploads = hdResolveUploads(data.attachments, owner);
+      const message = hdAppend(name, support ? "support" : "user", text);
+      if (message) {
+        for (const entry of uploads.attached) {
+          entry.row.attached_to_doctype = "Communication";
+          entry.row.attached_to_name = `HDCOMM-${message.id}`;
+        }
+        message.attachments = uploads.attached.map((entry) => ({
+          id: entry.row.name,
+          name: entry.row.file_name,
+          size: entry.row.file_size,
+          mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
+          url: entry.row.file_url,
+        }));
+      }
+      ok(response, { ...hdConversation(name, support, {}), attachments_failed: uploads.failed });
       return;
     }
 

@@ -11,6 +11,8 @@
  * session cookie — this layer never sends a user identifier.
  */
 
+import { reportClientError } from "@/lib/log/report-error";
+import { toast } from "@/lib/ui/toast";
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
   ConversationListPayload,
@@ -192,6 +194,27 @@ export function alignConversation(payload: ConversationPayload): ConversationPay
   return { ...payload, messages, timeline };
 }
 
+/**
+ * Files the ERP refused to link to a message (not the caller's upload, or already
+ * attached elsewhere). The message itself was accepted, so this is a warning, not
+ * a failure - but the customer must never believe a missing image is on the thread.
+ */
+function reportUnattached(missed: string[] | undefined, scope: string): void {
+  if (!missed || missed.length === 0) return;
+  const bangla = currentLanguage() !== "en";
+  toast.warning(
+    bangla
+      ? `${missed.length}টি ফাইল সংযুক্ত হয়নি: ${missed.join(", ")}`
+      : `${missed.length} file(s) could not be attached: ${missed.join(", ")}`
+  );
+  console.error("[help-desk] message saved but attachments were not attached", { missed });
+  reportClientError({
+    scope,
+    message: `Message saved without ${missed.length} attachment(s): ${missed.join(", ")}`,
+    detail: { missed },
+  });
+}
+
 /** Resolve UI attachments to ERP `File` rows, uploading any browser file first. */
 async function resolveAttachments(files?: File[]): Promise<{ name: string; url: string }[]> {
   const resolved: { name: string; url: string }[] = [];
@@ -224,6 +247,7 @@ export async function sendMessage(ticketId: string, input: SendMessageInput): Pr
       language: currentLanguage(),
     }
   );
+  reportUnattached(payload.attachments_failed, "help-desk:reply");
   return alignConversation(payload);
 }
 
@@ -242,6 +266,7 @@ export async function addRequirement(
       language: currentLanguage(),
     }
   );
+  reportUnattached(payload.attachments_failed, "help-desk:requirement");
   return alignConversation(payload);
 }
 
