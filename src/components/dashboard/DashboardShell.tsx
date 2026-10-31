@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import {
   FiCamera,
   FiClock,
@@ -56,6 +56,22 @@ import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
+
+/**
+ * Publishes the Help Desk link's own transition state to the watchdog below.
+ *
+ * `useLinkStatus` reports only the navigation started by the enclosing `<Link>`,
+ * so this has to sit inside it. It renders nothing.
+ */
+function HelpDeskLinkStatus({ onChange }: { onChange: (pending: boolean) => void }) {
+  const { pending } = useLinkStatus();
+
+  useEffect(() => {
+    onChange(pending);
+  }, [pending, onChange]);
+
+  return null;
+}
 
 interface DashboardShellProps {
   initialData?: DashboardPayload;
@@ -115,6 +131,17 @@ export default function DashboardShell({
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
+
+  // Help Desk navigation watchdog state: the link's live transition status and
+  // the single pending poll timer (so a second click restarts the watch instead
+  // of stacking timers).
+  const helpDeskStatusRef = useRef<{ pending: boolean }>({ pending: false });
+  const navWatchRef = useRef<number | undefined>(undefined);
+  const onHelpDeskStatus = useCallback((pending: boolean) => {
+    helpDeskStatusRef.current.pending = pending;
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(navWatchRef.current), []);
 
   // The active panel is driven by the URL, not local state: "Create Customer"
   // has its own route inside this shell, so the address bar reflects it and the
@@ -177,11 +204,17 @@ export default function DashboardShell({
    * Rail click for Help Desk.
    *
    * The link itself is a plain `<Link href>`, so the address bar is the source of
-   * truth. This handler only adds a watchdog: if the transition never lands on
-   * the help-desk route within a couple of seconds (dead client router, stale
-   * chunk, aborted RSC request), the failure is reported to the console AND to
-   * the ERP Error Log, then recovered with a full page load to the same URL - so
-   * the click can never silently leave the visitor on the dashboard home.
+   * truth. This handler only adds a watchdog, and the watchdog is *progress
+   * aware*: it follows the link's own transition (`useLinkStatus`) instead of a
+   * blind timer. The old 2.5s timer treated a slow route - a cold dev compile, a
+   * slow RSC fetch on a phone - as a failure, reported it to the Error Log and
+   * force-reloaded the page, which then aborted the request that was about to
+   * land. Now we only escalate when nothing is happening at all:
+   *   - the transition never started (dead router, stale chunk), or
+   *   - it finished without landing on the help-desk route, or
+   *   - it has been pending past the hard cap.
+   * In those cases the visitor still gets the route via a full page load, and the
+   * Error Log gets a diagnostic that says which of the three it was.
    * Modified clicks (new tab, middle click) are left to the browser.
    */
   const onHelpDeskClick = useCallback(
@@ -192,16 +225,60 @@ export default function DashboardShell({
         return;
       }
 
-      window.setTimeout(() => {
-        if (window.location.pathname.startsWith(helpDeskPath)) return;
+      window.clearTimeout(navWatchRef.current);
 
+      const startedAt = Date.now();
+      let sawPending = false;
+      let settled = false;
+
+      const fail = (reason: "never-started" | "transition-ended" | "timeout") => {
+        if (settled) return;
+        settled = true;
         reportClientError({
           scope: "help-desk:navigation",
           message: "Help Desk navigation did not complete; falling back to a full page load.",
-          detail: { from: window.location.pathname, to: helpDeskPath },
+          detail: {
+            from: window.location.pathname,
+            to: helpDeskPath,
+            reason,
+            elapsedMs: Date.now() - startedAt,
+          },
         });
         window.location.assign(helpDeskPath);
-      }, 2500);
+      };
+
+      const poll = () => {
+        if (window.location.pathname.startsWith(helpDeskPath)) {
+          settled = true;
+          return;
+        }
+
+        const elapsed = Date.now() - startedAt;
+        const { pending } = helpDeskStatusRef.current;
+        if (pending) sawPending = true;
+
+        if (elapsed >= 20000) {
+          fail("timeout");
+          return;
+        }
+
+        // Give the router a moment to pick the click up before judging it.
+        if (!pending && elapsed >= 1500) {
+          if (sawPending) {
+            fail("transition-ended");
+            return;
+          }
+
+          if (elapsed >= 4000) {
+            fail("never-started");
+            return;
+          }
+        }
+
+        navWatchRef.current = window.setTimeout(poll, 250);
+      };
+
+      navWatchRef.current = window.setTimeout(poll, 400);
     },
     [helpDeskPath]
   );
@@ -528,6 +605,7 @@ export default function DashboardShell({
           aria-current={active ? "page" : undefined}
           className={navButtonClass(active)}
         >
+          <HelpDeskLinkStatus onChange={onHelpDeskStatus} />
           <span className={navLabelClass(active)}>
             <HelpDeskIcon className="shrink-0 text-[16px]" />
             <span className="truncate">{copy.nav.helpDesk}</span>
