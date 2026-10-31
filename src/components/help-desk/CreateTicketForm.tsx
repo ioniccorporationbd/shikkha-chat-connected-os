@@ -466,10 +466,11 @@ export default function CreateTicketForm({
             <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
               {copy.preferredContactHint}
             </p>
-            {/* Channel buttons reuse the Client Dashboard sidebar row: rounded-2xl, px-3, py-2.5
-                (13px medium label, semibold + solid action fill when selected). Fixed height and an
-                always-mounted check slot keep the two buttons the exact same size in every state. */}
-            <div role="group" aria-label={copy.fieldPreferredContact} className="grid grid-cols-2 gap-2">
+            {/* Channel buttons are the siblings of the header nav pills ("পেছনে যান" / "হেল্প ডেস্ক"):
+                same 36.5px height, px-3 py-2.5, 16px radius, 12px gap, bold 12px label with a
+                16.5px line box, 14px icon. Sized to content (w-fit) and left-aligned like a sidebar
+                row; the always-mounted check slot keeps both buttons identical in every state. */}
+            <div role="group" aria-label={copy.fieldPreferredContact} className="flex flex-wrap items-center gap-2">
               {(
                 [
                   { id: "mobile" as const, label: copy.preferredMobile, hint: copy.preferredMobileHint, Icon: FiSmartphone },
@@ -488,14 +489,14 @@ export default function CreateTicketForm({
                       setChannels((current) => ({ ...current, [id]: !current[id] }));
                       setErrors((current) => ({ ...current, channels: undefined }));
                     }}
-                    className={`flex items-center justify-center gap-2 rounded-2xl px-3.5 py-2.5 transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)] ${
+                    className={`inline-flex w-fit items-center justify-center gap-3 rounded-2xl px-3 py-2.5 text-[12px] font-bold transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)] ${
                       selected
-                        ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-action)_70%,transparent)] hover:bg-[var(--color-action-hover)]"
-                        : "bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+                        ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_12px_24px_-16px_color-mix(in_srgb,var(--color-action)_85%,transparent)] hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)]"
+                        : "bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:-translate-y-[1px] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
                     }`}
                   >
-                    <Icon className="h-4 w-4 flex-none" aria-hidden />
-                    <span className={`truncate text-[13px] leading-[18px] ${selected ? "font-semibold" : "font-medium"}`}>
+                    <Icon className="h-3.5 w-3.5 flex-none" aria-hidden />
+                    <span className="truncate font-bold" style={{ lineHeight: "16.5px" }}>
                       {label}
                     </span>
                     <FiCheck
