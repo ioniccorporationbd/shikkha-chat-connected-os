@@ -179,6 +179,11 @@ export default function FeatureShowcase() {
           return;
         }
 
+        // Keep the invariant "an active child lives inside an open dropdown":
+        // if the accordion happens to be shut, open it rather than show a
+        // highlight nobody can see.
+        setOpenCategory(parsed.categoryId);
+        setRoleExpanded(false);
         setActiveFeatureId(parsed.featureId);
       } catch (error) {
         reportClientError({
