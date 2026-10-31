@@ -265,7 +265,7 @@ export default function RegisterForm() {
 
   return (
     <AuthCard>
-      <AuthBrand subtitle={copy.panelSubtitle} />
+      <AuthBrand />
 
       <h1 className="mt-6 text-center text-[21px] font-semibold leading-tight text-[var(--color-primary)]">
         {step === "details" ? copy.panelTitle : copy.otpTitle}
