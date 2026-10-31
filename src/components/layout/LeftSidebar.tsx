@@ -465,9 +465,10 @@ export default function LeftSidebar() {
         className={[
           [
             "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen max-w-[calc(100vw-16px)] flex-col overflow-hidden",
-            // Right-hand seam: 10% of the brand primary, deliberately faint so
-            // the rail reads as a soft divider rather than a hard edge.
-            "border-r border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[var(--color-white)]",
+            // Right-hand seam: the same 1px hairline the language toggle and the
+            // log-in button are drawn with (--color-border-subtle = primary 16%),
+            // so the rail edge and those controls match exactly.
+            "border-r [border-right-color:var(--color-border-subtle)] bg-[var(--color-white)]",
             "shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
             "transition-transform duration-500 will-change-transform",
             sidebarWidthClass,
