@@ -58,7 +58,7 @@ const GROUP_ICONS: Record<string, IconType> = {
 };
 
 const sidebarWidthClass =
-  "w-[min(88vw,300px)] sm:w-[310px] xl:w-[300px] 2xl:w-[272px]";
+  "w-[min(88vw,310px)] sm:w-[320px] xl:w-[310px] 2xl:w-[282px]";
 
 const sidebarPaddingClass = "px-4 py-5 sm:px-5 sm:py-6 xl:py-7";
 
@@ -466,10 +466,9 @@ export default function LeftSidebar() {
           [
             "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen max-w-[calc(100vw-16px)] flex-col overflow-hidden",
             // Right-hand seam comes from `.connected-sidebar::after` in globals.css
-            // (0.5px neutral grey #E4E6E5) — a real border would be snapped up to
-            // 1px by the browser. Width/position/layout are unchanged.
+            // (1px solid neutral grey #E4E6E5). No drop shadow, glow or blur sits
+            // on this edge — the border reads as one clean solid line.
             "bg-[var(--color-white)]",
-            "shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
             "transition-transform duration-500 will-change-transform",
             sidebarWidthClass,
           ].join(" "),

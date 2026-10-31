@@ -566,9 +566,9 @@ div {
 
 @media (min-width: 1536px) {
   .site-content-shell {
-    /* Matches .connected-sidebar's 2xl width (272px, +20px) so the content
-       shell is offset by exactly the rail width. */
-    padding-left: 272px;
+    /* Matches .connected-sidebar's 2xl width (282px) so the content shell is
+       offset by exactly the rail width. */
+    padding-left: 282px;
   }
 }
 
@@ -584,24 +584,25 @@ div {
 }
 
 /* Left rail runs one step denser than the global small-text token so every
-   label fits the wider (272px) rail without clipping — including the long
+   label fits the wider (282px) rail without clipping — including the long
    "K-12 Operating System" card title that used to truncate. Scoped to the
    rail so the right pane and the rest of the UI keep the global 12px token. */
 .connected-sidebar {
   --text-text-size: 11px;
 }
 
-/* Homepage rail seam — 0.5px neutral grey hairline instead of the old
-   green-tinted 1px border. Drawn as an absolutely positioned pseudo-element
-   because the browser snaps a 0.5px *border-width* up to 1px; a 0.5px *width*
-   box keeps the measured 0.5px and renders a true hairline on the right edge.
-   Purely visual: the rail's width, position and layout are untouched. */
+/* Homepage rail seam — one clean 1px solid neutral grey line (#E4E6E5) with no
+   shadow, glow or gradient behind it. Drawn as a positioned pseudo-element (not a
+   border) so the width is exactly what is measured and nothing else paints on the
+   edge. Purely visual: the rail's width, position and layout are untouched. */
 .connected-sidebar::after {
   content: "";
   position: absolute;
   inset: 0 0 0 auto;
-  width: 0.5px;
+  width: 1px;
   background: #e4e6e5;
+  box-shadow: none;
+  filter: none;
   pointer-events: none;
 }
 
@@ -637,10 +638,10 @@ div {
    unreadably small. Sizes therefore live here, on plain class selectors the
    tier list never matches: child rows 14px, dropdown category titles 15px. */
 .sidebar-row-label {
-  font-size: 14px;
+  font-size: 13px;
 }
 .sidebar-row-parent .sidebar-row-label {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .sidebar-row {
