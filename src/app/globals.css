@@ -591,6 +591,20 @@ div {
   --text-text-size: 11px;
 }
 
+/* Homepage rail seam — 0.5px neutral grey hairline instead of the old
+   green-tinted 1px border. Drawn as an absolutely positioned pseudo-element
+   because the browser snaps a 0.5px *border-width* up to 1px; a 0.5px *width*
+   box keeps the measured 0.5px and renders a true hairline on the right edge.
+   Purely visual: the rail's width, position and layout are untouched. */
+.connected-sidebar::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 0.5px;
+  background: #e4e6e5;
+  pointer-events: none;
+}
+
 .connected-sidebar.is-open {
   transform: translateX(0);
 }
@@ -618,6 +632,17 @@ div {
    tint (never a solid red). Rows carry no decorative chips — icons are plain
    inline glyphs, exactly like the Dashboard rail.
 --------------------------------------------------------------------- */
+/* Rail type scale — the global tier system collapses every text-[8..14px]
+   utility to --text-text-size (11px, !important), which left the catalogue rows
+   unreadably small. Sizes therefore live here, on plain class selectors the
+   tier list never matches: child rows 14px, dropdown category titles 15px. */
+.sidebar-row-label {
+  font-size: 14px;
+}
+.sidebar-row-parent .sidebar-row-label {
+  font-size: 15px;
+}
+
 .sidebar-row {
   color: color-mix(in srgb, var(--color-primary) 78%, transparent);
   font-weight: 600;
