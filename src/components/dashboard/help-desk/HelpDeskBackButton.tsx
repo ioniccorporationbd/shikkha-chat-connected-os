@@ -16,11 +16,13 @@ import { FiArrowLeft, FiHeadphones } from "react-icons/fi";
  *   vice versa. The overview page itself hides it (`showHome={false}`).
  *
  * Styling is the standard Help Desk action button: brand-red pill, bold white
- * label, white icon.
+ * label, white icon. Dimensions follow the Client Dashboard left-sidebar row
+ * (px-3 py-2.5, rounded-2xl → 36.5px tall, 16px radius) so both controls read
+ * as compact rail buttons; colour, label, icon, hover and click are unchanged.
  */
 
 const ACTION_CLASS =
-  "inline-flex min-h-10 w-fit items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-bold text-[var(--color-white)] shadow-[0_12px_24px_-16px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 active:translate-y-0";
+  "inline-flex min-h-[36.5px] w-fit items-center justify-center gap-3 rounded-2xl bg-[var(--color-action)] px-3 py-2.5 text-[12px] font-bold text-[var(--color-white)] shadow-[0_12px_24px_-16px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2 active:translate-y-0";
 
 /** Role-aware Help Desk overview for the current dashboard. */
 export function helpDeskHomeFor(pathname: string): string {
@@ -58,7 +60,7 @@ export default function HelpDeskBackButton({
         className={ACTION_CLASS}
       >
         <FiArrowLeft size={14} className="text-[var(--color-white)]" aria-hidden />
-        <span className="font-bold text-[var(--color-white)]">{label}</span>
+        <span className="font-bold text-[var(--color-white)]" style={{ lineHeight: "16.5px" }}>{label}</span>
       </button>
 
       {showHome ? (
@@ -72,7 +74,7 @@ export default function HelpDeskBackButton({
           style={{ color: "var(--color-white)" }}
         >
           <FiHeadphones size={14} className="text-[var(--color-white)]" aria-hidden style={{ color: "var(--color-white)" }} />
-          <span className="font-bold" style={{ color: "var(--color-white)" }}>{homeLabel || "হেল্প ডেস্ক"}</span>
+          <span className="font-bold" style={{ color: "var(--color-white)", lineHeight: "16.5px" }}>{homeLabel || "হেল্প ডেস্ক"}</span>
         </Link>
       ) : null}
     </div>
