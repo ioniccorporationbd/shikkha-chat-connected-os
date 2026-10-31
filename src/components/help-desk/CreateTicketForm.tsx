@@ -432,7 +432,7 @@ export default function CreateTicketForm({
           <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
             <div
               className={`h-full rounded-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                mandatoryDone === 6 ? "bg-[var(--color-success)]" : "bg-[var(--color-action)]"
+                mandatoryDone === 6 ? "bg-[var(--color-deep-surface)]" : "bg-[var(--color-action)]"
               }`}
               style={{ width: `${(mandatoryDone / 6) * 100}%` }}
             />
@@ -444,7 +444,7 @@ export default function CreateTicketForm({
                 key={step.key}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold transition duration-300 ${
                   step.done
-                    ? "border-[color-mix(in_srgb,var(--color-success)_38%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] text-[var(--color-success)]"
+                    ? "border-[color-mix(in_srgb,var(--color-deep-surface)_26%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-deep-surface)_8%,var(--color-white))] text-[var(--color-deep-surface)]"
                     : "border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_58%,var(--color-white))]"
                 }`}
               >
@@ -466,7 +466,10 @@ export default function CreateTicketForm({
             <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
               {copy.preferredContactHint}
             </p>
-            <div role="group" aria-label={copy.fieldPreferredContact} className="grid gap-2 sm:grid-cols-2">
+            {/* Channel buttons reuse the Client Dashboard sidebar row: rounded-2xl, px-3, py-2.5
+                (13px medium label, semibold + solid action fill when selected). Fixed height and an
+                always-mounted check slot keep the two buttons the exact same size in every state. */}
+            <div role="group" aria-label={copy.fieldPreferredContact} className="grid grid-cols-2 gap-2">
               {(
                 [
                   { id: "mobile" as const, label: copy.preferredMobile, hint: copy.preferredMobileHint, Icon: FiSmartphone },
@@ -480,42 +483,26 @@ export default function CreateTicketForm({
                     type="button"
                     role="checkbox"
                     aria-checked={selected}
+                    title={hint}
                     onClick={() => {
                       setChannels((current) => ({ ...current, [id]: !current[id] }));
                       setErrors((current) => ({ ...current, channels: undefined }));
                     }}
-                    className={`group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
+                    className={`flex items-center justify-center gap-2 rounded-2xl px-3.5 py-2.5 transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-action)] ${
                       selected
-                        ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,var(--color-white))] hover:bg-[var(--color-action-tint)]"
+                        ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-action)_70%,transparent)] hover:bg-[var(--color-action-hover)]"
+                        : "bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
                     }`}
                   >
-                    <span
-                      className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${
-                        selected ? "bg-[color-mix(in_srgb,var(--color-white)_18%,transparent)]" : "bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]"
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`} aria-hidden />
+                    <Icon className="h-4 w-4 flex-none" aria-hidden />
+                    <span className={`truncate text-[13px] leading-[18px] ${selected ? "font-semibold" : "font-medium"}`}>
+                      {label}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={`block text-sm font-semibold leading-tight ${selected ? "text-[var(--color-white)]" : "text-[var(--color-primary)]"}`}>
-                        {label}
-                      </span>
-                      <span
-                        className={`mt-0.5 block truncate text-[11px] ${
-                          selected
-                            ? "text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]"
-                            : "text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]"
-                        }`}
-                      >
-                        {hint}
-                      </span>
-                    </span>
-                    {selected ? (
-                      <FiCheckCircle className="h-4 w-4 flex-none text-[var(--color-white)]" aria-hidden />
-                    ) : (
-                      <span className="h-4 w-4 flex-none rounded-[5px] border border-[color-mix(in_srgb,var(--color-primary)_24%,var(--color-white))]" aria-hidden />
-                    )}
+                    <FiCheck
+                      aria-hidden
+                      className={`h-3.5 w-3.5 flex-none transition-opacity duration-200 ${selected ? "opacity-100" : "opacity-0"}`}
+                    />
+                    <span className="sr-only">{hint}</span>
                   </button>
                 );
               })}
@@ -607,7 +594,7 @@ export default function CreateTicketForm({
 
         {/* Steps 3–5 — routing: one horizontal row, each cell revealed in turn */}
         <div className="flex flex-col gap-5 md:flex-row md:items-stretch">
-          <div className="min-w-0 md:flex-1">
+          <div className="min-w-0 md:basis-0 md:flex-1">
         {/* Step 3 — Category (first cell of the routing row) */}
         <StepCard
           step={3}
@@ -616,10 +603,11 @@ export default function CreateTicketForm({
           hint={copy.stepCategoryHint}
           open={subjectOk}
           done={categoryOk}
+          dense
           lockedHint={copy.stepLocked}
         >
           {optionsState === "loading" ? (
-            <div className="h-[58px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" aria-busy="true" aria-label={copy.optionsLoading} />
+            <div className="h-[60px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" aria-busy="true" aria-label={copy.optionsLoading} />
           ) : optionsState === "error" ? (
             <OptionsError
               copy={copy}
@@ -647,7 +635,7 @@ export default function CreateTicketForm({
           )}
         </StepCard>
           </div>
-          <div className="min-w-0 md:flex-1">
+          <div className="min-w-0 md:basis-0 md:flex-1">
         {/* Step 4 — Priority (second cell of the routing row) */}
         <StepCard
           step={4}
@@ -656,6 +644,7 @@ export default function CreateTicketForm({
           hint={copy.stepPriorityHint}
           open={categoryOk}
           done={priorityOk}
+          dense
           lockedHint={copy.stepLocked}
         >
           {priorities.length === 0 ? (
@@ -675,7 +664,7 @@ export default function CreateTicketForm({
           )}
         </StepCard>
           </div>
-          <div className="min-w-0 md:flex-1">
+          <div className="min-w-0 md:basis-0 md:flex-1">
         {/* Step 5 — Department (third cell of the routing row) */}
         <StepCard
           step={5}
@@ -684,6 +673,7 @@ export default function CreateTicketForm({
           hint={copy.stepDepartmentHint}
           open={priorityOk}
           done={departmentOk}
+          dense
           lockedHint={copy.stepLocked}
         >
           {teams.length === 0 ? (
@@ -705,7 +695,7 @@ export default function CreateTicketForm({
           )}
 
           {departmentOk ? (
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[var(--color-success)]">
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-deep-surface)_9%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[var(--color-deep-surface)]">
               <FiCheckCircle className="h-3.5 w-3.5" aria-hidden />
               {copy.stepComplete} — 5/6
             </p>
@@ -1051,6 +1041,7 @@ function StepCard({
   lockedHint,
   optionalLabel,
   hidden,
+  dense = false,
   children,
 }: {
   step: number;
@@ -1062,24 +1053,26 @@ function StepCard({
   optionalLabel?: string;
   // Steps are revealed one at a time: anything not yet reached is not rendered at all.
   hidden?: boolean;
+  // Row cells drop the hint line so the three cards keep identical header heights
+  // and their dropdowns sit on one baseline.
+  dense?: boolean;
   children: React.ReactNode;
 }) {
   if (hidden) return null;
 
   return (
     <section
-      className={`${HD_CARD} overflow-hidden motion-safe:animate-[shk-fade-in_0.26s_ease-out]`}
+      className={`${HD_CARD} flex h-full flex-col overflow-hidden motion-safe:animate-[shk-fade-in_0.26s_ease-out]`}
       aria-label={title}
       aria-current={open && !done ? "step" : undefined}
     >
-      <header className="flex items-start gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
+      <header className={`flex items-start gap-3 p-5 pb-4 sm:p-6 sm:pb-4 ${dense ? "sm:pb-3" : ""}`}>
+        {/* Step badges all share the dashboard Sign-out green (--color-deep-surface). */}
         <span
-          className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-action)_75%,transparent)] ${
-            done
-              ? "bg-[var(--color-success)] text-[var(--color-white)]"
-              : open
-                ? "bg-[var(--color-action)] text-[var(--color-white)]"
-                : "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] shadow-none"
+          className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_8px_18px_-10px_color-mix(in_srgb,var(--color-deep-surface)_70%,transparent)] ${
+            done || open
+              ? "bg-[var(--color-deep-surface)] text-[var(--color-white)]"
+              : "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] shadow-none"
           }`}
         >
           {done ? <FiCheck className="h-3.5 w-3.5" aria-hidden /> : open ? step : <FiLock className="h-3 w-3" aria-hidden />}
@@ -1093,12 +1086,16 @@ function StepCard({
               </span>
             ) : null}
           </h2>
-          <p className="mt-0.5 text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{hint}</p>
+          {dense ? (
+            <p className="sr-only">{hint}</p>
+          ) : (
+            <p className="mt-0.5 text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]">{hint}</p>
+          )}
         </div>
-        {done ? <FiCheckCircle className="mt-1 h-4 w-4 flex-none text-[var(--color-success)]" aria-hidden /> : null}
+        {done ? <FiCheckCircle className="mt-1 h-4 w-4 flex-none text-[var(--color-deep-surface)]" aria-hidden /> : null}
       </header>
 
-      <div className={`${REVEAL} ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+      <div className={`${REVEAL} ${open ? "flex-1 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
         <div className="min-h-0">
           <fieldset disabled={!open} className="px-5 pb-5 disabled:opacity-100 sm:px-6 sm:pb-6">
             {children}

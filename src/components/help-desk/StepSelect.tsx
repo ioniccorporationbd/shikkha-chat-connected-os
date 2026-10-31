@@ -156,7 +156,7 @@ export default function StepSelect({
         }}
         onKeyDown={onTriggerKeyDown}
         className={[
-          "group flex w-full items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]",
+          "group flex min-h-[60px] w-full items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]",
           loading
             ? "cursor-progress border-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
             : locked
