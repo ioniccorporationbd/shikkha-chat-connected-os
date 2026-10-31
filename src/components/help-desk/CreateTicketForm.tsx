@@ -89,8 +89,8 @@ const REVEAL =
 /**
  * The New Ticket form — a step-by-step, gate-kept wizard.
  *
- * Step order is the ERP-facing contract from the ticket spec:
- *   Subject → Category → Priority → Description → Department
+ * Step order (contact first; routing in one row; submit with the optional block):
+ *   Contact → Subject → [Category → Priority → Department] → Description → Optional
  * and each step only opens once the one before it holds a valid value; all
  * five must be filled before the ticket can be submitted. Changing an earlier
  * answer re-validates everything downstream (a stale selection is dropped).
@@ -246,27 +246,36 @@ export default function CreateTicketForm({
   };
 
   // ── Step gates ────────────────────────────────────────────────────────────
-  const subjectOk = subject.trim().length >= MIN_SUBJECT_LENGTH;
-  const categoryOk = subjectOk && Boolean(ticketType) && categories.some((item) => item.value === ticketType);
-  const priorityOk = categoryOk && Boolean(priority) && priorities.some((item) => item.name === priority);
-  const descriptionOk = priorityOk && description.trim().length >= MIN_DESCRIPTION_LENGTH;
-  const departmentOk = descriptionOk && Boolean(teamValue);
-
+  // Contact comes first now: it is the only step open on a fresh form, and each
+  // later gate is chained to the one before it so an edit that invalidates an
+  // earlier step also closes everything downstream (and the submit button).
   const emailValid = EMAIL_RE.test(email.trim());
   const mobileDigits = mobile.replace(/\D/g, "");
   const channelCount = Number(channels.mobile) + Number(channels.email);
+
   const contactOk =
-    departmentOk &&
     channelCount > 0 &&
     Boolean(name.trim()) &&
     (!channels.email || emailValid) &&
     (!channels.mobile || mobileDigits.length >= 10);
 
-  const mandatoryDone = [subjectOk, categoryOk, priorityOk, descriptionOk, departmentOk].filter(Boolean).length;
-  const allDone = departmentOk && contactOk && optionsState === "ready";
+  const subjectOk = contactOk && subject.trim().length >= MIN_SUBJECT_LENGTH;
+  const categoryOk = subjectOk && Boolean(ticketType) && categories.some((item) => item.value === ticketType);
+  const priorityOk = categoryOk && Boolean(priority) && priorities.some((item) => item.name === priority);
+  const departmentOk = priorityOk && Boolean(teamValue);
+  const descriptionOk = departmentOk && description.trim().length >= MIN_DESCRIPTION_LENGTH;
+
+  const mandatorySteps = [contactOk, subjectOk, categoryOk, priorityOk, departmentOk, descriptionOk];
+  const mandatoryDone = mandatorySteps.filter(Boolean).length;
+  const allDone = descriptionOk && optionsState === "ready";
   const canSubmit = allDone && !submitting;
 
-  // Move keyboard focus to the step that just opened.
+  // Move keyboard focus to the step that just opened (contact → subject → the
+  // routing row → description).
+  useEffect(() => {
+    if (!subjectOk) return;
+    document.getElementById("hd-subject")?.focus();
+  }, [subjectOk]);
   useEffect(() => {
     if (!categoryOk) return;
     document.querySelector<HTMLElement>("#hd-step-category button[role='combobox']")?.focus();
@@ -276,13 +285,13 @@ export default function CreateTicketForm({
     document.querySelector<HTMLElement>("#hd-step-priority button[role='combobox']")?.focus();
   }, [priorityOk]);
   useEffect(() => {
-    if (!descriptionOk) return;
-    document.getElementById("hd-description")?.focus();
-  }, [descriptionOk]);
-  useEffect(() => {
     if (!departmentOk) return;
     document.querySelector<HTMLElement>("#hd-step-department button[role='combobox']")?.focus();
   }, [departmentOk]);
+  useEffect(() => {
+    if (!descriptionOk) return;
+    document.getElementById("hd-description")?.focus();
+  }, [descriptionOk]);
 
   const preferredContact: PreferredContact =
     channels.mobile && channels.email ? "both" : channels.mobile ? "mobile" : "email";
@@ -393,11 +402,12 @@ export default function CreateTicketForm({
   const departmentOptions: StepSelectOption[] = teams.map((option) => ({ value: option, label: option }));
 
   const steps: { key: string; title: string; done: boolean }[] = [
+    { key: "contact", title: copy.contactStepTitle, done: contactOk },
     { key: "subject", title: copy.fieldSubject, done: subjectOk },
     { key: "category", title: copy.fieldCategory, done: categoryOk },
     { key: "priority", title: copy.fieldPriority, done: priorityOk },
-    { key: "description", title: copy.fieldDescription, done: descriptionOk },
     { key: "department", title: copy.fieldDepartment, done: departmentOk },
+    { key: "description", title: copy.fieldDescription, done: descriptionOk },
   ];
 
   const imageAttachments = attachments.filter((item) => Boolean(item.previewUrl));
@@ -409,7 +419,7 @@ export default function CreateTicketForm({
         <div className={`${HD_CARD} p-4 sm:p-5`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
-              {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "5")}
+              {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "6")}
             </p>
             {optionsState === "ready" ? (
               <span className="inline-flex items-center gap-1 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
@@ -422,9 +432,9 @@ export default function CreateTicketForm({
           <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
             <div
               className={`h-full rounded-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                mandatoryDone === 5 ? "bg-[var(--color-success)]" : "bg-[var(--color-primary)]"
+                mandatoryDone === 6 ? "bg-[var(--color-success)]" : "bg-[var(--color-action)]"
               }`}
-              style={{ width: `${(mandatoryDone / 5) * 100}%` }}
+              style={{ width: `${(mandatoryDone / 6) * 100}%` }}
             />
           </div>
 
@@ -449,187 +459,8 @@ export default function CreateTicketForm({
           </ol>
         </div>
 
-        {/* Step 1 — Subject (the only field open at first) */}
-        <StepCard step={1} title={copy.fieldSubject} hint={copy.stepSubjectHint} open done={subjectOk}>
-          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
-            <input
-              id="hd-subject"
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder={copy.phSubject}
-              className={HD_INPUT}
-              maxLength={140}
-              autoFocus
-            />
-            <span className="self-end text-[10.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_48%,var(--color-white))]">
-              {subject.length}/140
-            </span>
-          </Field>
-          {!subjectOk && subject.length > 0 ? (
-            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-danger)_85%,var(--color-primary))]">
-              <FiAlertCircle className="h-3.5 w-3.5" aria-hidden />
-              {copy.errSubjectShort}
-            </p>
-          ) : null}
-        </StepCard>
-
-        {/* Step 2 — Category */}
-        <StepCard
-          step={2}
-          title={copy.fieldCategory}
-          hidden={!subjectOk}
-          hint={copy.stepCategoryHint}
-          open={subjectOk}
-          done={categoryOk}
-          lockedHint={copy.stepLocked}
-        >
-          {optionsState === "loading" ? (
-            <div className="h-[58px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" aria-busy="true" aria-label={copy.optionsLoading} />
-          ) : optionsState === "error" ? (
-            <OptionsError
-              copy={copy}
-              onRetry={() => {
-                setOptionsState("loading");
-                setOptionsNonce((n) => n + 1);
-              }}
-            />
-          ) : categories.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
-              {copy.optionsEmptyType}
-            </p>
-          ) : (
-            <div id="hd-step-category">
-              <StepSelect
-                label={copy.fieldCategory}
-                placeholder={copy.selectPlaceholder}
-                searchPlaceholder={copy.searchOptions}
-                noMatchLabel={copy.noMatchOptions}
-                options={categoryOptions}
-                value={ticketType}
-                onChange={setTicketType}
-              />
-            </div>
-          )}
-        </StepCard>
-
-        {/* Step 3 — Priority */}
-        <StepCard
-          step={3}
-          title={copy.fieldPriority}
-          hidden={!categoryOk}
-          hint={copy.stepPriorityHint}
-          open={categoryOk}
-          done={priorityOk}
-          lockedHint={copy.stepLocked}
-        >
-          {priorities.length === 0 ? (
-            <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">{copy.optionsEmptyPriority}</p>
-          ) : (
-            <div id="hd-step-priority">
-              <StepSelect
-                label={copy.fieldPriority}
-                placeholder={copy.selectPlaceholder}
-                noMatchLabel={copy.noMatchOptions}
-                options={priorityOptions}
-                value={priority}
-                onChange={setPriority}
-              />
-            </div>
-          )}
-        </StepCard>
-
-        {/* Step 4 — Description */}
-        <StepCard
-          step={4}
-          title={copy.fieldDescription}
-          hidden={!priorityOk}
-          hint={copy.stepDescriptionHint}
-          open={priorityOk}
-          done={descriptionOk}
-          lockedHint={copy.stepLocked}
-        >
-          <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
-            <textarea
-              id="hd-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={copy.phDescription}
-              rows={6}
-              className={`${HD_INPUT} resize-y`}
-            />
-          </Field>
-          <div className="mt-2 flex items-center gap-3">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${descriptionDone ? "bg-[var(--color-success)]" : "bg-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-white))]"}`}
-                style={{ width: `${Math.min(100, (descriptionLength / MIN_DESCRIPTION_LENGTH) * 100)}%` }}
-              />
-            </div>
-            <span className={`inline-flex flex-none items-center gap-1 text-[11px] font-medium ${descriptionDone ? "text-[var(--color-success)]" : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]"}`}>
-              {descriptionDone ? (
-                <>
-                  <FiCheckCircle className="h-3 w-3" aria-hidden />
-                  {descriptionLength}
-                </>
-              ) : (
-                <>
-                  <span className="tabular-nums">{descriptionLength}/{MIN_DESCRIPTION_LENGTH}</span>
-                  <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]">
-                    · {copy.descriptionMinHint.replace("{count}", String(MIN_DESCRIPTION_LENGTH))}
-                  </span>
-                </>
-              )}
-            </span>
-          </div>
-        </StepCard>
-
-        {/* Step 5 — Department (last mandatory step) */}
-        <StepCard
-          step={5}
-          title={copy.fieldDepartment}
-          hidden={!descriptionOk}
-          hint={copy.stepDepartmentHint}
-          open={descriptionOk}
-          done={departmentOk}
-          lockedHint={copy.stepLocked}
-        >
-          {teams.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
-              {copy.optionsEmptyTeam}
-            </p>
-          ) : (
-            <div id="hd-step-department">
-              <StepSelect
-                label={copy.fieldDepartment}
-                placeholder={copy.selectPlaceholder}
-                searchPlaceholder={copy.searchOptions}
-                noMatchLabel={copy.noMatchOptions}
-                options={departmentOptions}
-                value={teamValue}
-                onChange={setTeam}
-              />
-            </div>
-          )}
-
-          {departmentOk ? (
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[var(--color-success)]">
-              <FiCheckCircle className="h-3.5 w-3.5" aria-hidden />
-              {copy.stepComplete} — 5/5
-            </p>
-          ) : null}
-        </StepCard>
-
-        {/* Step 6 — Contact details (multi-channel) */}
-        <StepCard
-          step={6}
-          title={copy.contactStepTitle}
-          hidden={!departmentOk}
-          hint={copy.contactStepHint}
-          open={departmentOk}
-          done={contactOk}
-          lockedHint={copy.stepLocked}
-        >
+        {/* Step 1 — Contact details (multi-channel, open on a fresh form) */}
+        <StepCard step={1} title={copy.contactStepTitle} hint={copy.contactStepHint} open done={contactOk}>
           <div>
             <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
             <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
@@ -655,8 +486,8 @@ export default function CreateTicketForm({
                     }}
                     className={`group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
                       selected
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+                        ? "border-[var(--color-action)] bg-[var(--color-action)] shadow-[0_6px_18px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+                        : "border-[color-mix(in_srgb,var(--color-primary)_20%,var(--color-white))] bg-[var(--color-white)] hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,var(--color-white))] hover:bg-[var(--color-action-tint)]"
                     }`}
                   >
                     <span
@@ -742,13 +573,199 @@ export default function CreateTicketForm({
           </div>
         </StepCard>
 
-        {/* Step 7 — Optional: page URL + attachments */}
+        {/* Step 2 — Subject */}
+        <StepCard
+          step={2}
+          title={copy.fieldSubject}
+          hidden={!contactOk}
+          hint={copy.stepSubjectHint}
+          open={contactOk}
+          done={subjectOk}
+          lockedHint={copy.stepLocked}
+        >
+          <Field label={copy.fieldSubject} error={errors.subject} htmlFor="hd-subject">
+            <input
+              id="hd-subject"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={copy.phSubject}
+              className={HD_INPUT}
+              maxLength={140}
+            />
+            <span className="self-end text-[10.5px] font-medium tabular-nums text-[color-mix(in_srgb,var(--color-primary)_48%,var(--color-white))]">
+              {subject.length}/140
+            </span>
+          </Field>
+          {!subjectOk && subject.length > 0 ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-danger)_85%,var(--color-primary))]">
+              <FiAlertCircle className="h-3.5 w-3.5" aria-hidden />
+              {copy.errSubjectShort}
+            </p>
+          ) : null}
+        </StepCard>
+
+        {/* Steps 3–5 — routing: one horizontal row, each cell revealed in turn */}
+        <div className="flex flex-col gap-5 md:flex-row md:items-stretch">
+          <div className="min-w-0 md:flex-1">
+        {/* Step 3 — Category (first cell of the routing row) */}
+        <StepCard
+          step={3}
+          title={copy.fieldCategory}
+          hidden={!subjectOk}
+          hint={copy.stepCategoryHint}
+          open={subjectOk}
+          done={categoryOk}
+          lockedHint={copy.stepLocked}
+        >
+          {optionsState === "loading" ? (
+            <div className="h-[58px] animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" aria-busy="true" aria-label={copy.optionsLoading} />
+          ) : optionsState === "error" ? (
+            <OptionsError
+              copy={copy}
+              onRetry={() => {
+                setOptionsState("loading");
+                setOptionsNonce((n) => n + 1);
+              }}
+            />
+          ) : categories.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+              {copy.optionsEmptyType}
+            </p>
+          ) : (
+            <div id="hd-step-category">
+              <StepSelect
+                label={copy.fieldCategory}
+                placeholder={copy.selectPlaceholder}
+                noMatchLabel={copy.noMatchOptions}
+                options={categoryOptions}
+                value={ticketType}
+                onChange={setTicketType}
+                tone="action"
+              />
+            </div>
+          )}
+        </StepCard>
+          </div>
+          <div className="min-w-0 md:flex-1">
+        {/* Step 4 — Priority (second cell of the routing row) */}
+        <StepCard
+          step={4}
+          title={copy.fieldPriority}
+          hidden={!categoryOk}
+          hint={copy.stepPriorityHint}
+          open={categoryOk}
+          done={priorityOk}
+          lockedHint={copy.stepLocked}
+        >
+          {priorities.length === 0 ? (
+            <p className="text-xs text-[color-mix(in_srgb,var(--color-primary)_62%,var(--color-white))]">{copy.optionsEmptyPriority}</p>
+          ) : (
+            <div id="hd-step-priority">
+              <StepSelect
+                label={copy.fieldPriority}
+                placeholder={copy.selectPlaceholder}
+                noMatchLabel={copy.noMatchOptions}
+                options={priorityOptions}
+                value={priority}
+                onChange={setPriority}
+                tone="action"
+              />
+            </div>
+          )}
+        </StepCard>
+          </div>
+          <div className="min-w-0 md:flex-1">
+        {/* Step 5 — Department (third cell of the routing row) */}
+        <StepCard
+          step={5}
+          title={copy.fieldDepartment}
+          hidden={!priorityOk}
+          hint={copy.stepDepartmentHint}
+          open={priorityOk}
+          done={departmentOk}
+          lockedHint={copy.stepLocked}
+        >
+          {teams.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_22%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-4 py-3 text-xs text-[color-mix(in_srgb,var(--color-primary)_70%,var(--color-white))]">
+              {copy.optionsEmptyTeam}
+            </p>
+          ) : (
+            <div id="hd-step-department">
+              <StepSelect
+                label={copy.fieldDepartment}
+                placeholder={copy.selectPlaceholder}
+                noMatchLabel={copy.noMatchOptions}
+                options={departmentOptions}
+                value={teamValue}
+                onChange={setTeam}
+                tone="action"
+              />
+            </div>
+          )}
+
+          {departmentOk ? (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[var(--color-success)]">
+              <FiCheckCircle className="h-3.5 w-3.5" aria-hidden />
+              {copy.stepComplete} — 5/6
+            </p>
+          ) : null}
+        </StepCard>
+          </div>
+        </div>
+
+        {/* Step 6 — Description (unlocks the optional block + submit) */}
+        <StepCard
+          step={6}
+          title={copy.fieldDescription}
+          hidden={!departmentOk}
+          hint={copy.stepDescriptionHint}
+          open={departmentOk}
+          done={descriptionOk}
+          lockedHint={copy.stepLocked}
+        >
+          <Field label={copy.fieldDescription} error={errors.description} htmlFor="hd-description">
+            <textarea
+              id="hd-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={copy.phDescription}
+              rows={6}
+              className={`${HD_INPUT} resize-y`}
+            />
+          </Field>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${descriptionDone ? "bg-[var(--color-success)]" : "bg-[color-mix(in_srgb,var(--color-primary)_35%,var(--color-white))]"}`}
+                style={{ width: `${Math.min(100, (descriptionLength / MIN_DESCRIPTION_LENGTH) * 100)}%` }}
+              />
+            </div>
+            <span className={`inline-flex flex-none items-center gap-1 text-[11px] font-medium ${descriptionDone ? "text-[var(--color-success)]" : "text-[color-mix(in_srgb,var(--color-primary)_60%,var(--color-white))]"}`}>
+              {descriptionDone ? (
+                <>
+                  <FiCheckCircle className="h-3 w-3" aria-hidden />
+                  {descriptionLength}
+                </>
+              ) : (
+                <>
+                  <span className="tabular-nums">{descriptionLength}/{MIN_DESCRIPTION_LENGTH}</span>
+                  <span className="text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]">
+                    · {copy.descriptionMinHint.replace("{count}", String(MIN_DESCRIPTION_LENGTH))}
+                  </span>
+                </>
+              )}
+            </span>
+          </div>
+        </StepCard>
+
+        {/* Step 7 — Optional: page URL + attachments (revealed with submit) */}
         <StepCard
           step={7}
           title={copy.sectionOptional}
-          hidden={!(departmentOk && contactOk)}
+          hidden={!descriptionOk}
           hint={copy.sectionOptionalHint}
-          open={departmentOk && contactOk}
+          open={descriptionOk}
           done={false}
           lockedHint={copy.stepLocked}
         >
@@ -909,9 +926,10 @@ export default function CreateTicketForm({
           <div className="flex items-center gap-3">
             {!allDone ? (
               <span className="hidden text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] sm:inline">
-                {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "5")}
+                {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "6")}
               </span>
             ) : null}
+            {descriptionOk ? (
             <button
               type="submit"
               disabled={!canSubmit}
@@ -920,6 +938,7 @@ export default function CreateTicketForm({
               <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
               <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
             </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -986,14 +1005,20 @@ export default function CreateTicketForm({
             </ol>
           </div>
 
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-action)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
-          >
-            <FiSend className="h-3.5 w-3.5 text-[var(--color-white)]" aria-hidden />
-            <span className="text-xs font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
-          </button>
+          {descriptionOk ? (
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-action)] px-4 py-2.5 transition duration-200 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+            >
+              <FiSend className="h-3.5 w-3.5 text-[var(--color-white)]" aria-hidden />
+              <span className="text-xs font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
+            </button>
+          ) : (
+            <p className="mt-4 rounded-xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_18%,var(--color-white))] px-3 py-2.5 text-center text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+              {copy.stepProgress.replace("{done}", String(mandatoryDone)).replace("{total}", "6")}
+            </p>
+          )}
         </div>
       </aside>
 
@@ -1049,11 +1074,11 @@ function StepCard({
     >
       <header className="flex items-start gap-3 p-5 pb-4 sm:p-6 sm:pb-4">
         <span
-          className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
+          className={`mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-xl text-[11.5px] font-bold tabular-nums shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-action)_75%,transparent)] ${
             done
               ? "bg-[var(--color-success)] text-[var(--color-white)]"
               : open
-                ? "bg-[var(--color-primary)] text-[var(--color-white)]"
+                ? "bg-[var(--color-action)] text-[var(--color-white)]"
                 : "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))] shadow-none"
           }`}
         >

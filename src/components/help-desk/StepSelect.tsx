@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { FiCheck, FiChevronDown, FiLock, FiSearch } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiLock } from "react-icons/fi";
 
 export type StepSelectOption = {
   value: string;
@@ -21,14 +21,14 @@ export type StepSelectOption = {
  *   • rounded-2xl trigger with a rotating chevron (same easing/duration)
  *   • panel expands with the same `grid-rows-[0fr] → [1fr]` + opacity trick
  *   • rows use the rail row hover tint (`--color-action` colour-mix)
- *   • search box, keyboard nav, focus rings, outside-click close, disabled state
+ *   • no search box — the rail pill opens straight to its rows
+ *   • keyboard nav, focus rings, outside-click close, disabled state
  *
  * It is a plain controlled listbox — the caller owns the value.
  */
 export default function StepSelect({
   label,
   placeholder,
-  searchPlaceholder,
   noMatchLabel,
   options,
   value,
@@ -41,7 +41,6 @@ export default function StepSelect({
 }: {
   label: string;
   placeholder: string;
-  searchPlaceholder?: string;
   noMatchLabel?: string;
   options: StepSelectOption[];
   value: string;
@@ -54,30 +53,28 @@ export default function StepSelect({
   tone?: "primary" | "action";
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const baseId = useId();
   const panelId = `${baseId}-panel`;
   const listId = `${baseId}-list`;
 
   const selected = useMemo(() => options.find((item) => item.value === value) ?? null, [options, value]);
-  const searchable = options.length > 6 || Boolean(searchPlaceholder);
-
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return options;
-    return options.filter((item) => item.label.toLowerCase().includes(needle));
-  }, [options, query]);
+  const filtered = options;
 
   const close = useCallback(() => {
     setOpen(false);
-    setQuery("");
   }, []);
+
+  // Opening highlights the current selection so Enter/Arrow starts from there.
+  const openPanel = useCallback(() => {
+    const index = options.findIndex((item) => item.value === value);
+    setActive(index >= 0 ? index : 0);
+    setOpen(true);
+  }, [options, value]);
 
   // Close on outside click / Escape. Kept separate from the trigger handler so
   // a click inside the panel never closes it before the row's onClick fires.
@@ -90,22 +87,12 @@ export default function StepSelect({
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, close]);
 
-  // Focus the search box when the panel opens (mouse or keyboard).
+  // Focus the option list when the panel opens (mouse or keyboard).
   useEffect(() => {
     if (!open) return;
-    const id = window.setTimeout(() => {
-      if (searchable) searchRef.current?.focus();
-      else listRef.current?.focus();
-    }, 40);
+    const id = window.setTimeout(() => listRef.current?.focus(), 40);
     return () => window.clearTimeout(id);
-  }, [open, searchable]);
-
-  // Keep the highlighted row in sync with the current selection.
-  useEffect(() => {
-    if (!open) return;
-    const index = filtered.findIndex((item) => item.value === value);
-    setActive(index >= 0 ? index : 0);
-  }, [open, filtered, value]);
+  }, [open]);
 
   const commit = (next: string) => {
     onChange(next);
@@ -118,7 +105,7 @@ export default function StepSelect({
     if (disabled || loading) return;
     if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setOpen(true);
+      openPanel();
     }
   };
 
@@ -164,7 +151,8 @@ export default function StepSelect({
         disabled={disabled || loading}
         onClick={() => {
           if (disabled || loading) return;
-          setOpen((current) => !current);
+          if (open) close();
+          else openPanel();
         }}
         onKeyDown={onTriggerKeyDown}
         className={[
@@ -226,25 +214,6 @@ export default function StepSelect({
             onKeyDown={onPanelKeyDown}
             className="overflow-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,var(--color-white))] bg-[var(--color-white)] shadow-[0_24px_48px_-28px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
           >
-            {searchable ? (
-              <div className="flex items-center gap-2 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] px-3 py-2">
-                <FiSearch className="h-3.5 w-3.5 flex-none text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]" aria-hidden />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setActive(0);
-                  }}
-                  placeholder={searchPlaceholder}
-                  aria-label={searchPlaceholder}
-                  aria-controls={listId}
-                  className="w-full bg-transparent text-sm text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,var(--color-white))]"
-                />
-              </div>
-            ) : null}
-
             <ul
               ref={listRef}
               id={listId}
