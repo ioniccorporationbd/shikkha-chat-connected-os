@@ -196,13 +196,15 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   // Upload the files first: a ticket is only created once every attachment has
   // a real File record, so the ERP never holds a reference to a missing file.
   const attachments: { name: string; url: string }[] = [];
-  for (const attachment of input.attachments ?? []) {
+  const pending = (input.attachments ?? []).filter((a) => a.file || a.url);
+  for (const attachment of pending) {
     if (attachment.file) {
       const uploaded = await uploadAttachment(attachment.file);
       attachments.push({ name: uploaded.name, url: uploaded.url });
     } else if (attachment.url) {
       attachments.push({ name: attachment.name, url: attachment.url });
     }
+    input.onAttachmentProgress?.(attachments.length, pending.length);
   }
 
   const data = await postJson<HelpDeskTicketPayload>(TICKETS_URL, {

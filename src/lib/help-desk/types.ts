@@ -147,6 +147,12 @@ export interface CreateTicketInput {
   /** ERP `HD Team` name the ticket is routed to, when one is configured. */
   department?: string;
   attachments?: TicketAttachment[];
+  /**
+   * Called after each attachment finishes uploading, so the form can show real
+   * upload progress instead of a generic spinner (files go to the ERP one by one
+   * before the ticket is created).
+   */
+  onAttachmentProgress?: (done: number, total: number) => void;
 }
 
 /** A support reply the "customer care" simulation can post. */

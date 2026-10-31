@@ -83,6 +83,8 @@ export interface HelpDeskCopy {
   close: string;
   optionalBadge: string;
   attachNote: string;
+  /** Submit-button label while files are being uploaded (has {done}/{total}). */
+  submittingAttachments: string;
   submit: string;
   submitting: string;
   cancel: string;
@@ -150,6 +152,8 @@ export interface HelpDeskCopy {
   successCreated: string;
   successPriority: string;
   successContact: string;
+  /** Label for the attachments row of the success card. */
+  successAttachments: string;
   successView: string;
   successAnother: string;
 
@@ -417,7 +421,9 @@ const bn: HelpDeskCopy = {
   attachRemove: "সরান",
   close: "বন্ধ করুন",
   optionalBadge: "ঐচ্ছিক",
-  attachNote: "এখন ফাইল শুধু কাছাকাছি সময়ের জন্য দেখানো হচ্ছে; স্থায়ী আপলোড পরবর্তী ছাড়ে যোগ হবে।",
+  attachNote:
+    "ফাইল জমা দেওয়ার সঙ্গে সঙ্গেই Helpdesk-এ আপলোড হয় এবং টিকিটে সংযুক্ত থাকে — সাপোর্ট টিম ও আপনি টিকিটেই ছবিগুলো দেখতে পাবেন। ফাইলগুলো ব্যক্তিগত (private), শুধু আপনার টিকিটে অনুমোদিত ব্যক্তিরা খুলতে পারেন।",
+  submittingAttachments: "সংযুক্তি আপলোড হচ্ছে… ({done}/{total})",
   submit: "টিকিট জমা দিন",
   submitting: "জমা হচ্ছে…",
   cancel: "বাতিল করুন",
@@ -482,6 +488,7 @@ const bn: HelpDeskCopy = {
   successCreated: "তৈরির সময়",
   successPriority: "প্রায়োরিটি",
   successContact: "যোগাযোগ",
+  successAttachments: "সংযুক্তি",
   successView: "টিকিট দেখুন",
   successAnother: "আরেকটি টিকিট তৈরি করুন",
 
@@ -745,7 +752,9 @@ const en: HelpDeskCopy = {
   attachRemove: "Remove",
   close: "Close",
   optionalBadge: "Optional",
-  attachNote: "Files are only previewed locally for now; real upload arrives with the backend.",
+  attachNote:
+    "Files upload to the Helpdesk the moment you submit and stay attached to the ticket — both you and the support team see them there. They are private: only people with access to your ticket can open them.",
+  submittingAttachments: "Uploading attachments… ({done}/{total})",
   submit: "Submit ticket",
   submitting: "Submitting…",
   cancel: "Cancel",
@@ -810,6 +819,7 @@ const en: HelpDeskCopy = {
   successCreated: "Created",
   successPriority: "Priority",
   successContact: "Contact",
+  successAttachments: "Attachments",
   successView: "View ticket",
   successAnother: "Create another ticket",
 

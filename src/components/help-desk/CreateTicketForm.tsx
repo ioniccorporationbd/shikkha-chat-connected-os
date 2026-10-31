@@ -128,6 +128,9 @@ export default function CreateTicketForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<Ticket | null>(null);
+  // Real upload progress: the service uploads each file before creating the
+  // ticket, so the button can say exactly which file is in flight.
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [options, setOptions] = useState<HelpDeskOptions | null>(null);
@@ -322,6 +325,7 @@ export default function CreateTicketForm({
 
     submitLock.current = true;
     setSubmitting(true);
+    setUploadProgress({ done: 0, total: attachments.filter((a) => a.file || a.url).length });
     try {
       // Identity/ownership is decided by the ERP from the session cookie — the
       // form only sends what the customer typed, plus the ERP-configured names.
@@ -334,6 +338,7 @@ export default function CreateTicketForm({
         relatedRoute,
         department: teamValue,
         attachments,
+        onAttachmentProgress: (done, total) => setUploadProgress({ done, total }),
       });
 
       setCreated(ticket);
@@ -359,6 +364,7 @@ export default function CreateTicketForm({
     } finally {
       submitLock.current = false;
       setSubmitting(false);
+      setUploadProgress({ done: 0, total: 0 });
     }
   };
 
@@ -927,7 +933,15 @@ export default function CreateTicketForm({
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-6 py-3 shadow-[0_16px_30px_-16px_color-mix(in_srgb,var(--color-action)_75%,transparent)] transition duration-200 hover:-translate-y-[1px] hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
             >
               <FiSend className="h-4 w-4 text-[var(--color-white)]" aria-hidden />
-              <span className="text-sm font-semibold text-[var(--color-white)]">{submitting ? copy.submitting : copy.submit}</span>
+              <span className="text-sm font-semibold text-[var(--color-white)]">
+                {submitting
+                  ? uploadProgress.total > 0
+                    ? copy.submittingAttachments
+                        .replace("{done}", String(Math.min(uploadProgress.done, uploadProgress.total)))
+                        .replace("{total}", String(uploadProgress.total))
+                    : copy.submitting
+                  : copy.submit}
+              </span>
             </button>
             ) : null}
           </div>

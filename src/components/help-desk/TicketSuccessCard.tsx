@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { FiCheckCircle, FiPlus, FiShield } from "react-icons/fi";
+import { FiCheckCircle, FiPaperclip, FiPlus, FiShield } from "react-icons/fi";
 
 import { HD_CARD } from "@/lib/help-desk/config";
-import { formatDateTimeNumeric } from "@/lib/help-desk/format";
+import { formatDateTimeNumeric, formatFileSize } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -69,6 +69,32 @@ export default function TicketSuccessCard({
           label={copy.successContact}
           value={[ticket.contact.name, ticket.contact.email, ticket.contact.mobile].filter(Boolean).join(" · ")}
         />
+        {ticket.attachments?.length ? (
+          <div className="min-w-0 sm:col-span-2">
+            <dt className="flex items-center gap-2 text-xs font-semibold text-[color-mix(in_srgb,var(--color-primary)_66%,var(--color-white))]">
+              <FiPaperclip className="h-3.5 w-3.5" aria-hidden />
+              {copy.successAttachments}
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] px-2 py-0.5 text-[11px] font-bold text-[var(--color-primary)]">
+                {ticket.attachments.length}
+              </span>
+            </dt>
+            <dd className="mt-1.5 flex flex-wrap gap-2">
+              {ticket.attachments.map((file) => (
+                <span
+                  key={file.id || file.name}
+                  className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,var(--color-white))] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-2.5 py-1.5"
+                >
+                  <span className="truncate text-xs font-semibold text-[var(--color-primary)]">{file.name}</span>
+                  {typeof file.size === "number" && file.size > 0 ? (
+                    <span className="flex-none text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
+                      {formatFileSize(file.size)}
+                    </span>
+                  ) : null}
+                </span>
+              ))}
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       <div className="flex flex-col gap-3 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] p-5 sm:flex-row sm:items-center sm:justify-end sm:p-6">
