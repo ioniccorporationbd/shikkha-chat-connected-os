@@ -11,6 +11,7 @@ import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 import FeatureShowcase from "@/components/showcase/FeatureShowcase";
+import DemoRequestModal from "@/components/home/DemoRequestModal";
 
 type ActiveSectionId =
   | "home-connections-panel"
@@ -371,6 +372,11 @@ export default function LeftSidebar() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  /* The rail's demo CTA opens the same lead-capture dialog as the hero
+     button; it is mounted as a sibling of <aside> so the rail's transform
+     cannot become the dialog's containing block. */
+  const [demoOpen, setDemoOpen] = useState(false);
+
   /* H-01 — the rail is a permanent fixture at ≥1536px and an off-canvas drawer
      below it. Track that breakpoint so the closed drawer can be made truly
      non-interactive without ever disabling the always-on desktop rail. */
@@ -459,7 +465,9 @@ export default function LeftSidebar() {
         className={[
           [
             "connected-sidebar fixed left-0 top-0 z-[90] flex h-screen max-w-[calc(100vw-16px)] flex-col overflow-hidden",
-            "border-r border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)]",
+            // Right-hand seam: 10% of the brand primary, deliberately faint so
+            // the rail reads as a soft divider rather than a hard edge.
+            "border-r border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[var(--color-white)]",
             "shadow-[12px_0_40px_color-mix(in_srgb,var(--color-primary)_10%,transparent)]",
             "transition-transform duration-500 will-change-transform",
             sidebarWidthClass,
@@ -508,17 +516,20 @@ export default function LeftSidebar() {
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
             {/* Demo-request CTA at the foot of the rail: background is the
                 brand primary #032521 (--color-primary); `.sidebar-demo-cta`
-                in globals.css lifts the label one type step above the rail
-                rows. The modal and its flow stay untouched. */}
-            <Link
-              href="#connect"
-              className="sidebar-demo-cta flex h-12 items-center justify-center rounded-2xl border border-[#032521] bg-[#032521] text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,#032521_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[#06453c] sm:h-[56px]"
+                in globals.css sizes the label. Height, hover and the look are
+                unchanged; the click opens the existing DemoRequestModal. */}
+            <button
+              type="button"
+              onClick={() => setDemoOpen(true)}
+              className="sidebar-demo-cta flex h-12 w-full items-center justify-center rounded-2xl border border-[#032521] bg-[#032521] text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,#032521_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[#06453c] sm:h-[56px]"
             >
-              {text.talkToExpert}
-            </Link>
+              ডেমো রিকুয়েস্ট করুন
+            </button>
           </div>
         </div>
       </aside>
+
+      <DemoRequestModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </>
   );
 }

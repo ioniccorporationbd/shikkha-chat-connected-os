@@ -2501,8 +2501,9 @@ html[data-lang="en"] .language-toggle-knob {
    global type scale and the `*` reset live unlayered too, so a Tailwind
    utility layer could never win here. */
 .connected-sidebar .sidebar-demo-cta {
-  font-size: var(--text-title-size) !important; /* one step above the 16px rows */
+  font-size: 18px !important; /* a notch under the 20px title step, above the 16px rows */
   font-weight: 700 !important;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
