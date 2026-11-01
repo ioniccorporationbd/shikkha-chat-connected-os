@@ -1663,6 +1663,58 @@ html[data-lang="en"] .language-toggle-knob {
   color: color-mix(in srgb, var(--color-primary) 52%, var(--color-black)) !important;
 }
 
+/* =========================================================
+   RIGHT-SIDE CARD HEADER PAIRING (homepage rail only)
+   The section badge is the anchor label of every right-side card, so it now
+   reads one step LARGER than the card headline:
+     badge  12px -> 18px  (tighter tracking + negative word-spacing keeps the
+                           long Bangla labels compact instead of airy)
+     headline 20px -> 16px (bold 700, roomier line height for Bangla conjuncts)
+   Scoped to `.connected-right-pane` on purpose: the middle sticky section
+   label shares `.section-label-badge`, and dashboard pages share
+   `.section-main-title` — neither may change.
+========================================================= */
+
+.connected-right-pane .section-label-badge {
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.005em !important;
+  word-spacing: -0.06em !important;
+}
+
+.connected-right-pane .section-main-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.62 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* The card body steps down one notch with the headline so the requested
+   hierarchy still reads top-down (badge > headline > description > feature row). */
+.connected-right-pane .section-description {
+  font-size: 13px !important;
+  line-height: 1.75 !important;
+  word-spacing: -0.02em !important;
+}
+
+/* Narrow phones: one more notch down so long Bangla/English labels keep a single
+   line inside the pill instead of wrapping. */
+@media (max-width: 640px) {
+  .connected-right-pane .section-label-badge {
+    font-size: 14px !important;
+  }
+
+  .connected-right-pane .section-main-title {
+    font-size: 13px !important;
+    line-height: 1.66 !important;
+  }
+
+  .connected-right-pane .section-description {
+    font-size: 12.5px !important;
+  }
+}
+
 @media (max-width: 767px) {
   .right-panel-section {
     padding-left: 16px;
