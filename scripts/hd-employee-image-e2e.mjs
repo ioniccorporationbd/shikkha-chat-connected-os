@@ -27,6 +27,8 @@ const EMAIL = process.env.E2E_EMAIL ?? "client@example.com";
 const TICKET = process.env.E2E_TICKET ?? "0583";
 const IMAGE = process.env.E2E_IMAGE ?? "/private/files/hd-0583-employee-sign.png";
 const NEEDLE_TEXT = process.env.E2E_TEXT ?? "এমপ্লয়ি সাইন";
+const SECTION = process.env.E2E_SECTION ?? "clientDashboard";
+const AGENT = process.env.E2E_AGENT ?? "MD Shahzalal Amin Surker";
 
 const results = [];
 const check = (name, ok, extra = "") => {
@@ -70,9 +72,9 @@ try {
   });
 
   await login(page);
-  await page.waitForURL(/clientDashboard/, { timeout: 60000 });
+  await page.waitForURL(new RegExp(SECTION), { timeout: 60000 });
 
-  await page.goto(`${BASE}/clientDashboard/help-desk/tickets/${TICKET}`, {
+  await page.goto(`${BASE}/${SECTION}/help-desk/tickets/${TICKET}`, {
     waitUntil: "domcontentloaded",
     timeout: 120000,
   });
@@ -87,6 +89,16 @@ try {
     return false;
   })();
   check("reply text rendered in the customer thread", replyText);
+
+  // The header is shaped from the conversation payload, so a column their meta
+  // hides must not blank the Submitted stamp / assignee (help-desk:ticket-meta).
+  const pageText = await page.evaluate(() => document.body.innerText || "");
+  check(
+    "ticket header keeps its Submitted stamp",
+    /(?:[0-9০-৯]{1,4}[/.-]){2}[0-9০-৯]{2,4}/.test(pageText),
+    pageText.slice(0, 140)
+  );
+  check("ticket header names the assigned employee", pageText.includes(AGENT), AGENT);
 
   // Leg 1 — the bug: the direct file GET is refused for the customer session.
   // Fetched off-origin against the ERP mock, exactly as the portal's server-side

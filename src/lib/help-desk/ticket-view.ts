@@ -39,8 +39,16 @@ export function resolveTicketHeader(
   };
 }
 
-/** True when both fields the desk shows are still unresolved — worth a report. */
+/**
+ * True when a header field the desk shows was dropped on the way in — worth a
+ * report.
+ *
+ * An unassigned ticket is a normal state (the desk shows "Unassigned"), so a
+ * missing agent only counts when the payload did carry one; a missing
+ * `createdAt` is always a mapping bug.
+ */
 export function missingTicketHeader(ticket: Ticket): boolean {
   const loose = ticket as Ticket & { agent?: string | null; assignee?: string | null };
-  return !(ticket.assignedAgent || loose.agent || loose.assignee) || !ticket.createdAt;
+  const unmappedAgent = Boolean((loose.agent || loose.assignee) && !ticket.assignedAgent);
+  return unmappedAgent || !ticket.createdAt;
 }
