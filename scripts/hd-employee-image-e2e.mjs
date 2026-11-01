@@ -25,7 +25,8 @@ const LOG = process.env.MOCK_LOG ?? "/tmp/mock_frappe.log";
 const PASSWORD = process.env.MOCK_PASSWORD ?? "demo1234";
 const EMAIL = process.env.E2E_EMAIL ?? "client@example.com";
 const TICKET = process.env.E2E_TICKET ?? "0583";
-const IMAGE = "/private/files/hd-0583-employee-sign.png";
+const IMAGE = process.env.E2E_IMAGE ?? "/private/files/hd-0583-employee-sign.png";
+const NEEDLE_TEXT = process.env.E2E_TEXT ?? "এমপ্লয়ি সাইন";
 
 const results = [];
 const check = (name, ok, extra = "") => {
@@ -80,7 +81,7 @@ try {
   const replyText = await (async () => {
     for (let i = 0; i < 60; i += 1) {
       const text = await page.evaluate(() => document.body.innerText || "");
-      if (text.includes("এমপ্লয়ি সাইন")) return true;
+      if (text.includes(NEEDLE_TEXT)) return true;
       await sleep(700);
     }
     return false;

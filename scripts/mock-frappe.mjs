@@ -2094,6 +2094,68 @@ hd0583Reply.attachments.push({
   url: HD_0583_IMAGE_URL,
 });
 
+// 0592 — the live report (dash.shikkhachat.com/helpdesk/tickets/0592): support's
+// screenshot is not on a message row at all. It is a private File attached to the
+// ticket itself, announced by the ``Attachment`` comment Frappe writes and the
+// desk renders inside *Activity*. The customer thread must show it as a message
+// with that file attached — and the direct GET must stay 403 for the customer.
+const HD_0592 = "0592";
+const HD_0592_AGENT = "MD Shahzalal Amin Surker";
+const HD_0592_IMAGE_URL = "/private/files/hd-0592-employee-sign.png";
+hdThreads.set(HD_0592, {
+  name: HD_0592,
+  subject: "রেজাল্ট পেজে এরর আসছে",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: HD_0592_AGENT,
+  submittedAt: "2026-10-30T05:10:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0592, "user", "রেজাল্ট পেজে এরর আসছে, একটু দেখবেন?", {
+  at: "2026-10-30T05:10:00.000Z",
+  authorName: "Tamim Hasan",
+});
+const hd0592File = hdFileRow({
+  name: "MOCKFILE-05921",
+  url: HD_0592_IMAGE_URL,
+  fileName: "hd-0592-employee-sign.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0592File.attached_to_doctype = "HD Ticket";
+hd0592File.attached_to_name = HD_0592;
+hd0592File.is_private = 1;
+hd0592File.agent_only = true;
+hdFileBytes.set(HD_0592_IMAGE_URL, AVATAR_BYTES);
+hd0592File.file_size = AVATAR_BYTES.length;
+// the Attachment comment's own text is just the file link — the API drops it,
+// so the picture stands alone in the bubble
+const hd0592Attach = hdAppend(HD_0592, "support", "", {
+  at: "2026-10-31T03:00:00.000Z",
+  authorName: HD_0592_AGENT,
+});
+if (hd0592Attach) {
+  hd0592Attach.id = "comment:MOCK-0592-ATTACH";
+  hd0592Attach.attachments.push({
+    id: hd0592File.name,
+    name: hd0592File.file_name,
+    size: hd0592File.file_size,
+    mime: "image/png",
+    url: HD_0592_IMAGE_URL,
+  });
+}
+hdAppend(HD_0592, "support", "ছবিটি দেখুন — এটি আমাদের এমপ্লয়ি সাইন, এটা দিয়েই ভেরিফাই করতে পারবেন।", {
+  at: "2026-10-31T03:01:00.000Z",
+  authorName: HD_0592_AGENT,
+});
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
