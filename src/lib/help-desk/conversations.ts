@@ -15,7 +15,9 @@ import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
+  ConversationAttachment,
   ConversationListPayload,
+  ConversationMessage,
   ConversationReaction,
   HelpDeskBadgesPayload,
   ConversationPayload,
@@ -171,18 +173,66 @@ export function orderConversation<T extends { createdAt?: string | null; id?: st
   return orderByStamp(messages, (message) => ({ at: message.createdAt, id: message.id }));
 }
 
+/**
+ * One attachment as the ERP sends it. The API names the file `name`/`mime`; the
+ * conversation UI reads `fileName`/`fileType`, so every payload is translated
+ * here — otherwise an image arrives with no MIME type and no name, and the
+ * thread draws it as an anonymous row instead of the picture itself.
+ */
+type RawAttachment = {
+  id?: string;
+  name?: string;
+  fileName?: string;
+  size?: number | string | null;
+  mime?: string;
+  fileType?: string;
+  url?: string;
+};
+
+function toAttachment(raw: RawAttachment): ConversationAttachment | null {
+  if (!raw || typeof raw !== "object") return null;
+  const url = typeof raw.url === "string" ? raw.url.trim() : "";
+  const named = String(raw.fileName ?? raw.name ?? "").trim();
+  const fromUrl = url ? decodeURIComponent(url.split("/").pop() || "") : "";
+  const fileName = named || fromUrl;
+  if (!url && !fileName) return null;
+  const size = Number.parseInt(String(raw.size ?? 0), 10);
+  return {
+    url: url || undefined,
+    fileName,
+    fileType: String(raw.fileType ?? raw.mime ?? "").trim(),
+    size: Number.isFinite(size) && size > 0 ? size : 0,
+  };
+}
+
+function normalizeMessage(message: ConversationMessage): ConversationMessage {
+  const raw = (message as unknown as { attachments?: unknown }).attachments;
+  if (!Array.isArray(raw) || raw.length === 0) return { ...message, attachments: [] };
+  const attachments = (raw as RawAttachment[])
+    .map(toAttachment)
+    .filter((file): file is ConversationAttachment => file !== null);
+  return { ...message, attachments };
+}
+
 export function alignConversation(payload: ConversationPayload): ConversationPayload {
   const viewerIsSupport = typeof payload.isSupport === "boolean" ? payload.isSupport : null;
   if (viewerIsSupport === null) {
     // An older backend keeps its own `isMine`; the reading order still holds.
-    return { ...payload, messages: orderConversation(Array.isArray(payload.messages) ? payload.messages : []) };
+    return {
+      ...payload,
+      messages: orderConversation(
+        (Array.isArray(payload.messages) ? payload.messages : []).map(normalizeMessage)
+      ),
+    };
   }
 
   const messages = orderConversation(
-    (Array.isArray(payload.messages) ? payload.messages : []).map((message) => ({
-      ...message,
-      isMine: message.author === "support" ? viewerIsSupport : !viewerIsSupport,
-    }))
+    (Array.isArray(payload.messages) ? payload.messages : []).map((message) =>
+      normalizeMessage({
+        ...message,
+        isMine: message.author === "support" ? viewerIsSupport : !viewerIsSupport,
+      })
+    )
   );
 
   // The chat is ordered by these events: an unsorted timeline would draw the

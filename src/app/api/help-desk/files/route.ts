@@ -33,19 +33,40 @@ export async function GET(request: Request) {
   }
 
   const target = new URL(base);
-  let upstream: Response;
-  try {
-    upstream = await fetch(`${base}${url}`, {
-      headers: {
-        cookie: `sid=${sid}`,
-        "x-forwarded-host": target.host,
-        "x-forwarded-proto": target.protocol.replace(":", ""),
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(20000),
-    });
-  } catch {
+  const headers: Record<string, string> = {
+    cookie: `sid=${sid}`,
+    "x-forwarded-host": target.host,
+    "x-forwarded-proto": target.protocol.replace(":", ""),
+  };
+
+  const load = async (href: string) => {
+    try {
+      return await fetch(href, {
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  let upstream = await load(`${base}${url}`);
+  if (!upstream) {
     return jsonFail("The file could not be loaded right now.", "upstream_unreachable", 502);
+  }
+
+  // An employee's reply attachment lives on an **agent-side** row (Comment /
+  // Communication), which a customer session may not read — Frappe answers 403.
+  // The ticket-scoped streamer re-checks the right question ("can this caller
+  // read the ticket the file belongs to?") and hands the bytes back.
+  if (!upstream.ok && (upstream.status === 403 || upstream.status === 404)) {
+    const viaTicket = await load(
+      `${base}/api/method/shikkha_os.api.v1.help_desk_files.stream_file?url=${encodeURIComponent(url)}`
+    );
+    if (viaTicket && viaTicket.ok && viaTicket.body) {
+      upstream = viaTicket;
+    }
   }
 
   if (!upstream.ok || !upstream.body) {

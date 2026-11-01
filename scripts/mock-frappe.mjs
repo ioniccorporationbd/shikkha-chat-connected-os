@@ -2035,6 +2035,65 @@ hdAppend(HD_0510, "user", "ঠিক আছে, অপেক্ষা করছ�
 });
 hdThreads.get(HD_0510).payloadOrder = "reverse";
 
+// 0583 — support answered with a picture, the way it happens on the live site
+// (https://dash.shikkhachat.com/helpdesk/tickets/0583). The employee's image is
+// a *private* File on the agent-side Comment row: Frappe refuses it to a
+// customer session (403), so the portal must fall back to the ticket-scoped
+// streamer and then render the picture inline in the conversation.
+const HD_0583 = "0583";
+const HD_0583_CUSTOMER = "Tamim Hasan";
+const HD_0583_AGENT = "MD Shahzalal Amin Surker";
+const HD_0583_IMAGE_URL = "/private/files/hd-0583-employee-sign.png";
+hdThreads.set(HD_0583, {
+  name: HD_0583,
+  subject: "রেজাল্ট পেজে এরর আসছে",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: HD_0583_CUSTOMER,
+  customerEmail: "client@example.com",
+  agent: HD_0583_AGENT,
+  submittedAt: "2026-10-31T06:20:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0583, "user", "রেজাল্ট পেজ খুললে এরর আসছে। কী করব?", {
+  at: "2026-10-31T06:20:00.000Z",
+  authorName: HD_0583_CUSTOMER,
+});
+const hd0583File = hdFileRow({
+  name: "MOCKFILE-05831",
+  url: HD_0583_IMAGE_URL,
+  fileName: "employee-sign.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0583File.attached_to_doctype = "Comment";
+hd0583File.attached_to_name = "COMMENT-0583-A1";
+hd0583File.is_private = 1;
+// Dev-only mirror of Frappe's Comment permission: the customer cannot read this
+// row, so a plain GET of the private file must answer 403 and force the portal
+// through the ticket-scoped streamer.
+hd0583File.agent_only = true;
+hdFileBytes.set(HD_0583_IMAGE_URL, AVATAR_BYTES);
+hd0583File.file_size = AVATAR_BYTES.length;
+const hd0583Reply = hdAppend(
+  HD_0583,
+  "support",
+  "ছবিটি দেখুন — এটি আমাদের এমপ্লয়ি সাইন, এটা দিয়েই ভেরিফাই করতে পারবেন।",
+  { at: "2026-10-31T06:33:00.000Z", authorName: HD_0583_AGENT }
+);
+hd0583Reply.attachments.push({
+  id: hd0583File.name,
+  name: hd0583File.file_name,
+  size: hd0583File.file_size,
+  mime: "image/png",
+  url: HD_0583_IMAGE_URL,
+});
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
@@ -2063,6 +2122,14 @@ const server = createServer(async (request, response) => {
     url.pathname.startsWith("/files/") ||
     url.pathname.startsWith("/private/files/")
   ) {
+    // A private file claimed onto an agent-side Comment is unreadable for the
+    // customer, exactly like Frappe's Comment permission. Answering 403 here is
+    // what pushes the portal onto the ticket-scoped streamer fallback.
+    const fileRow = hdFilesByUrl.get(url.pathname);
+    if (fileRow && fileRow.agent_only) {
+      failure(response, 403, "PermissionError", "You are not permitted to access this file.", "Help Desk");
+      return;
+    }
     // Serve the uploaded bytes when we have them (the ticket's real image);
     // anything else (avatars and seeded files) falls back to the sample PNG.
     const stored = hdFileBytes.get(url.pathname);
@@ -2079,6 +2146,27 @@ const server = createServer(async (request, response) => {
   if (!url.pathname.startsWith("/api/method/")) {
     response.writeHead(404, { "content-type": "text/plain" });
     response.end("not found");
+    return;
+  }
+
+  // Ticket-scoped attachment streamer. The portal calls this only after the
+  // direct file GET was refused (403/404), and it answers the bytes for any
+  // file that belongs to a ticket the caller may read.
+  if (method === "shikkha_os.api.v1.help_desk_files.stream_file") {
+    const fileUrl = url.searchParams.get("url") || "";
+    const row = hdFilesByUrl.get(fileUrl);
+    const known = Boolean(row);
+    if (!known || !(fileUrl.startsWith("/files/") || fileUrl.startsWith("/private/files/"))) {
+      failure(response, 404, "DoesNotExistError", "Unknown file.", "Help Desk");
+      return;
+    }
+    const payload = hdFileBytes.get(fileUrl) ?? AVATAR_BYTES;
+    response.writeHead(200, {
+      "content-type": "image/png",
+      "content-length": payload.length,
+      "cache-control": "no-store",
+    });
+    response.end(payload);
     return;
   }
 
