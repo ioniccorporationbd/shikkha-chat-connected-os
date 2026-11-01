@@ -1665,13 +1665,13 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* =========================================================
    RIGHT-SIDE CARD HEADER PAIRING (homepage rail only)
-   Subtitle (the pill) is one step larger than it used to be, but it must stay
-   BELOW the card title — the title remains the biggest text in the header:
+   Title (the pill, e.g. "Content Quality & AI Safety") and subtitle (the
+   headline under it, e.g. "Flagged AI Content") carry the SAME text size:
      badge  12px -> 16px  (tighter tracking + negative word-spacing keeps the
                            long Bangla labels compact instead of airy)
-     title  20px -> 15px  (still smaller than before, and stays below the pill)
-   Body copy steps down to 14px so the header reads
-   pill 16 > title 15 > body 14 instead of an inverted hierarchy.
+     title  20px -> 16px  (equal to the pill; still smaller than the old 20px)
+   Body copy stays one notch under the pair, so the header reads
+   pill 16 = title 16 > body 14.
    Scoped to `.connected-right-pane` on purpose: the middle sticky section
    label shares `.section-label-badge`, and dashboard pages share
    `.section-main-title` — neither may change.
@@ -1686,29 +1686,29 @@ html[data-lang="en"] .language-toggle-knob {
 }
 
 .connected-right-pane .section-main-title {
-  font-size: 15px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
-  line-height: 1.6 !important;
+  line-height: 1.42 !important;
   letter-spacing: -0.01em !important;
 }
 
-/* The supporting line stays one notch under the headline so the rail still reads
-   top-down: pill 16 > heading 15 > body 14 > feature row 12. */
+/* The supporting line stays one notch under the headline pair so the rail still
+   reads top-down: pill 16 = heading 16 > body 14 > feature row 12. */
 .connected-right-pane .section-description {
   font-size: 14px !important;
   line-height: 1.72 !important;
   word-spacing: -0.02em !important;
 }
 
-/* Narrow phones: one notch down each, same order (pill 15 > heading 14 > body 13). */
+/* Narrow phones: the pair drops one notch together (pill 15 = heading 15 > body 13). */
 @media (max-width: 640px) {
   .connected-right-pane .section-label-badge {
     font-size: 15px !important;
   }
 
   .connected-right-pane .section-main-title {
-    font-size: 14px !important;
-    line-height: 1.62 !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
   }
 
   .connected-right-pane .section-description {
