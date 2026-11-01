@@ -1677,19 +1677,18 @@ html[data-lang="en"] .language-toggle-knob {
    `.section-main-title` — neither may change.
 ========================================================= */
 
-.connected-right-pane .section-label-badge {
-  font-size: 16px !important;
-  line-height: 1.3 !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.005em !important;
-  word-spacing: -0.06em !important;
-}
-
+/* ONE type recipe for the pair — pill (card title) and the headline under it
+   (card subtitle) share size, family, weight, line-height and tracking, so the
+   two lines measure identically. Only colour and the pill's uppercase Latin
+   styling differ. */
+.connected-right-pane .section-label-badge,
 .connected-right-pane .section-main-title {
   font-size: 16px !important;
   font-weight: 700 !important;
-  line-height: 1.42 !important;
-  letter-spacing: -0.01em !important;
+  line-height: 1.36 !important;
+  letter-spacing: -0.008em !important;
+  word-spacing: -0.05em !important;
+  text-transform: none !important;
 }
 
 /* The supporting line stays one notch under the headline pair so the rail still
@@ -1702,13 +1701,9 @@ html[data-lang="en"] .language-toggle-knob {
 
 /* Narrow phones: the pair drops one notch together (pill 15 = heading 15 > body 13). */
 @media (max-width: 640px) {
-  .connected-right-pane .section-label-badge {
-    font-size: 15px !important;
-  }
-
+  .connected-right-pane .section-label-badge,
   .connected-right-pane .section-main-title {
     font-size: 15px !important;
-    line-height: 1.45 !important;
   }
 
   .connected-right-pane .section-description {
