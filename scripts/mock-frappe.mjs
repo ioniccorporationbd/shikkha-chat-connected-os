@@ -2927,15 +2927,36 @@ const server = createServer(async (request, response) => {
         // The resubmit still carries this attempt's uploads: they go onto the
         // ticket that actually exists, and anything left over is discarded.
         const retryUploads = hdResolveUploads(hdData.attachments, ownerKey);
+        const retryCommentId = retryUploads.attached.length
+          ? `HDCOMM-${recent.ticket.id}-${Date.now()}`
+          : null;
         for (const entry of retryUploads.attached) {
-          entry.row.attached_to_doctype = "HD Ticket";
-          entry.row.attached_to_name = recent.ticket.id;
+          entry.row.attached_to_doctype = "Comment";
+          entry.row.attached_to_name = retryCommentId;
           recent.ticket.attachments.push({
             id: entry.row.name,
             name: entry.row.file_name,
             size: entry.row.file_size,
             mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
             url: entry.row.file_url,
+          });
+        }
+        const retryThread = hdThreads.get(recent.ticket.id);
+        if (retryThread && retryUploads.attached.length) {
+          retryThread.attachments = recent.ticket.attachments;
+          retryThread.messages.push({
+            id: retryCommentId,
+            author: "user",
+            authorName: recent.ticket.contact.name,
+            body: `সংযুক্তি — ${retryUploads.attached.map((entry) => entry.row.file_name).join(", ")}`,
+            createdAt: new Date().toISOString(),
+            kind: "message",
+            channel: "comment",
+            replyTo: null,
+            attachments: recent.ticket.attachments,
+            isMine: false,
+            seen: false,
+            reactions: [],
           });
         }
         hdDiscardUploads(hdData.attachments, ownerKey);
@@ -2958,12 +2979,14 @@ const server = createServer(async (request, response) => {
       const timestamp = new Date().toISOString();
 
       // Claim the uploaded Files exactly like `_attach_uploaded_files`: only the
-      // caller's unattached rows move, and each one records the ticket it now
-      // belongs to (what the agent's Helpdesk attachment panel reads).
+      // caller's unattached rows move, and they move onto a *comment* on the
+      // ticket — Desk shows them in Activity > Comment > attach file, which is
+      // the conversation the agent actually reads.
       const uploads = hdResolveUploads(hdData.attachments, ownerKey);
+      const attachmentCommentId = uploads.attached.length ? `HDCOMM-${id}` : null;
       for (const entry of uploads.attached) {
-        entry.row.attached_to_doctype = "HD Ticket";
-        entry.row.attached_to_name = id;
+        entry.row.attached_to_doctype = "Comment";
+        entry.row.attached_to_name = attachmentCommentId;
       }
       const ticket = {
         id,
@@ -3026,11 +3049,32 @@ const server = createServer(async (request, response) => {
             kind: "message",
             channel: "comment",
             replyTo: null,
-            attachments: ticket.attachments,
+            // The files were posted as their own comment, so they hang off that
+            // comment — the ticket-level list above is the aggregate the ERP
+            // serves for the ticket page.
+            attachments: [],
             isMine: false,
             seen: false,
             reactions: [],
           },
+          ...(ticket.attachments.length
+            ? [
+                {
+                  id: attachmentCommentId,
+                  author: "user",
+                  authorName: ticket.contact.name,
+                  body: `সংযুক্তি — ${ticket.attachments.map((file) => file.name).join(", ")}`,
+                  createdAt: timestamp,
+                  kind: "message",
+                  channel: "comment",
+                  replyTo: null,
+                  attachments: ticket.attachments,
+                  isMine: false,
+                  seen: false,
+                  reactions: [],
+                },
+              ]
+            : []),
         ],
       });
       console.log(`[mock-frappe] HD TICKET ${id} ${preferred} files=${ticket.attachments.length}`);
