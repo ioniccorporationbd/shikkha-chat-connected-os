@@ -10,8 +10,9 @@
  * Legs:
  *   A. customer picks an image on the New Ticket form (thumbnail + honest copy),
  *      submits, and the success card lists what actually landed;
- *   B. the `File` row itself says attached_to_doctype="Comment" (Desk:
- *      HD Ticket > Activity > Comment > attach file) on the just-created
+ *   B. the `File` row itself says attached_to_doctype="Communication" (Desk:
+ *      HD Ticket > Activity > the customer's message > attach file) on the
+ *      just-created
  *      ticket — and nothing points at 0529;
  *   C. the ticket's image is visible to the customer on the detail page and to
  *      the support agent (separate login) in the ticket conversation, where it
@@ -131,10 +132,10 @@ try {
   // ------------------------------------------------------------------ leg B
   if (createdId) {
     const files = await mockFiles();
-    const commentId = `HDCOMM-${createdId}`;
-    const mine = files.filter((row) => row.attached_to_name === commentId);
-    check("File row maps to a comment on the ticket", mine.length === 1 && mine[0].attached_to_doctype === "Comment", JSON.stringify(mine[0] ?? null));
-    check("comment belongs to the created ticket", mine[0]?.attached_to_name === commentId, `${mine[0]?.attached_to_name} vs ${commentId}`);
+    const messageId = `HDCOMM-${createdId}`;
+    const mine = files.filter((row) => row.attached_to_name === messageId);
+    check("File row maps to a message on the ticket", mine.length === 1 && mine[0].attached_to_doctype === "Communication", JSON.stringify(mine[0] ?? null));
+    check("message belongs to the created ticket", mine[0]?.attached_to_name === messageId, `${mine[0]?.attached_to_name} vs ${messageId}`);
     const wrong = files.filter((row) => String(row.attached_to_name ?? "").includes(REFERENCE_TICKET));
     check("no upload was attached to reference ticket 0529", wrong.length === 0, JSON.stringify(wrong));
   }
@@ -206,7 +207,7 @@ try {
   if (createdId) {
     const files = await mockFiles();
     const mine = files.filter((row) => row.attached_to_name === `HDCOMM-${createdId}`);
-    check("mapping unchanged after the agent opened the ticket", mine.length === 1 && mine[0].attached_to_doctype === "Comment");
+    check("mapping unchanged after the agent opened the ticket", mine.length === 1 && mine[0].attached_to_doctype === "Communication");
   }
   await agent.screenshot({ path: "/tmp/hd14_agent_conversation.png", timeout: 60000 });
 } finally {

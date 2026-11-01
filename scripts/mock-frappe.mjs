@@ -2927,12 +2927,12 @@ const server = createServer(async (request, response) => {
         // The resubmit still carries this attempt's uploads: they go onto the
         // ticket that actually exists, and anything left over is discarded.
         const retryUploads = hdResolveUploads(hdData.attachments, ownerKey);
-        const retryCommentId = retryUploads.attached.length
+        const retryMessageId = retryUploads.attached.length
           ? `HDCOMM-${recent.ticket.id}-${Date.now()}`
           : null;
         for (const entry of retryUploads.attached) {
-          entry.row.attached_to_doctype = "Comment";
-          entry.row.attached_to_name = retryCommentId;
+          entry.row.attached_to_doctype = "Communication";
+          entry.row.attached_to_name = retryMessageId;
           recent.ticket.attachments.push({
             id: entry.row.name,
             name: entry.row.file_name,
@@ -2945,13 +2945,13 @@ const server = createServer(async (request, response) => {
         if (retryThread && retryUploads.attached.length) {
           retryThread.attachments = recent.ticket.attachments;
           retryThread.messages.push({
-            id: retryCommentId,
+            id: retryMessageId,
             author: "user",
             authorName: recent.ticket.contact.name,
             body: `সংযুক্তি — ${retryUploads.attached.map((entry) => entry.row.file_name).join(", ")}`,
             createdAt: new Date().toISOString(),
             kind: "message",
-            channel: "comment",
+            channel: "message",
             replyTo: null,
             attachments: recent.ticket.attachments,
             isMine: false,
@@ -2979,14 +2979,16 @@ const server = createServer(async (request, response) => {
       const timestamp = new Date().toISOString();
 
       // Claim the uploaded Files exactly like `_attach_uploaded_files`: only the
-      // caller's unattached rows move, and they move onto a *comment* on the
-      // ticket — Desk shows them in Activity > Comment > attach file, which is
-      // the conversation the agent actually reads.
+      // caller's unattached rows move, and they move onto a *message*
+      // (Communication) on the ticket — Desk shows them in Activity > the message
+      // > attach file, which is the conversation the agent actually reads. A
+      // Comment is not used: the helpdesk app refuses comment inserts from
+      // customers (ticket comments are internal agent notes).
       const uploads = hdResolveUploads(hdData.attachments, ownerKey);
-      const attachmentCommentId = uploads.attached.length ? `HDCOMM-${id}` : null;
+      const attachmentMessageId = uploads.attached.length ? `HDCOMM-${id}` : null;
       for (const entry of uploads.attached) {
-        entry.row.attached_to_doctype = "Comment";
-        entry.row.attached_to_name = attachmentCommentId;
+        entry.row.attached_to_doctype = "Communication";
+        entry.row.attached_to_name = attachmentMessageId;
       }
       const ticket = {
         id,
@@ -3060,13 +3062,13 @@ const server = createServer(async (request, response) => {
           ...(ticket.attachments.length
             ? [
                 {
-                  id: attachmentCommentId,
+                  id: attachmentMessageId,
                   author: "user",
                   authorName: ticket.contact.name,
                   body: `সংযুক্তি — ${ticket.attachments.map((file) => file.name).join(", ")}`,
                   createdAt: timestamp,
                   kind: "message",
-                  channel: "comment",
+                  channel: "message",
                   replyTo: null,
                   attachments: ticket.attachments,
                   isMine: false,
