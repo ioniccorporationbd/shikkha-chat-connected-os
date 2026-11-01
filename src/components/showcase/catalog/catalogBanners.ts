@@ -1,6 +1,5 @@
 import type { VideoBannerContent } from "@/components/home/VideoBanner";
 import type { ShowcaseCategory } from "@/lib/feature-showcase";
-import { CATALOG_SECTION_DETAILS } from "@/lib/catalog-section-details";
 
 /**
  * Banner content for a catalog MAIN section.
@@ -63,7 +62,6 @@ export function buildCatalogBannerContent(
 ): VideoBannerContent {
   const glow = GLOW_THEMES[index % GLOW_THEMES.length];
   const videoSrc = CATALOG_SECTION_VIDEOS[category.id] ?? DEFAULT_SECTION_VIDEO;
-  const detail = CATALOG_SECTION_DETAILS[category.id];
   const count = category.features.length;
   const ordinal = index + 1;
 
@@ -79,9 +77,10 @@ export function buildCatalogBannerContent(
       bn: {
         pill: category.title.bn,
         title: `Shikkha Chat Apps — ${category.title.bn}`,
-        description: detail
-          ? `এই বিভাগে ${toBn(count)}টি বৈশিষ্ট্য · কাদের জন্য: ${detail.audience.bn}।`
-          : `এই বিভাগে ${toBn(count)}টি বৈশিষ্ট্য রয়েছে। প্রতিটি বৈশিষ্ট্যের জন্য নিচে আলাদা সেকশন দেওয়া হলো।`,
+        /* The section intro keeps its feature-count line only: the old
+           "· কাদের জন্য: <audience>" tail was section-metadata of the same
+           kind the right-side cards no longer show. */
+        description: `এই বিভাগে ${toBn(count)}টি বৈশিষ্ট্য রয়েছে। প্রতিটি বৈশিষ্ট্যের জন্য নিচে আলাদা সেকশন দেওয়া হলো।`,
         playVideo: "ভিডিও চালু করুন",
         pauseVideo: "ভিডিও বিরতি দিন",
         scroll: "স্ক্রল করুন",
@@ -89,9 +88,7 @@ export function buildCatalogBannerContent(
       en: {
         pill: category.title.en,
         title: `Shikkha Chat Apps — ${category.title.en}`,
-        description: detail
-          ? `This category has ${count} features · who it's for: ${detail.audience.en}.`
-          : `This category contains ${count} features. Each feature is given its own section below.`,
+        description: `This category contains ${count} features. Each feature is given its own section below.`,
         playVideo: "Play video",
         pauseVideo: "Pause video",
         scroll: "Scroll",
