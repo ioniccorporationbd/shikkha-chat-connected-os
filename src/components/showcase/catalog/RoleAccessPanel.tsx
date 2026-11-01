@@ -199,6 +199,7 @@ export default function RoleAccessPanel({
         icon={SHOWCASE_ICONS[feature.icon]}
         showButtons={false}
         capabilities={guide.tips.map((tip) => tip[lang])}
+        demoRequest
       >
         {/* The role's links — 1 … N, title + description, five lines cap. */}
         <div className="mt-6 w-full">

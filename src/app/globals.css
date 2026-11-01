@@ -1951,6 +1951,37 @@ html[data-lang="en"] .language-toggle-knob {
   background: color-mix(in srgb, var(--color-secondary) 16%, var(--color-white));
 }
 
+/* Rail / sidebar variant — the SAME geometry, radius, type scale and hover
+   mechanics as `.mk-btn--primary`, but on the brand primary #032521.
+   Used by the left sidebar's demo CTA, which must keep its own colour. */
+.mk-btn--deep {
+  background: #032521;
+  color: var(--color-white);
+  box-shadow: 0 10px 30px color-mix(in srgb, #032521 34%, transparent);
+}
+.mk-btn--deep:hover {
+  background: #06453c;
+  box-shadow: 0 16px 42px color-mix(in srgb, #032521 44%, transparent);
+  transform: translateY(-2px);
+}
+
+/* Fill the parent column (right-rail card footer, sidebar footer). */
+.mk-btn--block {
+  display: flex;
+  width: 100%;
+}
+
+/* The right pane's approved type scale (below) forces EVERY button in the rail
+   to `--text-text-size` !important. The demo CTA must keep the hero banner's
+   own type (0.95rem / line-height 1) so the two buttons are the same height and
+   weight, so it is opted back out — specificity beats that `:where()` block
+   and only `.mk-btn` is affected. */
+:is(.connected-right-pane, .connected-right-scroll-panel, .right-scroll-panel)
+  .mk-btn {
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+}
+
 /* =========================================================
    MAIN BANNER (LandingHeroBanner) — background system
    Refined brand wash: a masked "blueprint" grid that fades out

@@ -11,7 +11,7 @@ import SidebarAccountSection from "@/components/auth/SidebarAccountSection";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
 import FeatureShowcase from "@/components/showcase/FeatureShowcase";
-import DemoRequestModal from "@/components/home/DemoRequestModal";
+import DemoRequestButton from "@/components/home/DemoRequestButton";
 
 type ActiveSectionId =
   | "home-connections-panel"
@@ -372,11 +372,6 @@ export default function LeftSidebar() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  /* The rail's demo CTA opens the same lead-capture dialog as the hero
-     button; it is mounted as a sibling of <aside> so the rail's transform
-     cannot become the dialog's containing block. */
-  const [demoOpen, setDemoOpen] = useState(false);
-
   /* H-01 — the rail is a permanent fixture at ≥1536px and an off-canvas drawer
      below it. Track that breakpoint so the closed drawer can be made truly
      non-interactive without ever disabling the always-on desktop rail. */
@@ -514,22 +509,19 @@ export default function LeftSidebar() {
           <FeatureShowcase />
 
           <div className="mt-auto border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
-            {/* Demo-request CTA at the foot of the rail: background is the
-                brand primary #032521 (--color-primary); `.sidebar-demo-cta`
-                in globals.css sizes the label. Height, hover and the look are
-                unchanged; the click opens the existing DemoRequestModal. */}
-            <button
-              type="button"
-              onClick={() => setDemoOpen(true)}
-              className="sidebar-demo-cta flex h-12 w-full items-center justify-center rounded-2xl border border-[#032521] bg-[#032521] text-[var(--color-white)] shadow-[0_16px_34px_-18px_color-mix(in_srgb,#032521_78%,transparent)] transition duration-300 hover:-translate-y-1 hover:bg-[#06453c] sm:h-[56px]"
-            >
-              ডেমো রিকুয়েস্ট করুন
-            </button>
+            {/* Demo-request CTA at the foot of the rail. Now the SAME shared
+                component as the hero banner's button and the right-rail card
+                footers — identical height, padding, radius, type scale, icon
+                slot and hover lift — with `tone="deep"` so the background stays
+                the brand primary #032521 this rail has always used. Opens the
+                existing DemoRequestModal. */}
+            <DemoRequestButton tone="deep" fullWidth />
           </div>
         </div>
       </aside>
 
-      <DemoRequestModal open={demoOpen} onClose={() => setDemoOpen(false)} />
+      {/* The rail no longer mounts its own dialog: DemoRequestButton renders
+          the shared DemoRequestModal next to the button it belongs to. */}
     </>
   );
 }

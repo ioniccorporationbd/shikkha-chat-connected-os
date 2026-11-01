@@ -2,12 +2,7 @@
 
 import SectionPanel from "@/components/hubs/shared/SectionPanel";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
-import {
-  SHOWCASE_TEXT,
-  showcaseAccessLabel,
-  showcaseStatusLabel,
-  type ShowcaseCategory,
-} from "@/lib/feature-showcase";
+import { type ShowcaseCategory } from "@/lib/feature-showcase";
 
 import { SHOWCASE_ICONS } from "./icons";
 import { catalogPanelId } from "./sceneGroups";
@@ -27,7 +22,11 @@ function toBnDigits(value: number): string {
  * `variant="dashboard"`). Each panel carries the category's data:
  *   • the category name (title) + feature count (badge),
  *   • a short summary,
- *   • a row per feature with its description + source route + audience + status.
+ *   • a row per feature with its description.
+ *
+ * The per-feature metadata block (source route / who can use / status) is
+ * REMOVED, and the card now ends with the shared "Request a Demo" button
+ * instead. Titles, descriptions, icons and navigation stay untouched.
  * -------------------------------------------------------------------------
  */
 export default function CatalogPanel({
@@ -44,26 +43,12 @@ export default function CatalogPanel({
 
   const description =
     lang === "bn"
-      ? `এই বিভাগে Shikkha Chat Apps-এর ${toBnDigits(count)}টি বৈশিষ্ট্য রয়েছে। প্রতিটি বৈশিষ্ট্যের সোর্স রুট, ব্যবহারকারী ও স্ট্যাটাস নিচে দেওয়া হলো।`
-      : `This section lists the ${count} features of the Shikkha Chat Apps platform. Each feature's source route, audience and status are shown below.`;
+      ? `এই বিভাগে Shikkha Chat Apps-এর ${toBnDigits(count)}টি বৈশিষ্ট্য রয়েছে। প্রতিটি বৈশিষ্ট্যের নাম ও কাজ নিচে দেওয়া হলো।`
+      : `This section lists the ${count} features of the Shikkha Chat Apps platform. Each feature's name and what it does are shown below.`;
 
   const rows = category.features.map((feature) => ({
     title: feature.title[lang],
     description: feature.description[lang],
-    meta: [
-      {
-        label: SHOWCASE_TEXT.sourceRoute[lang],
-        value: feature.route,
-      },
-      {
-        label: SHOWCASE_TEXT.whoCanUse[lang],
-        value: showcaseAccessLabel(feature.access, lang),
-      },
-      {
-        label: SHOWCASE_TEXT.statusLabel[lang],
-        value: showcaseStatusLabel(feature, lang),
-      },
-    ],
   }));
 
   return (
@@ -76,6 +61,7 @@ export default function CatalogPanel({
       icon={SHOWCASE_ICONS[category.icon]}
       showButtons={false}
       rows={rows}
+      demoRequest
     />
   );
 }

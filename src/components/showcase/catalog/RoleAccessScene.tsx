@@ -17,7 +17,9 @@ const ROLE_SECTION_ID = "role-access";
 
 /* Icon of each role, taken from the same role rows the left sidebar's
    "Role-based Dashboards" dropdown renders (FEATURE_SHOWCASE ▸ role-access). */
-const ROLE_ICON: Record<string, string> = Object.fromEntries(
+/* Typed as ShowcaseIconKey (not a bare string) so the map below can index
+   SHOWCASE_ICONS without a cast; every FEATURE_SHOWCASE icon is already one. */
+const ROLE_ICON = Object.fromEntries(
   (FEATURE_SHOWCASE.find((c) => c.id === ROLE_SECTION_ID)?.features ?? []).map((f) => [
     f.id,
     f.icon,

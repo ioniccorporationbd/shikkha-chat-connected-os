@@ -6,6 +6,7 @@ import { LuCheck } from "react-icons/lu";
 import { motion, useReducedMotion } from "framer-motion";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { useSavedSections } from "@/lib/savedSections";
+import DemoRequestButton from "@/components/home/DemoRequestButton";
 
 type Stat = {
   value: string;
@@ -26,14 +27,14 @@ type SectionPanelProps = {
    * Optional structured rows (e.g. a feature catalog), rendered below the
    * capabilities list in the shared rail type tokens. Additive: panels that
    * pass nothing render exactly as before.
+   *
+   * `meta` (label/value pairs such as source route, who can use, status) is
+   * deliberately NOT rendered any more: the section metadata boxes were
+   * removed from the rail, so a row is now title + description only.
    */
   rows?: readonly {
     readonly title: string;
     readonly description?: string;
-    readonly meta?: readonly {
-      readonly label: string;
-      readonly value: string;
-    }[];
   }[];
   /** Semantic icon for the card, from the shared react-icons/lu family. */
   icon?: IconType;
@@ -58,6 +59,12 @@ type SectionPanelProps = {
    * sub-route detail + route index) instead of stacking a look-alike box.
    */
   children?: ReactNode;
+  /**
+   * Render the shared "Request a Demo" CTA as the card's last element (where
+   * the old section-metadata box used to sit). Off by default so the 26 rail
+   * panels that never had a metadata box stay pixel-identical.
+   */
+  demoRequest?: boolean;
 };
 
 const panelText = {
@@ -112,6 +119,7 @@ export default function SectionPanel({
   saveProductText,
   variant = "default",
   children,
+  demoRequest = false,
 }: SectionPanelProps) {
   const { language } = useLanguage();
   const reduceMotion = useReducedMotion();
@@ -270,21 +278,6 @@ export default function SectionPanel({
                   {row.description}
                 </p>
               ) : null}
-
-              {row.meta && row.meta.length ? (
-                <dl className="mt-2.5 space-y-1">
-                  {row.meta.map((meta) => (
-                    <div key={meta.label} className="flex gap-2">
-                      <dt className="capability-text shrink-0 font-semibold text-[color-mix(in_srgb,var(--color-black)_55%,var(--color-primary))]">
-                        {meta.label}:
-                      </dt>
-                      <dd className="capability-text min-w-0 break-all text-[var(--color-primary)]">
-                        {meta.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
             </motion.div>
           ))}
         </motion.div>
@@ -387,6 +380,15 @@ export default function SectionPanel({
 
       {/* Panel-specific extension (rendered inside the same card surface). */}
       {children}
+
+      {/* Card footer CTA — the demo request button now sits exactly where the
+          removed section-metadata box used to be: the last thing in the card,
+          aligned to the card's own content column. */}
+      {demoRequest ? (
+        <div className="mt-7 max-w-[560px]">
+          <DemoRequestButton fullWidth />
+        </div>
+      ) : null}
     </>
   );
 
