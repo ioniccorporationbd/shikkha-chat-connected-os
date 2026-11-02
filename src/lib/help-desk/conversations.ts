@@ -105,7 +105,10 @@ export async function getConversation(
     const payload = await request<ConversationPayload>(
       `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}?${query.toString()}`
     );
-    return payload ? alignConversation(payload) : payload;
+    if (!payload) return payload;
+    const aligned = alignConversation(payload);
+    logAttachmentCensus(aligned, `read ${ticketId}`);
+    return aligned;
   } catch (error) {
     if (error instanceof HelpDeskError && (error.status === 404 || error.status === 403)) return null;
     throw error;
@@ -294,13 +297,89 @@ function toAttachment(raw: RawAttachment): ConversationAttachment | null {
   };
 }
 
+/**
+ * One stable name for a file, however the ERP spelled it: the name if it came
+ * with one, else the last path segment. `/files/x.png` and
+ * `/private/files/x.png` are the same picture, and the desk writes both forms.
+ */
+export function attachmentName(file: ConversationAttachment): string {
+  const name = String(file.fileName ?? "").trim();
+  if (name) return decodeURIComponent(name).toLowerCase();
+  const url = String(file.url ?? "").trim();
+  return url ? decodeURIComponent(url.split("?")[0].split("/").pop() || "").toLowerCase() : "";
+}
+
 function normalizeMessage(message: ConversationMessage): ConversationMessage {
   const raw = (message as unknown as { attachments?: unknown }).attachments;
   if (!Array.isArray(raw) || raw.length === 0) return { ...message, attachments: [] };
+  const seen = new Set<string>();
   const attachments = (raw as RawAttachment[])
     .map(toAttachment)
-    .filter((file): file is ConversationAttachment => file !== null);
+    .filter((file): file is ConversationAttachment => file !== null)
+    // One picture is one picture: the ERP can name the same file twice — once
+    // from the row's attachment list and once from the image its HTML embeds —
+    // and a bubble that draws it twice reads as "my message was sent twice".
+    .filter((file) => {
+      const name = attachmentName(file);
+      const key = name || String(file.url ?? "");
+      if (!key) return false;
+      if (seen.has(key)) {
+        console.info("[hd:attach] folded a repeated file inside one message", {
+          message: message.id,
+          file: key,
+        });
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
   return { ...message, attachments };
+}
+
+/**
+ * A file belongs to the message that carried it. The desk also keeps a
+ * file-only row for the same upload (an "Attachment" comment, a ticket-tray
+ * row), so the picture shows up again one line lower with no text of its own.
+ * Once a picture rides on a message that has words, later rows lose it — and a
+ * file-only row that is left with nothing at all disappears. Order matters:
+ * this runs on the already-ordered list, so the *earliest* copy wins.
+ */
+function settleAttachments<T extends { id?: string; body?: string; attachments?: ConversationAttachment[] }>(
+  messages: T[]
+): { kept: T[]; dropped: Set<string> } {
+  const shown = new Set<string>();
+  const kept: T[] = [];
+  const droppedIds = new Set<string>();
+  for (const message of messages) {
+    if (!message.attachments || message.attachments.length === 0) {
+      kept.push(message);
+      continue;
+    }
+    const here: ConversationAttachment[] = [];
+    for (const file of message.attachments) {
+      const key = attachmentName(file) || String(file.url ?? "");
+      if (!key) continue;
+      if (shown.has(key)) continue;
+      shown.add(key);
+      here.push(file);
+    }
+    const dropped = message.attachments.length - here.length;
+    if (dropped > 0) {
+      console.info("[hd:attach] a file already shown elsewhere was folded away", {
+        message: message.id ?? "",
+        kept: here.length,
+        dropped,
+        text: Boolean(message.body && message.body.trim()),
+      });
+    }
+    if (here.length === 0 && !(message.body && message.body.trim())) {
+      // A file-only row with nothing left to draw is a mirror, not a message.
+      if (message.id) droppedIds.add(message.id);
+      continue;
+    }
+    kept.push({ ...message, attachments: here });
+  }
+  return { kept, dropped: droppedIds };
 }
 
 export function alignConversation(payload: ConversationPayload): ConversationPayload {
@@ -310,10 +389,11 @@ export function alignConversation(payload: ConversationPayload): ConversationPay
     const folded = foldChannelDuplicates(
       (Array.isArray(payload.messages) ? payload.messages : []).map(normalizeMessage)
     );
+    const settled = settleAttachments(orderConversation(folded.kept));
     return {
       ...payload,
-      messages: orderConversation(folded.kept),
-      timeline: withoutDropped(payload.timeline, folded.dropped),
+      messages: settled.kept,
+      timeline: withoutDropped(payload.timeline, union(folded.dropped, settled.dropped)),
     };
   }
 
@@ -325,19 +405,40 @@ export function alignConversation(payload: ConversationPayload): ConversationPay
       })
     )
   );
-  const messages = orderConversation(folded.kept);
+  const settled = settleAttachments(orderConversation(folded.kept));
+  const messages = settled.kept;
 
   // The chat is ordered by these events: an unsorted timeline would draw the
   // bubbles out of time even when `messages` itself is right. A twin the fold
-  // removed must leave the timeline as well, or it draws again as an event row.
+  // removed must leave the timeline as well, or it draws again as an event row
+  // — and so must a bare attachment row the picture-fold swallowed.
+  const gone = union(folded.dropped, settled.dropped);
+  const counted = new Map(
+    messages.map((message) => [message.id, (message.attachments ?? []).length] as const)
+  );
   const timeline = Array.isArray(payload.timeline)
     ? orderByStamp(
-        payload.timeline.filter((event) => !folded.dropped.has(event.id)),
+        payload.timeline
+          .filter((event) => !(event.id && gone.has(event.id)))
+          // The event row prints "N attachments" from the row it came with, and
+          // that row still counts the copies the chat just folded away.
+          .map((event) =>
+            event.id && counted.has(event.id)
+              ? { ...event, attachments: counted.get(event.id) as number }
+              : event
+          ),
         (event) => ({ at: event.at, id: event.id })
       )
     : payload.timeline;
 
   return { ...payload, messages, timeline };
+}
+
+function union(a: Set<string>, b: Set<string>): Set<string> {
+  if (b.size === 0) return a;
+  const merged = new Set(a);
+  for (const id of b) merged.add(id);
+  return merged;
 }
 
 function withoutDropped<T extends { id?: string }>(timeline: T[] | undefined, dropped: Set<string>): T[] | undefined {
@@ -371,6 +472,11 @@ async function resolveAttachments(files?: File[]): Promise<{ name: string; url: 
   const resolved: { name: string; url: string }[] = [];
   for (const file of files ?? []) {
     const uploaded: HelpDeskUploadedFile = await uploadAttachment(file);
+    console.info("[hd:attach] uploaded", {
+      fileName: uploaded.name,
+      url: uploaded.url,
+      size: uploaded.size,
+    });
     resolved.push({ name: uploaded.name, url: uploaded.url });
   }
   return resolved;
@@ -386,6 +492,24 @@ export interface SendMessageInput {
 }
 
 /** Append one message to the conversation (customer or support employee). */
+/** One console line per message that carries files: what came back, from where. */
+function logAttachmentCensus(payload: ConversationPayload, where: string): void {
+  const rows = (payload.messages ?? []).filter(
+    (message) => (message.attachments ?? []).length > 0
+  );
+  if (rows.length === 0) return;
+  console.info(
+    "[hd:attach] conversation", where,
+    rows.map((message) => ({
+      id: message.id,
+      author: message.author,
+      channel: message.channel,
+      text: Boolean(message.body && message.body.trim()),
+      files: (message.attachments ?? []).map((file) => file.fileName || file.url || ""),
+    }))
+  );
+}
+
 export async function sendMessage(ticketId: string, input: SendMessageInput): Promise<ConversationPayload> {
   const attachments = await resolveAttachments(input.attachments);
   const payload = await postJson<ConversationPayload>(
@@ -399,7 +523,9 @@ export async function sendMessage(ticketId: string, input: SendMessageInput): Pr
     }
   );
   reportUnattached(payload.attachments_failed, "help-desk:reply");
-  return alignConversation(payload);
+  const aligned = alignConversation(payload);
+  logAttachmentCensus(aligned, `sent ${ticketId}`);
+  return aligned;
 }
 
 /** Add an additional requirement — accepted only while the ticket is Open. */

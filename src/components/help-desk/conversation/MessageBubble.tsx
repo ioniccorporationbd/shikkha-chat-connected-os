@@ -308,16 +308,25 @@ export default function MessageBubble({
                 if (image && href) {
                   return (
                     <li key={key}>
-                      <button
-                        type="button"
-                        onClick={() => href && setLightbox({ src: href, alt: file.fileName || copy.imageOpen })}
+                      {/* The picture is the link: one tap opens the file itself in
+                          a new tab, and the caption row underneath carries the
+                          file name. A plain button (the old lightbox-only
+                          behaviour) read as a dead image on the customer's side. */}
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setLightbox({ src: href, alt: file.fileName || copy.imageOpen });
+                        }}
                         className="block overflow-hidden rounded-lg transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                         aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
-                        title={copy.imageOpen}
+                        title={`${copy.imageOpen}: ${file.fileName || ""}`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={href ?? ""}
+                          src={href}
                           alt={file.fileName}
                           loading="lazy"
                           className="max-h-56 w-auto max-w-full object-cover"
@@ -337,7 +346,18 @@ export default function MessageBubble({
                             });
                           }}
                         />
-                      </button>
+                      </a>
+                      {file.fileName ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 flex max-w-full items-center gap-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))] underline-offset-2 hover:underline"
+                        >
+                          <FiFileText size={11} className="flex-none" aria-hidden />
+                          <span className="min-w-0 truncate">{file.fileName}</span>
+                        </a>
+                      ) : null}
                     </li>
                   );
                 }

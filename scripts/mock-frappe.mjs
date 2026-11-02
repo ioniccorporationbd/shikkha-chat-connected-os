@@ -2468,6 +2468,30 @@ hdAppend(HD_0623, "user", "[0623-5] ok sir", {
   at: "2026-11-02T10:01:00.000Z",
 });
 
+// 0643 - the "attach a picture the first time" ticket. It starts empty on
+// purpose: the e2e sends the first message with an image through the real
+// composer, and this thread answers the way the live desk does - the same upload
+// named twice on the message itself, plus a bare Attachment comment that holds
+// nothing but the picture.
+const HD_0643 = "0643";
+hdThreads.set(HD_0643, {
+  name: HD_0643,
+  subject: "attachment test",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "billing",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: "MD Shahzalal Amin Surker",
+  submittedAt: "2026-11-02T10:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+  mirrorAttachments: true,
+});
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
@@ -3729,6 +3753,27 @@ const server = createServer(async (request, response) => {
           mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
           url: entry.row.file_url,
         }));
+        // 0643: the desk names the same upload twice — once from the row's own
+        // attachment list (`/private/files/...`) and once from the image its
+        // HTML embeds (`/files/...`) — and leaves a bare `Attachment` comment
+        // holding the picture with no text of its own. A chat that trusts the
+        // payload draws the same picture three times; the fixture keeps that
+        // shape so the portal has to fold it.
+        const thread = hdThreads.get(name);
+        if (thread && thread.mirrorAttachments && message.attachments?.length) {
+          const originals = [...message.attachments];
+          for (const file of originals) {
+            const alias = String(file.url || "").replace("/private/files/", "/files/");
+            hdFileBytes.set(alias, hdFileBytes.get(file.url) || AVATAR_BYTES);
+            message.attachments.push({ ...file, id: `${file.id}-alias`, url: alias });
+          }
+          const mirror = hdAppend(name, support ? "support" : "user", "", {
+            at: new Date(Date.now() + 500).toISOString(),
+          });
+          if (mirror) {
+            mirror.attachments = message.attachments.map((file) => ({ ...file }));
+          }
+        }
       }
       // A site whose write lands but whose answer crawls (0602): by the time the
       // portal's ceiling expires the message is already on the ticket.
