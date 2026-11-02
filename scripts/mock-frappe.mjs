@@ -1641,6 +1641,12 @@ function hdAppend(ticket, author, body, options = {}) {
     seen: false,
     reactions: [],
   };
+  if (Array.isArray(options.attachments) && options.attachments.length) {
+    // Seeding a file that hangs on no other row (e.g. the desk's attach button
+    // put it straight on the ticket): the thread entry exists, its body is
+    // empty, and the attachment is the whole message.
+    message.attachments.push(...options.attachments);
+  }
   thread.messages.push(message);
   return message;
 }
@@ -2154,6 +2160,91 @@ if (hd0592Attach) {
 hdAppend(HD_0592, "support", "ছবিটি দেখুন — এটি আমাদের এমপ্লয়ি সাইন, এটা দিয়েই ভেরিফাই করতে পারবেন।", {
   at: "2026-10-31T03:01:00.000Z",
   authorName: HD_0592_AGENT,
+});
+
+// 0602 — the file the *employee* sends. Two shapes live on the same ticket and
+// both must reach the customer's chat box: an image attached to a support reply,
+// and a document that hangs on no message row at all (the desk's attach button
+// puts it straight on the ticket, which the API surfaces as its own entry).
+const HD_0602 = "0602";
+const HD_0602_AGENT = "MD Shahzalal Amin Surker";
+const HD_0602_IMAGE_URL = "/private/files/hd-0602-employee-sign.png";
+const HD_0602_PDF_URL = "/private/files/hd-0602-payment-slip.pdf";
+const HD_0602_PDF_NAME = "hd-0602-payment-slip.pdf";
+hdThreads.set(HD_0602, {
+  name: HD_0602,
+  subject: "পেমেন্ট স্লিপ যুক্ত করুন",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "billing",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: HD_0602_AGENT,
+  submittedAt: "2026-11-01T06:20:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0602, "user", "আমার পেমেন্ট স্লিপটা চ্যাটে দেখতে পাচ্ছি না, একটু দেবেন?", {
+  at: "2026-11-01T06:20:00.000Z",
+  authorName: "Tamim Hasan",
+});
+const hd0602File = hdFileRow({
+  name: "MOCKFILE-06021",
+  url: HD_0602_IMAGE_URL,
+  fileName: "hd-0602-employee-sign.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0602File.attached_to_doctype = "HD Ticket";
+hd0602File.attached_to_name = HD_0602;
+hd0602File.is_private = 1;
+hd0602File.agent_only = true;
+hdFileBytes.set(HD_0602_IMAGE_URL, AVATAR_BYTES);
+hd0602File.file_size = AVATAR_BYTES.length;
+const hd0602ImageReply = hdAppend(HD_0602, "support", "স্লিপের স্ক্রিনশট দিলাম, দেখুন।", {
+  at: "2026-11-01T07:05:00.000Z",
+  authorName: HD_0602_AGENT,
+});
+if (hd0602ImageReply) {
+  hd0602ImageReply.attachments.push({
+    id: hd0602File.name,
+    name: hd0602File.file_name,
+    size: hd0602File.file_size,
+    mime: "image/png",
+    url: HD_0602_IMAGE_URL,
+  });
+}
+const hd0602Pdf = hdFileRow({
+  name: "MOCKFILE-06022",
+  url: HD_0602_PDF_URL,
+  fileName: HD_0602_PDF_NAME,
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0602Pdf.attached_to_doctype = "HD Ticket";
+hd0602Pdf.attached_to_name = HD_0602;
+hd0602Pdf.is_private = 1;
+hd0602Pdf.agent_only = true;
+const HD_0602_PDF_BYTES = Buffer.from("%PDF-1.4\n% stub payment slip\n%%EOF\n", "utf8");
+hdFileBytes.set(HD_0602_PDF_URL, HD_0602_PDF_BYTES);
+hd0602Pdf.file_size = HD_0602_PDF_BYTES.length;
+// No message row claims the document: this is the entry the API's orphan sweep
+// emits (body empty, one attachment) and exactly what the customer saw vanish.
+hdAppend(HD_0602, "support", "", {
+  at: "2026-11-01T07:06:00.000Z",
+  authorName: HD_0602_AGENT,
+  attachments: [
+    {
+      id: hd0602Pdf.name,
+      name: HD_0602_PDF_NAME,
+      size: hd0602Pdf.file_size,
+      mime: "application/pdf",
+      url: HD_0602_PDF_URL,
+    },
+  ],
 });
 
 // Pristine copy of the seeded thread. A harness resets to this between runs so

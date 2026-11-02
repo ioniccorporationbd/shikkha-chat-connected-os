@@ -29,6 +29,7 @@ const IMAGE = process.env.E2E_IMAGE ?? "/private/files/hd-0583-employee-sign.png
 const NEEDLE_TEXT = process.env.E2E_TEXT ?? "এমপ্লয়ি সাইন";
 const SECTION = process.env.E2E_SECTION ?? "clientDashboard";
 const AGENT = process.env.E2E_AGENT ?? "MD Shahzalal Amin Surker";
+const DOC_NAME = process.env.E2E_DOC_NAME ?? "";
 
 const results = [];
 const check = (name, ok, extra = "") => {
@@ -135,6 +136,22 @@ try {
     rendered.found && rendered.naturalWidth > 0,
     `naturalWidth=${rendered.naturalWidth}`
   );
+
+  if (DOC_NAME) {
+    // A document the employee sent (no thumbnail to paint): it must arrive as a
+    // downloadable row, streamed through the portal proxy like the image.
+    let doc = { found: false, href: "" };
+    for (let i = 0; i < 20; i += 1) {
+      doc = await page.evaluate((name) => {
+        const link = [...document.querySelectorAll("a")].find((node) => (node.textContent || "").includes(name));
+        return { found: Boolean(link), href: link ? link.getAttribute("href") || "" : "" };
+      }, DOC_NAME);
+      if (doc.found) break;
+      await sleep(300);
+    }
+    check("employee document renders as a file row", doc.found, DOC_NAME);
+    check("the document row goes through the portal proxy", doc.href.includes("/api/help-desk/files"), doc.href);
+  }
 
   const shot = process.env.SHOT ?? "/tmp/hd-employee-sign.png";
   await page.screenshot({ path: shot, fullPage: false });

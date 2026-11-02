@@ -8,6 +8,8 @@ import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
+import { reportClientError } from "@/lib/log/report-error";
+
 import ImageLightbox from "./ImageLightbox";
 import MessageActionMenu from "./MessageActionMenu";
 
@@ -318,6 +320,21 @@ export default function MessageBubble({
                           alt={file.fileName}
                           loading="lazy"
                           className="max-h-56 w-auto max-w-full object-cover"
+                          onError={() => {
+                            // A broken attachment otherwise fails silently: the
+                            // browser only paints a torn thumbnail. Both copies
+                            // land in Desk -> Error Log via client_log.report.
+                            reportClientError({
+                              scope: "help-desk:attachment",
+                              message: "A ticket attachment did not load in the thread.",
+                              detail: JSON.stringify({
+                                url: file.url ?? href ?? "",
+                                fileName: file.fileName ?? "",
+                                fileType: file.fileType ?? "",
+                                messageId: message.id,
+                              }),
+                            });
+                          }}
                         />
                       </button>
                     </li>
