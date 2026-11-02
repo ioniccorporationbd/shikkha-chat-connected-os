@@ -27,13 +27,19 @@ const TICKET = process.env.E2E_TICKET ?? "0616";
 const SECTION = process.env.E2E_SECTION ?? "clientDashboard";
 const SHOT = process.env.SHOT ?? "/tmp/hd-0616-order.png";
 
-// Chronological order the chat must read in, and who wrote each row.
-const EXPECTED = [
-  { token: "[0616-1]", side: "right" },
-  { token: "[0616-2]", side: "left" },
-  { token: "[0616-3]", side: "right" },
-  { token: "[0616-4]", side: "left" },
-];
+// Chronological order the chat must read in, and who wrote each row. Another
+// ticket passes its own thread via E2E_EXPECT (JSON array of {token, side}); the
+// ticket under test says which single message must not read twice.
+const EXPECTED = process.env.E2E_EXPECT
+  ? JSON.parse(process.env.E2E_EXPECT)
+  : [
+      { token: "[0616-1]", side: "right" },
+      { token: "[0616-2]", side: "left" },
+      { token: "[0616-3]", side: "right" },
+      { token: "[0616-4]", side: "left" },
+    ];
+const ONCE = process.env.E2E_ONCE ?? "[0616-3]";
+const IMAGE = process.env.E2E_IMAGE ?? "";
 
 const results = [];
 const check = (name, ok, extra = "") => {
@@ -180,9 +186,35 @@ try {
         }
         return rows.size;
       },
-      EXPECTED[2].token
+      ONCE
     );
-    check("the retried message reads once, not twice", duplicated === 1, String(duplicated));
+    check(`"${ONCE}" reads once, not twice`, duplicated === 1, String(duplicated));
+
+    // A picture the customer or the employee sent must paint, not sit blank:
+    // its bytes come through the portal proxy, which is the whole point of the
+    // ticket-scoped streamer.
+    if (IMAGE) {
+      const needle = IMAGE.split("/").pop();
+      const painted = await page.evaluate(async (name) => {
+        for (let i = 0; i < 30; i += 1) {
+          const img = [...document.querySelectorAll("img")].find((node) =>
+            (node.currentSrc || node.src || "").includes(name)
+          );
+          if (img) {
+            if (!img.naturalWidth) img.scrollIntoView({ block: "center" });
+            if (img.naturalWidth > 0) return { found: true, width: img.naturalWidth };
+          } else {
+            const link = [...document.querySelectorAll("a")].find((node) =>
+              (node.getAttribute("href") || "").includes(name)
+            );
+            if (link) return { found: true, width: -1 };
+          }
+          await new Promise((resolve) => setTimeout(resolve, 400));
+        }
+        return { found: false, width: 0 };
+      }, needle);
+      check("the sent picture paints in the chat box", painted.found, JSON.stringify(painted));
+    }
   }
 
   await page.screenshot({ path: SHOT, fullPage: false });

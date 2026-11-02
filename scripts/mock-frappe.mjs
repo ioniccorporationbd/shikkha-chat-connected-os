@@ -2378,6 +2378,96 @@ if (hd0616Retry) {
   hd0616Retry.channel = "message";
 }
 
+// 0623 - the chat box issue ticket, seeded exactly as the desk shows it: two
+// customer lines (one with only a receipt picture), two employee lines, then the
+// customer's "ok sir". The payload is handed over reversed so the portal has to
+// put the sequence right instead of trusting the read order.
+const HD_0623 = "0623";
+const HD_0623_AGENT = "MD Shahzalal Amin Surker";
+const HD_0623_IMAGE_URL = "/private/files/payment-receipt-080QqpUdCU8b55bd.png";
+const HD_0623_IMAGE_NAME = "payment-receipt-080QqpUdCU8b55bd.png";
+const HD_0623_JPG_URL = "/private/files/payment-receipt-2Y7fjJLDw.jpg";
+const HD_0623_JPG_NAME = "payment-receipt-2Y7fjJLDw.jpg";
+hdThreads.set(HD_0623, {
+  name: HD_0623,
+  subject: "chat box issue",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "billing",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: HD_0623_AGENT,
+  submittedAt: "2026-11-02T09:52:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+  payloadOrder: "reverse",
+});
+hdAppend(HD_0623, "user", "[0623-1] yhhhhhhhhhhhhhhhhhhhhhh", {
+  at: "2026-11-02T09:53:00.000Z",
+});
+// The customer's own receipt, sent as the picture alone (the desk shows it as an
+// Attachment comment carrying the inline image): body empty, one file.
+const hd0623Image = hdFileRow({
+  name: "MOCKFILE-06231",
+  url: HD_0623_IMAGE_URL,
+  fileName: HD_0623_IMAGE_NAME,
+  size: 0,
+  owner: "client@example.com",
+});
+hd0623Image.attached_to_doctype = "Comment";
+hd0623Image.attached_to_name = "MOCKCOMMENT-06231";
+hd0623Image.is_private = 1;
+hdFileBytes.set(HD_0623_IMAGE_URL, AVATAR_BYTES);
+hd0623Image.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0623, "user", "", {
+  at: "2026-11-02T09:55:00.000Z",
+  attachments: [
+    {
+      id: hd0623Image.name,
+      name: HD_0623_IMAGE_NAME,
+      size: hd0623Image.file_size,
+      mime: "image/png",
+      url: HD_0623_IMAGE_URL,
+    },
+  ],
+});
+const hd0623Jpg = hdFileRow({
+  name: "MOCKFILE-06232",
+  url: HD_0623_JPG_URL,
+  fileName: HD_0623_JPG_NAME,
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0623Jpg.attached_to_doctype = "Communication";
+hd0623Jpg.attached_to_name = "MOCKCOMM-06231";
+hd0623Jpg.is_private = 1;
+hd0623Jpg.agent_only = true;
+hdFileBytes.set(HD_0623_JPG_URL, AVATAR_BYTES);
+hd0623Jpg.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0623, "support", "[0623-3] solve problem", {
+  at: "2026-11-02T09:57:00.000Z",
+  authorName: HD_0623_AGENT,
+  attachments: [
+    {
+      id: hd0623Jpg.name,
+      name: HD_0623_JPG_NAME,
+      size: hd0623Jpg.file_size,
+      mime: "image/jpeg",
+      url: HD_0623_JPG_URL,
+    },
+  ],
+});
+hdAppend(HD_0623, "support", "[0623-4] hello sir", {
+  at: "2026-11-02T09:59:00.000Z",
+  authorName: HD_0623_AGENT,
+});
+hdAppend(HD_0623, "user", "[0623-5] ok sir", {
+  at: "2026-11-02T10:01:00.000Z",
+});
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
