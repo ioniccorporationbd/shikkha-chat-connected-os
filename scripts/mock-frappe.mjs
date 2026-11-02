@@ -2247,6 +2247,90 @@ hdAppend(HD_0602, "support", "", {
   ],
 });
 
+// 0611 — reported again after 0602: the employee replies from the agent portal
+// (userDashboard) with a screenshot, and the desk ticket page shows the file, yet
+// the customer's chat box shows only the text. Both carrier shapes are seeded:
+// the image rides the support reply (files live on the Communication row), and a
+// proof PDF hangs on the ticket alone with no message row anywhere.
+const HD_0611 = "0611";
+const HD_0611_AGENT = "MD Shahzalal Amin Surker";
+const HD_0611_IMAGE_URL = "/private/files/hd-0611-employee-slip.png";
+const HD_0611_PDF_URL = "/private/files/hd-0611-proof.pdf";
+const HD_0611_PDF_NAME = "hd-0611-proof.pdf";
+hdThreads.set(HD_0611, {
+  name: HD_0611,
+  subject: "স্ক্রিনশট যুক্ত করুন",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "billing",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: HD_0611_AGENT,
+  submittedAt: "2026-11-01T08:10:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0611, "user", "আপনার পাঠানো স্ক্রিনশটটা চ্যাটে দেখা যাচ্ছে না।", {
+  at: "2026-11-01T08:10:00.000Z",
+  authorName: "Tamim Hasan",
+});
+const hd0611Image = hdFileRow({
+  name: "MOCKFILE-06111",
+  url: HD_0611_IMAGE_URL,
+  fileName: "hd-0611-employee-slip.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0611Image.attached_to_doctype = "Communication";
+hd0611Image.attached_to_name = "MOCKCOMM-06111";
+hd0611Image.is_private = 1;
+hd0611Image.agent_only = true;
+hdFileBytes.set(HD_0611_IMAGE_URL, AVATAR_BYTES);
+hd0611Image.file_size = AVATAR_BYTES.length;
+const hd0611ImageReply = hdAppend(HD_0611, "support", "স্ক্রিনশটটি দেখুন, এখানে পেমেন্ট ডিটেইল আছে।", {
+  at: "2026-11-01T08:40:00.000Z",
+  authorName: HD_0611_AGENT,
+});
+if (hd0611ImageReply) {
+  hd0611ImageReply.attachments.push({
+    id: hd0611Image.name,
+    name: hd0611Image.file_name,
+    size: hd0611Image.file_size,
+    mime: "image/png",
+    url: HD_0611_IMAGE_URL,
+  });
+}
+const hd0611Pdf = hdFileRow({
+  name: "MOCKFILE-06112",
+  url: HD_0611_PDF_URL,
+  fileName: HD_0611_PDF_NAME,
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0611Pdf.attached_to_doctype = "HD Ticket";
+hd0611Pdf.attached_to_name = HD_0611;
+hd0611Pdf.is_private = 1;
+hd0611Pdf.agent_only = true;
+const HD_0611_PDF_BYTES = Buffer.from("%PDF-1.4\n% stub proof slip\n%%EOF\n", "utf8");
+hdFileBytes.set(HD_0611_PDF_URL, HD_0611_PDF_BYTES);
+hd0611Pdf.file_size = HD_0611_PDF_BYTES.length;
+hdAppend(HD_0611, "support", "", {
+  at: "2026-11-01T08:41:00.000Z",
+  authorName: HD_0611_AGENT,
+  attachments: [
+    {
+      id: hd0611Pdf.name,
+      name: HD_0611_PDF_NAME,
+      size: hd0611Pdf.file_size,
+      mime: "application/pdf",
+      url: HD_0611_PDF_URL,
+    },
+  ],
+});
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
