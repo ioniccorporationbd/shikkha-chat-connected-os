@@ -320,16 +320,67 @@ export default function MessageBubble({
                           event.preventDefault();
                           setLightbox({ src: href, alt: file.fileName || copy.imageOpen });
                         }}
-                        className="block overflow-hidden rounded-lg transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                        className="block w-[min(28rem,100%)] max-w-full overflow-hidden rounded-lg border border-black/5 bg-white/70 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                         aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
                         title={`${copy.imageOpen}: ${file.fileName || ""}`}
                       >
+                        {/* A fixed-width thumbnail with both dimensions capped, so
+                            the whole picture fits: a wide screenshot used to be
+                            capped by height alone and spilled over the bubble. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={href}
                           alt={file.fileName}
                           loading="lazy"
-                          className="max-h-56 w-auto max-w-full object-cover"
+                          className="mx-auto block h-auto max-h-[22rem] w-auto max-w-full object-contain"
+                          onLoad={(event) => {
+                            // "The picture does not view properly" must be
+                            // visible, not silent: log every paint, and when the
+                            // frame is empty, squashed off its aspect ratio, or
+                            // wider than the thread, warn in the console and
+                            // file it in Desk -> Error Log.
+                            const node = event.currentTarget;
+                            const box = node.getBoundingClientRect();
+                            const painted = {
+                              fileName: file.fileName ?? "",
+                              naturalWidth: node.naturalWidth,
+                              naturalHeight: node.naturalHeight,
+                              shownWidth: Math.round(box.width),
+                              shownHeight: Math.round(box.height),
+                            };
+                            console.info("[hd:attach] image painted", painted);
+                            const pane = node.closest('[data-hd="thread"]');
+                            const paneWidth = pane instanceof HTMLElement ? pane.clientWidth : 0;
+                            const naturalRatio = node.naturalWidth / Math.max(1, node.naturalHeight);
+                            const shownRatio = box.width / Math.max(1, box.height);
+                            const squashed =
+                              node.naturalWidth > 0 &&
+                              Math.abs(shownRatio - naturalRatio) / naturalRatio > 0.02;
+                            const overflowing = paneWidth > 0 && box.width > paneWidth;
+                            if (node.naturalWidth === 0 || squashed || overflowing) {
+                              const reason = node.naturalWidth === 0
+                                ? "empty"
+                                : squashed
+                                  ? "squashed"
+                                  : "overflowing";
+                              console.warn("[hd:attach] image does not view properly", {
+                                ...painted,
+                                reason,
+                                paneWidth,
+                              });
+                              reportClientError({
+                                scope: "help-desk:attachment",
+                                message: "A ticket attachment does not view properly in the thread.",
+                                detail: JSON.stringify({
+                                  ...painted,
+                                  reason,
+                                  paneWidth,
+                                  url: file.url ?? href ?? "",
+                                  messageId: message.id,
+                                }),
+                              });
+                            }
+                          }}
                           onError={() => {
                             // A broken attachment otherwise fails silently: the
                             // browser only paints a torn thumbnail. Both copies

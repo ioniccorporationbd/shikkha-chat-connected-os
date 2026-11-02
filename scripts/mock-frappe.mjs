@@ -22,6 +22,7 @@
  * Never use this in production.
  */
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.MOCK_FRAPPE_PORT ?? 8787);
@@ -2490,6 +2491,68 @@ hdThreads.set(HD_0643, {
   messages: [],
   timeline: [],
   mirrorAttachments: true,
+});
+
+// 0658 — "attached file image do not view properly". The employee attaches a
+// full-page screenshot (1600x900): a wide picture is what breaks a bubble whose
+// image is only capped by height, so this fixture is the standing proof that the
+// thumbnail keeps the whole picture inside the bubble at its own aspect ratio.
+const HD_0658 = "0658";
+const HD_0658_AGENT = "MD Shahzalal Amin Surker";
+const HD_0658_IMAGE_URL = "/private/files/hd-0658-screenshot.png";
+const HD_0658_IMAGE_NAME = "Screenshot-18_57d4b9.png";
+hdThreads.set(HD_0658, {
+  name: HD_0658,
+  subject: "পেজে এরর আসছে",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: HD_0658_AGENT,
+  submittedAt: "2026-11-02T11:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+hdAppend(HD_0658, "user", "[0658-1] এই পেজে এরর আসছে, স্ক্রিনশট দিচ্ছি", {
+  at: "2026-11-02T11:00:00.000Z",
+  authorName: "Tamim Hasan",
+});
+const hd0658Image = hdFileRow({
+  name: "MOCKFILE-06581",
+  url: HD_0658_IMAGE_URL,
+  fileName: HD_0658_IMAGE_NAME,
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0658Image.attached_to_doctype = "Comment";
+hd0658Image.attached_to_name = "MOCKCOMMENT-06581";
+hd0658Image.is_private = 1;
+// A wide screenshot, so the browser has real bytes to lay out: 1600x900.
+const HD_0658_IMAGE_BYTES = (() => {
+  try {
+    return readFileSync(new URL("./fixtures/hd-0658-screenshot.png", import.meta.url));
+  } catch {
+    return AVATAR_BYTES;
+  }
+})();
+hdFileBytes.set(HD_0658_IMAGE_URL, HD_0658_IMAGE_BYTES);
+hd0658Image.file_size = HD_0658_IMAGE_BYTES.length;
+hdAppend(HD_0658, "support", "[0658-2] স্ক্রিনশট দেখুন", {
+  at: "2026-11-02T11:10:00.000Z",
+  authorName: HD_0658_AGENT,
+  attachments: [
+    {
+      id: hd0658Image.name,
+      name: HD_0658_IMAGE_NAME,
+      size: hd0658Image.file_size,
+      mime: "image/png",
+      url: HD_0658_IMAGE_URL,
+    },
+  ],
 });
 
 // Pristine copy of the seeded thread. A harness resets to this between runs so
