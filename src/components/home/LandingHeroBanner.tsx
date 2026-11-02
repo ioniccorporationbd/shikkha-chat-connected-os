@@ -351,9 +351,14 @@ export default function LandingHeroBanner() {
           animate="visible"
           className="mx-auto text-center"
         >
+          {/* Exactly two points above the sentence under the headline: that
+              sentence resolves from `--text-subtitle-size` (16px, measured at
+              both 1440 and 390), so the chip is 18px and keeps the relationship
+              whatever the reader's type scale is set to. */}
           <motion.p
             variants={textItem}
-            className="mb-5 inline-flex max-w-full items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-danger)_80%,transparent)] bg-[var(--color-danger)] px-5 py-2 text-center text-[20px] font-extrabold leading-snug tracking-normal text-white [word-spacing:normal] shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--color-danger)_65%,transparent)] backdrop-blur-sm md:mb-6"
+            className="mb-5 inline-flex max-w-full items-center justify-center rounded-full border border-[#C80013] bg-[#C80013] px-5 py-2 text-center font-extrabold leading-snug tracking-normal text-white [word-spacing:normal] shadow-[0_10px_24px_-12px_rgba(200,0,19,0.55)] backdrop-blur-sm md:mb-6"
+            style={{ fontSize: "calc(var(--text-subtitle-size, 16px) + 2px)" }}
           >
             EDUCATION ERP FOR ANY INSTITUTION
           </motion.p>
