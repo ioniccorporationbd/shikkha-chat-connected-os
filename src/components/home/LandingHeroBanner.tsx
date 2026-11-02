@@ -344,7 +344,7 @@ export default function LandingHeroBanner() {
         <div className="absolute -right-24 top-[4%] h-[470px] w-[470px] rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--color-secondary-strong)_24%,transparent),transparent)] blur-[130px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-7 md:px-7 lg:px-10">
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1540px] flex-col px-4 pb-6 pt-[4.75rem] md:px-7 lg:px-10 lg:pt-7">
         <motion.div
           variants={textContainer}
           initial={reduce ? "visible" : "hidden"}
@@ -353,9 +353,9 @@ export default function LandingHeroBanner() {
         >
           <motion.p
             variants={textItem}
-            className="mb-3 inline-flex items-center justify-center gap-2.5 rounded-full border border-[color-mix(in_srgb,var(--color-secondary-strong)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_14%,transparent)] px-4 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-[var(--color-secondary-strong)] backdrop-blur-sm md:text-[11.5px]"
+            className="mb-5 inline-flex max-w-full items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--color-danger)_80%,transparent)] bg-[var(--color-danger)] px-5 py-2 text-center text-[20px] font-extrabold leading-snug tracking-normal text-white [word-spacing:normal] shadow-[0_10px_24px_-12px_color-mix(in_srgb,var(--color-danger)_65%,transparent)] backdrop-blur-sm md:mb-6"
           >
-            CONNECT HOME, CLASSROOM &amp; ADMIN OFFICE
+            EDUCATION ERP FOR ANY INSTITUTION
           </motion.p>
 
           <motion.h1
@@ -367,9 +367,9 @@ export default function LandingHeroBanner() {
 
           <motion.p
             variants={textItem}
-            className="mx-auto mt-4 max-w-[640px] text-pretty text-[15px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_66%,transparent)] md:text-[16.5px]"
+            className="mx-auto mt-4 max-w-[780px] text-pretty text-[15px] font-medium leading-relaxed text-[color-mix(in_srgb,var(--sc-primary)_66%,transparent)] md:text-[16.5px]"
           >
-            Connect your school, families and students on one advanced AI digital platform — see the details below.
+            Connect every guardian and student of your school on one advanced AI digital platform —
           </motion.p>
 
           <motion.div

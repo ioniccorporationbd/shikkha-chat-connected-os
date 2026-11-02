@@ -43,6 +43,12 @@ type LanguageContextValue = {
 const translations: Record<string, string> = {
   "CONNECT HOME, CLASSROOM & ADMIN OFFICE":
     "বাড়ি, শ্রেণিকক্ষ ও প্রশাসনিক অফিসকে যুক্ত করুন",
+  // The home banner pill now speaks to any institution, and the line under it
+  // addresses the school's own guardians and students.
+  "EDUCATION ERP FOR ANY INSTITUTION":
+    "যে কোন শিক্ষা প্রতিষ্ঠানের জন্য এডুকেশন ইআরপি",
+  "Connect every guardian and student of your school on one advanced AI digital platform —":
+    "আপনার স্কুলের সকল অভিভাবক ও শিক্ষার্থীদের একটি অত্যাধুনিক AI-ভিত্তিক ডিজিটাল প্ল্যাটফর্মে সংযুক্ত করুন —",
   "UNIFY THE HOME, CLASSROOM, AND ADMIN OFFICE":
     "বাড়ি, শ্রেণিকক্ষ এবং প্রশাসনিক অফিসকে একসাথে যুক্ত করুন",
   "Nursery to Masters": "নার্সারি থেকে মাস্টার্স",
