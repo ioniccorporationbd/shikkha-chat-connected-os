@@ -193,6 +193,8 @@ export interface ConversationCopy {
   attachmentWrongType: string;
   attachmentTooMany: string;
   imageOpen: string;
+  /** Shown in place of a picture whose bytes did not arrive. */
+  imageBroken: string;
   imageClose: string;
   imageDownload: string;
   voicePreview: string;
@@ -415,6 +417,7 @@ const bn: ConversationCopy = {
   attachmentWrongType: "এই ধরনের ফাইল সংযুক্ত করা যায় না।",
   attachmentTooMany: "একসঙ্গে সর্বোচ্চ ৫টি ফাইল সংযুক্ত করা যাবে।",
   imageOpen: "ছবিটি বড় করে দেখুন",
+  imageBroken: "ছবিটি এখন দেখা যাচ্ছে না",
   imageClose: "বন্ধ করুন",
   imageDownload: "ডাউনলোড",
   voicePreview: "ভয়েস নোট প্রিভিউ",
@@ -633,6 +636,7 @@ const en: ConversationCopy = {
   attachmentWrongType: "That file type cannot be attached.",
   attachmentTooMany: "Attach at most 5 files at once.",
   imageOpen: "Open image",
+  imageBroken: "This picture could not be loaded",
   imageClose: "Close",
   imageDownload: "Download",
   voicePreview: "Voice note preview",

@@ -13,7 +13,7 @@ import { promisify } from "node:util";
 
 const run_ = promisify(execFile);
 
-const NEXT = "http://localhost:3005";
+const NEXT = process.env.E2E_BASE ?? "http://localhost:3005";
 const MOCK = "http://127.0.0.1:8787";
 const TICKET = "HD-2026-00001";
 const PASSWORD = "demo1234";

@@ -2531,6 +2531,7 @@ const hd0658Image = hdFileRow({
 hd0658Image.attached_to_doctype = "Comment";
 hd0658Image.attached_to_name = "MOCKCOMMENT-06581";
 hd0658Image.is_private = 1;
+hd0658Image.agent_only = true;
 // A wide screenshot, so the browser has real bytes to lay out: 1600x900.
 const HD_0658_IMAGE_BYTES = (() => {
   try {
@@ -2555,9 +2556,142 @@ hdAppend(HD_0658, "support", "[0658-2] স্ক্রিনশট দেখু�
   ],
 });
 
-// Pristine copy of the seeded thread. A harness resets to this between runs so
-// repeated pushes cannot pile up duplicate rows in one long-lived mock process.
-/** Every seeded thread's pristine rows, keyed by ticket name. */
+// 0662 — the live shape behind "attached file image does not view properly": two
+// attachment-only rows, the customer's own upload first and the employee's reply
+// upload second. The employee file lives on an agent-side row, so a customer
+// session gets 403 on the direct URL and only the ticket-scoped streamer can hand
+// the bytes over. This fixture is the standing proof that the portal still paints
+// that picture (and the 0658 fixture keeps proving the geometry).
+const HD_0662 = "0662";
+const HD_0662_USER_IMAGE_URL = "/private/files/Screenshot-_18_57d4b9.png";
+const HD_0662_STAFF_IMAGE_URL = "/private/files/Screenshot-_19_6e0bc2.png";
+hdThreads.set(HD_0662, {
+  name: HD_0662,
+  subject: "ছবি দেখা যাচ্ছে না",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: "Tajul Islam",
+  customerEmail: "client@example.com",
+  agent: HD_0658_AGENT,
+  submittedAt: "2026-11-02T12:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+
+// The customer's own upload: readable directly, so the plain URL works.
+const hd0662UserImage = hdFileRow({
+  name: "MOCKFILE-06621",
+  url: HD_0662_USER_IMAGE_URL,
+  fileName: "Screenshot-_18_57d4b9.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0662UserImage.attached_to_doctype = "Comment";
+hd0662UserImage.attached_to_name = "MOCKCOMMENT-06621";
+hd0662UserImage.is_private = 1;
+hdFileBytes.set(HD_0662_USER_IMAGE_URL, HD_0658_IMAGE_BYTES);
+hd0662UserImage.file_size = HD_0658_IMAGE_BYTES.length;
+
+// The employee's reply upload: agent-side, so `agent_only` makes a direct read a
+// 403 and the portal has to go through `help_desk_files.stream_file`.
+const hd0662StaffImage = hdFileRow({
+  name: "MOCKFILE-06622",
+  url: HD_0662_STAFF_IMAGE_URL,
+  fileName: "Screenshot-_19_6e0bc2.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0662StaffImage.attached_to_doctype = "Comment";
+hd0662StaffImage.attached_to_name = "MOCKCOMMENT-06622";
+hd0662StaffImage.is_private = 1;
+hd0662StaffImage.agent_only = true;
+hdFileBytes.set(HD_0662_STAFF_IMAGE_URL, HD_0658_IMAGE_BYTES);
+hd0662StaffImage.file_size = HD_0658_IMAGE_BYTES.length;
+
+hdAppend(HD_0662, "user", "", {
+  at: "2026-11-02T12:00:00.000Z",
+  authorName: "Tajul Islam",
+  attachments: [
+    {
+      id: hd0662UserImage.name,
+      name: "Screenshot-_18_57d4b9.png",
+      size: hd0662UserImage.file_size,
+      mime: "image/png",
+      url: HD_0662_USER_IMAGE_URL,
+    },
+  ],
+});
+hdAppend(HD_0662, "support", "", {
+  at: "2026-11-02T12:05:00.000Z",
+  authorName: HD_0658_AGENT,
+  attachments: [
+    {
+      id: hd0662StaffImage.name,
+      name: "Screenshot-_19_6e0bc2.png",
+      size: hd0662StaffImage.file_size,
+      mime: "image/png",
+      url: HD_0662_STAFF_IMAGE_URL,
+    },
+  ],
+});
+
+// 0663 — the negative twin of 0662: the row lists a picture whose bytes may not be
+// handed over at all (neither the storage path nor the ticket streamer). The
+// portal must say so in the console and in Desk -> Error Log, and show a clear
+// "cannot be loaded" frame instead of a torn thumbnail.
+const HD_0663 = "0663";
+const HD_0663_IMAGE_URL = "/private/files/hd-0663-unreadable.png";
+hdThreads.set(HD_0663, {
+  name: HD_0663,
+  subject: "ছবি লোড হচ্ছে না",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: "Tajul Islam",
+  customerEmail: "client@example.com",
+  agent: HD_0658_AGENT,
+  submittedAt: "2026-11-02T13:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+const hd0663Image = hdFileRow({
+  name: "MOCKFILE-06631",
+  url: HD_0663_IMAGE_URL,
+  fileName: "Screenshot-_20_1a2b3c.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0663Image.attached_to_doctype = "Comment";
+hd0663Image.attached_to_name = "MOCKCOMMENT-06631";
+hd0663Image.is_private = 1;
+hd0663Image.agent_only = true;
+hd0663Image.unreadable = true;
+hdFileBytes.set(HD_0663_IMAGE_URL, HD_0658_IMAGE_BYTES);
+hd0663Image.file_size = HD_0658_IMAGE_BYTES.length;
+hdAppend(HD_0663, "support", "", {
+  at: "2026-11-02T13:05:00.000Z",
+  authorName: HD_0658_AGENT,
+  attachments: [
+    {
+      id: hd0663Image.name,
+      name: "Screenshot-_20_1a2b3c.png",
+      size: hd0663Image.file_size,
+      mime: "image/png",
+      url: HD_0663_IMAGE_URL,
+    },
+  ],
+});
+
+// Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
+// this between runs so repeated pushes cannot pile up duplicate rows in one
+// long-lived mock process.
 const HD_SEED_ALL = new Map(
   [...hdThreads.values()].map((thread) => [thread.name, thread.messages.map((message) => ({ ...message }))]),
 );
@@ -2586,9 +2720,26 @@ const server = createServer(async (request, response) => {
     // A private file claimed onto an agent-side Comment is unreadable for the
     // customer, exactly like Frappe's Comment permission. Answering 403 here is
     // what pushes the portal onto the ticket-scoped streamer fallback.
-    const fileRow = hdFilesByUrl.get(url.pathname);
+    const fileRow =
+      hdFilesByUrl.get(url.pathname) ??
+      // A seeded file can be quoted under the other prefix than the one it was
+      // registered with; treat the two spellings as the same file.
+      hdFilesByUrl.get(
+        (url.pathname.startsWith("/private/files/") ? "/files/" : "/private/files/") +
+          (url.pathname.split("/").pop() || "")
+      );
+    // Nothing claims this name and it is not the avatar: the real ERP answers 404,
+    // so the mock must not invent bytes (otherwise a broken picture looks painted).
+    if (!fileRow && url.pathname !== AVATAR_PATH) {
+      failure(response, 404, "DoesNotExistError", "File not found.", "Help Desk");
+      return;
+    }
     if (fileRow && fileRow.agent_only) {
       failure(response, 403, "PermissionError", "You are not permitted to access this file.", "Help Desk");
+      return;
+    }
+    if (fileRow && fileRow.unreadable) {
+      failure(response, 403, "PermissionError", "Not permitted to read this file.", "Help Desk");
       return;
     }
     // Serve the uploaded bytes when we have them (the ticket's real image);
@@ -2619,6 +2770,12 @@ const server = createServer(async (request, response) => {
     const known = Boolean(row);
     if (!known || !(fileUrl.startsWith("/files/") || fileUrl.startsWith("/private/files/"))) {
       failure(response, 404, "DoesNotExistError", "Unknown file.", "Help Desk");
+      return;
+    }
+    if (row.unreadable) {
+      // The case behind "if the image has problem to view properly": the file is
+      // listed on the row but its bytes may not be handed over at all.
+      failure(response, 403, "PermissionError", "Not permitted to read this file.", "Help Desk");
       return;
     }
     const payload = hdFileBytes.get(fileUrl) ?? AVATAR_BYTES;

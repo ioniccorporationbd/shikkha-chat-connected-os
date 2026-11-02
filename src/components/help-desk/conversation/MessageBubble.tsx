@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText } from "react-icons/fi";
+import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
@@ -126,6 +126,9 @@ export default function MessageBubble({
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Attachment ids whose bytes did not arrive: the bubble then shows the reason
+  // and a link instead of a torn thumbnail.
+  const [brokenFiles, setBrokenFiles] = useState<Record<string, boolean>>({});
   const copiedTimer = useRef<number | null>(null);
 
   const isSupport = isResolution || message.author === "support";
@@ -324,6 +327,16 @@ export default function MessageBubble({
                         aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
                         title={`${copy.imageOpen}: ${file.fileName || ""}`}
                       >
+                        {/* A picture whose bytes were refused (a support reply's
+                            private file, or a stale URL) is not left as a torn
+                            icon: the frame says so and still links to the file. */}
+                        {brokenFiles[key] ? (
+                          <span className="flex w-[min(28rem,100%)] items-center gap-2 rounded-lg border border-dashed border-[color-mix(in_srgb,var(--color-danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_7%,transparent)] px-3 py-2 text-[12px] font-semibold text-[var(--color-danger)]">
+                            <FiImage size={14} className="flex-none" aria-hidden />
+                            <span className="min-w-0 truncate">{copy.imageBroken}</span>
+                          </span>
+                        ) : (
+                          <>
                         {/* A fixed-width thumbnail with both dimensions capped, so
                             the whole picture fits: a wide screenshot used to be
                             capped by height alone and spilled over the bubble. */}
@@ -381,22 +394,54 @@ export default function MessageBubble({
                               });
                             }
                           }}
-                          onError={() => {
+                          onError={(event) => {
                             // A broken attachment otherwise fails silently: the
-                            // browser only paints a torn thumbnail. Both copies
-                            // land in Desk -> Error Log via client_log.report.
-                            reportClientError({
-                              scope: "help-desk:attachment",
-                              message: "A ticket attachment did not load in the thread.",
-                              detail: JSON.stringify({
-                                url: file.url ?? href ?? "",
-                                fileName: file.fileName ?? "",
-                                fileType: file.fileType ?? "",
-                                messageId: message.id,
-                              }),
+                            // browser only paints a torn thumbnail. Ask the same
+                            // URL *why* it failed (403 / 404 / no bytes) so the
+                            // console and Desk -> Error Log name the cause, then
+                            // swap the frame for a clear "cannot be loaded" note.
+                            const node = event.currentTarget;
+                            const src = node.currentSrc || node.src || href || "";
+                            console.error("[hd:attach] image did not load", {
+                              fileName: file.fileName ?? "",
+                              url: file.url ?? "",
+                              src,
+                              messageId: message.id,
                             });
+                            setBrokenFiles((seen) => ({ ...seen, [key]: true }));
+                            void (async () => {
+                              let reason = "no bytes";
+                              try {
+                                const answer = await fetch(src, { cache: "no-store" });
+                                if (answer.ok) {
+                                  reason = "the bytes did not decode as an image";
+                                } else {
+                                  const body = await answer.text().catch(() => "");
+                                  reason = `HTTP ${answer.status} ${answer.statusText}${body ? ` :: ${body.slice(0, 300)}` : ""}`;
+                                }
+                              } catch (error) {
+                                reason = `the request failed: ${String(error).slice(0, 200)}`;
+                              }
+                              console.warn("[hd:attach] image does not view properly", {
+                                fileName: file.fileName ?? "",
+                                reason,
+                              });
+                              reportClientError({
+                                scope: "help-desk:attachment",
+                                message: "A ticket attachment did not load in the thread.",
+                                detail: JSON.stringify({
+                                  url: file.url ?? href ?? "",
+                                  fileName: file.fileName ?? "",
+                                  fileType: file.fileType ?? "",
+                                  messageId: message.id,
+                                  reason,
+                                }),
+                              });
+                            })();
                           }}
                         />
+                          </>
+                        )}
                       </a>
                       {file.fileName ? (
                         <a
