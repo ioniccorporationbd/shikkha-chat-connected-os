@@ -1,4 +1,4 @@
-import { callFrappe } from "@/lib/api/frappe";
+import { callFrappe, WRITE_TIMEOUT_MS } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 import type { ConversationPayload } from "@/lib/help-desk/types";
@@ -34,6 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const result = await callFrappe<ConversationPayload>(STATUS_METHOD, {
+    timeoutMs: WRITE_TIMEOUT_MS,
     sid,
     httpMethod: "POST",
     body: { ...body, name: id },

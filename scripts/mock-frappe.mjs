@@ -3494,6 +3494,9 @@ const server = createServer(async (request, response) => {
       const uploads = hdResolveUploads(data.attachments, owner);
       const message = hdAppend(name, support ? "support" : "user", text);
       if (message) {
+        // One line per stored message: the slow-send e2e counts them to prove a
+        // timed-out write was not sent twice.
+        console.log(`[mock-frappe] HD MESSAGE ${name} ${message.id} by=${owner}`);
         for (const entry of uploads.attached) {
           entry.row.attached_to_doctype = "Communication";
           entry.row.attached_to_name = `HDCOMM-${message.id}`;
@@ -3506,6 +3509,10 @@ const server = createServer(async (request, response) => {
           url: entry.row.file_url,
         }));
       }
+      // A site whose write lands but whose answer crawls (0602): by the time the
+      // portal's ceiling expires the message is already on the ticket.
+      const sendDelay = Number(process.env.MOCK_HD_SEND_DELAY_MS || 0);
+      if (sendDelay > 0) await new Promise((resolve) => setTimeout(resolve, sendDelay));
       ok(response, { ...hdConversation(name, support, {}), attachments_failed: uploads.failed });
       return;
     }

@@ -1,4 +1,4 @@
-import { callFrappe } from "@/lib/api/frappe";
+import { callFrappe, WRITE_TIMEOUT_MS } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 import type { HelpDeskUploadedFile } from "@/lib/help-desk/types";
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
   }
 
   const result = await callFrappe<HelpDeskUploadedFile>("shikkha_os.api.v1.help_desk.upload_attachment", {
+    timeoutMs: WRITE_TIMEOUT_MS,
     sid,
     httpMethod: "POST",
     body: { file_name: fileName, content, language },

@@ -1,4 +1,4 @@
-import { callFrappeWithSessionCheck } from "@/lib/api/frappe";
+import { callFrappeWithSessionCheck, WRITE_TIMEOUT_MS } from "@/lib/api/frappe";
 import {
   clearSessionCookie,
   fromFrappeFailure,
@@ -54,6 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const result = await callFrappeWithSessionCheck<ConversationPayload>(SEND_METHOD, {
+    timeoutMs: WRITE_TIMEOUT_MS,
     sid,
     httpMethod: "POST",
     body: { ...body, name: id },

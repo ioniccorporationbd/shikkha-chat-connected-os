@@ -1,4 +1,4 @@
-import { callFrappe } from "@/lib/api/frappe";
+import { callFrappe, WRITE_TIMEOUT_MS } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 
@@ -29,7 +29,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const result = await callFrappe<{ pinnedMessageId?: string | null }>(
     "shikkha_os.api.v1.help_desk.pin_message",
-    { sid, httpMethod: "POST", body: { ...body, name: id } }
+    {
+    timeoutMs: WRITE_TIMEOUT_MS, sid, httpMethod: "POST", body: { ...body, name: id } }
   );
 
   if (!result.ok) {

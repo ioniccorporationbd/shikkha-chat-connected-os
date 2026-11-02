@@ -15,6 +15,18 @@ const METHOD_BASE = "/api/method/";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+/**
+ * Ceiling for calls that *write* a ticket (send a message, add a requirement,
+ * change status) instead of merely reading it.
+ *
+ * A write makes the ERP save rows, attach files and — for a customer reply —
+ * hand the row to helpdesk's own writer, which may queue the notification mail
+ * inline. On a slow-mail site that routinely overruns a 15s read budget, and the
+ * portal then told the customer "the ERP did not answer" for a message the ERP
+ * had in fact accepted. Writes get their own, generous ceiling.
+ */
+export const WRITE_TIMEOUT_MS = Number(process.env.HD_WRITE_TIMEOUT_MS || 60_000);
+
 export type FrappeFailureCode =
   | "not_configured"
   | "upstream_unreachable"

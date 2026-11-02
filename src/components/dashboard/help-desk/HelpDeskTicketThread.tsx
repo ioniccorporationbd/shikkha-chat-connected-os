@@ -85,6 +85,43 @@ function optimisticReactions(
   return next.filter((reaction) => reaction.count > 0);
 }
 
+/**
+ * A write that outran the portal's upstream ceiling.
+ *
+ * The socket timeout ends *our* wait, not the ERP's work: a reply can land after
+ * the portal has already told the UI it failed (0602). Callers must re-read the
+ * thread before reporting a failure, or the customer retypes a message that is
+ * already on the ticket.
+ */
+function isPossibleTimeout(error: unknown): boolean {
+  const err = error as { code?: string; message?: string } | null;
+  if (err?.code === "upstream_unreachable") return true;
+  return typeof err?.message === "string" && /did not answer within/i.test(err.message);
+}
+
+/** Message bodies are HTML; compare what the reader actually sees. */
+function plainBody(html: string | null | undefined): string {
+  return String(html ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Did the text the composer tried to send reach the thread after all? */
+async function landedInThread(ticketId: string, text: string): Promise<boolean> {
+  const needle = plainBody(text).slice(0, 60);
+  if (!needle) return false;
+  try {
+    const data = await getConversation(ticketId, { limit: 5 });
+    return (data?.messages ?? [])
+      .slice(-5)
+      .some((message) => plainBody(message.body).includes(needle));
+  } catch {
+    return false;
+  }
+}
+
 function isAuthFailure(error: unknown): boolean {
   const err = error as { code?: string; status?: number } | null;
   return err?.code === "not_authenticated" || err?.status === 401;
@@ -515,6 +552,21 @@ export default function HelpDeskTicketThread({
             return false;
           }
           const text = err instanceof Error ? err.message : "";
+          if (isPossibleTimeout(err)) {
+            // The reply may be on the ticket already — check before failing it.
+            const landed = await landedInThread(ticketId, input.message);
+            await load(true);
+            if (landed) {
+              clearDraft(ticketId);
+              setDraft("");
+              setQuoted(null);
+              toast.success(copy.composerRequirementSent, copy.conversationTitle);
+              return true;
+            }
+            toast.warning(text || copy.composerFailed);
+            console.warn("[help-desk] requirement outran the portal ceiling and is not on the ticket", ticketId);
+            return false;
+          }
           toast.error(text || copy.composerFailed);
           console.error("[help-desk] requirement failed", ticketId, err);
           return false;
@@ -546,6 +598,28 @@ export default function HelpDeskTicketThread({
           return false;
         }
         const text = err instanceof Error ? err.message : "";
+        if (isPossibleTimeout(err)) {
+          // A slow site answers late: if the reply is on the ticket, say so and
+          // do not ask the customer to send it twice.
+          const landed = await landedInThread(ticketId, input.message);
+          await load(true);
+          if (landed) {
+            clearDraft(ticketId);
+            setDraft("");
+            setQuoted(null);
+            toast.success(copy.composerSent);
+            console.warn("[help-desk] reply landed after the portal stopped waiting", ticketId);
+            return true;
+          }
+          toast.warning(text || copy.composerFailed);
+          console.warn("[help-desk] reply outran the portal ceiling and is not on the ticket", ticketId);
+          reportClientError({
+            scope: "help-desk:send",
+            message: "Sending a ticket message failed.",
+            detail: { ticket: ticketId, error: text || String(err) },
+          });
+          return false;
+        }
         toast.error(text || copy.composerFailed);
         console.error("[help-desk] message send failed", ticketId, err);
         reportClientError({
@@ -556,7 +630,7 @@ export default function HelpDeskTicketThread({
         return false;
       }
     },
-    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, mergeThread, mode, ticketId]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, load, mergeThread, mode, ticketId]
   );
 
   const submitStatus = useCallback(async () => {
@@ -1011,7 +1085,10 @@ export default function HelpDeskTicketThread({
           />
         ) : null}
 
-        <div className="bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]">
+        <div
+          data-hd="thread"
+          className="bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]"
+        >
           <ConversationThread
             bare
             copy={copy}

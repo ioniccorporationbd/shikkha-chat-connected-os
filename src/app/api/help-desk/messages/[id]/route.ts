@@ -1,4 +1,4 @@
-import { callFrappe } from "@/lib/api/frappe";
+import { callFrappe, WRITE_TIMEOUT_MS } from "@/lib/api/frappe";
 import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
 import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
 
@@ -24,6 +24,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const result = await callFrappe<unknown>("frappe.client.delete", {
+    timeoutMs: WRITE_TIMEOUT_MS,
     sid,
     httpMethod: "POST",
     body: { doctype: "Communication", name: id },
