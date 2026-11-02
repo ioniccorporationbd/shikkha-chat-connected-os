@@ -174,6 +174,95 @@ export function orderConversation<T extends { createdAt?: string | null; id?: st
 }
 
 /**
+ * How long apart two rows may sit and still count as one retried send.
+ * Mirrors `_DUPLICATE_WINDOW_SECONDS` on the ERP side.
+ */
+const DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+
+function bodyKey(body: unknown): string {
+  return String(body ?? "").split(/\s+/).filter(Boolean).join(" ").toLowerCase();
+}
+
+function attachmentMark(file: unknown): string {
+  const row = file as { url?: string; fileName?: string; name?: string } | null;
+  return String(row?.url ?? row?.fileName ?? row?.name ?? "").trim();
+}
+
+function fileKey(files: unknown): string {
+  if (!Array.isArray(files)) return "";
+  return files.map(attachmentMark).filter(Boolean).sort().join("|");
+}
+
+function stamp(value: unknown): number | null {
+  const parsed = typeof value === "string" ? Date.parse(value) : Number.NaN;
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+/**
+ * One message must read once, even when the ERP stored it on both channels.
+ *
+ * A customer message lives in `Comment` (the desk's Comment tab) while agent
+ * replies live in `Communication`; a send that was retried — the browser gave up
+ * at 15s and the reader pressed send again — can therefore land on both, with two
+ * ids and two timestamps seconds apart, and the chat box drew the same text twice.
+ * Rows are folded only when they sit on *different* channels, share the author and
+ * the text (or the exact file set), and are within five minutes, so a customer who
+ * genuinely repeats himself later still reads twice. The surviving row keeps any
+ * file or quote only the retried twin carried.
+ */
+export function dropChannelDuplicates<T extends ConversationMessage>(messages: T[]): T[] {
+  return foldChannelDuplicates(messages).kept;
+}
+
+/**
+ * Same fold, plus the ids that no longer draw. The audit timeline lists a row per
+ * message id, so a twin folded out of `messages` has to leave the timeline too —
+ * otherwise the very same text returns as a "message" event a line further down.
+ */
+function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
+  kept: T[];
+  dropped: Set<string>;
+} {
+  const kept: T[] = [];
+  const dropped = new Set<string>();
+  const twins = new Map<string, T[]>();
+  for (const message of messages) {
+    const body = bodyKey(message.body);
+    const files = fileKey(message.attachments);
+    if (!body && !files) {
+      kept.push(message);
+      continue;
+    }
+    // Text identifies a message; files only identify a file-only row. A retry
+    // that also carried a file must still fold with its text twin.
+    const key = `${message.author ?? ""}\u0001${body}\u0001${body ? "" : files}`;
+    const candidates = twins.get(key) ?? [];
+    twins.set(key, candidates);
+    const at = stamp(message.createdAt);
+    const twin = candidates.find((prior) => {
+      if ((prior.channel ?? "") === (message.channel ?? "")) return false;
+      const priorAt = stamp(prior.createdAt);
+      if (priorAt === null || at === null) return false;
+      return Math.abs(priorAt - at) <= DUPLICATE_WINDOW_MS;
+    });
+    if (!twin) {
+      candidates.push(message);
+      kept.push(message);
+      continue;
+    }
+    const known = new Set(fileKey(twin.attachments).split("|").filter(Boolean));
+    const extra = (message.attachments ?? []).filter((file) => {
+      const mark = attachmentMark(file);
+      return mark !== "" && !known.has(mark);
+    });
+    if (extra.length) twin.attachments = [...(twin.attachments ?? []), ...extra];
+    if (!twin.replyTo && message.replyTo) twin.replyTo = message.replyTo;
+    if (message.id) dropped.add(message.id);
+  }
+  return { kept, dropped };
+}
+
+/**
  * One attachment as the ERP sends it. The API names the file `name`/`mime`; the
  * conversation UI reads `fileName`/`fileType`, so every payload is translated
  * here — otherwise an image arrives with no MIME type and no name, and the
@@ -218,15 +307,17 @@ export function alignConversation(payload: ConversationPayload): ConversationPay
   const viewerIsSupport = typeof payload.isSupport === "boolean" ? payload.isSupport : null;
   if (viewerIsSupport === null) {
     // An older backend keeps its own `isMine`; the reading order still holds.
+    const folded = foldChannelDuplicates(
+      (Array.isArray(payload.messages) ? payload.messages : []).map(normalizeMessage)
+    );
     return {
       ...payload,
-      messages: orderConversation(
-        (Array.isArray(payload.messages) ? payload.messages : []).map(normalizeMessage)
-      ),
+      messages: orderConversation(folded.kept),
+      timeline: withoutDropped(payload.timeline, folded.dropped),
     };
   }
 
-  const messages = orderConversation(
+  const folded = foldChannelDuplicates(
     (Array.isArray(payload.messages) ? payload.messages : []).map((message) =>
       normalizeMessage({
         ...message,
@@ -234,14 +325,24 @@ export function alignConversation(payload: ConversationPayload): ConversationPay
       })
     )
   );
+  const messages = orderConversation(folded.kept);
 
   // The chat is ordered by these events: an unsorted timeline would draw the
-  // bubbles out of time even when `messages` itself is right.
+  // bubbles out of time even when `messages` itself is right. A twin the fold
+  // removed must leave the timeline as well, or it draws again as an event row.
   const timeline = Array.isArray(payload.timeline)
-    ? orderByStamp(payload.timeline, (event) => ({ at: event.at, id: event.id }))
+    ? orderByStamp(
+        payload.timeline.filter((event) => !folded.dropped.has(event.id)),
+        (event) => ({ at: event.at, id: event.id })
+      )
     : payload.timeline;
 
   return { ...payload, messages, timeline };
+}
+
+function withoutDropped<T extends { id?: string }>(timeline: T[] | undefined, dropped: Set<string>): T[] | undefined {
+  if (!Array.isArray(timeline)) return timeline;
+  return timeline.filter((event) => !(event.id && dropped.has(event.id)));
 }
 
 /**

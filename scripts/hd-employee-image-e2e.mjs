@@ -126,6 +126,8 @@ try {
       const needle = image.split("/").pop();
       const img = [...document.querySelectorAll("img")].find((node) => (node.currentSrc || node.src || "").includes(needle));
       if (!img) return { found: false, naturalWidth: 0, src: "" };
+      // The preview is loading="lazy": bring it on screen so the fetch starts.
+      if (!img.naturalWidth) img.scrollIntoView({ block: "center" });
       return { found: true, naturalWidth: img.naturalWidth || 0, src: img.currentSrc || img.src, complete: img.complete };
     }, IMAGE);
     if (rendered.found && rendered.naturalWidth > 0) break;
@@ -134,7 +136,7 @@ try {
   check(
     "employee image paints in the thread",
     rendered.found && rendered.naturalWidth > 0,
-    `naturalWidth=${rendered.naturalWidth}`
+    `found=${rendered.found} naturalWidth=${rendered.naturalWidth} src=${rendered.src.slice(0, 90)}`
   );
 
   if (DOC_NAME) {

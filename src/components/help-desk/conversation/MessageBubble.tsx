@@ -269,6 +269,7 @@ export default function MessageBubble({
                scrolls the pair into view together. */
             <button
               type="button"
+              data-hd-quote={reply.id ?? ""}
               onClick={() => onJumpTo?.(reply.id)}
               title={reply.body}
               className="mb-1.5 block w-full max-w-full cursor-pointer rounded-lg border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] px-2.5 py-1.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_35%,transparent)]"

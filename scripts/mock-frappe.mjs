@@ -2331,6 +2331,53 @@ hdAppend(HD_0611, "support", "", {
   ],
 });
 
+// 0616 - the customer's chat box must read like the desk ticket: oldest on top,
+// newest at the bottom, customer on the right, employee on the left, and a retried
+// send that landed on both channels only once. The payload is handed over in the
+// order the two channels were read (reversed), which is exactly the mismatch the
+// portal has to correct.
+const HD_0616 = "0616";
+hdThreads.set(HD_0616, {
+  name: HD_0616,
+  subject: "পেমেন্ট স্লিপ ও স্ট্যাটাস",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "billing",
+  customer: "Tamim Hasan",
+  customerEmail: "client@example.com",
+  agent: "MD Shahzalal Amin Surker",
+  submittedAt: "2026-11-02T09:05:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+  // See hdConversation: only the no-limit (detail page) read is reversed.
+  payloadOrder: "reverse",
+});
+hdAppend(HD_0616, "user", "[0616-1] পেমেন্ট স্লিপ পাঠিয়েছি, দেখে নিন।", {
+  at: "2026-11-02T09:05:00.000Z",
+});
+hdAppend(HD_0616, "support", "[0616-2] স্লিপটি পেয়েছি, যাচাই করছি।", {
+  at: "2026-11-02T09:18:00.000Z",
+  authorName: "MD Shahzalal Amin Surker",
+});
+hdAppend(HD_0616, "user", "[0616-3] ধন্যবাদ, কত সময় লাগবে?", {
+  at: "2026-11-02T09:26:00.000Z",
+});
+hdAppend(HD_0616, "support", "[0616-4] আজকের মধ্যেই জানিয়ে দিচ্ছি।", {
+  at: "2026-11-02T09:41:00.000Z",
+  authorName: "MD Shahzalal Amin Surker",
+});
+// The retried send: same words, same side, three minutes later, other channel.
+const hd0616Retry = hdAppend(HD_0616, "user", "[0616-3] ধন্যবাদ, কত সময় লাগবে?", {
+  at: "2026-11-02T09:29:00.000Z",
+});
+if (hd0616Retry) {
+  hd0616Retry.id = "HDMSG-0616R";
+  hd0616Retry.channel = "message";
+}
+
 // Pristine copy of the seeded thread. A harness resets to this between runs so
 // repeated pushes cannot pile up duplicate rows in one long-lived mock process.
 /** Every seeded thread's pristine rows, keyed by ticket name. */
