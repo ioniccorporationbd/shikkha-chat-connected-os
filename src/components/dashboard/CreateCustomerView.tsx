@@ -39,6 +39,7 @@ import type {
   CustomerSchema,
 } from "@/lib/customer/types";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 
 /* ------------------------------------------------------------------ */
@@ -761,12 +762,18 @@ function SuccessCard({
     .filter((entry): entry is string => typeof entry === "string" && entry.trim() !== "")
     .join(" · ");
 
+  // The same request also provisions the Desk login (`/desk/system/user`), so
+  // the confirmation shows the identity that was created, not just the Customer.
+  const login = result.user;
+  const loginEmail = login?.email ?? (typeof values.email_id === "string" ? values.email_id.trim() : "");
+
   const rows: Array<[string, string]> = [
     [copy.idLabel, result.name],
     result.customer_type ? [copy.typeLabel, result.customer_type] : null,
     result.customer_group ? [copy.groupLabel, result.customer_group] : null,
     result.territory ? [copy.territoryLabel, result.territory] : null,
     contact ? [copy.contactLabel, contact] : null,
+    loginEmail && login && login.reason !== "no_email" ? [copy.loginLabel, loginEmail] : null,
   ].filter((row): row is [string, string] => Boolean(row && row[1]));
 
   return (
@@ -791,6 +798,32 @@ function SuccessCard({
             <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-white))] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-success)]">
               <FiCheck aria-hidden />
               {copy.verifiedLabel}
+            </p>
+          ) : null}
+          {login?.created ? (
+            <p
+              data-customer-login="created"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-primary)]"
+            >
+              <FiUserPlus aria-hidden />
+              {copy.loginCreatedLabel}
+            </p>
+          ) : login?.reason === "exists" ? (
+            <p
+              data-customer-login="exists"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]"
+            >
+              <FiUser aria-hidden />
+              {copy.loginExistingLabel}
+            </p>
+          ) : login?.reason === "error" ? (
+            <p
+              data-customer-login="error"
+              role="status"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-danger-strong)]"
+            >
+              <FiAlertCircle aria-hidden />
+              {copy.loginFailedLabel}
             </p>
           ) : null}
         </div>
@@ -1067,6 +1100,21 @@ export default function CreateCustomerView({ onBack }: CreateCustomerViewProps) 
         createdRef.current = result;
         clearDraft();
         toast.success(copy.successBody(result.name), copy.successTitle);
+
+        // The customer is created; only its login failed. Report it the same way
+        // any other client error is reported (browser console + ERP Error Log),
+        // without turning a successful create into an error toast.
+        if (result.user?.reason === "error") {
+          reportClientError({
+            scope: "customer:create-user",
+            message: "The customer was created but its login user was not.",
+            detail: {
+              customer: result.name,
+              email: result.user.email,
+              backend: result.user.message,
+            },
+          });
+        }
       } catch (error) {
         const failure = error as { code?: string; message?: string };
         const message = failure?.message || copy.loadFailed;

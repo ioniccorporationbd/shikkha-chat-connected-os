@@ -220,6 +220,67 @@ function redirectFor(account) {
  * allowed. A System User without the permission is refused with a PermissionError
  * (not a ValidationError) so the portal can show the dedicated permission state.
  */
+/**
+ * The Desk `User` a "Create Customer" click leaves behind (mirrors
+ * `_provision_portal_user` in shikkha_os/api/v1/customer.py):
+ *
+ *  - no `email_id` in the form  -> `{created: false, reason: "no_email"}`
+ *  - that e-mail already has a login -> `{created: false, reason: "exists"}`
+ *  - `MOCK_USER_PROVISION_FAIL=1` -> `{created: false, reason: "error"}` while
+ *    the customer itself is still created (that is the point of the switch)
+ *  - otherwise a `Website User` row with the customer's own name and mobile.
+ *
+ * `mock.users.list` exposes the table so a suite can prove the row exists,
+ * not just that the response claimed so.
+ */
+const customerUsers = new Map();
+//: Set by `mock.users.fail` so one suite run can prove the error path without
+//: restarting the mock (the customer must still be created when this trips).
+let mockUserProvisionFail = process.env.MOCK_USER_PROVISION_FAIL === "1";
+
+function mockProvisionCustomerUser(data) {
+  const email = String(data.email_id ?? "").trim().toLowerCase();
+
+  if (!email) return { created: false, reason: "no_email" };
+
+  if (mockUserProvisionFail) {
+    return {
+      created: false,
+      reason: "error",
+      email,
+      message: "The customer was created, but its login user could not be created.",
+    };
+  }
+
+  if (DEMO_USERS[email] || customerUsers.has(email)) {
+    return { created: false, reason: "exists", email, name: email };
+  }
+
+  // Mirrors the backend literally: first_name is the customer's whole name.
+  const full = String(data.customer_name ?? "").trim().replace(/\s+/g, " ");
+  const entry = {
+    email,
+    first_name: full || email.split("@")[0],
+    full_name: full || email.split("@")[0],
+    mobile_no: String(data.mobile_no ?? "").trim(),
+    user_type: "Website User",
+    enabled: 1,
+    role: "Customer",
+  };
+  customerUsers.set(email, entry);
+
+  console.log(`[mock-frappe] USER CREATED ${email} (${entry.first_name})`);
+
+  return {
+    created: true,
+    name: email,
+    email,
+    first_name: entry.first_name,
+    mobile_no: entry.mobile_no || null,
+    role: "Customer",
+  };
+}
+
 function customerGate(account) {
   if (!account || account.kind !== "staff") {
     return { status: 403, exc: "ValidationError", message: "Only System Users can create customers." };
@@ -3976,6 +4037,29 @@ const server = createServer(async (request, response) => {
   // Playwright harness pushes a message through `mock.hd.push` (a dev-only
   // control method) and then asserts the OTHER panel shows it without a reload.
   // Nothing here touches the real ERP; shapes follow src/lib/help-desk/types.ts.
+  // Dev-only control surface for the customer-bound login users, so a Playwright
+  // run can assert the row a create left behind (and clear it between runs).
+  if (method === "mock.users.list") {
+    ok(response, { users: [...customerUsers.values()] });
+    return;
+  }
+
+  if (method === "mock.users.clear") {
+    const cleared = customerUsers.size;
+    customerUsers.clear();
+    mockUserProvisionFail = process.env.MOCK_USER_PROVISION_FAIL === "1";
+    ok(response, { ok: true, cleared });
+    return;
+  }
+
+  if (method === "mock.users.fail") {
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+    mockUserProvisionFail = Boolean(data.fail);
+    ok(response, { ok: true, fail: mockUserProvisionFail });
+    return;
+  }
+
   if (method === "mock.hd.reset") {
     let restored = 0;
     for (const [name, seeded] of HD_SEED_ALL) {
@@ -4188,6 +4272,12 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  // --- Customer-bound login users ----------------------------------------- //
+  // Mirrors the backend's `_provision_portal_user`: one "Create Customer"
+  // request also leaves a Desk User (email / first_name / mobile_no). Kept out
+  // of the customer record so a suite can assert the row the operator sees, and
+  // switchable to the failure shape (customer created, login not) via
+  // `MOCK_USER_PROVISION_FAIL=1`, which is how the error-report path is proven.
   if (method === "shikkha_os.api.v1.customer.create") {
     if (request.method !== "POST") {
       failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
@@ -4237,6 +4327,7 @@ const server = createServer(async (request, response) => {
       values: { ...data },
       verified: true,
     };
+    record.user = mockProvisionCustomerUser(data);
     createdCustomers.set(name.toLowerCase(), record);
     createdCustomers.set(docName.toLowerCase(), record);
 

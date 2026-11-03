@@ -66,6 +66,14 @@ export interface CustomerCopy {
   idLabel: string;
   typeLabel: string;
   contactLabel: string;
+  /** Success-card line for the Desk login provisioned with the customer. */
+  loginLabel: string;
+  /** Badge: the login was created in this same request. */
+  loginCreatedLabel: string;
+  /** Badge: that e-mail already had a login, reused as-is. */
+  loginExistingLabel: string;
+  /** Notice: the customer exists but the login could not be provisioned. */
+  loginFailedLabel: string;
   /** Edit mode reuses the create surface with update semantics. */
   editHeading: string;
   editHint: string;
@@ -133,6 +141,10 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     idLabel: "কাস্টমার আইডি",
     typeLabel: "ধরন",
     contactLabel: "যোগাযোগ",
+    loginLabel: "লগইন ইউজার",
+    loginCreatedLabel: "লগইন ইউজার তৈরি হয়েছে",
+    loginExistingLabel: "এই ইমেইলে লগইন আগেই ছিল",
+    loginFailedLabel: "লগইন ইউজার তৈরি হয়নি (কাস্টমার ঠিক আছে) — Error Log দেখুন",
     editHeading: "কাস্টমার সম্পাদনা",
     editHint: "এই কাস্টমারের তথ্য হালনাগাদ করুন এবং সংরক্ষণ করুন।",
     submitEdit: "পরিবর্তন সংরক্ষণ করুন",
@@ -217,6 +229,10 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     idLabel: "Customer ID",
     typeLabel: "Type",
     contactLabel: "Contact",
+    loginLabel: "Login user",
+    loginCreatedLabel: "Login user created",
+    loginExistingLabel: "A login with this e-mail already existed",
+    loginFailedLabel: "Login user was not created (customer is fine) — see the Error Log",
     editHeading: "Edit Customer",
     editHint: "Update this customer's details and save your changes.",
     submitEdit: "Save changes",

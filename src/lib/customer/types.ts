@@ -57,6 +57,27 @@ export interface CustomerCreateResult {
   creation?: string;
   /** Backend self-check: the row exists in the Customer table (frappe.db.exists). */
   verified?: boolean;
+  /** The Desk login the same request provisioned for this customer. */
+  user?: CustomerPortalUser;
+}
+
+/**
+ * Desk `User` (`/desk/system/user`) created alongside the Customer, so one
+ * "Create Customer" click also leaves a login behind. `created: true` means it
+ * was just inserted; `reason: "exists"` means that e-mail already had a login
+ * (reused untouched); `"no_email"` means the form carried no e-mail;
+ * `"error"` means provisioning failed (customer still created — the failure is
+ * also written to the ERP Error Log).
+ */
+export interface CustomerPortalUser {
+  created: boolean;
+  email?: string;
+  name?: string;
+  first_name?: string;
+  mobile_no?: string | null;
+  role?: string | null;
+  reason?: "no_email" | "exists" | "error";
+  message?: string;
 }
 
 /** A single form value — text, number, date string, or a Check boolean. */
