@@ -1637,6 +1637,23 @@ function hdFileRow({ name, url, fileName, size, owner }) {
 
 const hdFileUnattached = (row) => !row.attached_to_doctype && !row.attached_to_name;
 
+// Mirrors `help_desk.timestamped_filename`: Desk File rows carry the upload's
+// date and time, e.g. `photo-20261103-154210.png`.
+const HD_STAMP_RE = /-\d{8}-\d{6}(?=\.[^.]+$|$)/;
+function mockTimestampedName(fileName) {
+  const name = String(fileName || "attachment");
+  const un = name.replace(HD_STAMP_RE, "");
+  const now = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+  if (un.includes(".")) {
+    const i = un.lastIndexOf(".");
+    return `${un.slice(0, i)}-${stamp}${un.slice(i)}`;
+  }
+  return `${un}-${stamp}`;
+}
+const mockUnstamped = (fileName) => String(fileName || "").replace(HD_STAMP_RE, "");
+
 // The real backend only links Files that (a) the caller owns and (b) nothing has
 // claimed yet; anything else is reported back as `attachments_failed`. The mock
 // refuses exactly the same way, so a green run cannot hide an ownership hole.
@@ -3773,34 +3790,37 @@ const server = createServer(async (request, response) => {
 
       // Mirrors `attachment_rules.reusable_upload`: a retried submit re-sends the
       // same bytes, so the same File row is handed back instead of a duplicate.
+      // Stored names are stamped, so compare the base name.
       const reusable = hdFileList.find(
         (row) =>
           row.owner === owner &&
-          row.file_name === name &&
+          mockUnstamped(row.file_name) === name &&
           row.file_size === bytes &&
           hdFileUnattached(row),
       );
       if (reusable) {
-        console.log(`[mock-frappe] HD UPLOAD ${name} (reused)`);
-        ok(response, { name, url: reusable.file_url, size: bytes, reused: true });
+        console.log(`[mock-frappe] HD UPLOAD ${reusable.file_name} (reused)`);
+        ok(response, { name: reusable.file_name, url: reusable.file_url, size: bytes, reused: true });
         return;
       }
 
       hdFileSeq += 1;
       // `_store_upload` on the ERP writes a *public* row (`is_private` 0), which
-      // is what the Desk shows as an unchecked box and a `/files/...` URL.
-      const url = `/files/mock-hd-${hdFileSeq}-${name}`;
+      // is what the Desk shows as an unchecked box and a `/files/...` URL — and
+      // the stored name carries the upload date and time.
+      const storedName = mockTimestampedName(name);
+      const url = `/files/mock-hd-${hdFileSeq}-${storedName}`;
       hdFileBytes.set(url, Buffer.from(String(body?.content ?? ""), "base64"));
       const uploadedRow = hdFileRow({
         name: `MOCKFILE-${String(hdFileSeq).padStart(5, "0")}`,
         url,
-        fileName: name,
+        fileName: storedName,
         size: bytes,
         owner,
       });
       uploadedRow.is_private = 0;
-      console.log(`[mock-frappe] HD UPLOAD ${name} (${size}b64)`);
-      ok(response, { name, url, size: bytes });
+      console.log(`[mock-frappe] HD UPLOAD ${storedName} (${size}b64)`);
+      ok(response, { name: storedName, url, size: bytes });
       return;
     }
 

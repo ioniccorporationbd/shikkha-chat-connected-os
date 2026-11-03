@@ -27,7 +27,11 @@ const LOG = process.env.MOCK_LOG ?? "/tmp/mock_frappe.log";
 const PASSWORD = process.env.MOCK_PASSWORD ?? "demo1234";
 const PIC = process.env.PIC ?? "/tmp/hd13_pic.png";
 const PIC_NAME = PIC.split("/").pop();
-const PIC_RE = new RegExp(PIC_NAME.replace(/\./g, "\\."));
+// Desk stores uploads with the upload date and time appended:
+// `pic.png` -> `pic-20261103-154210.png`. Accept both spellings.
+const picBase = PIC_NAME.replace(/\.[^.]+$/, "");
+const picExt = (PIC_NAME.match(/\.[^.]+$/) || [""])[0].replace(/\./g, "\\.");
+const PIC_RE = new RegExp(`${picBase.replace(/\./g, "\\.")}(?:-\\d{8}-\\d{6})?${picExt}`);
 const REFERENCE_TICKET = "0529"; // screenshot reference only — never a target
 
 const results = [];
@@ -108,10 +112,10 @@ try {
 
   await customer.locator("input[type=file]").first().setInputFiles(PIC);
   await sleep(1800);
-  const preview = await customer.evaluate((name) => ({
+  const preview = await customer.evaluate((pattern) => ({
     thumbs: [...document.querySelectorAll("img")].filter((img) => /blob:|data:image/.test(img.src) && img.getBoundingClientRect().width > 25).length,
-    named: new RegExp(name.replace(/\./g, "\\.")).test(document.body.innerText),
-  }), PIC_NAME);
+    named: new RegExp(pattern).test(document.body.innerText),
+  }), PIC_RE.source);
   check("customer sees a thumbnail before submitting", preview.thumbs >= 1 && preview.named, JSON.stringify(preview));
 
   const before = fs.readFileSync(LOG, "utf8").length;
@@ -119,7 +123,7 @@ try {
   await sleep(8000);
   const submitLog = fs.readFileSync(LOG, "utf8").slice(before);
   const createdId = (submitLog.match(/HD TICKET (HD-\d{4}-\d{5})/) || [])[1] ?? null;
-  check("upload hit the ERP", new RegExp(`HD UPLOAD ${PIC_NAME.replace(/\./g, "\\.")}`).test(submitLog));
+  check("upload hit the ERP", new RegExp(`HD UPLOAD ${PIC_RE.source}`).test(submitLog));
   check("ticket created carrying the file", /files=1/.test(submitLog) && Boolean(createdId), createdId ?? "no id");
 
   const successText = await customer.evaluate(() => document.body.innerText.replace(/\n+/g, " | "));
@@ -145,8 +149,8 @@ try {
   if (createdId) {
     await customer.goto(`${BASE}/clientDashboard/help-desk/tickets/${createdId}`, { waitUntil: "domcontentloaded", timeout: 120000 });
     await sleep(4500);
-    const detail = await customer.evaluate((name) => {
-      const pattern = new RegExp(name.replace(/\./g, "\\."));
+    const detail = await customer.evaluate((pattern) => {
+      const named = new RegExp(pattern);
       // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
       const isAttach = (src) =>
         /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
@@ -158,9 +162,9 @@ try {
         images: [...document.querySelectorAll("img")]
           .map((img) => img.getAttribute("src") || "")
           .filter(isAttach),
-        chips: [...document.querySelectorAll("a,button")].filter((el) => pattern.test(el.textContent || "")).length,
+        chips: [...document.querySelectorAll("a,button")].filter((el) => named.test(el.textContent || "")).length,
       };
-    }, PIC_NAME);
+    }, PIC_RE.source);
     check("customer detail page shows the attached image", detail.images.length >= 1 || detail.chips >= 1, JSON.stringify(detail).slice(0, 200));
     if (detail.images[0]) {
       const response = await customer.request.get(detail.images[0].startsWith("http") ? detail.images[0] : BASE + detail.images[0]);
@@ -176,7 +180,7 @@ try {
 
   await agent.goto(`${BASE}/userDashboard/help-desk/tickets/${createdId}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await sleep(5000);
-  const agentView = await agent.evaluate((name) => {
+  const agentView = await agent.evaluate((pattern) => {
       // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
       const isAttach = (src) =>
         /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
@@ -185,10 +189,10 @@ try {
       .map((img) => ({ src: img.getAttribute("src"), w: Math.round(img.getBoundingClientRect().width), h: Math.round(img.getBoundingClientRect().height) }));
     return {
       images,
-      named: new RegExp(name.replace(/\./g, "\\.")).test(document.body.innerText),
+      named: new RegExp(pattern).test(document.body.innerText),
       ticketShown: /HD-\d{4}-\d{5}/.test(document.body.innerText),
     };
-  }, PIC_NAME);
+  }, PIC_RE.source);
   check("agent opens the created ticket", agentView.ticketShown, JSON.stringify({ ticketShown: agentView.ticketShown }));
   check("agent sees the attachment itself, not just a filename", agentView.images.length >= 1, JSON.stringify(agentView.images).slice(0, 240));
 

@@ -39,6 +39,8 @@ const PNG_1PX = Buffer.from(
   "base64"
 ).toString("base64");
 const FILE_NAME = `storage-check-${ROLE}.png`;
+// Stored Desk names carry the upload date and time: base-YYYYMMDD-HHMMSS.ext
+const STAMP_RE = /^(.+)-(\d{8}-\d{6})(\.[A-Za-z0-9]+)?$/;
 const SUBJECT = `স্টোরেজ চেক ${Date.now()}`;
 
 let passed = 0;
@@ -91,6 +93,7 @@ try {
   const payload = await uploaded.json().catch(() => ({}));
   const data = payload?.data ?? payload;
   const fileUrl = String(data?.url ?? "");
+  const storedName = String(data?.name ?? "");
   check("upload is accepted", uploaded.status() === 200, `status ${uploaded.status()} ${JSON.stringify(payload).slice(0, 160)}`);
   check(
     "the upload URL is public (/files/…), not /private/files/…",
@@ -98,13 +101,45 @@ try {
     fileUrl
   );
 
+  // 1b. The Desk File row is named with the upload's date and time.
+  const stamp = STAMP_RE.exec(storedName);
+  check(
+    "the stored file name carries the upload date and time",
+    Boolean(stamp) && stamp[1] === FILE_NAME.replace(/\.png$/, "") && stamp[3] === ".png",
+    storedName
+  );
+  check(
+    "the public URL keeps the same name",
+    fileUrl.endsWith("/" + storedName) || fileUrl.endsWith(storedName),
+    `${fileUrl} vs ${storedName}`
+  );
+
   // 2. The Desk row itself: is_private must be 0.
   const filesResponse = await page.request.get(`${MOCK_BASE}/__mock/files`);
   const rows = (await filesResponse.json()).files ?? [];
   const row = rows.find((item) => item.file_url === fileUrl);
   check("the File row exists", Boolean(row), `no row for ${fileUrl}`);
+  check("the File row stores the stamped name", row?.file_name === storedName, `${row?.file_name} vs ${storedName}`);
   check("the File row stores is_private 0 (box unchecked)", row?.is_private === 0, `is_private ${row?.is_private}`);
   check("the File row is owned by the uploader", row?.owner === EMAIL.toLowerCase(), row?.owner);
+
+  // 2b. A retried submit re-sends the same bytes: same row, no duplicate.
+  const retried = await page.request.post(`${BASE}/api/help-desk/upload`, {
+    data: { file_name: FILE_NAME, content: PNG_1PX, language: "bn" },
+  });
+  const retriedRaw = await retried.json().catch(() => ({}));
+  const retriedData = retriedRaw?.data ?? retriedRaw;
+  check(
+    "a retried upload reuses the same stamped File row",
+    retriedData?.url === fileUrl && retriedData?.name === storedName,
+    JSON.stringify(retriedData).slice(0, 160)
+  );
+  const rowsAfterRetry = (await (await page.request.get(`${MOCK_BASE}/__mock/files`)).json()).files ?? [];
+  check(
+    "no duplicate File row is written on retry",
+    rowsAfterRetry.filter((item) => item.file_url === fileUrl).length === 1,
+    `count ${rowsAfterRetry.filter((item) => item.file_url === fileUrl).length}`
+  );
 
   // 3. Public means publicly readable — no session, no proxy.
   const direct = await page.request.get(`${MOCK_BASE}${fileUrl}`);
@@ -137,7 +172,7 @@ try {
         priority: "medium",
         department: "Support",
         contact: { preferredContact: "email", mobile: "" },
-        attachments: [{ name: FILE_NAME, url: fileUrl, size: PNG_1PX.length }],
+        attachments: [{ name: storedName, url: fileUrl, size: PNG_1PX.length }],
         language: "bn",
       },
     });
@@ -167,16 +202,16 @@ try {
           const node = document.querySelector(`[data-hd="thread"] img[alt="${fileName}"]`);
           return node instanceof HTMLImageElement && node.complete && node.naturalWidth > 0;
         },
-        FILE_NAME,
+        storedName,
         { timeout: 60000 }
       );
       const painted = await page
-        .locator(`[data-hd="thread"] img[alt="${FILE_NAME}"]`)
+        .locator(`[data-hd="thread"] img[alt="${storedName}"]`)
         .first()
         .evaluate((node) => ({ w: node.naturalWidth, h: node.naturalHeight }));
       check("the attached picture paints in the thread", painted.w > 0, `${painted.w}x${painted.h}`);
 
-      const inActivity = await page.locator(`[data-hd="activity"] img[alt="${FILE_NAME}"]`).count();
+      const inActivity = await page.locator(`[data-hd="activity"] img[alt="${storedName}"]`).count();
       check("the Activity list shows the attachable picture", inActivity > 0, `count ${inActivity}`);
     }
   }
