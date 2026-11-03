@@ -1563,6 +1563,7 @@ function hdFileRow({ name, url, fileName, size, owner }) {
     owner,
     attached_to_doctype: "",
     attached_to_name: "",
+    is_private: 0,
   };
   hdFileList.push(row);
   hdFilesByUrl.set(url, row);
@@ -3721,9 +3722,18 @@ const server = createServer(async (request, response) => {
       }
 
       hdFileSeq += 1;
-      const url = `/private/files/mock-hd-${hdFileSeq}-${name}`;
+      // `_store_upload` on the ERP writes a *public* row (`is_private` 0), which
+      // is what the Desk shows as an unchecked box and a `/files/...` URL.
+      const url = `/files/mock-hd-${hdFileSeq}-${name}`;
       hdFileBytes.set(url, Buffer.from(String(body?.content ?? ""), "base64"));
-      hdFileRow({ name: `MOCKFILE-${String(hdFileSeq).padStart(5, "0")}`, url, fileName: name, size: bytes, owner });
+      const uploadedRow = hdFileRow({
+        name: `MOCKFILE-${String(hdFileSeq).padStart(5, "0")}`,
+        url,
+        fileName: name,
+        size: bytes,
+        owner,
+      });
+      uploadedRow.is_private = 0;
       console.log(`[mock-frappe] HD UPLOAD ${name} (${size}b64)`);
       ok(response, { name, url, size: bytes });
       return;

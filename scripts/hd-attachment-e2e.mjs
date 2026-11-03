@@ -147,8 +147,17 @@ try {
     await sleep(4500);
     const detail = await customer.evaluate((name) => {
       const pattern = new RegExp(name.replace(/\./g, "\\."));
+      // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
+      const isAttach = (src) =>
+        /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
+
       return {
-        images: [...document.querySelectorAll("img")].map((img) => img.getAttribute("src") || "").filter((src) => /files?[=/]|private/.test(src)),
+        // Uploads made from the portal are public now, so the src is
+        // `/api/help-desk/files?url=%2Ffiles%2F…`; match the proxy and both
+        // storage spellings rather than one literal path shape.
+        images: [...document.querySelectorAll("img")]
+          .map((img) => img.getAttribute("src") || "")
+          .filter(isAttach),
         chips: [...document.querySelectorAll("a,button")].filter((el) => pattern.test(el.textContent || "")).length,
       };
     }, PIC_NAME);
@@ -168,8 +177,11 @@ try {
   await agent.goto(`${BASE}/userDashboard/help-desk/tickets/${createdId}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await sleep(5000);
   const agentView = await agent.evaluate((name) => {
+      // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
+      const isAttach = (src) =>
+        /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
     const images = [...document.querySelectorAll("img")]
-      .filter((img) => /files?[=/]|private/.test(img.getAttribute("src") || ""))
+      .filter((img) => isAttach(img.getAttribute("src") || ""))
       .map((img) => ({ src: img.getAttribute("src"), w: Math.round(img.getBoundingClientRect().width), h: Math.round(img.getBoundingClientRect().height) }));
     return {
       images,
@@ -182,14 +194,20 @@ try {
 
   if (agentView.images.length >= 1) {
     const loaded = await agent.evaluate(() => {
-      const img = [...document.querySelectorAll("img")].find((el) => /files?[=/]|private/.test(el.getAttribute("src") || ""));
+      // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
+      const isAttach = (src) =>
+        /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
+      const img = [...document.querySelectorAll("img")].find((el) => isAttach(el.getAttribute("src") || ""));
       return img ? { complete: img.complete, w: img.naturalWidth, h: img.naturalHeight } : null;
     });
     check("agent image actually decodes", Boolean(loaded && loaded.complete && loaded.w > 0 && loaded.h > 0), JSON.stringify(loaded));
 
     // Open it full-size the way the agent would.
     await agent.evaluate(() => {
-      const img = [...document.querySelectorAll("img")].find((el) => /files?[=/]|private/.test(el.getAttribute("src") || ""));
+      // An attachment image, not the profile avatar (whose src also carries %2Ffiles%2F).
+      const isAttach = (src) =>
+        /help-desk\/files|%2Ffiles%2F|files?[=/]|private/.test(src) && !src.includes("/api/auth/avatar");
+      const img = [...document.querySelectorAll("img")].find((el) => isAttach(el.getAttribute("src") || ""));
       (img?.closest("button") || img)?.click();
     });
     await sleep(1500);

@@ -13,10 +13,13 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
  * Attachment upload proxy.
  *
  * The browser posts `{ file_name, content }` (base64) here; this route forwards
- * it to the whitelisted ERP method, which writes a real private `File` owned by
- * the signed-in user. The file is attached to a ticket later, server-side, by
- * the create/reply call — the client can neither choose a folder nor re-attach
- * somebody else's file.
+ * it to the whitelisted ERP method, which writes a real `File` owned by the
+ * signed-in user — stored **publicly** (`is_private` 0), so the Desk row for a
+ * customer's or employee's attachment shows the box unchecked and a `/files/...`
+ * URL. Access is still gated: the portal only ever streams a file through the
+ * ticket-checked `/api/help-desk/files` route. The file is attached to a ticket
+ * later, server-side, by the create/reply call — the client can neither choose a
+ * folder nor re-attach somebody else's file.
  */
 export async function POST(request: Request) {
   const sid = readCookie(request, SESSION_COOKIE);
