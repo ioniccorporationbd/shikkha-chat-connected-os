@@ -94,12 +94,19 @@ async function bubbles(page, names = []) {
         }
       }
       const rect = bubble.getBoundingClientRect();
-      const text = node.innerText.replace(/\s+/g, " ").trim();
+      // The row can carry an author label and a quoted line of the message it
+      // answers, so the row's innerText is not this message's own words — read
+      // the bubble paragraph itself.
+      const paras = [...node.querySelectorAll("p")]
+        .map((p) => (p.textContent || "").replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+      const text = (paras[0] || node.innerText).replace(/\s+/g, " ").trim();
       const stamp = [...node.querySelectorAll("span")].map((s) => s.innerText.trim()).filter(Boolean);
       return {
         index,
         id: node.id,
         text: text.slice(0, 60),
+        paras: paras.map((line) => line.slice(0, 80)),
         // A name stamp is any of the labels this role would see: "আপনি" for its
         // own lines, the other party's name for theirs.
         showsName: stamp.some((label) => names.includes(label)),
@@ -166,18 +173,28 @@ const run = async (label, usr, dashboard, shot, names) => {
       if (!ok) failures.push(`${who}: bubble ${row.index} not on ${side} (left=${row.leftGap} right=${row.rightGap}) :: ${row.text}`);
     }
   };
-  const isSupportRow = (row) => row.text.includes("আসসালামু") || row.text.includes("রেজিস্টার্ড ইমেইল");
-  const isCustomerRow = (row) => row.text.includes("আমার ইমেইল");
+  // Match the seeded sentences themselves. A quote row repeats the sentence it
+  // answers, so a loose `includes` would also catch the customer's own line.
+  const says = (row, sentence) => (row.paras?.length ? row.paras : [row.text]).some((line) => line.startsWith(sentence));
+  const isSupportRow = (row) =>
+    says(row, "আসসালামু আলাইকুম, আপনার সমস্যাটি") ||
+    says(row, "অনুগ্রহ করে আপনার রেজিস্টার্ড ইমেইলটি নিশ্চিত করুন।");
+  const isCustomerRow = (row) => says(row, "আমার ইমেইল client@example.com");
 
   expect("customer", customer, isSupportRow, "left");
   expect("customer", customer, isCustomerRow, "right");
   expect("staff", staff, isSupportRow, "right");
   expect("staff", staff, isCustomerRow, "left");
 
-  // The second staff line arrives a minute after the first: same run, no stamp.
-  const first = staff.filter(isSupportRow);
-  const collapsed = first.slice(1).every((row) => !row.showsName);
-  if (!collapsed) failures.push("staff: a same-run reply still prints its sender name");
+  // Within one run of consecutive same-author rows the name is printed once, on
+  // the first row. A row that follows a DIFFERENT author opens a new run and may
+  // print the name again, so only adjacent same-author pairs are checked.
+  const repeated = staff.filter(
+    (row, index) => index > 0 && isSupportRow(row) && isSupportRow(staff[index - 1]) && row.showsName
+  );
+  if (repeated.length) {
+    failures.push(`staff: a same-run reply still prints its sender name (rows ${repeated.map((row) => row.index).join(",")})`);
+  }
 
   console.log(`\nRESULT ${failures.length === 0 ? "PASS" : "FAIL"}`);
   for (const line of failures) console.log(" - " + line);

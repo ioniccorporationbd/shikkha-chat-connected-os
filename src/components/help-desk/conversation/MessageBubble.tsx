@@ -311,10 +311,13 @@ export default function MessageBubble({
                 if (image && href) {
                   return (
                     <li key={key}>
-                      {/* The picture is the link: one tap opens the file itself in
-                          a new tab, and the caption row underneath carries the
-                          file name. A plain button (the old lightbox-only
-                          behaviour) read as a dead image on the customer's side. */}
+                      {/* One card, not two blocks: the picture and its file name
+                          are ONE attachment, so the caption rides inside the same
+                          rounded frame under the image. It used to sit below the
+                          frame as a loose row, which read like a second file and
+                          left the picture "dangling" above its own name. The
+                          image opens the lightbox; the caption opens the file. */}
+                      <div className="w-[min(28rem,100%)] max-w-full overflow-hidden rounded-xl border border-black/5 bg-white/70">
                       <a
                         href={href}
                         target="_blank"
@@ -323,7 +326,7 @@ export default function MessageBubble({
                           event.preventDefault();
                           setLightbox({ src: href, alt: file.fileName || copy.imageOpen });
                         }}
-                        className="block w-[min(28rem,100%)] max-w-full overflow-hidden rounded-lg border border-black/5 bg-white/70 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                        className="block transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                         aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
                         title={`${copy.imageOpen}: ${file.fileName || ""}`}
                       >
@@ -448,12 +451,19 @@ export default function MessageBubble({
                           href={href}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-1 flex max-w-full items-center gap-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))] underline-offset-2 hover:underline"
+                          title={file.fileName}
+                          className="flex max-w-full items-center gap-1.5 border-t border-black/[0.07] bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] px-2.5 py-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))] underline-offset-2 hover:underline"
                         >
-                          <FiFileText size={11} className="flex-none" aria-hidden />
+                          <FiImage size={11} className="flex-none" aria-hidden />
                           <span className="min-w-0 truncate">{file.fileName}</span>
+                          {file.size > 0 ? (
+                            <span className="ml-auto flex-none pl-2 text-[10px] font-medium text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
+                              {formatFileSize(file.size)}
+                            </span>
+                          ) : null}
                         </a>
                       ) : null}
+                      </div>
                     </li>
                   );
                 }

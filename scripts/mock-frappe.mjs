@@ -4115,7 +4115,20 @@ const server = createServer(async (request, response) => {
         const data = hdData;
         const wanted = String(data.name ?? "").trim();
         const text = String(data.message ?? "").trim();
-        const row = hdTicketList.find((item) => item.ticket.id === wanted && hdCanRead(item));
+        // A ticket raised through the UI lives in `hdTicketList`; the seeded
+        // fixtures (0616, 0623, ...) live in `hdThreads`, so a reply to one of
+        // those has to resolve there too — same visitor rule: staff, or the
+        // customer the thread belongs to.
+        const seeded = (() => {
+          const thread = hdThreads.get(wanted);
+          if (!thread) return null;
+          const ownerEmail = String(thread.customerEmail || "").toLowerCase();
+          const mayReply = account.kind === "staff" || ownerEmail === String(email || "").toLowerCase();
+          if (!mayReply) return null;
+          return { ownerKey: ownerEmail, support: account.kind === "staff", ticket: thread };
+        })();
+        const row =
+          hdTicketList.find((item) => item.ticket.id === wanted && hdCanRead(item)) ?? seeded;
         if (!row) {
           failure(response, 404, "DoesNotExistError", "Ticket not found.", "Help Desk");
           return;

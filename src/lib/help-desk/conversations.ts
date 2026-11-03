@@ -182,8 +182,36 @@ export function orderConversation<T extends { createdAt?: string | null; id?: st
  */
 const DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 
+/**
+ * How close two same-channel rows must be to count as one retried send (a
+ * double click on "send", or a browser retry after its own timeout).
+ */
+const RETRY_WINDOW_MS = 25 * 1000;
+
+/**
+ * What the reader actually reads, as a fold key.
+ *
+ * The two channels store the same words differently: a Comment often carries
+ * HTML (`<div>hi</div>`, `&nbsp;`) while the Communication twin is plain text.
+ * Comparing the raw strings therefore failed to see them as one message and the
+ * chat drew the same sentence twice. Strip the markup and the common entities
+ * first, then collapse whitespace and case, so the fold compares text, not
+ * serialisation.
+ */
 function bodyKey(body: unknown): string {
-  return String(body ?? "").split(/\s+/).filter(Boolean).join(" ").toLowerCase();
+  return String(body ?? "")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;/g, "'")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
 }
 
 function attachmentMark(file: unknown): string {
@@ -229,7 +257,17 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
   const kept: T[] = [];
   const dropped = new Set<string>();
   const twins = new Map<string, T[]>();
+  // The very same row arriving twice (a page merged over itself, a delta read
+  // overlapping the page) must not draw twice, whatever its text says.
+  const seenIds = new Set<string>();
   for (const message of messages) {
+    if (message.id) {
+      if (seenIds.has(message.id)) {
+        dropped.add(message.id);
+        continue;
+      }
+      seenIds.add(message.id);
+    }
     const body = bodyKey(message.body);
     const files = fileKey(message.attachments);
     if (!body && !files) {
@@ -243,10 +281,17 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
     twins.set(key, candidates);
     const at = stamp(message.createdAt);
     const twin = candidates.find((prior) => {
-      if ((prior.channel ?? "") === (message.channel ?? "")) return false;
       const priorAt = stamp(prior.createdAt);
       if (priorAt === null || at === null) return false;
-      return Math.abs(priorAt - at) <= DUPLICATE_WINDOW_MS;
+      const gap = Math.abs(priorAt - at);
+      // Different channels: the classic Comment + Communication twin.
+      if ((prior.channel ?? "") !== (message.channel ?? "")) return gap <= DUPLICATE_WINDOW_MS;
+      // Same channel: only a resend of the same upload, or a retry of a real
+      // sentence, inside a few seconds — a person does not type the same line
+      // twice that fast, but a failed send retried from the UI does.
+      if (gap > RETRY_WINDOW_MS) return false;
+      if (files) return fileKey(prior.attachments) === files;
+      return body.length >= 12;
     });
     if (!twin) {
       candidates.push(message);

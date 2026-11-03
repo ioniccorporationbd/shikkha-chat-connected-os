@@ -121,9 +121,31 @@ export function formatTime(iso: string | undefined, language: string): string {
   }
 }
 
-/** Time shown inside a chat bubble footer, e.g. `08:10 PM`. */
+/**
+ * Time shown inside a chat bubble footer, e.g. `08:10:42 PM`.
+ *
+ * The chat reads messages sent seconds apart, so the stamp carries the second:
+ * a customer watching their own message appear can tell which line was theirs
+ * and which came from support a moment later. Still Asia/Dhaka, still the ERP
+ * timestamp — only the precision changed.
+ */
 export function formatBubbleTime(iso: string, language: string): string {
-  return formatTime(iso, language);
+  if (!iso) return "";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    // Fallback: the ERP stamp is ISO, so 11..19 is the Dhaka wall clock.
+    return date.toISOString().slice(11, 19);
+  }
 }
 
 /** Day the timestamp belongs to in Asia/Dhaka, as `YYYY-MM-DD`. */
