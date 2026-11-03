@@ -62,6 +62,10 @@ export interface HelpDeskCopy {
   fieldRelatedRoute: string;
   fieldPreferredContact: string;
   fieldDepartment: string;
+  /** Why the name and email fields are shown but cannot be typed into. */
+  profileLockedHint: string;
+  /** Why the mobile field drops every character that is not a digit. */
+  mobileNumericHint: string;
   phName: string;
   phEmail: string;
   phMobile: string;
@@ -402,6 +406,8 @@ const bn: HelpDeskCopy = {
   fieldRelatedRoute: "যে পেজে সমস্যা হয়েছে",
   fieldPreferredContact: "যোগাযোগের পছন্দের মাধ্যম",
   fieldDepartment: "বিভাগ",
+  profileLockedHint: "এই তথ্য আপনার প্রোফাইল থেকে নেওয়া — এখানে বদলানো যাবে না",
+  mobileNumericHint: "শুধু সংখ্যা — যেমন 01XXXXXXXXX",
   phName: "যেমন: আপনার পূর্ণ নাম",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",
@@ -735,6 +741,8 @@ const en: HelpDeskCopy = {
   fieldRelatedRoute: "Page where it happened",
   fieldPreferredContact: "Preferred contact method",
   fieldDepartment: "Department",
+  profileLockedHint: "Taken from your profile — it cannot be changed here",
+  mobileNumericHint: "Digits only — e.g. 01XXXXXXXXX",
   phName: "e.g. your full name",
   phEmail: "you@example.com",
   phMobile: "01XXXXXXXXX",

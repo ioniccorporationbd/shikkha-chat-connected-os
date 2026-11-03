@@ -28,7 +28,7 @@ import {
 } from "react-icons/fi";
 
 import { useAuthStore } from "@/lib/auth/store";
-import { HD_CARD, HD_INPUT, PRIORITY_TONE } from "@/lib/help-desk/config";
+import { HD_CARD, HD_INPUT, HD_INPUT_LOCKED, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { formatFileSize } from "@/lib/help-desk/format";
 import { uid } from "@/lib/help-desk/ids";
 import { MIN_DESCRIPTION_LENGTH, type HelpDeskCopy } from "@/lib/help-desk/messages";
@@ -113,6 +113,15 @@ export default function CreateTicketForm({
   const links = helpDeskLinks(basePath);
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
+
+  // What the signed-in profile already knows. Name and email are the profile's
+  // own values, so they are shown read-only — but only when the profile actually
+  // supplied one; if it did not, the field stays editable so a slow or missing
+  // session never leaves the customer unable to open a ticket.
+  const profileName = initialContact?.name || user?.full_name || user?.name || "";
+  const profileEmail = initialContact?.email || user?.email || "";
+  const nameLocked = Boolean(profileName);
+  const emailLocked = Boolean(profileEmail);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -474,7 +483,25 @@ export default function CreateTicketForm({
 
         {/* Step 1 — Contact details (multi-channel, open on a fresh form) */}
         <StepCard step={1} title={copy.contactStepTitle} hint={copy.contactStepHint} open done={contactOk}>
-          <div>
+          {/* Name first — and it is the signed-in profile, so it is shown, never
+              asked for. The email field below keeps the same contract. */}
+          <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
+            <input
+              id="hd-name"
+              type="text"
+              value={name}
+              readOnly={nameLocked}
+              aria-readonly={nameLocked}
+              title={nameLocked ? copy.profileLockedHint : undefined}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={copy.phName}
+              className={nameLocked ? HD_INPUT_LOCKED : HD_INPUT}
+              autoComplete="name"
+            />
+          </Field>
+
+          {/* The channel they want the answer on sits directly beneath the name. */}
+          <div className="mt-4">
             <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
             <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
               {copy.preferredContactHint}
@@ -537,36 +564,37 @@ export default function CreateTicketForm({
             ) : null}
           </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
-              <input
-                id="hd-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={copy.phName}
-                className={HD_INPUT}
-                autoComplete="name"
-              />
-            </Field>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field label={copy.fieldEmail} error={errors.email} htmlFor="hd-email">
               <input
                 id="hd-email"
                 type="email"
                 value={email}
+                readOnly={emailLocked}
+                aria-readonly={emailLocked}
+                title={emailLocked ? copy.profileLockedHint : undefined}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={copy.phEmail}
-                className={HD_INPUT}
+                className={emailLocked ? HD_INPUT_LOCKED : HD_INPUT}
                 autoComplete="email"
               />
             </Field>
+            {/* Mobile is the one contact value the customer owns here: digits only,
+                so a pasted "01-234 567890" still lands as a clean 11-digit number. */}
             <Field label={copy.fieldMobile} error={errors.mobile} htmlFor="hd-mobile">
               <input
                 id="hd-mobile"
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={15}
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => {
+                  setMobile(e.target.value.replace(/\D/g, ""));
+                  setErrors((current) => ({ ...current, mobile: undefined }));
+                }}
                 placeholder={copy.phMobile}
+                title={copy.mobileNumericHint}
                 className={HD_INPUT}
                 autoComplete="tel"
               />

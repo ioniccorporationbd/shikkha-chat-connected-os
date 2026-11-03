@@ -118,3 +118,11 @@ export const HD_GHOST_BTN =
 /** Shared text input / textarea / select surface. */
 export const HD_INPUT =
   "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-4 py-3 text-[15px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)]";
+
+/**
+ * The same field, for a value the reader may not change (the signed-in profile):
+ * quieter fill, no focus ring, and a cursor that says so. Kept as one constant so
+ * every locked field on the desk looks identical instead of being restyled locally.
+ */
+export const HD_INPUT_LOCKED =
+  "w-full cursor-not-allowed rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-4 py-3 text-[15px] font-medium text-[color-mix(in_srgb,var(--color-primary)_78%,var(--color-white))] outline-none transition select-text";

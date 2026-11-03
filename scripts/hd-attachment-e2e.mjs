@@ -90,8 +90,9 @@ try {
     await sleep(1000);
   };
 
-  await customer.fill("#hd-name", "Nusrat Jahan");
-  await customer.fill("#hd-email", "nusrat@example.com");
+  // The name and email are the signed-in profile now (read-only), so only the
+  // mobile is typed; the rest is asserted as prefilled.
+  await customer.waitForFunction(() => document.getElementById("hd-name")?.value.length > 0, null, { timeout: 30000 });
   await customer.fill("#hd-mobile", "01712345678");
   await sleep(600);
   await customer.locator("[role=checkbox]").first().click();
