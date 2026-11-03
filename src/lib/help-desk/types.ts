@@ -375,6 +375,13 @@ export interface ConversationListPayload {
 /** One row of the detail page's audit trail (`get_conversation().timeline`). */
 export type ConversationTimelineType = "created" | "message" | "requirement" | "resolution" | "status";
 
+/** A file carried by one Activity entry — the same triple the chat bubble renders. */
+export interface ConversationTimelineFile {
+  url: string;
+  fileName: string;
+  fileType: string;
+}
+
 export interface ConversationTimelineEvent {
   /** Communication name, `created`, or a synthetic `status:<at>` id. */
   id: string;
@@ -386,7 +393,14 @@ export interface ConversationTimelineEvent {
   /** Raw ERP status names — only on `type: "status"` events. */
   from?: string;
   to?: string;
+  /** How many files the entry carries (older ERP payloads only send this). */
   attachments: number;
+  /**
+   * The files themselves, so the Activity row can show the picture and open it
+   * the way the desk does. Present since the 0668 fix; `attachments` remains the
+   * count for payloads that predate it.
+   */
+  files?: ConversationTimelineFile[];
 }
 
 export interface ConversationPayload {

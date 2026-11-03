@@ -1783,6 +1783,13 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
       authorName: message.author === "support" ? message.authorName : "",
       text: message.body,
       attachments: (message.attachments ?? []).length,
+      // Mirrors the ERP's `_timeline`: the files themselves, so the Activity list
+      // can show and open the picture (0668), not just count it.
+      files: (message.attachments ?? []).map((attachment) => ({
+        url: attachment.url,
+        fileName: attachment.name ?? "",
+        fileType: attachment.mime ?? "",
+      })),
     });
   }
 
@@ -2689,6 +2696,110 @@ hdAppend(HD_0663, "support", "", {
   ],
 });
 
+// 0668 — the live shape behind "upload the image issue": the customer's own
+// screenshot paints, the employee's reply screenshot is on a row whose *direct*
+// URL answers 200 with a page (the desk login), which is exactly what an <img>
+// reports as "the bytes did not decode as an image". Only the ticket-scoped
+// streamer can hand the real bytes over, so this fixture is the standing proof
+// that the portal sniffs, refuses the page and falls back instead of painting
+// garbage. Its Activity list also carries both files, so the trail can show and
+// open them like the desk does.
+const HD_0668 = "0668";
+const HD_0668_USER_URL = "/private/files/Screenshot-_21_9f8e7d.png";
+const HD_0668_STAFF_URL = "/private/files/Screenshot-_22_5c4b3a.png";
+const HD_0668_GARBAGE_URL = "/private/files/hd-0668-not-a-picture.png";
+hdThreads.set(HD_0668, {
+  name: HD_0668,
+  subject: "ছবি আপলোড সমস্যা",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: "Tajul Islam",
+  customerEmail: "client@example.com",
+  agent: HD_0658_AGENT,
+  submittedAt: "2026-11-03T09:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [],
+});
+
+// The customer's own upload: readable directly.
+const hd0668UserImage = hdFileRow({
+  name: "MOCKFILE-06681",
+  url: HD_0668_USER_URL,
+  fileName: "Screenshot-_21_9f8e7d.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0668UserImage.attached_to_doctype = "Comment";
+hd0668UserImage.attached_to_name = "MOCKCOMMENT-06681";
+hd0668UserImage.is_private = 1;
+hdFileBytes.set(HD_0668_USER_URL, HD_0658_IMAGE_BYTES);
+hd0668UserImage.file_size = HD_0658_IMAGE_BYTES.length;
+
+// The employee's reply upload: agent-side, and its stored URL answers a *page*
+// with status 200. `stream_file` serves the real bytes (the live row has no
+// attach target and is reached through the ticket that mentions it).
+const hd0668StaffImage = hdFileRow({
+  name: "MOCKFILE-06682",
+  url: HD_0668_STAFF_URL,
+  fileName: "Screenshot-_22_5c4b3a.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0668StaffImage.attached_to_doctype = "";
+hd0668StaffImage.attached_to_name = "";
+hd0668StaffImage.is_private = 1;
+hd0668StaffImage.agent_only = true;
+hd0668StaffImage.decoy_html = true;
+hd0668StaffImage.ticket_scoped = HD_0668;
+hdFileBytes.set(HD_0668_STAFF_URL, HD_0658_IMAGE_BYTES);
+hd0668StaffImage.file_size = HD_0658_IMAGE_BYTES.length;
+
+// A row neither path can serve as a picture (both answer a page). Referenced by
+// no message: the 0668 harness requests it directly to prove the proxy answers a
+// typed error instead of streaming garbage.
+const hd0668Garbage = hdFileRow({
+  name: "MOCKFILE-06683",
+  url: HD_0668_GARBAGE_URL,
+  fileName: "hd-0668-not-a-picture.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0668Garbage.is_private = 1;
+hd0668Garbage.agent_only = true;
+hd0668Garbage.decoy_html = true;
+hd0668Garbage.only_garbage = true;
+
+hdAppend(HD_0668, "user", "আমার স্ক্রিনশট দেখুন", {
+  at: "2026-11-03T09:00:00.000Z",
+  authorName: "Tajul Islam",
+  attachments: [
+    {
+      id: hd0668UserImage.name,
+      name: "Screenshot-_21_9f8e7d.png",
+      size: hd0668UserImage.file_size,
+      mime: "image/png",
+      url: HD_0668_USER_URL,
+    },
+  ],
+});
+hdAppend(HD_0668, "support", "সমাধানটির স্ক্রিনশট দিন", {
+  at: "2026-11-03T09:10:00.000Z",
+  authorName: HD_0658_AGENT,
+  attachments: [
+    {
+      id: hd0668StaffImage.name,
+      name: "Screenshot-_22_5c4b3a.png",
+      size: hd0668StaffImage.file_size,
+      mime: "image/png",
+      url: HD_0668_STAFF_URL,
+    },
+  ],
+});
+
 // Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
 // this between runs so repeated pushes cannot pile up duplicate rows in one
 // long-lived mock process.
@@ -2734,6 +2845,14 @@ const server = createServer(async (request, response) => {
       failure(response, 404, "DoesNotExistError", "File not found.", "Help Desk");
       return;
     }
+    // A 200 that is not the file: the withdrawn-session/desk-page shape behind
+    // "the bytes did not decode as an image". The portal must sniff, refuse it and
+    // fall through to the ticket streamer (0668).
+    if (fileRow && fileRow.decoy_html) {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      response.end("<!doctype html><html><body><h1>Login</h1></body></html>");
+      return;
+    }
     if (fileRow && fileRow.agent_only) {
       failure(response, 403, "PermissionError", "You are not permitted to access this file.", "Help Desk");
       return;
@@ -2770,6 +2889,12 @@ const server = createServer(async (request, response) => {
     const known = Boolean(row);
     if (!known || !(fileUrl.startsWith("/files/") || fileUrl.startsWith("/private/files/"))) {
       failure(response, 404, "DoesNotExistError", "Unknown file.", "Help Desk");
+      return;
+    }
+    if (row.only_garbage) {
+      // Both paths answer a page: the portal must say so instead of streaming it.
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      response.end("<!doctype html><html><body><h1>Login</h1></body></html>");
       return;
     }
     if (row.unreadable) {

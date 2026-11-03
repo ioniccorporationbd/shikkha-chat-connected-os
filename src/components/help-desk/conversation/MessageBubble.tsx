@@ -5,6 +5,7 @@ import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
 import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
+import { isAudioAttachment, isImageAttachment } from "@/lib/help-desk/attachments";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
@@ -13,11 +14,10 @@ import { reportClientError } from "@/lib/log/report-error";
 import ImageLightbox from "./ImageLightbox";
 import MessageActionMenu from "./MessageActionMenu";
 
-const IMAGE_EXT = /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i;
-const AUDIO_EXT = /\.(webm|mp3|m4a|wav|ogg|oga|aac|mp4)$/i;
-
-const isImageFile = (mime: string, name: string) => (mime || "").startsWith("image/") || IMAGE_EXT.test(name || "");
-const isAudioFile = (mime: string, name: string) => (mime || "").startsWith("audio/") || AUDIO_EXT.test(name || "");
+// Shared with the Activity list: one rule for "is this a picture?" across the
+// chat bubble and the audit trail.
+const isImageFile = isImageAttachment;
+const isAudioFile = isAudioAttachment;
 
 /**
  * Copy plain text, with the old `execCommand` fallback for browsers that deny

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   FiCheckCircle,
   FiClock,
@@ -11,9 +11,13 @@ import {
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 
+import { isImageAttachment } from "@/lib/help-desk/attachments";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
 import { formatDateTime } from "@/lib/help-desk/format";
+import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationTimelineEvent, ConversationTimelineType } from "@/lib/help-desk/types";
+
+import ImageLightbox from "./ImageLightbox";
 
 const TYPE_STYLE: Record<
   ConversationTimelineType,
@@ -70,6 +74,8 @@ export interface ConversationTimelineProps {
  */
 export default function ConversationTimeline({ events, language, isSupport = false }: ConversationTimelineProps) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [broken, setBroken] = useState<Record<string, boolean>>({});
 
   const labels: Record<ConversationTimelineType, string> = {
     created: copy.timelineCreated,
@@ -93,6 +99,7 @@ export default function ConversationTimeline({ events, language, isSupport = fal
   return (
     <details
       open
+      data-hd="activity"
       className="group rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5 shadow-[0_16px_40px_-32px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
@@ -140,7 +147,7 @@ export default function ConversationTimeline({ events, language, isSupport = fal
                   <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                     {formatDateTime(event.at, language)}
                   </span>
-                  {event.attachments > 0 ? (
+                  {event.attachments > 0 && !event.files?.length ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-1.5 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
                       <FiFileText aria-hidden />
                       {copy.timelineAttachments(event.attachments)}
@@ -166,11 +173,93 @@ export default function ConversationTimeline({ events, language, isSupport = fal
                     {event.text}
                   </p>
                 ) : null}
+
+                {event.files?.length ? (
+                  /* The same files the chat bubble draws, repeated in the trail the
+                     way the desk lists them: the picture itself, openable, and the
+                     file name as a plain link. Streamed through the same authorised
+                     /api/help-desk/files route — nothing becomes more public here. */
+                  <ul className="mt-2 flex flex-wrap items-start gap-2">
+                    {event.files.map((file, fileIndex) => {
+                      const href = attachmentUrl(file);
+                      if (!href) return null;
+                      const key = `${file.url}-${fileIndex}`;
+                      if (!isImageAttachment(file.fileType, file.fileName)) {
+                        return (
+                          <li key={key}>
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-2 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))] underline-offset-2 hover:underline"
+                            >
+                              <FiFileText size={11} className="flex-none" aria-hidden />
+                              <span className="min-w-0 truncate">{file.fileName}</span>
+                            </a>
+                          </li>
+                        );
+                      }
+                      if (broken[key]) {
+                        return (
+                          <li key={key}>
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex max-w-[16rem] items-center gap-1.5 rounded-md border border-dashed border-[color-mix(in_srgb,var(--color-danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_7%,transparent)] px-2 py-1 text-[11px] font-semibold text-[var(--color-danger)]"
+                            >
+                              <FiFileText size={11} className="flex-none" aria-hidden />
+                              <span className="min-w-0 truncate">{file.fileName}</span>
+                            </a>
+                          </li>
+                        );
+                      }
+                      return (
+                        <li key={key}>
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`${copy.imageOpen}: ${file.fileName}`}
+                            title={`${copy.imageOpen}: ${file.fileName}`}
+                            onClick={(click) => {
+                              click.preventDefault();
+                              setLightbox({ src: href, alt: file.fileName || copy.imageOpen });
+                            }}
+                            className="block overflow-hidden rounded-lg border border-black/5 bg-white/70 transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={href}
+                              alt={file.fileName}
+                              loading="lazy"
+                              className="h-16 w-24 object-cover"
+                              onError={() => {
+                                // Same failure the bubble reports; the trail only
+                                // needs the fallback (the Error Log entry is filed
+                                // once, by the bubble, for this same URL).
+                                console.warn("[hd:attach] activity thumbnail did not load", {
+                                  fileName: file.fileName,
+                                  url: file.url,
+                                });
+                                setBroken((seen) => ({ ...seen, [key]: true }));
+                              }}
+                            />
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
               </div>
             </li>
           );
         })}
       </ol>
+
+      {lightbox ? (
+        <ImageLightbox copy={copy} src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+      ) : null}
     </details>
   );
 }
