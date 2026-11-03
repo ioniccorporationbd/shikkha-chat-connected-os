@@ -1659,6 +1659,30 @@ function mockTimestampedName(fileName) {
 }
 const mockUnstamped = (fileName) => String(fileName || "").replace(HD_STAMP_RE, "");
 
+// The helpdesk app copies a message's file onto the ticket's own attachment tray,
+// so one upload leaves two File rows (same file_url). Production must list it
+// once; `mock.hd.mirror` turns the same duplication on so a suite can prove it.
+let hdMirrorUploads = false;
+const hdUniqueFiles = (files) => {
+  const seen = new Set();
+  return files.filter((file) => {
+    const url = String(file?.url ?? "").trim().split("/").pop() ?? "";
+    const key = url || `${String(file?.name ?? "")}|${String(file?.size ?? "")}`;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+const hdMirrorRow = (row) => {
+  if (!hdMirrorUploads) return;
+  hdFileList.push({
+    ...row,
+    name: `${row.name}-mirror`,
+    attached_to_doctype: "HD Ticket",
+    attached_to_name: "mirror",
+  });
+};
+
 // Mirrors `help_desk._UPLOAD_REUSE_WINDOW_SECONDS`: only a File row written
 // moments ago can be a retry of the same submit; older ones are new sends and
 // get their own row with their own timestamp.
@@ -1697,6 +1721,7 @@ function hdResolveUploads(items, owner) {
       continue;
     }
     attached.push({ row, label });
+    hdMirrorRow(row);
   }
   return { attached, failed };
 }
@@ -3783,6 +3808,8 @@ const server = createServer(async (request, response) => {
       return;
     }
     const hdAction = method.slice("shikkha_os.api.v1.help_desk.".length).split("?")[0];
+    // A Desk agent reads every ticket; a customer only sees their own.
+    const hdCanRead = (item) => Boolean(account.kind === "staff" || item.support || item.ownerKey === String(email).toLowerCase());
 
     if (hdAction === "options") {
       ok(response, {
@@ -4073,14 +4100,72 @@ const server = createServer(async (request, response) => {
 
     if (hdAction === "get_ticket") {
       const wanted = String(url.searchParams.get("name") ?? "").trim();
-      const row = hdTicketList.find(
-        (item) => item.ticket.id === wanted && (item.ownerKey === ownerKey || item.support),
-      );
+      const row = hdTicketList.find((item) => item.ticket.id === wanted && hdCanRead(item));
       if (!row) {
         failure(response, 404, "DoesNotExistError", "Ticket not found.", "Help Desk");
         return;
       }
       ok(response, { ticket: row.ticket });
+      return;
+    }
+
+    if (hdAction === "reply_ticket") {
+      try {
+        // The dispatcher already consumed the request body into `hdData`.
+        const data = hdData;
+        const wanted = String(data.name ?? "").trim();
+        const text = String(data.message ?? "").trim();
+        const row = hdTicketList.find((item) => item.ticket.id === wanted && hdCanRead(item));
+        if (!row) {
+          failure(response, 404, "DoesNotExistError", "Ticket not found.", "Help Desk");
+          return;
+        }
+        if (!text && !(Array.isArray(data.attachments) && data.attachments.length)) {
+          failure(response, 417, "ValidationError", "Message is required.", "Help Desk");
+          return;
+        }
+        // A reply's files belong to its own comment, exactly like the real
+        // `create_communication_via_contact`; the ticket tray keeps only the
+        // files the customer sent when the ticket was raised.
+        const owner = String(email ?? "").toLowerCase();
+        const uploads = hdResolveUploads(data.attachments, owner);
+        const ticket = row.ticket;
+        if (text || uploads.attached.length) {
+          const nextId = `HDMSG-${String((ticket.messages?.length ?? 0) + 1).padStart(5, "0")}`;
+          ticket.messages = Array.isArray(ticket.messages) ? ticket.messages : [];
+          ticket.messages.push({
+            id: nextId,
+            author: row.support ? "support" : "user",
+            authorName: row.support ? (ticket.agent || "Support") : (ticket.customer || ticket.contact?.name || ""),
+            body: text,
+            createdAt: new Date().toISOString(),
+            kind: "message",
+            channel: "comment",
+            replyTo: null,
+            attachments: hdUniqueFiles(
+              uploads.attached.map((entry) => ({
+                id: entry.row.name,
+                name: entry.row.file_name,
+                size: entry.row.file_size,
+                mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
+                url: entry.row.file_url,
+              })),
+            ),
+            isMine: true,
+            seen: false,
+            reactions: [],
+          });
+          for (const entry of uploads.attached) {
+            entry.row.attached_to_doctype = "Communication";
+            entry.row.attached_to_name = `HDCOMM-${wanted}-${nextId}`;
+          }
+          console.log(`[mock-frappe] HD REPLY ${wanted} ${nextId} files=${uploads.attached.length}`);
+        }
+        ok(response, { ticket, attachments_failed: uploads.failed });
+      } catch (error) {
+        console.error("[mock-frappe] REPLY ERROR", error && error.stack ? error.stack : error);
+        failure(response, 500, "ValidationError", String(error && error.message || error), "Help Desk");
+      }
       return;
     }
 
@@ -4134,6 +4219,16 @@ const server = createServer(async (request, response) => {
       });
     }
     ok(response, { customers });
+    return;
+  }
+
+  // Simulate the helpdesk app copying a message's files onto the ticket tray:
+  // two File rows for one upload, which the portal must fold into one file.
+  if (method === "mock.hd.mirror") {
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+    hdMirrorUploads = data.enabled !== false;
+    ok(response, { ok: true, mirror: hdMirrorUploads });
     return;
   }
 
@@ -4275,13 +4370,15 @@ const server = createServer(async (request, response) => {
           entry.row.attached_to_doctype = "Communication";
           entry.row.attached_to_name = `HDCOMM-${message.id}`;
         }
-        message.attachments = uploads.attached.map((entry) => ({
-          id: entry.row.name,
-          name: entry.row.file_name,
-          size: entry.row.file_size,
-          mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
-          url: entry.row.file_url,
-        }));
+        message.attachments = hdUniqueFiles(
+          uploads.attached.map((entry) => ({
+            id: entry.row.name,
+            name: entry.row.file_name,
+            size: entry.row.file_size,
+            mime: /\.(png|jpe?g|webp|gif)$/i.test(entry.row.file_name) ? "image/png" : "application/pdf",
+            url: entry.row.file_url,
+          })),
+        );
         // 0643: the desk names the same upload twice — once from the row's own
         // attachment list (`/private/files/...`) and once from the image its
         // HTML embeds (`/files/...`) — and leaves a bare `Attachment` comment

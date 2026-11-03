@@ -139,11 +139,29 @@ export async function getOptions(): Promise<HelpDeskOptions> {
  * 'length')". Every response now passes through here, so array fields are never
  * undefined regardless of what the backend (or an older deployed backend) sends.
  */
+/**
+ * One upload must read as one attachment. The ERP can list the same file twice —
+ * the ticket's own tray plus a mirrored copy / a legacy Comment pointing at the
+ * same upload — which made a single screenshot show up as two files in the
+ * সংযুক্তি field. De-duplicate on the file URL (falling back to name + size),
+ * keeping the first (oldest) entry.
+ */
+function uniqueAttachments(attachments: Ticket["attachments"]): Ticket["attachments"] {
+  const seen = new Set<string>();
+  return attachments.filter((file) => {
+    const url = String(file?.url ?? "").trim().split("/").pop() ?? "";
+    const key = url || `${String(file?.name ?? "")}|${String(file?.size ?? "")}`;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function normaliseTicket(ticket: Ticket): Ticket {
   return {
     ...ticket,
     messages: Array.isArray(ticket.messages) ? ticket.messages : [],
-    attachments: Array.isArray(ticket.attachments) ? ticket.attachments : [],
+    attachments: uniqueAttachments(Array.isArray(ticket.attachments) ? ticket.attachments : []),
   };
 }
 
