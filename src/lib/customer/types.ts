@@ -74,8 +74,13 @@ export interface CustomerPortalUser {
   email?: string;
   name?: string;
   first_name?: string;
+  full_name?: string;
   mobile_no?: string | null;
   role?: string | null;
+  /** Role Profiles applied on the Desk form (spec: `["Customer"]`). */
+  role_profiles?: string[];
+  /** True when `Customer.portal_users` now points at this e-mail. */
+  customer_portal_users?: boolean;
   reason?: "no_email" | "exists" | "error";
   message?: string;
 }

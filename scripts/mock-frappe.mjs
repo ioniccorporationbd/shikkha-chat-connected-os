@@ -253,7 +253,7 @@ function mockProvisionCustomerUser(data) {
   }
 
   if (DEMO_USERS[email] || customerUsers.has(email)) {
-    return { created: false, reason: "exists", email, name: email };
+    return { created: false, reason: "exists", email, name: email, customer_portal_users: true };
   }
 
   // Mirrors the backend literally: first_name is the customer's whole name.
@@ -266,6 +266,7 @@ function mockProvisionCustomerUser(data) {
     user_type: "Website User",
     enabled: 1,
     role: "Customer",
+    role_profiles: ["Customer"],
   };
   customerUsers.set(email, entry);
 
@@ -276,8 +277,11 @@ function mockProvisionCustomerUser(data) {
     name: email,
     email,
     first_name: entry.first_name,
+    full_name: entry.full_name,
     mobile_no: entry.mobile_no || null,
     role: "Customer",
+    role_profiles: ["Customer"],
+    customer_portal_users: true,
   };
 }
 
@@ -4060,6 +4064,27 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  // Customers created through `customer.create`, with their `portal_users`
+  // link, so a suite can prove the customer side of the identity too.
+  if (method === "mock.customers.list") {
+    const seen = new Set();
+    const customers = [];
+    for (const record of createdCustomers.values()) {
+      if (seen.has(record.name)) continue;
+      seen.add(record.name);
+      customers.push({
+        name: record.name,
+        customer_name: record.customer_name,
+        email_id: record.values?.email_id ?? "",
+        mobile_no: record.values?.mobile_no ?? "",
+        portal_users: record.portal_users ?? [],
+        user: record.user ?? null,
+      });
+    }
+    ok(response, { customers });
+    return;
+  }
+
   if (method === "mock.hd.reset") {
     let restored = 0;
     for (const [name, seeded] of HD_SEED_ALL) {
@@ -4328,6 +4353,11 @@ const server = createServer(async (request, response) => {
       verified: true,
     };
     record.user = mockProvisionCustomerUser(data);
+    // Customer-side link: `portal_users` ← the same e-mail (mirrors
+    // `_link_customer_portal_user`; stays empty when provisioning failed).
+    record.portal_users = record.user?.customer_portal_users
+      ? [String(data.email_id ?? "").trim().toLowerCase()]
+      : [];
     createdCustomers.set(name.toLowerCase(), record);
     createdCustomers.set(docName.toLowerCase(), record);
 

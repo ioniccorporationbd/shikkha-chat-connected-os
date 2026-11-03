@@ -107,6 +107,12 @@ async function setMockFail(fail) {
   await mockControl("mock.users.fail", { fail });
 }
 
+/** Customers created via `customer.create`, including their `portal_users`. */
+async function mockCustomers() {
+  const payload = await mockControl("mock.customers.list");
+  return payload?.data?.customers ?? payload?.customers ?? [];
+}
+
 const browser = await chromium.launch({ args: ["--no-sandbox"] });
 try {
   const context = await browser.newContext({ viewport: { width: WIDTH, height: 1000 } });
@@ -172,6 +178,14 @@ try {
       JSON.stringify(users)
     );
 
+    const customers = await mockCustomers();
+    const customer = customers.find((entry) => entry.customer_name === CUSTOMER_NAME);
+    check(
+      "the Customer carries no portal_users row when provisioning failed",
+      Array.isArray(customer?.portal_users) && customer.portal_users.length === 0,
+      JSON.stringify(customer)
+    );
+
     // Console + Error Log: the reporter is fire-and-forget, so poll briefly.
     const sawReport = async () => {
       for (let i = 0; i < 40; i += 1) {
@@ -199,6 +213,14 @@ try {
       users.filter((user) => user.email === EXISTING_EMAIL).length === 0,
       JSON.stringify(users)
     );
+
+    const customers = await mockCustomers();
+    const customer = customers.find((entry) => entry.customer_name === CUSTOMER_NAME);
+    check(
+      "the Customer still links portal_users to that existing login",
+      Array.isArray(customer?.portal_users) && customer.portal_users.includes(EXISTING_EMAIL),
+      JSON.stringify(customer)
+    );
   } else {
     check("the login is reported as created", await badge("created").isVisible());
 
@@ -221,6 +243,29 @@ try {
       JSON.stringify(row)
     );
     check("the login is a Website User (portal, not desk)", row?.user_type === "Website User", JSON.stringify(row));
+    check(
+      "role_profiles carries Customer",
+      Array.isArray(row?.role_profiles) && row.role_profiles.includes("Customer"),
+      JSON.stringify(row)
+    );
+    check(
+      "full_name is the customer's name",
+      row?.full_name === CUSTOMER_NAME.replace(/\s+/g, " ").trim(),
+      JSON.stringify(row)
+    );
+
+    const customers = await mockCustomers();
+    const customer = customers.find((entry) => entry.customer_name === CUSTOMER_NAME);
+    check(
+      "the Customer's portal_users points at the new login",
+      Array.isArray(customer?.portal_users) && customer.portal_users.includes(CUSTOMER_EMAIL),
+      JSON.stringify(customer)
+    );
+    check(
+      "the card shows the Role profile row",
+      /Role profile|রোল প্রোফাইল/.test(cardText),
+      cardText.slice(0, 240)
+    );
   }
 
   // The create flow must still end where it always did: the card offers

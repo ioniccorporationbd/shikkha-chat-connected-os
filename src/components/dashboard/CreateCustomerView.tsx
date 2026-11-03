@@ -774,6 +774,8 @@ function SuccessCard({
     result.territory ? [copy.territoryLabel, result.territory] : null,
     contact ? [copy.contactLabel, contact] : null,
     loginEmail && login && login.reason !== "no_email" ? [copy.loginLabel, loginEmail] : null,
+    login?.role_profiles?.length ? [copy.roleProfileLabel, login.role_profiles.join(", ")] : null,
+    login?.customer_portal_users ? [copy.portalUsersLabel, loginEmail || "—"] : null,
   ].filter((row): row is [string, string] => Boolean(row && row[1]));
 
   return (

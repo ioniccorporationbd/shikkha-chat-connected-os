@@ -68,6 +68,10 @@ export interface CustomerCopy {
   contactLabel: string;
   /** Success-card line for the Desk login provisioned with the customer. */
   loginLabel: string;
+  /** Row label for the Role Profiles applied to the new login. */
+  roleProfileLabel: string;
+  /** Row label for `Customer.portal_users` (the customer-side link). */
+  portalUsersLabel: string;
   /** Badge: the login was created in this same request. */
   loginCreatedLabel: string;
   /** Badge: that e-mail already had a login, reused as-is. */
@@ -142,6 +146,8 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     typeLabel: "ধরন",
     contactLabel: "যোগাযোগ",
     loginLabel: "লগইন ইউজার",
+    roleProfileLabel: "রোল প্রোফাইল",
+    portalUsersLabel: "কাস্টমারের পোর্টাল ইউজার",
     loginCreatedLabel: "লগইন ইউজার তৈরি হয়েছে",
     loginExistingLabel: "এই ইমেইলে লগইন আগেই ছিল",
     loginFailedLabel: "লগইন ইউজার তৈরি হয়নি (কাস্টমার ঠিক আছে) — Error Log দেখুন",
@@ -230,6 +236,8 @@ export const customerCopy: Record<"bn" | "en", CustomerCopy> = {
     typeLabel: "Type",
     contactLabel: "Contact",
     loginLabel: "Login user",
+    roleProfileLabel: "Role profile",
+    portalUsersLabel: "Customer portal user",
     loginCreatedLabel: "Login user created",
     loginExistingLabel: "A login with this e-mail already existed",
     loginFailedLabel: "Login user was not created (customer is fine) — see the Error Log",
