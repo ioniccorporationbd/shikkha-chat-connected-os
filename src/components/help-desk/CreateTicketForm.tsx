@@ -483,24 +483,61 @@ export default function CreateTicketForm({
 
         {/* Step 1 — Contact details (multi-channel, open on a fresh form) */}
         <StepCard step={1} title={copy.contactStepTitle} hint={copy.contactStepHint} open done={contactOk}>
-          {/* Name first — and it is the signed-in profile, so it is shown, never
-              asked for. The email field below keeps the same contract. */}
-          <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
-            <input
-              id="hd-name"
-              type="text"
-              value={name}
-              readOnly={nameLocked}
-              aria-readonly={nameLocked}
-              title={nameLocked ? copy.profileLockedHint : undefined}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={copy.phName}
-              className={nameLocked ? HD_INPUT_LOCKED : HD_INPUT}
-              autoComplete="name"
-            />
-          </Field>
+          {/* The details the profile already owns lead the step: the customer's name,
+              the email behind it, and the one number they keep current themselves. */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label={copy.fieldName} error={errors.name} htmlFor="hd-name">
+              <input
+                id="hd-name"
+                type="text"
+                value={name}
+                readOnly={nameLocked}
+                aria-readonly={nameLocked}
+                title={nameLocked ? copy.profileLockedHint : undefined}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={copy.phName}
+                className={nameLocked ? HD_INPUT_LOCKED : HD_INPUT}
+                autoComplete="name"
+              />
+            </Field>
+            <Field label={copy.fieldEmail} error={errors.email} htmlFor="hd-email">
+              <input
+                id="hd-email"
+                type="email"
+                value={email}
+                readOnly={emailLocked}
+                aria-readonly={emailLocked}
+                title={emailLocked ? copy.profileLockedHint : undefined}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={copy.phEmail}
+                className={emailLocked ? HD_INPUT_LOCKED : HD_INPUT}
+                autoComplete="email"
+              />
+            </Field>
+            {/* Mobile is the one contact value the customer owns here: digits only,
+                so a pasted "01-234 567890" still lands as a clean 11-digit number. */}
+            <Field label={copy.fieldMobile} error={errors.mobile} htmlFor="hd-mobile">
+              <input
+                id="hd-mobile"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={15}
+                value={mobile}
+                onChange={(e) => {
+                  setMobile(e.target.value.replace(/\D/g, ""));
+                  setErrors((current) => ({ ...current, mobile: undefined }));
+                }}
+                placeholder={copy.phMobile}
+                title={copy.mobileNumericHint}
+                className={HD_INPUT}
+                autoComplete="tel"
+              />
+            </Field>
+          </div>
 
-          {/* The channel they want the answer on sits directly beneath the name. */}
+          {/* Only once those values are on screen does the step ask how to be answered —
+              so the picker sits beneath মোবাইল নম্বর, not above it. */}
           <div className="mt-4">
             <p className="text-xs font-semibold text-[var(--color-primary)]">{copy.fieldPreferredContact}</p>
             <p className="mb-2 mt-0.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,var(--color-white))]">
@@ -562,43 +599,6 @@ export default function CreateTicketForm({
                 {errors.channels}
               </p>
             ) : null}
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label={copy.fieldEmail} error={errors.email} htmlFor="hd-email">
-              <input
-                id="hd-email"
-                type="email"
-                value={email}
-                readOnly={emailLocked}
-                aria-readonly={emailLocked}
-                title={emailLocked ? copy.profileLockedHint : undefined}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={copy.phEmail}
-                className={emailLocked ? HD_INPUT_LOCKED : HD_INPUT}
-                autoComplete="email"
-              />
-            </Field>
-            {/* Mobile is the one contact value the customer owns here: digits only,
-                so a pasted "01-234 567890" still lands as a clean 11-digit number. */}
-            <Field label={copy.fieldMobile} error={errors.mobile} htmlFor="hd-mobile">
-              <input
-                id="hd-mobile"
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={15}
-                value={mobile}
-                onChange={(e) => {
-                  setMobile(e.target.value.replace(/\D/g, ""));
-                  setErrors((current) => ({ ...current, mobile: undefined }));
-                }}
-                placeholder={copy.phMobile}
-                title={copy.mobileNumericHint}
-                className={HD_INPUT}
-                autoComplete="tel"
-              />
-            </Field>
           </div>
         </StepCard>
 

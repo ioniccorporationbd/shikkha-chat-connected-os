@@ -107,14 +107,15 @@ check("name is filled from the profile", layout.name.value.trim().length > 0, la
 check("email is filled from the profile", /.+@.+/.test(layout.email.value), layout.email.value);
 check("mobile is a numeric field", layout.mobile.inputMode === "numeric", layout.mobile.inputMode);
 check(
-  "the channel picker sits below the name field",
-  layout.groupTop !== null && layout.groupTop > layout.name.top,
-  `name.top=${layout.name.top} group.top=${layout.groupTop}`,
+  "name, email and mobile share the top row",
+  Math.abs(layout.name.top - layout.email.top) < 2 && Math.abs(layout.email.top - layout.mobile.top) < 2,
+  `tops=${layout.name.top}/${layout.email.top}/${layout.mobile.top}`,
 );
 check(
-  "the channel picker sits above email and mobile",
-  layout.groupTop < layout.email.top && layout.groupTop < layout.mobile.top,
-  `group.top=${layout.groupTop} email.top=${layout.email.top} mobile.top=${layout.mobile.top}`,
+  "the channel picker sits below নাম, ইমেইল and মোবাইল নম্বর",
+  layout.groupTop !== null &&
+    layout.groupTop > Math.max(layout.name.top, layout.email.top, layout.mobile.top),
+  `group.top=${layout.groupTop} fields=${layout.name.top}/${layout.email.top}/${layout.mobile.top}`,
 );
 
 // --- 2. mobile keeps digits only and gates the next step -------------------
