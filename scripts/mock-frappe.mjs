@@ -1619,6 +1619,8 @@ const hdFilesByUrl = new Map();
 // real image (what the agent's preview/lightbox fetches), not a placeholder.
 const hdFileBytes = new Map();
 
+const hdSqlNow = () => new Date().toISOString().slice(0, 19).replace("T", " ");
+
 function hdFileRow({ name, url, fileName, size, owner }) {
   const row = {
     name,
@@ -1629,6 +1631,9 @@ function hdFileRow({ name, url, fileName, size, owner }) {
     attached_to_doctype: "",
     attached_to_name: "",
     is_private: 0,
+    creation: hdSqlNow(),
+    // Internal epoch ms for the reuse window; stripped before serving.
+    _createdMs: Date.now(),
   };
   hdFileList.push(row);
   hdFilesByUrl.set(url, row);
@@ -1653,6 +1658,28 @@ function mockTimestampedName(fileName) {
   return `${un}-${stamp}`;
 }
 const mockUnstamped = (fileName) => String(fileName || "").replace(HD_STAMP_RE, "");
+
+// Mirrors `help_desk._UPLOAD_REUSE_WINDOW_SECONDS`: only a File row written
+// moments ago can be a retry of the same submit; older ones are new sends and
+// get their own row with their own timestamp.
+const HD_REUSE_WINDOW_MS = 180 * 1000;
+
+// Mirrors `help_desk.unique_stored_name`: two sends in the same second must
+// still yield two distinct File rows.
+function mockUniqueStoredName(fileName) {
+  let candidate = fileName;
+  let counter = 1;
+  while (hdFileList.some((row) => row.file_name === candidate) && counter < 50) {
+    counter += 1;
+    if (fileName.includes(".")) {
+      const i = fileName.lastIndexOf(".");
+      candidate = `${fileName.slice(0, i)}-${counter}${fileName.slice(i)}`;
+    } else {
+      candidate = `${fileName}-${counter}`;
+    }
+  }
+  return candidate;
+}
 
 // The real backend only links Files that (a) the caller owns and (b) nothing has
 // claimed yet; anything else is reported back as `attachments_failed`. The mock
@@ -2898,8 +2925,10 @@ const server = createServer(async (request, response) => {
   // assert the attachment mapping (attached_to_doctype / attached_to_name)
   // without a live ERP.
   if (url.pathname === "/__mock/files") {
+    // `_createdMs` is a local test knob; the ERP has no such column.
+    const files = hdFileList.map(({ _createdMs, ...row }) => row);
     response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
-    response.end(JSON.stringify({ files: hdFileList }));
+    response.end(JSON.stringify({ files }));
     return;
   }
 
@@ -3796,7 +3825,10 @@ const server = createServer(async (request, response) => {
           row.owner === owner &&
           mockUnstamped(row.file_name) === name &&
           row.file_size === bytes &&
-          hdFileUnattached(row),
+          hdFileUnattached(row) &&
+          // Only a row written moments ago is a retry of *this* submit; a fresh
+          // send of the same picture gets its own row and timestamp.
+          Date.now() - (row._createdMs ?? 0) < HD_REUSE_WINDOW_MS,
       );
       if (reusable) {
         console.log(`[mock-frappe] HD UPLOAD ${reusable.file_name} (reused)`);
@@ -3808,7 +3840,7 @@ const server = createServer(async (request, response) => {
       // `_store_upload` on the ERP writes a *public* row (`is_private` 0), which
       // is what the Desk shows as an unchecked box and a `/files/...` URL — and
       // the stored name carries the upload date and time.
-      const storedName = mockTimestampedName(name);
+      const storedName = mockUniqueStoredName(mockTimestampedName(name));
       const url = `/files/mock-hd-${hdFileSeq}-${storedName}`;
       hdFileBytes.set(url, Buffer.from(String(body?.content ?? ""), "base64"));
       const uploadedRow = hdFileRow({
@@ -4102,6 +4134,19 @@ const server = createServer(async (request, response) => {
       });
     }
     ok(response, { customers });
+    return;
+  }
+
+  // Backdate earlier uploads so the retry-reuse window has elapsed — the knob a
+  // suite needs to prove "same file sent again = a new dated File row".
+  if (method === "mock.hd.age") {
+    const body = await readBody(request);
+    const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+    const seconds = Math.max(0, Number(data.seconds ?? 600));
+    for (const row of hdFileList) {
+      row._createdMs = (row._createdMs ?? Date.now()) - seconds * 1000;
+    }
+    ok(response, { ok: true, aged: hdFileList.length, seconds });
     return;
   }
 

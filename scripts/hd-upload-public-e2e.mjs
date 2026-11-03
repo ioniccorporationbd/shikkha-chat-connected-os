@@ -40,7 +40,12 @@ const PNG_1PX = Buffer.from(
 ).toString("base64");
 const FILE_NAME = `storage-check-${ROLE}.png`;
 // Stored Desk names carry the upload date and time: base-YYYYMMDD-HHMMSS.ext
-const STAMP_RE = /^(.+)-(\d{8}-\d{6})(\.[A-Za-z0-9]+)?$/;
+// (and a `-2`, `-3`… collision suffix when two sends land in the same second).
+const STAMP_RE = /^(.*?)-(\d{8}-\d{6})(?:-\d+)?(\.[A-Za-z0-9]+)?$/;
+const parseStored = (name) => {
+  const m = STAMP_RE.exec(String(name ?? ""));
+  return m ? { base: m[1], stamp: m[2], ext: m[3] ?? "" } : null;
+};
 const SUBJECT = `স্টোরেজ চেক ${Date.now()}`;
 
 let passed = 0;
@@ -102,10 +107,10 @@ try {
   );
 
   // 1b. The Desk File row is named with the upload's date and time.
-  const stamp = STAMP_RE.exec(storedName);
+  const stamp = parseStored(storedName);
   check(
     "the stored file name carries the upload date and time",
-    Boolean(stamp) && stamp[1] === FILE_NAME.replace(/\.png$/, "") && stamp[3] === ".png",
+    Boolean(stamp) && stamp.base === FILE_NAME.replace(/\.png$/, "") && stamp.ext === ".png",
     storedName
   );
   check(
@@ -139,6 +144,31 @@ try {
     "no duplicate File row is written on retry",
     rowsAfterRetry.filter((item) => item.file_url === fileUrl).length === 1,
     `count ${rowsAfterRetry.filter((item) => item.file_url === fileUrl).length}`
+  );
+
+  // 2c. The operator's rule: send the *same* picture again later and it must be
+  // stored again — its own File row, its own name with today's date and the new
+  // sending time. Only a retry within the same submit may reuse the first row.
+  await page.request.post(`${MOCK_BASE}/api/method/mock.hd.age`, { data: { seconds: 600 } });
+  const second = await page.request.post(`${BASE}/api/help-desk/upload`, {
+    data: { file_name: FILE_NAME, content: PNG_1PX, language: "bn" },
+  });
+  const secondRaw = await second.json().catch(() => ({}));
+  const secondData = secondRaw?.data ?? secondRaw;
+  const secondStamp = parseStored(secondData?.name);
+  check(
+    "re-sending the same name after the reuse window stores a NEW File",
+    secondData?.name !== storedName && Boolean(secondStamp) && secondStamp.base === stamp?.base,
+    JSON.stringify(secondData).slice(0, 160)
+  );
+  const rowsAfterSecond = (await (await page.request.get(`${MOCK_BASE}/__mock/files`)).json()).files ?? [];
+  const sameBase = rowsAfterSecond.filter((item) => parseStored(item.file_name)?.base === stamp?.base);
+  check(
+    "both sends appear as separate dated File rows",
+    sameBase.length === 2 &&
+      new Set(sameBase.map((item) => item.file_name)).size === 2 &&
+      sameBase.every((item) => /\d{8}-\d{6}/.test(item.file_name)),
+    JSON.stringify(sameBase.map((item) => item.file_name))
   );
 
   // 3. Public means publicly readable — no session, no proxy.
