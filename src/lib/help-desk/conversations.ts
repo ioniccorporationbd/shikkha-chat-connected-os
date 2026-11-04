@@ -183,10 +183,15 @@ export function orderConversation<T extends { createdAt?: string | null; id?: st
 const DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 
 /**
- * How close two same-channel rows must be to count as one retried send (a
- * double click on "send", or a browser retry after its own timeout).
+ * The same reply can also reach the desk twice with different *wrapping*: the
+ * plain comment the employee typed, and the email copy that carries the quoted
+ * history and a signature. The words of one sit whole inside the other, so the
+ * fold compares bodies by containment inside this window.
  */
-const RETRY_WINDOW_MS = 25 * 1000;
+const CONTAIN_WINDOW_MS = 2 * 60 * 1000;
+
+/** Bodies shorter than this never fold by containment - see above. */
+const CONTAIN_MIN_CHARS = 12;
 
 /**
  * What the reader actually reads, as a fold key.
@@ -286,12 +291,16 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
       const gap = Math.abs(priorAt - at);
       // Different channels: the classic Comment + Communication twin.
       if ((prior.channel ?? "") !== (message.channel ?? "")) return gap <= DUPLICATE_WINDOW_MS;
-      // Same channel: only a resend of the same upload, or a retry of a real
-      // sentence, inside a few seconds — a person does not type the same line
-      // twice that fast, but a failed send retried from the UI does.
-      if (gap > RETRY_WINDOW_MS) return false;
-      if (files) return fileKey(prior.attachments) === files;
-      return body.length >= 12;
+      // Same channel: a resend of the same upload, or the desk storing its own
+      // second copy of the reply. The key here is the whole body, so the wide
+      // window is safe — a person does not retype the same dozen-plus
+      // characters by accident, and a shorter line is never folded this way.
+      if (files) {
+        if (gap > DUPLICATE_WINDOW_MS) return false;
+        return fileKey(prior.attachments) === files;
+      }
+      if (body.length < CONTAIN_MIN_CHARS) return false;
+      return gap <= DUPLICATE_WINDOW_MS;
     });
     if (!twin) {
       candidates.push(message);
@@ -307,7 +316,49 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
     if (!twin.replyTo && message.replyTo) twin.replyTo = message.replyTo;
     if (message.id) dropped.add(message.id);
   }
-  return { kept, dropped };
+
+  // The same reply can reach the desk twice with different wrapping: the plain
+  // comment, and the email copy that carries the quoted history or a signature.
+  // The raw strings differ, so the twin pass above cannot see them — but the
+  // short body sits whole at the start (or the end) of the long one, under the
+  // same author, minutes apart. That is one message to the reader either way.
+  const byAuthor = new Map<string, T[]>();
+  const folded: T[] = [];
+  for (const message of kept) {
+    const body = bodyKey(message.body);
+    const at = stamp(message.createdAt);
+    const seen = byAuthor.get(String(message.author ?? "")) ?? [];
+    const host =
+      body.length >= CONTAIN_MIN_CHARS && at !== null
+        ? seen.find((prior) => {
+            const priorAt = stamp(prior.createdAt);
+            if (priorAt === null || Math.abs(at - priorAt) > CONTAIN_WINDOW_MS) return false;
+            const other = bodyKey(prior.body);
+            if (other.length < CONTAIN_MIN_CHARS || other === body) return false;
+            const [small, big] = body.length <= other.length ? [body, other] : [other, body];
+            return big.startsWith(small) || big.endsWith(small);
+          })
+        : undefined;
+    if (host) {
+      // Keep the row the reader already has (its time is the time they saw) and
+      // give it the fuller text, so the signature and quote are not lost.
+      if (body.length > bodyKey(host.body).length) host.body = message.body;
+      if (!host.replyTo && message.replyTo) host.replyTo = message.replyTo;
+      const knownFiles = new Set(fileKey(host.attachments).split("|").filter(Boolean));
+      const extraFiles = (message.attachments ?? []).filter((file) => {
+        const mark = attachmentMark(file);
+        return mark !== "" && !knownFiles.has(mark);
+      });
+      if (extraFiles.length) host.attachments = [...(host.attachments ?? []), ...extraFiles];
+      if (message.id) dropped.add(message.id);
+      continue;
+    }
+    seen.push(message);
+    byAuthor.set(String(message.author ?? ""), seen);
+    folded.push(message);
+  }
+
+  return { kept: folded, dropped };
 }
 
 /**

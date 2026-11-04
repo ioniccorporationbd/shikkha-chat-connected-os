@@ -2610,6 +2610,14 @@ html[data-lang="en"] .language-toggle-knob {
   display: none;
 }
 
+/* The chat pane reads as a messenger window, not as a table: WhatsApp's warm
+   paper tone with a whisper of a dot grid underneath the bubbles. */
+.hd-chat-wallpaper {
+  background-color: #efeae3;
+  background-image: radial-gradient(rgba(11, 20, 26, 0.045) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
 /* Sidebar demo-request CTA (foot of the rail): brand background #032521 and a
    label one step above the rail rows. Declared unlayered on purpose — the
    global type scale and the `*` reset live unlayered too, so a Tailwind

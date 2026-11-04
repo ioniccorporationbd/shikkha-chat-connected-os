@@ -523,7 +523,7 @@ export default function ConversationThread({
         className={
           bare
             ? `flex flex-col gap-3 overflow-y-auto hd-scrollbar-hidden px-3.5 py-3 sm:px-4 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
-            : `flex flex-col gap-3 overflow-y-auto hd-scrollbar-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] p-3 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
+            : `hd-chat-wallpaper flex flex-col gap-2 overflow-y-auto hd-scrollbar-hidden rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[#efeae3] p-3 ${heightClass ?? "max-h-[26rem] min-h-[14rem] sm:max-h-[32rem]"}`
         }
       >
         {loading ? (
@@ -581,7 +581,7 @@ export default function ConversationThread({
               <Fragment key={row.key}>
                 {row.dayLabel ? (
                   <div className="my-1 flex items-center justify-center">
-                    <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-3 py-0.5 text-[10.5px] font-bold text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]">
+                    <span className="rounded-md bg-white/95 px-2.5 py-1 text-[11px] font-medium text-[#54656f] shadow-[0_1px_1px_rgba(11,20,26,0.08)]">
                       {row.dayLabel}
                     </span>
                   </div>

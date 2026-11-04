@@ -172,7 +172,7 @@ export default function MessageBubble({
       className={[
         "group/msg flex w-full min-w-0 scroll-mt-4",
         mine ? "justify-end" : "justify-start",
-        grouped ? "-mt-1.5" : "",
+        grouped ? "-mt-1" : "",
       ].join(" ")}
     >
       <div
@@ -180,7 +180,7 @@ export default function MessageBubble({
           // The column is as wide as its content (`w-fit`) and only grows to the
           // responsive cap, so a short "ok" stays a small bubble. `min-w-0` keeps
           // long unbroken tokens inside the panel.
-          "flex w-fit min-w-0 max-w-[min(32rem,85%)] flex-col gap-1",
+          "flex w-fit min-w-0 max-w-[min(34rem,84%)] flex-col gap-1",
           mine ? "items-end" : "items-start",
         ].join(" ")}
       >
@@ -189,30 +189,24 @@ export default function MessageBubble({
             once and then simply stacks their lines. The chevron that opens the
             message menu rides at the end of that line. */}
         {grouped ? null : (
-          <div className="flex max-w-full items-center gap-1.5 px-1">
-            <span
-              className={[
-                "h-[5px] w-[5px] flex-none rounded-full",
-                isSupport
-                  ? "bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
-                  : "bg-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]",
-              ].join(" ")}
-              aria-hidden
-            />
-            <span
-              className={[
-                "truncate text-[12px] font-semibold tracking-[0.01em]",
-                isSupport
-                  ? "text-[color-mix(in_srgb,var(--color-action)_82%,var(--color-primary))]"
-                  : "text-[color-mix(in_srgb,var(--color-primary)_86%,transparent)]",
-              ].join(" ")}
-            >
-              {mine ? copy.conversationYou : authorLabel}
-            </span>
-            <span
-              className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
-              aria-hidden
-            />
+          <div className={["flex max-w-full items-center gap-1.5 px-1", mine ? "justify-end" : ""].join(" ")}>
+            {/* A messenger labels the sender of the other side and leaves your
+                own lines unlabelled — you know they are yours. */}
+            {mine ? null : (
+              <>
+                <span
+                  className="h-[5px] w-[5px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
+                  aria-hidden
+                />
+                <span className="truncate text-[12px] font-semibold tracking-[0.01em] text-[#008069]">
+                  {authorLabel}
+                </span>
+                <span
+                  className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
+                  aria-hidden
+                />
+              </>
+            )}
             {canAct ? (
               <MessageActionMenu
                 copy={copy}
@@ -247,10 +241,13 @@ export default function MessageBubble({
             // gesture available for anyone who wants to quote it themselves.
             // (No `min-w-*` here: globals.css sets `min-width:0` on every div,
             // which beats utilities — a short bubble simply hugs its text.)
-            "w-fit max-w-full select-text rounded-2xl px-3.5 py-2 text-[13.75px] leading-[1.55] text-[var(--color-primary)] shadow-[0_1px_2px_rgba(16,24,40,0.06)]",
+            // Messenger surface: the light-green outgoing bubble and the white
+            // incoming one, the top corner of the first line pulled in so a run
+            // of lines stacks as one block.
+            "w-fit max-w-full select-text rounded-[10px] px-3 py-1.5 text-[13.75px] leading-[1.5] text-[#111b21] ring-1 ring-black/[0.06]",
             mine
-              ? "rounded-tr-[6px] bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))]"
-              : "rounded-tl-[6px] bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]",
+              ? `bg-[#d9fdd3] ${grouped ? "" : "rounded-tr-[4px]"}`
+              : `bg-white ${grouped ? "" : "rounded-tl-[4px]"}`,
           ].join(" ")}
         >
           {isRequirement || isResolution ? (
@@ -275,7 +272,7 @@ export default function MessageBubble({
               data-hd-quote={reply.id ?? ""}
               onClick={() => onJumpTo?.(reply.id)}
               title={reply.body}
-              className="mb-1.5 block w-full max-w-full cursor-pointer rounded-lg border-l-[3px] border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_72%,transparent)] px-2.5 py-1.5 text-left transition hover:bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_35%,transparent)]"
+              className="mb-1 block w-full max-w-full cursor-pointer rounded-md border-l-[3px] border-[#00a884] bg-black/[0.055] px-2 py-1 text-left transition hover:bg-black/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00a884]/40"
             >
               <span className="flex items-center gap-1">
                 <FiCornerUpLeft
@@ -317,7 +314,7 @@ export default function MessageBubble({
                           frame as a loose row, which read like a second file and
                           left the picture "dangling" above its own name. The
                           image opens the lightbox; the caption opens the file. */}
-                      <div className="w-[min(28rem,100%)] max-w-full overflow-hidden rounded-xl border border-black/5 bg-white/70">
+                      <div className="w-[min(28rem,100%)] max-w-full overflow-hidden rounded-lg border border-black/5 bg-white">
                       <a
                         href={href}
                         target="_blank"
@@ -536,7 +533,7 @@ export default function MessageBubble({
             ) : null}
             <time
               dateTime={message.createdAt}
-              className="flex-none text-[10px] font-medium tabular-nums tracking-[0.02em] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+              className="flex-none text-[10.5px] font-normal tabular-nums tracking-[0.01em] text-[#667781]"
             >
               {timeLabel}
             </time>
