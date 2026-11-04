@@ -4,10 +4,13 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { formatBubbleTime, formatChatDay } from "@/lib/help-desk/format";
+import { formatBubbleTime, formatChatDay, parseErpTimestamp } from "@/lib/help-desk/format";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
+
+// Share captions carry no text of their own.
+const SHARE_CAPTIONS = new Set(["শেয়ার", "share", "shared"]);
 
 /**
  * One row of the ticket's audit trail that has no bubble of its own.
@@ -308,15 +311,68 @@ export default function ConversationThread({
   // then bubbles and (on the chat-only route) system-event chips interleaved
   // by time. Precomputed so render never mutates shared state.
   const rows = useMemo<ThreadRow[]>(() => {
-    const entries: ThreadRow[] = messages.map((message) => ({
-      kind: "message",
-      key: `m-${message.id}`,
-      at: message.createdAt,
-      sequence: message.sequence,
-      message,
-      dayLabel: null,
-      grouped: false,
-    }));
+    // Read each row once. Rows repeat for three reasons: an overlapping page
+    // or a delta poll hands the same message over again (same id), the ERP
+    // stores one send in both channels — a Comment (HTML body) and a
+    // Communication — so two different ids carry the same words, or a re-sent
+    // upload puts the very same file on the ticket twice. Folding mirrors what
+    // the desk's Activity tab prints: one row per event. A text a person
+    // repeated on purpose stays: same words on the same side but at a
+    // different second, or on the same channel a while apart, is not a retry.
+    // Read the stamp the way the rest of the Help Desk reads it (a bare ERP
+    // timestamp is Dhaka wall-clock time), so two rows written in different
+    // shapes still compare as one instant.
+    const epoch = (value?: string | null) => {
+      const parsed = parseErpTimestamp(String(value ?? "")).getTime();
+      return Number.isNaN(parsed) ? null : Math.floor(parsed / 1000);
+    };
+    const seen = new Set<string>();
+    const sent = new Map<string, { second: number | null; channel: string }[]>();
+    const DUPLICATE_WINDOW = 300; // seconds — the window the ERP uses
+    const entries: ThreadRow[] = [];
+    for (const message of messages) {
+      if (seen.has(message.id)) continue;
+      seen.add(message.id);
+      const rawWords = String(message.body ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      // A caption is the file talking: compare it like an empty body so the
+      // bare re-send of the same file folds into the share.
+      const words = SHARE_CAPTIONS.has(rawWords) ? "" : rawWords;
+      const files = (message.attachments ?? [])
+        .map((file) => String(file.fileName || file.url || ""))
+        .sort()
+        .join("|");
+      const second = epoch(message.createdAt);
+      const channel = String(message.channel ?? "");
+      const key = `${message.isMine ? 1 : 0}|${words}|${files}`;
+      if (words || files) {
+        const priors = sent.get(key) ?? [];
+        const twin = priors.some((prior) => {
+          if (prior.second === null || second === null) return false;
+          if (Math.abs(prior.second - second) > DUPLICATE_WINDOW) return false;
+          // Retried across channels, the same file re-sent, or the identical
+          // text landing on the same second: one row, not two.
+          if (prior.channel !== channel) return true;
+          if (files && !words) return true;
+          return prior.second === second;
+        });
+        if (twin) continue;
+        priors.push({ second, channel });
+        sent.set(key, priors);
+      }
+      entries.push({
+        kind: "message",
+        key: `m-${message.id}`,
+        at: message.createdAt,
+        sequence: message.sequence,
+        message,
+        dayLabel: null,
+        grouped: false,
+      });
+    }
 
     if (systemEvents?.length) {
       const known = new Set(messages.map((message) => message.id));
@@ -352,7 +408,14 @@ export default function ConversationThread({
     // second. Rows without a position (no timeline, older ERP) fall back to the
     // timestamp compare exactly as before.
     const position = new Map(entries.map((entry, index) => [entry.key, index]));
-    const stamp = (row: ThreadRow) => (row.at ? String(row.at).replace(" ", "T") : "");
+    // Compare instants, not spellings: the ERP writes a timestamp with or
+    // without a zone and string order flips those two shapes against each
+    // other. A row whose stamp cannot be read keeps its place at the end.
+    const stamp = (row: ThreadRow) => {
+      if (!row.at) return null;
+      const ms = parseErpTimestamp(String(row.at)).getTime();
+      return Number.isNaN(ms) ? null : ms;
+    };
     const ordered = (row: ThreadRow) =>
       typeof row.sequence === "number" && Number.isFinite(row.sequence) ? row.sequence : null;
     entries.sort((a, b) => {
@@ -363,9 +426,9 @@ export default function ConversationThread({
       }
       const first = stamp(a);
       const second = stamp(b);
-      if (first && !second) return -1;
-      if (!first && second) return 1;
-      if (first !== second) return first < second ? -1 : 1;
+      if (first !== null && second === null) return -1;
+      if (first === null && second !== null) return 1;
+      if (first !== null && second !== null && first !== second) return first - second;
       return (position.get(a.key) ?? 0) - (position.get(b.key) ?? 0);
     });
 

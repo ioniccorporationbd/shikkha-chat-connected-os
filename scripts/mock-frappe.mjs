@@ -1857,15 +1857,84 @@ function hdSummary(thread, support) {
   };
 }
 
+// Mirrors the ERP's `_drop_channel_duplicates` + time sort: a thread reads once
+// per event, oldest first, whatever order the two channels were stored in. The
+// duplicate shapes are the ones the ERP really produces — one send stored by
+// both channels (Comment keeps the editor's HTML, Communication the plain
+// text), a re-sent upload of the same file, and the same message handed over
+// twice under two ids.
+function hdSeconds(value) {
+  const text = String(value ?? "").trim();
+  // A bare ERP timestamp is Dhaka wall-clock time, exactly as the portal reads
+  // it; without the offset the same instant written two ways compares wrong.
+  const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(text);
+  const parsed = Date.parse(naive ? `${text.replace(" ", "T")}+06:00` : text);
+  return Number.isNaN(parsed) ? null : Math.floor(parsed / 1000);
+}
+
+function hdBodyKey(body) {
+  const key = String(body ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  // A share caption says nothing the file does not.
+  return ["শেয়ার", "share", "shared"].includes(key) ? "" : key;
+}
+
+function hdFileKey(attachments) {
+  return (attachments ?? [])
+    .map((file) => String(file.url || file.name || file.fileName || ""))
+    .sort()
+    .join("|");
+}
+
+function hdOrder(messages) {
+  const seen = new Set();
+  const sent = new Map();
+  const kept = [];
+  for (const message of messages) {
+    if (seen.has(message.id)) continue;
+    seen.add(message.id);
+    const words = hdBodyKey(message.body);
+    const files = hdFileKey(message.attachments);
+    const second = hdSeconds(message.createdAt);
+    const channel = String(message.channel ?? "");
+    const key = `${message.author}|${words}|${files}`;
+    if (words || files) {
+      const priors = sent.get(key) ?? [];
+      const twin = priors.some((prior) => {
+        if (prior.second === null || second === null) return false;
+        if (Math.abs(prior.second - second) > 300) return false;
+        if (prior.channel !== channel) return true;
+        if (files && !words) return true;
+        return prior.second === second;
+      });
+      if (twin) continue;
+      priors.push({ second, channel });
+      sent.set(key, priors);
+    }
+    kept.push(message);
+  }
+  return kept.sort((left, right) => {
+    const a = hdSeconds(left.createdAt);
+    const b = hdSeconds(right.createdAt);
+    if (a !== b) return (a ?? Infinity) - (b ?? Infinity);
+    return String(left.id).localeCompare(String(right.id));
+  });
+}
+
 function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = {}) {
   const thread = hdThreads.get(name);
   if (!thread) return null;
 
-  const all = thread.messages.map((message) => ({
-    ...message,
-    isMine: (message.author === "support") === support,
-    seen: true,
-  }));
+  const all = hdOrder(
+    thread.messages.map((message) => ({
+      ...message,
+      isMine: (message.author === "support") === support,
+      seen: true,
+    })),
+  );
 
   let messages = all;
   let hasMore = false;
@@ -2988,6 +3057,206 @@ hdAppend(HD_0747, "support", "শেয়ার", {
       url: HD_0747_IMG2_URL,
     },
   ],
+});
+
+// 0759 — the ordering ticket: the same conversation the desk's Activity tab
+// shows in time order, seeded with the ways the ERP hands rows over *out* of
+// order and *twice*: an overlapping page (one message delivered again under a
+// new id), a send stored by both channels (a Comment and a Communication, the
+// second wrapped in HTML), a re-sent upload of the same file, and a row whose
+// timestamp arrives in Frappe's space-separated form and is appended last.
+// The portal has to read each row once, oldest first.
+const HD_0759 = "0759";
+const HD_0759_CUSTOMER = "Nusrat Jahan";
+const HD_0759_CUSTOMER_EMAIL = "nusrat@example.com";
+const HD_0759_IMG1_URL = "/private/files/Screenshot-1-20261104-130205aa11.png";
+const HD_0759_IMG2_URL = "/private/files/Screenshot-2-20261104-130720bb22.png";
+const HD_0759_IMG7_URL = "/private/files/Screenshot-7-20261104-130600cc33.png";
+hdThreads.set(HD_0759, {
+  name: HD_0759,
+  subject: "Unable to login",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: HD_0759_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0759_CUSTOMER_EMAIL,
+  agent: HD_0747_AGENT,
+  submittedAt: "2026-11-04T13:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: "2026-11-04T13:00:00.000Z",
+      author: "user",
+      authorName: HD_0759_CUSTOMER,
+      text: "Unable to login\nCategory: Technical\nPreferred contact: email",
+      attachments: 0,
+    },
+  ],
+});
+
+// 1 — the customer's first text.
+hdAppend(HD_0759, "user", "hlw ami login korte parchi na", {
+  at: "2026-11-04T13:01:10.000Z",
+  authorName: HD_0759_CUSTOMER,
+});
+
+// 2 — the customer shares a picture (the desk's "Shared" row).
+const hd0759Img1 = hdFileRow({
+  name: "MOCKFILE-07591",
+  url: HD_0759_IMG1_URL,
+  fileName: "Screenshot-1-20261104-130205aa11.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0759Img1.attached_to_doctype = "Comment";
+hd0759Img1.attached_to_name = "MOCKCOMMENT-07591";
+hd0759Img1.is_private = 1;
+hdFileBytes.set(HD_0759_IMG1_URL, AVATAR_BYTES);
+hd0759Img1.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0759, "user", "", {
+  at: "2026-11-04T13:02:05.000Z",
+  authorName: HD_0759_CUSTOMER,
+  attachments: [
+    {
+      id: hd0759Img1.name,
+      name: "Screenshot-1-20261104-130205aa11.png",
+      size: hd0759Img1.file_size,
+      mime: "image/png",
+      url: HD_0759_IMG1_URL,
+    },
+  ],
+});
+
+// 2b — the same row delivered again by the other channel: same file, same
+// second, space-separated timestamp. Must fold into row 2.
+const hd0759Twin = hdAppend(HD_0759, "user", "", {
+  at: "2026-11-04 19:02:05",
+  authorName: HD_0759_CUSTOMER,
+  attachments: [
+    {
+      id: hd0759Img1.name,
+      name: "Screenshot-1-20261104-130205aa11.png",
+      size: hd0759Img1.file_size,
+      mime: "image/png",
+      url: HD_0759_IMG1_URL,
+    },
+  ],
+});
+if (hd0759Twin) hd0759Twin.channel = "message";
+
+// 3 — the employee's emailed answer.
+hdAppend(HD_0759, "support", "আপনার সমস্যাটি দেখছি, একটু অপেক্ষা করুন", {
+  at: "2026-11-04T13:03:30.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0759_CUSTOMER_EMAIL,
+});
+
+// 3b — the same answer as stored by the Comment channel, wrapped in the
+// editor's HTML: a retry the desk shows once.
+const hd0759ReplyTwin = hdAppend(
+  HD_0759,
+  "support",
+  "<p>আপনার সমস্যাটি দেখছি, একটু অপেক্ষা করুন</p>",
+  {
+    at: "2026-11-04T13:03:31.000Z",
+    authorName: HD_0747_AGENT,
+  },
+);
+if (hd0759ReplyTwin) hd0759ReplyTwin.channel = "comment";
+
+// 4 — the customer answers twice (two different moments, both must survive).
+hdAppend(HD_0759, "user", "ok", {
+  at: "2026-11-04T13:04:40.000Z",
+  authorName: HD_0759_CUSTOMER,
+});
+hdAppend(HD_0759, "user", "ok", {
+  at: "2026-11-04T13:04:52.000Z",
+  authorName: HD_0759_CUSTOMER,
+});
+
+// 5 — the employee sends a picture by email.
+const hd0759Img7 = hdFileRow({
+  name: "MOCKFILE-07597",
+  url: HD_0759_IMG7_URL,
+  fileName: "Screenshot-7-20261104-130600cc33.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0759Img7.attached_to_doctype = "Communication";
+hd0759Img7.attached_to_name = "MOCKCOMM-07591";
+hd0759Img7.is_private = 1;
+hd0759Img7.agent_only = true;
+hdFileBytes.set(HD_0759_IMG7_URL, AVATAR_BYTES);
+hd0759Img7.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0759, "support", "শেয়ার", {
+  at: "2026-11-04T13:06:00.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0759_CUSTOMER_EMAIL,
+  attachments: [
+    {
+      id: hd0759Img7.name,
+      name: "Screenshot-7-20261104-130600cc33.png",
+      size: hd0759Img7.file_size,
+      mime: "image/png",
+      url: HD_0759_IMG7_URL,
+    },
+  ],
+});
+
+// 5b — the same file re-sent five seconds later on the same channel: a
+// duplicate upload, read once.
+hdAppend(HD_0759, "support", "", {
+  at: "2026-11-04T13:06:05.000Z",
+  authorName: HD_0747_AGENT,
+  attachments: [
+    {
+      id: hd0759Img7.name,
+      name: "Screenshot-7-20261104-130600cc33.png",
+      size: hd0759Img7.file_size,
+      mime: "image/png",
+      url: HD_0759_IMG7_URL,
+    },
+  ],
+});
+
+// 6 — the customer shares a second picture.
+const hd0759Img2 = hdFileRow({
+  name: "MOCKFILE-07592",
+  url: HD_0759_IMG2_URL,
+  fileName: "Screenshot-2-20261104-130720bb22.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0759Img2.attached_to_doctype = "Comment";
+hd0759Img2.attached_to_name = "MOCKCOMMENT-07592";
+hd0759Img2.is_private = 1;
+hdFileBytes.set(HD_0759_IMG2_URL, AVATAR_BYTES);
+hd0759Img2.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0759, "user", "", {
+  at: "2026-11-04T13:07:20.000Z",
+  authorName: HD_0759_CUSTOMER,
+  attachments: [
+    {
+      id: hd0759Img2.name,
+      name: "Screenshot-2-20261104-130720bb22.png",
+      size: hd0759Img2.file_size,
+      mime: "image/png",
+      url: HD_0759_IMG2_URL,
+    },
+  ],
+});
+
+// 7 — a row handed over last but belonging between 2 and 3 (13:02:50), with
+// the space-separated timestamp form: sorting has to move it into place.
+hdAppend(HD_0759, "user", "abar try korlam", {
+  at: "2026-11-04 19:02:50",
+  authorName: HD_0759_CUSTOMER,
 });
 
 // 0663 — the negative twin of 0662: the row lists a picture whose bytes may not be

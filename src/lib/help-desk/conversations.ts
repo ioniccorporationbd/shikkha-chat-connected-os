@@ -13,6 +13,7 @@
 
 import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
+import { parseErpTimestamp } from "./format";
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
   ConversationAttachment,
@@ -148,7 +149,9 @@ function orderByStamp<T>(items: T[], stampOf: (item: T) => { at?: string | null;
     .map((item) => {
       const { at, id } = stampOf(item);
       const text = String(at ?? "");
-      const parsed = Date.parse(text);
+      // A bare ERP stamp is Dhaka wall-clock time; parsed as UTC it lands hours
+      // off and a row written in that shape sorts to the end of the thread.
+      const parsed = text ? parseErpTimestamp(text).getTime() : Number.NaN;
       return {
         item,
         parsed: Number.isFinite(parsed) ? parsed : null,
@@ -230,7 +233,8 @@ function fileKey(files: unknown): string {
 }
 
 function stamp(value: unknown): number | null {
-  const parsed = typeof value === "string" ? Date.parse(value) : Number.NaN;
+  const parsed =
+    typeof value === "string" && value ? parseErpTimestamp(value).getTime() : Number.NaN;
   return Number.isNaN(parsed) ? null : parsed;
 }
 
