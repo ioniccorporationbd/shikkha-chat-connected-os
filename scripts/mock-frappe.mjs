@@ -2906,6 +2906,38 @@ hdAppend(HD_0747, "user", "", {
   ],
 });
 
+// The desk's newest row on 0747: the agent mails a third screenshot
+// (Screenshot-2-…png, 9 minutes ago) — the Activity tab shows it as an email
+// with a To: recipient and the "shared" file chip.
+const HD_0747_IMG2_URL = "/private/files/Screenshot-2-20261104-1749438c8a93.png";
+const hd0747Img2 = hdFileRow({
+  name: "MOCKFILE-07474",
+  url: HD_0747_IMG2_URL,
+  fileName: "Screenshot-2-20261104-1749438c8a93.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0747Img2.attached_to_doctype = "Communication";
+hd0747Img2.attached_to_name = "MOCKCOMM-07472";
+hd0747Img2.is_private = 1;
+hd0747Img2.agent_only = true;
+hdFileBytes.set(HD_0747_IMG2_URL, AVATAR_BYTES);
+hd0747Img2.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "support", "শেয়ার", {
+  at: "2026-11-04T12:19:43.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0747_CUSTOMER_EMAIL,
+  attachments: [
+    {
+      id: hd0747Img2.name,
+      name: "Screenshot-2-20261104-1749438c8a93.png",
+      size: hd0747Img2.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG2_URL,
+    },
+  ],
+});
+
 // 0663 — the negative twin of 0662: the row lists a picture whose bytes may not be
 // handed over at all (neither the storage path nor the ticket streamer). The
 // portal must say so in the console and in Desk -> Error Log, and show a clear
