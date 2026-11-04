@@ -75,15 +75,30 @@ async function login(usr) {
   throw last;
 }
 
+/** Realistic copy — the dashboards must never be screenshotted with placeholder text. */
+const SEED_SUBJECTS = [
+  "পেমেন্ট এন্ট্রি পোস্ট হচ্ছে না",
+  "সাপ্তাহিক বিক্রয় রিপোর্টে ভুল টোটাল",
+  "ইনভয়েস প্রিন্টে লোগো আসছে না",
+  "কাস্টমার লেজার ব্যালেন্স মিলছে না",
+  "স্টক এন্ট্রি ডুপ্লিকেট দেখাচ্ছে",
+  "লগইন OTP আসছে না",
+  "রিপোর্ট এক্সপোর্ট ফেইল করছে",
+];
+
 /** A fresh mock boots with no tickets, so the tables need rows first. */
 async function seedTickets(sid, count) {
   for (let index = 1; index <= count; index += 1) {
     const body = JSON.stringify({
-      subject: `Dashboard table check ${index}`,
+      subject: SEED_SUBJECTS[(index - 1) % SEED_SUBJECTS.length],
       ticketType: "Technical",
       priority: index % 3 === 0 ? "High" : "Medium",
       description: `Seeded row ${index} for the dashboard table checks.`,
-      contact: { name: "Nusrat Jahan", email: "client@example.com", preferredContact: "email" },
+      contact: {
+        name: index % 2 === 0 ? "Rafiqul Islam" : "Nusrat Jahan",
+        email: "client@example.com",
+        preferredContact: "email",
+      },
       department: "Support",
       relatedRoute: "",
       attachments: [],
@@ -180,6 +195,9 @@ async function inspectTables(page) {
 
     const recentRows = first.panels[0]?.rows ?? [];
     check(recentRows.length > 0, `${label}: recent table has rows (${recentRows.length})`);
+    const ids = recentRows.map((row) => row.cells[0] ?? "");
+    const newestFirst = ids.every((id, index) => index === 0 || ids[index - 1].localeCompare(id, undefined, { numeric: true }) >= 0);
+    check(newestFirst, `${label}: rows run newest first (${ids.join(" > ")})`);
     check(
       recentRows.length <= 5,
       `${label}: the recent table starts paged (${recentRows.length} rows)`,

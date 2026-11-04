@@ -26,7 +26,7 @@ import type { HelpDeskBadgeCounts } from "@/lib/help-desk/types";
 import {
   isUnresolved,
   latestSupportReply,
-  sortTicketsSmart,
+  sortTicketsNewestFirst,
   summariseTickets,
   unseenSupportIds,
 } from "@/lib/help-desk/insights";
@@ -109,9 +109,10 @@ export default function HelpDeskOverview({
   const list = useMemo(() => tickets ?? [], [tickets]);
   const summary = useMemo(() => summariseTickets(list), [list]);
   const unseen = useMemo(() => unseenSupportIds(list), [list]);
-  const recent = useMemo(() => sortTicketsSmart(list), [list]);
+  // Both tables read newest-first, so the freshest ticket owns the first row.
+  const recent = useMemo(() => sortTicketsNewestFirst(list), [list]);
   const unresolved = useMemo(
-    () => sortTicketsSmart(list.filter((ticket) => isUnresolved(ticket.status))),
+    () => sortTicketsNewestFirst(list.filter((ticket) => isUnresolved(ticket.status))),
     [list],
   );
 

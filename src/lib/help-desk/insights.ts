@@ -7,6 +7,7 @@
  * value is computed from the tickets the service layer returns.
  */
 
+import { parseErpTimestamp } from "./format";
 import type { Ticket, TicketMessage, TicketStatus } from "./types";
 
 /**
@@ -42,6 +43,16 @@ export function isUnresolved(status: TicketStatus): boolean {
 }
 
 /** Sort a copy of the list: attention-first, then newest-updated. */
+/** Newest first, straight chronological. The overview tables are a feed, so the
+ *  freshest ticket always sits on top — no status grouping, no stale row first. */
+export function sortTicketsNewestFirst(tickets: readonly Ticket[]): Ticket[] {
+  return tickets.slice().sort((a, b) => {
+    const byTime = parseErpTimestamp(b.createdAt).getTime() - parseErpTimestamp(a.createdAt).getTime();
+    if (Number.isFinite(byTime) && byTime !== 0) return byTime;
+    return b.id.localeCompare(a.id, undefined, { numeric: true });
+  });
+}
+
 export function sortTicketsSmart(tickets: readonly Ticket[]): Ticket[] {
   return tickets.slice().sort((a, b) => {
     const byStatus = STATUS_RANK[a.status] - STATUS_RANK[b.status];
