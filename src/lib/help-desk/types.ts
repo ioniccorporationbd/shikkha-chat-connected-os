@@ -289,6 +289,12 @@ export interface ConversationMessage {
   id: string;
   author: MessageAuthor;
   authorName?: string;
+  /**
+   * The desk's "To: <email>" line: the address an employee's outgoing reply was
+   * emailed to (`Communication.recipients`/`email_to`). Empty on every other
+   * row, so the bubble only prints it when the desk would.
+   */
+  recipients?: string;
   body: string;
   /** ISO timestamp. */
   createdAt: string;
@@ -390,6 +396,8 @@ export interface ConversationTimelineEvent {
   author: "user" | "support";
   authorName: string;
   text: string;
+  /** The desk's "To: <email>" line on an outgoing employee reply. */
+  recipients?: string;
   /** Raw ERP status names — only on `type: "status"` events. */
   from?: string;
   to?: string;

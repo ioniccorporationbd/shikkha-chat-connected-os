@@ -1770,6 +1770,10 @@ function hdAppend(ticket, author, body, options = {}) {
     // the two channels' timestamps land out of order (or share one second).
     createdAt: typeof options.at === "string" && options.at ? options.at : new Date().toISOString(),
     kind: typeof options.kind === "string" && options.kind ? options.kind : "message",
+    // The desk stamps an outgoing email with its recipient ("To: ..."); the
+    // portal shows the same line on the employee's bubble.
+    recipients:
+      typeof options.recipients === "string" && options.recipients ? options.recipients : "",
     channel: author === "support" ? "message" : "comment",
     replyTo: options.replyTo && typeof options.replyTo === "object" ? options.replyTo : null,
     attachments: [],
@@ -1917,6 +1921,7 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
       // timeline shows "আপনি" for it.
       authorName: message.author === "support" ? message.authorName : "",
       text: message.body,
+      recipients: message.recipients ?? "",
       attachments: (message.attachments ?? []).length,
       // Mirrors the ERP's `_timeline`: the files themselves, so the Activity list
       // can show and open the picture (0668), not just count it.
@@ -2777,6 +2782,126 @@ hdAppend(HD_0662, "support", "", {
       size: hd0662StaffImage.file_size,
       mime: "image/png",
       url: HD_0662_STAFF_IMAGE_URL,
+    },
+  ],
+});
+
+// 0747 — the ticket behind "the chat has to read like the desk's Activity tab":
+// the customer's text, two attachment-only rows (the desk's "Shared" rows), and
+// the employee's emailed reply, which the desk stamps `To: <customer email>` and
+// which carries its own picture.
+const HD_0747 = "0747";
+const HD_0747_CUSTOMER = "tajul23";
+const HD_0747_CUSTOMER_EMAIL = "tajul789@gmail.com";
+const HD_0747_AGENT = "MD Shahzalal Amin Surker";
+const HD_0747_IMG5_URL = "/private/files/Screenshot-5-20261104-171145d7ba8b.png";
+const HD_0747_IMG6_URL = "/private/files/Screenshot-6-20261104-171238503386.png";
+const HD_0747_IMG3_URL = "/private/files/Screenshot-3-20261104-1713228b5efa.png";
+hdThreads.set(HD_0747, {
+  name: HD_0747,
+  subject: "hjkkkk",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: HD_0747_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0747_CUSTOMER_EMAIL,
+  agent: HD_0747_AGENT,
+  submittedAt: "2026-11-04T12:05:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: "2026-11-04T12:05:00.000Z",
+      author: "user",
+      authorName: HD_0747_CUSTOMER,
+      text: "hjkkkk\nCategory: Technical\nPreferred contact: email",
+      attachments: 0,
+    },
+  ],
+});
+hdAppend(HD_0747, "user", "kkkkkkkkkkkkkkkkkkkkkkk", {
+  at: "2026-11-04T12:10:00.000Z",
+  authorName: HD_0747_CUSTOMER,
+});
+const hd0747Img5 = hdFileRow({
+  name: "MOCKFILE-07471",
+  url: HD_0747_IMG5_URL,
+  fileName: "Screenshot-5-20261104-171145d7ba8b.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0747Img5.attached_to_doctype = "Comment";
+hd0747Img5.attached_to_name = "MOCKCOMMENT-07471";
+hd0747Img5.is_private = 1;
+hdFileBytes.set(HD_0747_IMG5_URL, AVATAR_BYTES);
+hd0747Img5.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "user", "", {
+  at: "2026-11-04T12:11:45.000Z",
+  authorName: HD_0747_CUSTOMER,
+  attachments: [
+    {
+      id: hd0747Img5.name,
+      name: "Screenshot-5-20261104-171145d7ba8b.png",
+      size: hd0747Img5.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG5_URL,
+    },
+  ],
+});
+const hd0747Img6 = hdFileRow({
+  name: "MOCKFILE-07472",
+  url: HD_0747_IMG6_URL,
+  fileName: "Screenshot-6-20261104-171238503386.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0747Img6.attached_to_doctype = "Communication";
+hd0747Img6.attached_to_name = "MOCKCOMM-07471";
+hd0747Img6.is_private = 1;
+hd0747Img6.agent_only = true;
+hdFileBytes.set(HD_0747_IMG6_URL, AVATAR_BYTES);
+hd0747Img6.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "support", "শেয়ার", {
+  at: "2026-11-04T12:12:38.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0747_CUSTOMER_EMAIL,
+  attachments: [
+    {
+      id: hd0747Img6.name,
+      name: "Screenshot-6-20261104-171238503386.png",
+      size: hd0747Img6.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG6_URL,
+    },
+  ],
+});
+const hd0747Img3 = hdFileRow({
+  name: "MOCKFILE-07473",
+  url: HD_0747_IMG3_URL,
+  fileName: "Screenshot-3-20261104-1713228b5efa.png",
+  size: 0,
+  owner: "client@example.com",
+});
+hd0747Img3.attached_to_doctype = "Comment";
+hd0747Img3.attached_to_name = "MOCKCOMMENT-07473";
+hd0747Img3.is_private = 1;
+hdFileBytes.set(HD_0747_IMG3_URL, AVATAR_BYTES);
+hd0747Img3.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "user", "", {
+  at: "2026-11-04T12:13:22.000Z",
+  authorName: HD_0747_CUSTOMER,
+  attachments: [
+    {
+      id: hd0747Img3.name,
+      name: "Screenshot-3-20261104-1713228b5efa.png",
+      size: hd0747Img3.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG3_URL,
     },
   ],
 });

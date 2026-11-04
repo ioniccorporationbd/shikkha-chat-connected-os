@@ -293,6 +293,15 @@ export default function MessageBubble({
             </button>
           ) : null}
 
+          {message.recipients ? (
+            /* The desk prints the address an employee's reply went out to
+               ("To: ...") above that row — the portal shows the same line so
+               the bubble reads exactly like the ticket's Activity tab. */
+            <p className="mb-1 break-all text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              To: {message.recipients}
+            </p>
+          ) : null}
+
           {message.body ? <p className="whitespace-pre-wrap break-words">{message.body}</p> : null}
 
           {message.attachments.length > 0 ? (

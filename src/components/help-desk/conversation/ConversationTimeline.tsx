@@ -154,6 +154,13 @@ export default function ConversationTimeline({ events, language, isSupport = fal
                     </span>
                   ) : null}
                 </div>
+                {event.recipients ? (
+                  /* Same "To: <email>" line the desk prints on an outgoing
+                     employee reply, so the trail reads row for row. */
+                  <p className="mt-1 break-all text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                    To: {event.recipients}
+                  </p>
+                ) : null}
                 {event.type === "status" && (event.from || event.to) ? (
                   <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_80%,transparent)]">
                     <span className="rounded-md bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-1.5 py-0.5">
