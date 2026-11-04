@@ -2906,9 +2906,61 @@ hdAppend(HD_0747, "user", "", {
   ],
 });
 
-// The desk's newest row on 0747: the agent mails a third screenshot
-// (Screenshot-2-…png, 9 minutes ago) — the Activity tab shows it as an email
-// with a To: recipient and the "shared" file chip.
+// The desk's last three rows re-share the same three pictures by email: the
+// agent mails Screenshot-5, then Screenshot-3, then Screenshot-2 (9 minutes
+// ago). Each is an email row with a To: recipient and the "shared" chip.
+const hd0747Reshare5 = hdFileRow({
+  name: "MOCKFILE-07475",
+  url: HD_0747_IMG5_URL,
+  fileName: "Screenshot-5-20261104-171145d7ba8b.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0747Reshare5.attached_to_doctype = "Communication";
+hd0747Reshare5.attached_to_name = "MOCKCOMM-07472";
+hd0747Reshare5.is_private = 1;
+hd0747Reshare5.agent_only = true;
+hd0747Reshare5.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "support", "শেয়ার", {
+  at: "2026-11-04T12:14:30.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0747_CUSTOMER_EMAIL,
+  attachments: [
+    {
+      id: hd0747Reshare5.name,
+      name: "Screenshot-5-20261104-171145d7ba8b.png",
+      size: hd0747Reshare5.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG5_URL,
+    },
+  ],
+});
+const hd0747Reshare3 = hdFileRow({
+  name: "MOCKFILE-07476",
+  url: HD_0747_IMG3_URL,
+  fileName: "Screenshot-3-20261104-1713228b5efa.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0747Reshare3.attached_to_doctype = "Communication";
+hd0747Reshare3.attached_to_name = "MOCKCOMM-07472";
+hd0747Reshare3.is_private = 1;
+hd0747Reshare3.agent_only = true;
+hd0747Reshare3.file_size = AVATAR_BYTES.length;
+hdAppend(HD_0747, "support", "শেয়ার", {
+  at: "2026-11-04T12:15:40.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0747_CUSTOMER_EMAIL,
+  attachments: [
+    {
+      id: hd0747Reshare3.name,
+      name: "Screenshot-3-20261104-1713228b5efa.png",
+      size: hd0747Reshare3.file_size,
+      mime: "image/png",
+      url: HD_0747_IMG3_URL,
+    },
+  ],
+});
 const HD_0747_IMG2_URL = "/private/files/Screenshot-2-20261104-1749438c8a93.png";
 const hd0747Img2 = hdFileRow({
   name: "MOCKFILE-07474",
