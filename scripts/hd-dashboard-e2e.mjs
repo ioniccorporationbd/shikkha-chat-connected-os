@@ -168,7 +168,7 @@ async function inspectTables(page) {
   for (const { dash, usr, label } of DASHBOARDS) {
     const sid = await login(usr);
     if (label === "client") {
-      // Seven rows so the five-row first page and "load more" both show up.
+      // Seven rows so the cap can be proven: exactly five survive, no pager.
       const existing = await expectedRows(sid);
       if (existing.length < 7) await seedTickets(sid, 7 - existing.length);
     }
@@ -231,21 +231,16 @@ async function inspectTables(page) {
     }
 
     // Load more: a paged table keeps the rest behind one button.
-    if (recentRows.length === 5 && wanted.length > 5) {
-      const more = await page.$('[data-hd-table="recent"] button');
-      check(Boolean(more), `${label}: load more shows under a paged table`);
-      if (more) {
-        await page.click('[data-hd-table="recent"] button');
-        await page.waitForTimeout(500);
-        const grown = await inspectTables(page);
-        check(
-          (grown.panels[0]?.rows.length ?? 0) > 5,
-          `${label}: load more reveals the rest (${grown.panels[0]?.rows.length} rows)`,
-        );
-      }
-    } else {
-      check(wanted.length <= 5, `${label}: seeding produced rows to page (${wanted.length})`);
-    }
+    check(
+      wanted.length <= 5 || recentRows.length === 5,
+      `${label}: the table caps at five rows (${recentRows.length})`,
+    );
+    const pager = await page.evaluate(() => {
+      const table = document.querySelector('[data-hd-table]');
+      const buttons = [...(table?.querySelectorAll("button") ?? [])].map((b) => b.innerText.trim());
+      return buttons;
+    });
+    check(pager.length === 0, `${label}: no load-more or pager in the table (${pager.join("/") || "none"})`);
 
     // Switch to the unresolved tab.
     await page.click('[data-hd-tab="unresolved"]');

@@ -73,11 +73,11 @@ export const DEFAULT_PRIORITY: TicketPriority = "medium";
  *
  * Shikkha red is reserved for elements that perform an action when clicked
  * (primary buttons, the row "view details" action). Status is information, not
- * an action, so this palette never uses red: ink = live work, teal = in
- * progress, green = resolved, grey = settled / waiting.
+ * an action, so this palette never uses red: blue = live work (open), teal =
+ * in progress, green = resolved, grey = settled / waiting.
  */
 export const STATUS_TONE: Record<TicketStatus, string> = {
-  open: "#032521",
+  open: "#2563eb",
   in_progress: "#2e8b76",
   waiting_for_user: "#6b7280",
   resolved: "#2f7d5a",

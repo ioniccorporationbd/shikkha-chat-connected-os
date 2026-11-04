@@ -6,7 +6,6 @@ import {
   FiAlertCircle,
   FiArrowRight,
   FiCheckCircle,
-  FiChevronDown,
   FiClock,
   FiHeadphones,
   FiInbox,
@@ -42,7 +41,7 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transpar
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 /** Rows revealed per "load more" click in the dashboard tables. */
-const TABLE_PAGE = 5;
+const MAX_ROWS = 5;
 /** Shared column template so the head and every row line up on desktop. */
 const TABLE_COLS = "lg:grid-cols-[8.5rem_minmax(0,1.6fr)_12rem_auto_auto_10rem_1.25rem]";
 const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
@@ -74,8 +73,6 @@ export default function HelpDeskOverview({
   // One table at a time: the two lists sit behind tabs so neither competes for
   // the same screen space as before.
   const [tab, setTab] = useState<OverviewTab>("recent");
-  const [recentLimit, setRecentLimit] = useState(TABLE_PAGE);
-  const [unresolvedLimit, setUnresolvedLimit] = useState(TABLE_PAGE);
 
   const load = useCallback(async () => {
     try {
@@ -116,11 +113,10 @@ export default function HelpDeskOverview({
     [list],
   );
 
-  // Whichever tab is open owns the table, its own page size and its own
-  // "load more" cursor, so switching back keeps the reader where they were.
+  // Whichever tab is open owns the table. Both are capped at the five freshest
+  // rows — no paging, no load-more: the overview is a recent-activity glance,
+  // the full queue lives on its own page.
   const active = tab === "recent" ? recent : unresolved;
-  const limit = tab === "recent" ? recentLimit : unresolvedLimit;
-  const setLimit = tab === "recent" ? setRecentLimit : setUnresolvedLimit;
 
   // Real unread activity, straight from the ERP. Zero never renders a badge and
   // the New Ticket / file-ticket action never carries one.
@@ -312,7 +308,7 @@ export default function HelpDeskOverview({
                     <span aria-hidden />
                   </div>
                   <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
-                    {active.slice(0, limit).map((ticket) => (
+                    {active.slice(0, MAX_ROWS).map((ticket) => (
                       <TicketTableRow
                         key={ticket.id}
                         ticket={ticket}
@@ -323,21 +319,6 @@ export default function HelpDeskOverview({
                       />
                     ))}
                   </ul>
-                  {active.length > limit ? (
-                    <div className="mt-3 flex justify-center">
-                      <button
-                        type="button"
-                        onClick={() => setLimit((count) => count + TABLE_PAGE)}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-                      >
-                        <FiChevronDown size={14} aria-hidden />
-                        {copy.loadMore}
-                        <span className={`rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-1.5 text-[10.5px] tabular-nums ${MUTED}`}>
-                          {active.length - limit}
-                        </span>
-                      </button>
-                    </div>
-                  ) : null}
                 </>
               )}
             </div>
@@ -464,7 +445,7 @@ function TicketTableRow({
           ) : null}
         </span>
 
-        <span className={`order-3 truncate text-[12.5px] ${MUTED} lg:order-none`} title={customer}>
+        <span className="order-3 truncate text-[12.5px] font-medium text-[var(--color-primary)] lg:order-none" title={customer}>
           {customer}
         </span>
 
@@ -480,7 +461,7 @@ function TicketTableRow({
           {copy.priorities[ticket.priority]}
         </span>
 
-        <span className={`order-6 text-[11.5px] tabular-nums ${MUTED} lg:order-none`}>
+        <span className="order-6 text-[11.5px] tabular-nums text-[var(--color-primary)] lg:order-none">
           {formatDateTimeNumeric(ticket.createdAt, language)}
         </span>
 
