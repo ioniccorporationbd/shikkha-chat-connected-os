@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 
 import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/HelpDeskStates";
+import { reportClientError } from "@/lib/log/report-error";
 import NotificationBadge from "@/components/dashboard/help-desk/NotificationBadge";
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
@@ -78,9 +79,16 @@ export default function HelpDeskOverview({
     try {
       const all = await listTickets();
       setTickets(all);
-    } catch {
+    } catch (err) {
       setError(true);
       setTickets([]);
+      // The requirement is explicit: a failed overview load must be readable in
+      // the browser console AND land in the ERP Error Log, never just blank out.
+      reportClientError({
+        scope: "help-desk:overview-load",
+        message: "Could not load the help-desk overview tickets.",
+        detail: { error: err instanceof Error ? err.message : String(err) },
+      });
     }
   }, []);
 
@@ -255,21 +263,18 @@ export default function HelpDeskOverview({
           {/* Recent activity / unresolved — one table at a time */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} sm:p-6`}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div
-                role="tablist"
-                className="inline-flex flex-wrap gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1"
-              >
+              <div role="tablist" className="flex flex-wrap gap-2">
                 <TabButton
                   id="recent"
                   label={copy.recentActivity}
-                  count={recent.length}
+                  icon={FiClock}
                   active={tab === "recent"}
                   onSelect={() => setTab("recent")}
                 />
                 <TabButton
                   id="unresolved"
                   label={copy.unresolvedHeading}
-                  count={unresolved.length}
+                  icon={FiAlertCircle}
                   active={tab === "unresolved"}
                   onSelect={() => setTab("unresolved")}
                 />
@@ -358,17 +363,21 @@ function SummaryCard({
   );
 }
 
-/** One pill in the tab bar; the active one takes the house green. */
+/**
+ * A tab styled exactly like the "New Ticket" quick action beside it: same
+ * rounded card, same primary icon chip, same hover lift — so the two read as
+ * one family. The active tab simply locks the hover state in.
+ */
 function TabButton({
   id,
   label,
-  count,
+  icon: Icon,
   active,
   onSelect,
 }: {
   id: OverviewTab;
   label: string;
-  count: number;
+  icon: typeof FiClock;
   active: boolean;
   onSelect: () => void;
 }) {
@@ -381,22 +390,20 @@ function TabButton({
       aria-controls={`hd-overview-panel-${id}`}
       data-hd-tab={id}
       onClick={onSelect}
-      className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[12.5px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+      className={`group inline-flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 text-left transition sm:w-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] ${
         active
-          ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
-          : "text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] hover:text-[var(--color-primary)]"
+          ? "border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+          : "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
       }`}
     >
-      {label}
       <span
-        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold leading-none tabular-nums ${
-          active
-            ? "bg-[color-mix(in_srgb,var(--color-white)_26%,transparent)] text-[var(--color-white)]"
-            : "bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)] transition ${
+          active ? "" : "group-hover:bg-[var(--color-action)]"
         }`}
       >
-        {count}
+        <Icon size={16} aria-hidden />
       </span>
+      <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{label}</span>
     </button>
   );
 }
