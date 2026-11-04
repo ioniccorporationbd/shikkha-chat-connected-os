@@ -187,6 +187,10 @@ export interface HelpDeskCopy {
   openOnlyNote: string;
   colTicketId: string;
   colSubject: string;
+  /** Header of the table's customer column (the ticket's real reporter). */
+  colCustomer: string;
+  /** Button under a table row list that reveals the next page. */
+  loadMore: string;
   colCategory: string;
   colPriority: string;
   colStatus: string;
@@ -522,6 +526,8 @@ const bn: HelpDeskCopy = {
   openOnlyNote: "শুধু ওপেন স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
   colTicketId: "টিকিট আইডি",
   colSubject: "বিষয়",
+  colCustomer: "কাস্টমার",
+  loadMore: "আরও দেখুন",
   colCategory: "ক্যাটাগরি",
   colPriority: "প্রায়োরিটি",
   colStatus: "স্ট্যাটাস",
@@ -857,6 +863,8 @@ const en: HelpDeskCopy = {
   openOnlyNote: "Showing open tickets only",
   colTicketId: "Ticket ID",
   colSubject: "Subject",
+  colCustomer: "Customer",
+  loadMore: "Load more",
   colCategory: "Category",
   colPriority: "Priority",
   colStatus: "Status",

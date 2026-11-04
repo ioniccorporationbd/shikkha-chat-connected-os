@@ -6,6 +6,7 @@ import {
   FiAlertCircle,
   FiArrowRight,
   FiCheckCircle,
+  FiChevronDown,
   FiClock,
   FiHeadphones,
   FiInbox,
@@ -40,6 +41,14 @@ import HelpDeskBackButton from "./HelpDeskBackButton";
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
+/** Rows revealed per "load more" click in the dashboard tables. */
+const TABLE_PAGE = 5;
+/** Shared column template so the head and every row line up on desktop. */
+const TABLE_COLS = "lg:grid-cols-[8.5rem_minmax(0,1.6fr)_12rem_auto_auto_10rem_1.25rem]";
+const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
+
+type OverviewTab = "recent" | "unresolved";
+
 /**
  * The smart Help Desk landing rendered inside the dashboard content area:
  * a branded hero, data-driven summary cards, quick actions, recent activity and
@@ -62,6 +71,11 @@ export default function HelpDeskOverview({
 
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [error, setError] = useState(false);
+  // One table at a time: the two lists sit behind tabs so neither competes for
+  // the same screen space as before.
+  const [tab, setTab] = useState<OverviewTab>("recent");
+  const [recentLimit, setRecentLimit] = useState(TABLE_PAGE);
+  const [unresolvedLimit, setUnresolvedLimit] = useState(TABLE_PAGE);
 
   const load = useCallback(async () => {
     try {
@@ -92,11 +106,20 @@ export default function HelpDeskOverview({
     void load();
   };
 
-  const list = tickets ?? [];
+  const list = useMemo(() => tickets ?? [], [tickets]);
   const summary = useMemo(() => summariseTickets(list), [list]);
   const unseen = useMemo(() => unseenSupportIds(list), [list]);
-  const recent = useMemo(() => sortTicketsSmart(list).slice(0, 4), [list]);
-  const unresolved = useMemo(() => list.filter((ticket) => isUnresolved(ticket.status)).slice(0, 4), [list]);
+  const recent = useMemo(() => sortTicketsSmart(list), [list]);
+  const unresolved = useMemo(
+    () => sortTicketsSmart(list.filter((ticket) => isUnresolved(ticket.status))),
+    [list],
+  );
+
+  // Whichever tab is open owns the table, its own page size and its own
+  // "load more" cursor, so switching back keeps the reader where they were.
+  const active = tab === "recent" ? recent : unresolved;
+  const limit = tab === "recent" ? recentLimit : unresolvedLimit;
+  const setLimit = tab === "recent" ? setRecentLimit : setUnresolvedLimit;
 
   // Real unread activity, straight from the ERP. Zero never renders a badge and
   // the New Ticket / file-ticket action never carries one.
@@ -232,78 +255,92 @@ export default function HelpDeskOverview({
             </div>
           </section>
 
-          {/* Recent + unresolved */}
-          <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-            <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-[15px] font-semibold">{copy.recentActivity}</h2>
-                <Link
-                  href={links.tickets}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
-                >
-                  <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.landingViewAll}</span>
-                  <FiArrowRight size={14} className="text-[var(--color-primary)]" aria-hidden />
-                </Link>
+          {/* Recent activity / unresolved — one table at a time */}
+          <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} sm:p-6`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div
+                role="tablist"
+                className="inline-flex flex-wrap gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1"
+              >
+                <TabButton
+                  id="recent"
+                  label={copy.recentActivity}
+                  count={recent.length}
+                  active={tab === "recent"}
+                  onSelect={() => setTab("recent")}
+                />
+                <TabButton
+                  id="unresolved"
+                  label={copy.unresolvedHeading}
+                  count={unresolved.length}
+                  active={tab === "unresolved"}
+                  onSelect={() => setTab("unresolved")}
+                />
               </div>
+              <Link
+                href={links.tickets}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+              >
+                <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.landingViewAll}</span>
+                <FiArrowRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+              </Link>
+            </div>
 
-              {recent.length === 0 ? (
-                <p className="mt-3 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                  {copy.recentEmpty}
+            <div
+              role="tabpanel"
+              id={`hd-overview-panel-${tab}`}
+              aria-labelledby={`hd-overview-tab-${tab}`}
+              data-hd-table={tab}
+              className="mt-4"
+            >
+              {active.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-8 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                  {tab === "recent" ? copy.recentEmpty : copy.unresolvedEmpty}
                 </p>
               ) : (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {recent.map((ticket) => (
-                    <TicketRow
-                      key={ticket.id}
-                      ticket={ticket}
-                      copy={copy}
-                      language={language}
-                      href={links.ticket(ticket.id)}
-                      unseen={unseen}
-                    />
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
-              <h2 className="text-[15px] font-semibold">{copy.unresolvedHeading}</h2>
-              {unresolved.length === 0 ? (
-                <p className="mt-3 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                  {copy.unresolvedEmpty}
-                </p>
-              ) : (
-                <ul className="mt-3 flex flex-col gap-2">
-                  {unresolved.map((ticket) => (
-                    <li key={ticket.id}>
-                      <Link
+                <>
+                  <div
+                    className={`hidden ${TABLE_COLS} items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-4 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.06em] ${MUTED} lg:grid`}
+                  >
+                    <span>{copy.colTicketId}</span>
+                    <span>{copy.colSubject}</span>
+                    <span>{copy.colCustomer}</span>
+                    <span>{copy.colStatus}</span>
+                    <span>{copy.colPriority}</span>
+                    <span>{copy.colCreatedAt}</span>
+                    <span aria-hidden />
+                  </div>
+                  <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
+                    {active.slice(0, limit).map((ticket) => (
+                      <TicketTableRow
+                        key={ticket.id}
+                        ticket={ticket}
+                        copy={copy}
+                        language={language}
                         href={links.ticket(ticket.id)}
-                        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:border-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                        unseen={unseen}
+                      />
+                    ))}
+                  </ul>
+                  {active.length > limit ? (
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setLimit((count) => count + TABLE_PAGE)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
                       >
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: PRIORITY_TONE[ticket.priority] }}
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span
-                            className="block truncate text-[13px] font-semibold text-[var(--color-primary)]"
-                            title={ticket.subject}
-                          >
-                            {ticket.subject}
-                          </span>
-                          <span className="block text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                            {ticket.id} · {copy.priorities[ticket.priority]}
-                          </span>
+                        <FiChevronDown size={14} aria-hidden />
+                        {copy.loadMore}
+                        <span className={`rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-1.5 text-[10.5px] tabular-nums ${MUTED}`}>
+                          {active.length - limit}
                         </span>
-                        <TicketStatusBadge status={ticket.status} copy={copy} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               )}
-            </section>
-          </div>
+            </div>
+          </section>
         </>
       )}
     </div>
@@ -339,7 +376,55 @@ function SummaryCard({
   );
 }
 
-function TicketRow({
+/** One pill in the tab bar; the active one takes the house green. */
+function TabButton({
+  id,
+  label,
+  count,
+  active,
+  onSelect,
+}: {
+  id: OverviewTab;
+  label: string;
+  count: number;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      id={`hd-overview-tab-${id}`}
+      aria-selected={active}
+      aria-controls={`hd-overview-panel-${id}`}
+      data-hd-tab={id}
+      onClick={onSelect}
+      className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[12.5px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] ${
+        active
+          ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-[0_6px_16px_-8px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+          : "text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] hover:text-[var(--color-primary)]"
+      }`}
+    >
+      {label}
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-bold leading-none tabular-nums ${
+          active
+            ? "bg-[color-mix(in_srgb,var(--color-white)_26%,transparent)] text-[var(--color-white)]"
+            : "bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A single table row. Desktop lays the six cells out on the shared column
+ * template; narrow screens stack them (subject first, then id/customer, status,
+ * priority and the filed date) so nothing is cropped on a phone.
+ */
+function TicketTableRow({
   ticket,
   copy,
   language,
@@ -354,33 +439,55 @@ function TicketRow({
 }) {
   const reply = latestSupportReply(ticket);
   const showNew = unseen.has(ticket.id) && Boolean(reply);
+  const customer = ticket.contact?.name?.trim() || ticket.contact?.email?.trim() || "—";
+  const tone = PRIORITY_TONE[ticket.priority];
 
   return (
     <li>
       <Link
         href={href}
-        className="flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] px-3 py-2.5 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+        className={`grid grid-cols-[max-content_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 px-3 py-3 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-action-ring)] lg:px-4 ${TABLE_COLS} lg:items-center lg:gap-3`}
       >
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span
-              className="truncate text-[13.5px] font-semibold text-[var(--color-primary)]"
-              title={ticket.subject}
-            >
-              {ticket.subject}
-            </span>
-            {showNew ? (
-              <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
-                {copy.newReplyBadge}
-              </span>
-            ) : null}
-          </span>
-          <span className="mt-0.5 block text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-            {ticket.id} · {formatDateTimeNumeric(ticket.updatedAt, language)}
-          </span>
+        <span className={`order-2 text-[11.5px] font-semibold tabular-nums ${MUTED} lg:order-none`}>
+          {ticket.id}
         </span>
-        <TicketStatusBadge status={ticket.status} copy={copy} />
-        <FiArrowRight size={15} className="text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]" aria-hidden />
+
+        <span className="order-1 col-span-2 flex min-w-0 items-center gap-2 lg:order-none lg:col-span-1">
+          <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]" title={ticket.subject}>
+            {ticket.subject}
+          </span>
+          {showNew ? (
+            <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a5a10]">
+              {copy.newReplyBadge}
+            </span>
+          ) : null}
+        </span>
+
+        <span className={`order-3 truncate text-[12.5px] ${MUTED} lg:order-none`} title={customer}>
+          {customer}
+        </span>
+
+        <span className="order-4 justify-self-start lg:order-none lg:justify-self-start">
+          <TicketStatusBadge status={ticket.status} copy={copy} />
+        </span>
+
+        <span
+          className="order-5 inline-flex items-center gap-1.5 justify-self-start rounded-full px-2 py-0.5 text-[10.5px] font-semibold lg:order-none lg:justify-self-start"
+          style={{ backgroundColor: `color-mix(in srgb, ${tone} 14%, white)`, color: tone }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: tone }} aria-hidden />
+          {copy.priorities[ticket.priority]}
+        </span>
+
+        <span className={`order-6 text-[11.5px] tabular-nums ${MUTED} lg:order-none`}>
+          {formatDateTimeNumeric(ticket.createdAt, language)}
+        </span>
+
+        {/* A global `svg { display: block }` rule beats Tailwind's `hidden`
+            on the svg itself, so the arrow hides through a span wrapper. */}
+        <span className="hidden lg:block" aria-hidden>
+          <FiArrowRight size={15} className="text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]" />
+        </span>
       </Link>
     </li>
   );

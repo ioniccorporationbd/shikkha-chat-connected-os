@@ -4082,8 +4082,11 @@ const server = createServer(async (request, response) => {
     }
 
     if (hdAction === "list_tickets") {
+      // A support agent sees the whole queue, exactly like the ERP scopes it;
+      // a customer only ever sees the tickets they raised themselves.
+      const viewerIsStaff = DEMO_USERS[String(email ?? "").toLowerCase()]?.kind === "staff";
       const rows = hdTicketList
-        .filter((row) => row.ownerKey === ownerKey || row.support)
+        .filter((row) => viewerIsStaff || row.ownerKey === ownerKey || row.support)
         .map((row) => row.ticket)
         .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
       ok(response, {
