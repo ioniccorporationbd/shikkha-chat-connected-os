@@ -304,6 +304,15 @@ export default function MessageBubble({
 
           {message.body ? <p className="whitespace-pre-wrap break-words">{message.body}</p> : null}
 
+          {!message.body && message.attachments.length > 0 ? (
+            /* An attachment-only row on the desk carries the Attachment
+               comment's own text: "Shared — <file>", printed above the file
+               chip. Mirror it so the bubble reads like the Activity tab. */
+            <p className="mb-1 break-words font-semibold">
+              {copy.conversationShared} — {message.attachments[0].fileName}
+            </p>
+          ) : null}
+
           {message.attachments.length > 0 ? (
             <ul className="mt-2 space-y-1.5">
               {message.attachments.map((file, index) => {

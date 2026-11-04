@@ -179,6 +179,13 @@ export default function ConversationTimeline({ events, language, isSupport = fal
                   <p className="mt-1 whitespace-pre-line break-words text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
                     {event.text}
                   </p>
+                ) : event.files?.length ? (
+                  /* Desk's attachment-only row reads "Shared — <file>" (the
+                     Attachment comment's own text); the trail prints the same
+                     line above the file. */
+                  <p className="mt-1 break-words text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                    {copy.conversationShared} — {event.files[0].fileName}
+                  </p>
                 ) : null}
 
                 {event.files?.length ? (

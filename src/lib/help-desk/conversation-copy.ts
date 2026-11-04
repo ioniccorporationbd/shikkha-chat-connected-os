@@ -95,6 +95,8 @@ export interface ConversationCopy {
   conversationEmpty: string;
   conversationYou: string;
   conversationSupport: string;
+  /** Desk's label on an attachment-only row ("Shared" / "শেয়ার"). */
+  conversationShared: string;
   conversationCustomer: string;
   conversationNewMessages: string;
   conversationClosed: string;
@@ -331,6 +333,7 @@ const bn: ConversationCopy = {
   conversationEmpty: "এখনও কোনো বার্তা নেই। প্রথম বার্তাটি আপনিই পাঠাতে পারেন।",
   conversationYou: "আপনি",
   conversationSupport: "সাপোর্ট টিম",
+  conversationShared: "শেয়ার",
   conversationCustomer: "গ্রাহক",
   conversationNewMessages: "নতুন বার্তা এসেছে — নিচে যান",
   conversationClosed: "টিকিটটি ক্লোজড",
@@ -550,6 +553,7 @@ const en: ConversationCopy = {
   conversationEmpty: "No messages yet. You can send the first one.",
   conversationYou: "You",
   conversationSupport: "Support team",
+  conversationShared: "Shared",
   conversationCustomer: "Customer",
   conversationNewMessages: "New message arrived — jump to it",
   conversationClosed: "This ticket is closed",

@@ -407,38 +407,12 @@ export default function ConversationThread({
     }
 
     // --- Which comment does this reply answer? -----------------------------
-    // The ERP stores a ticket's rows as a flat list: the Comment channel and the
-    // Communication channel each write their own rows, and neither links an
-    // answer to the comment it answers. Without that link the thread reads as
-    // two one-sided columns — a customer's "hi" on the right, support's "hello"
-    // on the left, nothing saying they belong together.
-    //
-    // So pair them the way the reader already understands a conversation: a row
-    // whose predecessor in this ordered thread came from the *other* side quotes
-    // that predecessor. Runs from one person never quote themselves, and an
-    // existing `replyTo` from the ERP always wins over the inference. The snippet
-    // is trimmed here (not in the bubble) so the quote strip can stay one block
-    // tall no matter how long the comment was.
-    const inferredQuotes = new Map<string, ConversationReplyRef>();
-    let previousMessage: Extract<ThreadRow, { kind: "message" }> | null = null;
-    for (const entry of entries) {
-      if (entry.kind !== "message") continue;
-      const current = entry;
-      if (previousMessage && !current.message.replyTo && previousMessage.message.isMine !== current.message.isMine) {
-        const text = String(previousMessage.message.body || "")
-          .replace(/\s+/g, " ")
-          .trim();
-        if (text) {
-          inferredQuotes.set(current.key, {
-            id: previousMessage.message.id,
-            author: previousMessage.message.author,
-            authorName: previousMessage.message.authorName,
-            body: text.length > 140 ? `${text.slice(0, 140)}…` : text,
-          });
-        }
-      }
-      previousMessage = current;
-    }
+    // Only what the ERP actually links. The desk's Activity tab shows a quote
+    // strip strictly from `replyTo` (Communication.in_reply_to); it never pairs
+    // two neighbouring rows into a conversation. Inferring "the row above came
+    // from the other side, so this answers it" invented a quote the desk never
+    // printed — and on an attachment-only row it quoted the word "Shared".
+    // A real `replyTo` still renders; nothing is synthesised.
 
     // One pass sets the day separator and, with it, the run collapsing: two
     // bubbles from the same person on the same day are one block, so the second
@@ -459,7 +433,7 @@ export default function ConversationThread({
         grouped = sameSide && sameAuthor && closeEnough;
       }
       return entry.kind === "message"
-        ? { ...entry, dayLabel, grouped, quoted: inferredQuotes.get(entry.key) }
+        ? { ...entry, dayLabel, grouped }
         : { ...entry, dayLabel };
     });
   }, [messages, language, systemEvents]);
