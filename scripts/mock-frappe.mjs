@@ -3452,6 +3452,128 @@ hdThreads.get(HD_0793).timeline.push({
 
 
 
+// 0814 — a thread where the employee answers with text *and* a picture, the
+// shape the staff conversation page (/userDashboard/.../0814/conversation) and
+// the customer's page must both draw in full.
+const HD_0814 = "0814";
+const HD_0814_CUSTOMER = "sadia";
+const HD_0814_EMAIL = "sadia@example.com";
+const HD_0814_AGENT_EMAIL = "agent@shikkhachat.com";
+const hd0814Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+const HD_0814_CUST_IMG_URL = "/private/files/screenshot-1-20261105-101500aa11bb.png";
+const HD_0814_AGENT_IMG_URL = "/private/files/screenshot-2-20261105-101800cc22dd.png";
+
+const hd0814CustImg = hdFileRow({
+  name: "MOCKFILE-08141",
+  url: HD_0814_CUST_IMG_URL,
+  fileName: "screenshot-1-20261105-101500aa11bb.png",
+  size: 0,
+  owner: HD_0814_EMAIL,
+});
+hd0814CustImg.attached_to_doctype = "Comment";
+hd0814CustImg.attached_to_name = "MOCKCOMMENT-08141";
+hd0814CustImg.is_private = 1;
+hd0814CustImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0814_CUST_IMG_URL, AVATAR_BYTES);
+
+// The employee's picture is a Desk upload: private, on the agent's own row, and
+// flagged agent-only — the customer's page still has to show it, streamed
+// through the portal's ticket-checked file route.
+const hd0814AgentImg = hdFileRow({
+  name: "MOCKFILE-08142",
+  url: HD_0814_AGENT_IMG_URL,
+  fileName: "screenshot-2-20261105-101800cc22dd.png",
+  size: 0,
+  owner: HD_0814_AGENT_EMAIL,
+});
+hd0814AgentImg.attached_to_doctype = "Communication";
+hd0814AgentImg.attached_to_name = "MOCKCOMM-08142";
+hd0814AgentImg.is_private = 1;
+hd0814AgentImg.agent_only = true;
+hd0814AgentImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0814_AGENT_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0814, {
+  name: HD_0814,
+  subject: "payment problem",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0814_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0814_EMAIL,
+  agent: HD_0747_AGENT,
+  team: "Support Team",
+  submittedAt: hd0814Ago(56),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0814Ago(56),
+      author: "user",
+      authorName: HD_0814_CUSTOMER,
+      text: "payment problem\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+// 55 minutes ago — the customer opens with a picture.
+hdAppend(HD_0814, "user", "পেমেন্ট deduction হয়েছে কিন্তু কোর্সে ঢুকতে পারছি না", {
+  at: hd0814Ago(55),
+  authorName: HD_0814_CUSTOMER,
+  attachments: [
+    {
+      id: hd0814CustImg.name,
+      name: "screenshot-1-20261105-101500aa11bb.png",
+      size: hd0814CustImg.file_size,
+      mime: "image/png",
+      url: HD_0814_CUST_IMG_URL,
+    },
+  ],
+});
+
+// 52 minutes ago — the employee's first answer.
+hdAppend(HD_0814, "support", "hello sir, ki problem hoyeche?", {
+  at: hd0814Ago(52),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0814_EMAIL,
+});
+
+// 50 minutes ago — the employee answers with a picture only.
+hdAppend(HD_0814, "support", "", {
+  at: hd0814Ago(50),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0814_EMAIL,
+  attachments: [
+    {
+      id: hd0814AgentImg.name,
+      name: "screenshot-2-20261105-101800cc22dd.png",
+      size: hd0814AgentImg.file_size,
+      mime: "image/png",
+      url: HD_0814_AGENT_IMG_URL,
+    },
+  ],
+});
+
+// 48 minutes ago — the employee's explanation.
+hdAppend(HD_0814, "support", "ei dekhen, payment ta confirm hoye geche", {
+  at: hd0814Ago(48),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0814_EMAIL,
+});
+
+// 20 minutes ago — the customer closes the loop.
+hdAppend(HD_0814, "user", "ok sir, ekhon dhukte parchi", {
+  at: hd0814Ago(20),
+  authorName: HD_0814_CUSTOMER,
+});
+
 // 0807 — a portal ticket read from the staff desk's own conversation route
 // (/userDashboard/help-desk/tickets/0807/conversation).
 const HD_0807 = "0807";

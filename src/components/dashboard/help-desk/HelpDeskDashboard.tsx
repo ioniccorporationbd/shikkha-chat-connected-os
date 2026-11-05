@@ -96,6 +96,10 @@ export default function HelpDeskDashboard({
         backFallback={links.tickets}
         expanded={view === "conversation"}
         chatOnly={view === "conversation"}
+        // One ticket, one layout: the full-conversation page reads exactly as
+        // the customer sees it on either dashboard — his messages right, every
+        // employee reply left — so staff and customer screens cannot disagree.
+        perspective={view === "conversation" ? "customer" : undefined}
         allConversationsHref={view === "detail" ? links.conversation(ticketId) : undefined}
       />
     );

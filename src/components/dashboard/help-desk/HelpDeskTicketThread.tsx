@@ -17,6 +17,7 @@ import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackBut
 import { useTicketRealtime } from "@/lib/help-desk/use-ticket-realtime";
 import {
   addRequirement,
+  alignConversation,
   getConversation,
   orderConversation,
   markConversationRead,
@@ -122,6 +123,18 @@ async function landedInThread(ticketId: string, text: string): Promise<boolean> 
   }
 }
 
+/**
+ * Re-shape a write response onto the side the page reads from. Reads already
+ * carry `viewAs`; a send response has to be laid on the same side or the row
+ * the sender just wrote would jump to the middle of the room.
+ */
+function shapedFor(
+  viewAs: "support" | "customer" | undefined,
+  data: ConversationPayload | null
+): ConversationPayload | null {
+  return data && viewAs ? alignConversation(data, viewAs) : data;
+}
+
 function isAuthFailure(error: unknown): boolean {
   const err = error as { code?: string; status?: number } | null;
   return err?.code === "not_authenticated" || err?.status === 401;
@@ -190,6 +203,7 @@ export default function HelpDeskTicketThread({
   titleOverride,
   allConversationsHref,
   chatOnly = false,
+  perspective,
 }: {
   language: string;
   ticketId: string;
@@ -203,8 +217,21 @@ export default function HelpDeskTicketThread({
   allConversationsHref?: string;
   /** Chat-only view: the conversation fills the page, problem/timeline hidden. */
   chatOnly?: boolean;
+  /**
+   * Force the side every bubble is drawn from, whatever the ERP guessed about
+   * the reader. The full-conversation pages pass `"customer"` on *both*
+   * dashboards so one ticket reads the same everywhere: the customer's own
+   * messages on the right, every employee reply (text and file) on the left —
+   * an employee opening the same page sees the room exactly as the customer
+   * does, which is what the desk's own preview shows too.
+   */
+  perspective?: "customer";
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
+  // Every read/write on this thread is shaped for this side, so a bubble can
+  // never land on the wrong half of the room between a first load, a poll and
+  // a send response.
+  const viewAs = perspective === "customer" ? ("customer" as const) : undefined;
   // Status names come from the Help Desk copy so the chip reads "Closed", not
   // the raw lifecycle key the type carries.
   const hdCopy = useMemo(() => helpDeskCopyFor(language), [language]);
@@ -281,7 +308,10 @@ export default function HelpDeskTicketThread({
         setError(false);
       }
       try {
-        const data = await getConversation(ticketId, chatOnly ? { limit: PAGE_SIZE } : {});
+        const data = await getConversation(
+          ticketId,
+          chatOnly ? { limit: PAGE_SIZE, viewAs } : { viewAs }
+        );
         if (!mounted.current || activeTicket.current !== ticketId) return;
         if (!data) {
           setMissing(true);
@@ -331,7 +361,7 @@ export default function HelpDeskTicketThread({
         if (mounted.current && !silent) setLoading(false);
       }
     },
-    [chatOnly, ticketId]
+    [chatOnly, ticketId, viewAs]
   );
 
   useEffect(() => {
@@ -419,7 +449,7 @@ export default function HelpDeskTicketThread({
     olderInFlight.current = true;
     setLoadingOlder(true);
     try {
-      const data = await getConversation(ticketId, { limit: PAGE_SIZE, cursor: olderCursor });
+      const data = await getConversation(ticketId, { limit: PAGE_SIZE, cursor: olderCursor, viewAs });
       if (!mounted.current || !data) return;
       setPayload((current) => {
         if (!current) return data;
@@ -438,7 +468,7 @@ export default function HelpDeskTicketThread({
       olderInFlight.current = false;
       if (mounted.current) setLoadingOlder(false);
     }
-  }, [chatOnly, hasOlder, loadingOlder, olderCursor, ticketId]);
+  }, [chatOnly, hasOlder, loadingOlder, olderCursor, ticketId, viewAs]);
 
   /**
    * Catch up after a live ping, a reconnect or a poll tick.
@@ -464,7 +494,7 @@ export default function HelpDeskTicketThread({
       for (let round = 0; round < 5; round += 1) {
         const data = await getConversation(
           ticketId,
-          cursor ? { limit: PAGE_SIZE, since: cursor } : { limit: PAGE_SIZE }
+          cursor ? { limit: PAGE_SIZE, since: cursor, viewAs } : { limit: PAGE_SIZE, viewAs }
         );
         if (!mounted.current || !data) return;
         if (round > 0 && !data.messages.length) break;
@@ -483,7 +513,7 @@ export default function HelpDeskTicketThread({
     } catch {
       // Silent: the interval or the next ping tries again.
     }
-  }, [load, mergeThread, ticketId]);
+  }, [load, mergeThread, ticketId, viewAs]);
 
   // Frappe realtime, bridged server-side (see the stream route). `live` is false
   // when the socket is unavailable, and the existing poll then keeps running at
@@ -529,11 +559,15 @@ export default function HelpDeskTicketThread({
     async (input: ComposerInput) => {
       if (mode === "requirement") {
         try {
-          const data = await addRequirement(ticketId, {
-            message: input.message,
-            replyTo: input.replyTo,
-            attachments: input.files,
-          });
+          const data = shapedFor(
+            viewAs,
+            await addRequirement(ticketId, {
+              message: input.message,
+              replyTo: input.replyTo,
+              attachments: input.files,
+            })
+          );
+          if (!data) return false;
           mergeThread(data);
           setQuoted(null);
           clearDraft(ticketId);
@@ -573,11 +607,15 @@ export default function HelpDeskTicketThread({
       }
 
       try {
-        const data = await sendMessage(ticketId, {
-          message: input.message,
-          replyTo: input.replyTo,
-          attachments: input.files,
-        });
+        const data = shapedFor(
+          viewAs,
+          await sendMessage(ticketId, {
+            message: input.message,
+            replyTo: input.replyTo,
+            attachments: input.files,
+          })
+        );
+        if (!data) return false;
         mergeThread(data);
         setQuoted(null);
         clearDraft(ticketId);
@@ -629,7 +667,7 @@ export default function HelpDeskTicketThread({
         return false;
       }
     },
-    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, load, mergeThread, mode, ticketId]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, load, mergeThread, mode, ticketId, viewAs]
   );
 
   const submitStatus = useCallback(async () => {

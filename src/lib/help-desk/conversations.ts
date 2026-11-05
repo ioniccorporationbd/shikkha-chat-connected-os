@@ -96,7 +96,12 @@ export async function listConversations(
  */
 export async function getConversation(
   ticketId: string,
-  options: { limit?: number; cursor?: string | null; since?: string | null } = {}
+  options: {
+    limit?: number;
+    cursor?: string | null;
+    since?: string | null;
+    viewAs?: "support" | "customer";
+  } = {}
 ): Promise<ConversationPayload | null> {
   const query = new URLSearchParams({ language: currentLanguage() });
   if (options.limit && options.limit > 0) query.set("limit", String(options.limit));
@@ -107,7 +112,7 @@ export async function getConversation(
       `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}?${query.toString()}`
     );
     if (!payload) return payload;
-    const aligned = alignConversation(payload);
+    const aligned = alignConversation(payload, options.viewAs);
     logAttachmentCensus(aligned, `read ${ticketId}`);
     return aligned;
   } catch (error) {
@@ -482,8 +487,19 @@ function settleAttachments<T extends { id?: string; body?: string; attachments?:
   return { kept, dropped: droppedIds };
 }
 
-export function alignConversation(payload: ConversationPayload): ConversationPayload {
-  const viewerIsSupport = typeof payload.isSupport === "boolean" ? payload.isSupport : null;
+export function alignConversation(
+  payload: ConversationPayload,
+  /**
+   * Force the side the payload is drawn from, whatever the backend guessed.
+   * A conversation page always reads as the *customer* sees it — his own
+   * messages on the right, every staff reply on the left — on both dashboards,
+   * so the two copies of one ticket can never disagree about a side.
+   */
+  viewAs?: "support" | "customer"
+): ConversationPayload {
+  const forced = viewAs === "support" ? true : viewAs === "customer" ? false : null;
+  const viewerIsSupport =
+    forced ?? (typeof payload.isSupport === "boolean" ? payload.isSupport : null);
   if (viewerIsSupport === null) {
     // An older backend keeps its own `isMine`; the reading order still holds.
     const folded = foldChannelDuplicates(
