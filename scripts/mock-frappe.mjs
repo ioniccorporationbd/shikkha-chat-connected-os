@@ -3259,6 +3259,56 @@ hdAppend(HD_0759, "user", "abar try korlam", {
   authorName: HD_0759_CUSTOMER,
 });
 
+// ---------------------------------------------------------------------------
+// 0781 — the desk's own case: both the customer and the employee write on the
+// same ticket, and the employee's dashboard detail page has to read exactly
+// like the immersive conversation page: every send, its time, in order.
+// ---------------------------------------------------------------------------
+const HD_0781 = "0781";
+hdThreads.set(HD_0781, {
+  name: HD_0781,
+  subject: "Portal chat reply",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: HD_0759_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0759_CUSTOMER_EMAIL,
+  agent: HD_0747_AGENT,
+  submittedAt: "2026-11-05T06:00:00.000Z",
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: "2026-11-05T06:00:00.000Z",
+      author: "user",
+      authorName: HD_0759_CUSTOMER,
+      text: "Portal chat reply\nCategory: Technical\nPreferred contact: email",
+      attachments: 0,
+    },
+  ],
+});
+
+hdAppend(HD_0781, "user", "assalamu alaikum, amar order update dorkar", {
+  at: "2026-11-05T06:01:00.000Z",
+  authorName: HD_0759_CUSTOMER,
+});
+
+hdAppend(HD_0781, "support", "walaikum assalam, order ti check korchi", {
+  at: "2026-11-05T06:03:00.000Z",
+  authorName: HD_0747_AGENT,
+  recipients: HD_0759_CUSTOMER_EMAIL,
+});
+
+hdAppend(HD_0781, "user", "dhonnobad, wait korchi", {
+  at: "2026-11-05T06:05:00.000Z",
+  authorName: HD_0759_CUSTOMER,
+});
+
 // 0663 — the negative twin of 0662: the row lists a picture whose bytes may not be
 // handed over at all (neither the storage path nor the ticket streamer). The
 // portal must say so in the console and in Desk -> Error Log, and show a clear
