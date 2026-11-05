@@ -3452,6 +3452,58 @@ hdThreads.get(HD_0793).timeline.push({
 
 
 
+// 0807 — a portal ticket read from the staff desk's own conversation route
+// (/userDashboard/help-desk/tickets/0807/conversation).
+const HD_0807 = "0807";
+const HD_0807_CUSTOMER = "rakib";
+const HD_0807_EMAIL = "rakib@example.com";
+const hd0807Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+hdThreads.set(HD_0807, {
+  name: HD_0807,
+  subject: "login problem",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0807_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0807_EMAIL,
+  agent: HD_0747_AGENT,
+  team: "Support Team",
+  submittedAt: hd0807Ago(42),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0807Ago(42),
+      author: "user",
+      authorName: HD_0807_CUSTOMER,
+      text: "login problem\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+hdAppend(HD_0807, "user", "আমার অ্যাকাউন্টে লগইন হচ্ছে না", {
+  at: hd0807Ago(41),
+  authorName: HD_0807_CUSTOMER,
+});
+
+hdAppend(HD_0807, "support", "একটু অপেক্ষা করুন, দেখছি", {
+  at: hd0807Ago(39),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0807_EMAIL,
+});
+
+hdAppend(HD_0807, "user", "ধন্যবাদ, এখন ঠিক আছে", {
+  at: hd0807Ago(12),
+  authorName: HD_0807_CUSTOMER,
+});
+
 // handed over at all (neither the storage path nor the ticket streamer). The
 // portal must say so in the console and in Desk -> Error Log, and show a clear
 // "cannot be loaded" frame instead of a torn thumbnail.

@@ -28,7 +28,7 @@ export default async function StaffHelpDeskConversationPage({
 }) {
   const { id } = await params;
   const suffix = `/tickets/${encodeURIComponent(id)}/conversation`;
-  const deskRoot = `${CLIENT_DASHBOARD_PATH}/${HELP_DESK_SEGMENT}${suffix}`;
+  const deskRoot = `${STAFF_DASHBOARD_PATH}/${HELP_DESK_SEGMENT}${suffix}`;
 
   const cookieStore = await cookies();
   const sid = cookieStore.get(SESSION_COOKIE)?.value;
@@ -43,13 +43,16 @@ export default async function StaffHelpDeskConversationPage({
     redirect(`${LOGIN_PATH}?next=${encodeURIComponent(deskRoot)}&expired=1`);
   }
 
-  if (result.ok && dashboardPathFor(result.data.user) === STAFF_DASHBOARD_PATH) {
-    redirect(`${STAFF_DASHBOARD_PATH}/${HELP_DESK_SEGMENT}${suffix}`);
+  // This page *is* the staff desk: only a customer gets sent to their copy of
+  // the same conversation. Sending a staff session to the staff path pointed
+  // the redirect straight back at this URL, which is why the route answered
+  // with a 307 to itself and the panel never drew any data.
+  if (result.ok && dashboardPathFor(result.data.user) === CLIENT_DASHBOARD_PATH) {
+    redirect(`${CLIENT_DASHBOARD_PATH}/${HELP_DESK_SEGMENT}${suffix}`);
   }
 
   return (
     <DashboardShell
-      scope="client"
       initialData={result.ok ? result.data : undefined}
       initialError={result.ok ? undefined : result.message}
     />
