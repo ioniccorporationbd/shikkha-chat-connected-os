@@ -151,6 +151,20 @@ function isAuthFailure(error: unknown): boolean {
  */
 /** Messages per conversation page (newest first page, then 20 at a time). */
 const PAGE_SIZE = 20;
+
+/**
+ * How much of the thread the conversation route opens with.
+ *
+ * A chat opens on the newest rows, but "newest rows" only reads as history if
+ * it is actually the history: the reader on 0860 scrolled up looking for the
+ * text he had sent ten minutes earlier and found the room starting at his last
+ * few lines, with nothing above them and no sign that more existed — the walk
+ * over the topic group ended up costing him a second send of the same words.
+ * The opening read is therefore the widest page the ERP route serves (the
+ * proxy caps `limit` at 200); older-than-that tickets still arrive twenty rows
+ * at a time as the reader keeps scrolling up.
+ */
+const OPENING_WINDOW = 200;
 /** Slow safety-net poll while the realtime socket is up (belt and braces). */
 const LIVE_SAFETY_POLL_MS = 60_000;
 
@@ -313,7 +327,7 @@ export default function HelpDeskTicketThread({
       try {
         const data = await getConversation(
           ticketId,
-          chatOnly ? { limit: PAGE_SIZE, viewAs } : { viewAs }
+          chatOnly ? { limit: OPENING_WINDOW, viewAs } : { viewAs }
         );
         if (!mounted.current || activeTicket.current !== ticketId) return;
         if (!data) {
