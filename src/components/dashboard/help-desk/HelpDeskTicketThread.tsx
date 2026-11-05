@@ -188,7 +188,6 @@ export default function HelpDeskTicketThread({
   listHref,
   backFallback,
   titleOverride,
-  expanded,
   allConversationsHref,
   chatOnly = false,
 }: {
@@ -198,7 +197,7 @@ export default function HelpDeskTicketThread({
   listHref: string;
   backFallback: string;
   titleOverride?: string;
-  /** Full-page conversation route: let the thread grow to most of the screen. */
+  /** @deprecated every view now uses the tall chat box; kept so old callers compile. */
   expanded?: boolean;
   /** Link to the full conversation route, shown in the chat card header. */
   allConversationsHref?: string;
@@ -936,12 +935,17 @@ export default function HelpDeskTicketThread({
     );
   };
 
-  const systemEvents: ThreadSystemEvent[] = timeline
-    .filter((event) => !messageIds.has(event.id))
-    // The immersive route pages its thread, so a full timeline would double up
-    // with rows it has not loaded yet: it keeps only the creation marker.
-    .filter((event) => (chatOnly ? event.type === "created" || event.type === "status" : true))
-    .map((event) => {
+  // The detail route repeats every message in its audit-trail card, so the chat
+  // card above it must not draw the same rows inline — otherwise every reply the
+  // customer or the employee sends appears twice on one page. The immersive
+  // route has no audit card, so it folds the markers into the thread instead.
+  const systemEvents: ThreadSystemEvent[] = chatOnly
+    ? timeline
+        .filter((event) => !messageIds.has(event.id))
+        // The immersive route pages its thread, so a full timeline would double up
+        // with rows it has not loaded yet: it keeps only the creation marker.
+        .filter((event) => event.type === "created" || event.type === "status")
+        .map((event) => {
       const sequence = sequenceById.get(event.id);
       if (event.type === "status") {
         const move = event.from || event.to ? `${statusWord(event.from)} → ${statusWord(event.to)}` : "";
@@ -964,8 +968,9 @@ export default function HelpDeskTicketThread({
         authorName: event.authorName,
         side: mine ? ("mine" as const) : ("other" as const),
       };
-    })
-    .filter((event) => Boolean(event.label) || Boolean(event.body));
+        })
+        .filter((event) => Boolean(event.label) || Boolean(event.body))
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -1007,7 +1012,11 @@ export default function HelpDeskTicketThread({
       {/* B2 — full audit trail: creation, every reply/requirement, the
           employee solution and each ERP status change, oldest first. */}
       {chatOnly ? null : (
-        <ConversationTimeline events={payload!.timeline ?? []} language={language} isSupport={isSupport} />
+        <ConversationTimeline
+          events={timeline.filter((event) => !messageIds.has(event.id))}
+          language={language}
+          isSupport={isSupport}
+        />
       )}
 
       {!chatOnly && payload!.canChangeStatus ? (
@@ -1116,9 +1125,7 @@ export default function HelpDeskTicketThread({
             heightClass={
               chatOnly
                 ? "max-h-[calc(100dvh-17rem)] min-h-[24rem] sm:max-h-[calc(100dvh-15rem)]"
-                : expanded
-                  ? "max-h-[min(62vh,46rem)] min-h-[18rem]"
-                  : "max-h-[26rem] min-h-[12rem] sm:max-h-[34rem]"
+                : "max-h-[min(62vh,46rem)] min-h-[18rem]"
             }
           />
         </div>
