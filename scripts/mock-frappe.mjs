@@ -3574,6 +3574,120 @@ hdAppend(HD_0814, "user", "ok sir, ekhon dhukte parchi", {
   authorName: HD_0814_CUSTOMER,
 });
 
+// 0860 — the conversation-page twin: read from
+// /userDashboard/help-desk/tickets/0860/conversation (staff desk: whatever the
+// employee types or attaches appears on the right, with its own timestamp) and
+// /clientDashboard/help-desk/tickets/0860/conversation (the customer's copy of
+// the same room, read from the customer's chair).
+const HD_0860 = "0860";
+const HD_0860_CUSTOMER = "farhan";
+const HD_0860_EMAIL = "farhan@example.com";
+const HD_0860_AGENT_EMAIL = "agent@shikkhachat.com";
+const hd0860Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+const HD_0860_CUST_IMG_URL = "/private/files/screenshot-1-20261105-121500aa55bb.png";
+const HD_0860_AGENT_IMG_URL = "/private/files/screenshot-2-20261105-121900cc66dd.png";
+
+const hd0860CustImg = hdFileRow({
+  name: "MOCKFILE-08601",
+  url: HD_0860_CUST_IMG_URL,
+  fileName: "screenshot-1-20261105-121500aa55bb.png",
+  size: 0,
+  owner: HD_0860_EMAIL,
+});
+hd0860CustImg.attached_to_doctype = "Comment";
+hd0860CustImg.attached_to_name = "MOCKCOMMENT-08601";
+hd0860CustImg.is_private = 1;
+hd0860CustImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0860_CUST_IMG_URL, AVATAR_BYTES);
+
+const hd0860AgentImg = hdFileRow({
+  name: "MOCKFILE-08602",
+  url: HD_0860_AGENT_IMG_URL,
+  fileName: "screenshot-2-20261105-121900cc66dd.png",
+  size: 0,
+  owner: HD_0860_AGENT_EMAIL,
+});
+hd0860AgentImg.attached_to_doctype = "Communication";
+hd0860AgentImg.attached_to_name = "MOCKCOMM-08602";
+hd0860AgentImg.is_private = 1;
+hd0860AgentImg.agent_only = true;
+hd0860AgentImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0860_AGENT_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0860, {
+  name: HD_0860,
+  subject: "class link problem",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0860_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0860_EMAIL,
+  agent: HD_0747_AGENT,
+  team: "Support Team",
+  submittedAt: hd0860Ago(40),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0860Ago(40),
+      author: "user",
+      authorName: HD_0860_CUSTOMER,
+      text: "class link problem\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+// 39 minutes ago — the customer opens with text + picture.
+hdAppend(HD_0860, "user", "class er link kaj korche na", {
+  at: hd0860Ago(39),
+  authorName: HD_0860_CUSTOMER,
+  attachments: [
+    {
+      id: hd0860CustImg.name,
+      name: "screenshot-1-20261105-121500aa55bb.png",
+      size: hd0860CustImg.file_size,
+      mime: "image/png",
+      url: HD_0860_CUST_IMG_URL,
+    },
+  ],
+});
+
+// 36 minutes ago — an employee answer.
+hdAppend(HD_0860, "support", "hello sir, link ta abar pathachhi", {
+  at: hd0860Ago(36),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0860_EMAIL,
+});
+
+// 34 minutes ago — an employee answer with a picture only.
+hdAppend(HD_0860, "support", "", {
+  at: hd0860Ago(34),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0860_EMAIL,
+  attachments: [
+    {
+      id: hd0860AgentImg.name,
+      name: "screenshot-2-20261105-121900cc66dd.png",
+      size: hd0860AgentImg.file_size,
+      mime: "image/png",
+      url: HD_0860_AGENT_IMG_URL,
+    },
+  ],
+});
+
+// 8 minutes ago — the customer confirms.
+hdAppend(HD_0860, "user", "ekhon kaj korche, dhonnobad", {
+  at: hd0860Ago(8),
+  authorName: HD_0860_CUSTOMER,
+});
+
 // 0850 — the detail-page twin of 0814: a customer opens with text + picture,
 // the employee answers with text and a picture, the customer replies. Read from
 // /userDashboard/help-desk/tickets/0850 (staff detail: own text and files on

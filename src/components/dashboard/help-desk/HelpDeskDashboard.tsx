@@ -96,13 +96,13 @@ export default function HelpDeskDashboard({
         backFallback={links.tickets}
         expanded={view === "conversation"}
         chatOnly={view === "conversation"}
-        // One ticket, one layout: the full-conversation page reads exactly as
-        // the customer sees it on either dashboard — his messages right, every
-        // employee reply left — so staff and customer screens cannot disagree.
-        // The detail page reads from its own side instead: the staff desk draws
-        // its own text and files on the right, the customer's page keeps every
-        // employee reply on the left.
-        perspective={view === "conversation" ? "customer" : staff ? "support" : "customer"}
+        // One rule for every ticket screen — detail and full conversation
+        // alike: the page reads from its own side, exactly like the customer's
+        // conversation does. Whoever is looking, their own text and files sit
+        // on the right with their own timestamp, and the other side's messages
+        // stay on the left. Staff and customer therefore see the same room
+        // from their own chair, and never in a mirrored layout by accident.
+        perspective={staff ? "support" : "customer"}
         allConversationsHref={view === "detail" ? links.conversation(ticketId) : undefined}
       />
     );
