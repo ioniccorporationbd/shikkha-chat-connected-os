@@ -3574,6 +3574,127 @@ hdAppend(HD_0814, "user", "ok sir, ekhon dhukte parchi", {
   authorName: HD_0814_CUSTOMER,
 });
 
+// 0850 — the detail-page twin of 0814: a customer opens with text + picture,
+// the employee answers with text and a picture, the customer replies. Read from
+// /userDashboard/help-desk/tickets/0850 (staff detail: own text and files on
+// the right) and /clientDashboard/help-desk/tickets/0850 (the শিক্ষা চ্যাট
+// সাপোর্ট thread below: every employee reply on the left).
+const HD_0850 = "0850";
+const HD_0850_CUSTOMER = "mim";
+const HD_0850_EMAIL = "mim@example.com";
+const HD_0850_AGENT_EMAIL = "agent@shikkhachat.com";
+const hd0850Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+const HD_0850_CUST_IMG_URL = "/private/files/screenshot-1-20261105-113000dd33ee.png";
+const HD_0850_AGENT_IMG_URL = "/private/files/screenshot-2-20261105-113400ff44aa.png";
+
+const hd0850CustImg = hdFileRow({
+  name: "MOCKFILE-08501",
+  url: HD_0850_CUST_IMG_URL,
+  fileName: "screenshot-1-20261105-113000dd33ee.png",
+  size: 0,
+  owner: HD_0850_EMAIL,
+});
+hd0850CustImg.attached_to_doctype = "Comment";
+hd0850CustImg.attached_to_name = "MOCKCOMMENT-08501";
+hd0850CustImg.is_private = 1;
+hd0850CustImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0850_CUST_IMG_URL, AVATAR_BYTES);
+
+const hd0850AgentImg = hdFileRow({
+  name: "MOCKFILE-08502",
+  url: HD_0850_AGENT_IMG_URL,
+  fileName: "screenshot-2-20261105-113400ff44aa.png",
+  size: 0,
+  owner: HD_0850_AGENT_EMAIL,
+});
+hd0850AgentImg.attached_to_doctype = "Communication";
+hd0850AgentImg.attached_to_name = "MOCKCOMM-08502";
+hd0850AgentImg.is_private = 1;
+hd0850AgentImg.agent_only = true;
+hd0850AgentImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0850_AGENT_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0850, {
+  name: HD_0850,
+  subject: "course fee problem",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0850_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0850_EMAIL,
+  agent: HD_0747_AGENT,
+  team: "Support Team",
+  submittedAt: hd0850Ago(45),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0850Ago(45),
+      author: "user",
+      authorName: HD_0850_CUSTOMER,
+      text: "course fee problem\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+// 44 minutes ago — the customer opens with a picture.
+hdAppend(HD_0850, "user", "কোর্স ফি কেটে নিয়েছে কিন্তু ক্লাস শুরু হয়নি", {
+  at: hd0850Ago(44),
+  authorName: HD_0850_CUSTOMER,
+  attachments: [
+    {
+      id: hd0850CustImg.name,
+      name: "screenshot-1-20261105-113000dd33ee.png",
+      size: hd0850CustImg.file_size,
+      mime: "image/png",
+      url: HD_0850_CUST_IMG_URL,
+    },
+  ],
+});
+
+// 41 minutes ago — the employee's first answer.
+hdAppend(HD_0850, "support", "hello sir, payment ta dekhe janachhi", {
+  at: hd0850Ago(41),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0850_EMAIL,
+});
+
+// 39 minutes ago — the employee answers with a picture only.
+hdAppend(HD_0850, "support", "", {
+  at: hd0850Ago(39),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0850_EMAIL,
+  attachments: [
+    {
+      id: hd0850AgentImg.name,
+      name: "screenshot-2-20261105-113400ff44aa.png",
+      size: hd0850AgentImg.file_size,
+      mime: "image/png",
+      url: HD_0850_AGENT_IMG_URL,
+    },
+  ],
+});
+
+// 37 minutes ago — the employee's explanation.
+hdAppend(HD_0850, "support", "payment confirm hoye geche, class link pathiye diyechi", {
+  at: hd0850Ago(37),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0850_EMAIL,
+});
+
+// 12 minutes ago — the customer closes the loop.
+hdAppend(HD_0850, "user", "ok sir, link peyechi", {
+  at: hd0850Ago(12),
+  authorName: HD_0850_CUSTOMER,
+});
+
 // 0807 — a portal ticket read from the staff desk's own conversation route
 // (/userDashboard/help-desk/tickets/0807/conversation).
 const HD_0807 = "0807";

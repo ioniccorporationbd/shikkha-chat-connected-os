@@ -99,7 +99,10 @@ export default function HelpDeskDashboard({
         // One ticket, one layout: the full-conversation page reads exactly as
         // the customer sees it on either dashboard — his messages right, every
         // employee reply left — so staff and customer screens cannot disagree.
-        perspective={view === "conversation" ? "customer" : undefined}
+        // The detail page reads from its own side instead: the staff desk draws
+        // its own text and files on the right, the customer's page keeps every
+        // employee reply on the left.
+        perspective={view === "conversation" ? "customer" : staff ? "support" : "customer"}
         allConversationsHref={view === "detail" ? links.conversation(ticketId) : undefined}
       />
     );

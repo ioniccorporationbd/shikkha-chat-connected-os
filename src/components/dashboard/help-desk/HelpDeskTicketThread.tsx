@@ -220,18 +220,21 @@ export default function HelpDeskTicketThread({
   /**
    * Force the side every bubble is drawn from, whatever the ERP guessed about
    * the reader. The full-conversation pages pass `"customer"` on *both*
-   * dashboards so one ticket reads the same everywhere: the customer's own
+   * dashboard so one ticket reads the same everywhere: the customer's own
    * messages on the right, every employee reply (text and file) on the left —
    * an employee opening the same page sees the room exactly as the customer
-   * does, which is what the desk's own preview shows too.
+   * does, which is what the desk's own preview shows too. The ticket *detail*
+   * page instead reads from its own side: `"support"` on the staff dashboard
+   * (an employee's own text and files land on the right), `"customer"` on the
+   * client dashboard (every employee reply stays on the left).
    */
-  perspective?: "customer";
+  perspective?: "support" | "customer";
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
   // Every read/write on this thread is shaped for this side, so a bubble can
   // never land on the wrong half of the room between a first load, a poll and
   // a send response.
-  const viewAs = perspective === "customer" ? ("customer" as const) : undefined;
+  const viewAs = perspective;
   // Status names come from the Help Desk copy so the chip reads "Closed", not
   // the raw lifecycle key the type carries.
   const hdCopy = useMemo(() => helpDeskCopyFor(language), [language]);
