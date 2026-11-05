@@ -131,10 +131,6 @@ export default function MessageBubble({
   const [brokenFiles, setBrokenFiles] = useState<Record<string, boolean>>({});
   const copiedTimer = useRef<number | null>(null);
 
-  const isSupport = isResolution || message.author === "support";
-  const authorLabel = isResolution
-    ? copy.conversationSupport
-    : message.authorName || (message.author === "support" ? copy.conversationSupport : copy.conversationCustomer);
   const timeLabel = formatBubbleTime(message.createdAt, language);
   const reactions = message.reactions ?? [];
   const canAct = Boolean(onQuote || onReact || onCopied);
@@ -190,23 +186,10 @@ export default function MessageBubble({
             message menu rides at the end of that line. */}
         {grouped ? null : (
           <div className={["flex max-w-full items-center gap-1.5 px-1", mine ? "justify-end" : ""].join(" ")}>
-            {/* A messenger labels the sender of the other side and leaves your
-                own lines unlabelled — you know they are yours. */}
-            {mine ? null : (
-              <>
-                <span
-                  className="h-[5px] w-[5px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
-                  aria-hidden
-                />
-                <span className="truncate text-[12px] font-semibold tracking-[0.01em] text-[#008069]">
-                  {authorLabel}
-                </span>
-                <span
-                  className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
-                  aria-hidden
-                />
-              </>
-            )}
+            {/* Whoever speaks is told apart by the side of the room and the
+                timestamp on the bubble, exactly as on the other dashboard; a
+                dot and a printed name above a reply only made the two screens
+                look unlike each other. */}
             {canAct ? (
               <MessageActionMenu
                 copy={copy}

@@ -574,7 +574,7 @@ export default function HelpDeskTicketThread({
 
   const submitMessage = useCallback(
     async (input: ComposerInput) => {
-      if (mode === "requirement") {
+      if (mode === "requirement" && (payload?.canAddRequirement ?? false)) {
         try {
           const data = shapedFor(
             viewAs,
@@ -684,7 +684,7 @@ export default function HelpDeskTicketThread({
         return false;
       }
     },
-    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, load, mergeThread, mode, ticketId, viewAs]
+    [copy.composerFailed, copy.composerRequirementSent, copy.composerSent, copy.conversationTitle, copy.sessionExpired, load, mergeThread, mode, payload?.canAddRequirement, ticketId, viewAs]
   );
 
   const submitStatus = useCallback(async () => {
@@ -1027,6 +1027,36 @@ export default function HelpDeskTicketThread({
         .filter((event) => Boolean(event.label) || Boolean(event.body))
     : [];
 
+  // The audit trail is the ticket's own record, and the answer typed into the
+  // box above is part of that record: staff write a reply, watch the bubble
+  // land in the chat, look down at "সম্পূর্ণ কথোপকথন টাইমলাইন" and find the
+  // trail unchanged, because it is fed from the payload the page loaded with
+  // and a fresh send is not in it yet. The message rows are therefore taken
+  // from `messages` - already merged, folded and in order, and updated the
+  // moment a send succeeds - while every non-message row (creation, an added
+  // requirement, the employee's solution, ERP status moves) still comes from
+  // the ERP timeline. Ids are carried through, so no row is drawn twice.
+  const auditTrail: ConversationTimelineEvent[] = chatOnly
+    ? []
+    : [
+        ...timeline.filter((event) => event.type !== "message" && !messageIds.has(event.id)),
+        ...orderedMessages.map((message) => ({
+          id: message.id,
+          type: "message" as const,
+          at: message.createdAt,
+          author: message.author === "support" ? ("support" as const) : ("user" as const),
+          authorName: message.authorName ?? "",
+          text: message.body,
+          recipients: message.recipients,
+          attachments: message.attachments.length,
+          files: message.attachments.map((file) => ({
+            url: file.url ?? "",
+            fileName: file.fileName,
+            fileType: file.fileType,
+          })),
+        })),
+      ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+
   return (
     <div className="flex flex-col gap-4">
       <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={backFallback} />
@@ -1068,7 +1098,7 @@ export default function HelpDeskTicketThread({
           employee solution and each ERP status change, oldest first. */}
       {chatOnly ? null : (
         <ConversationTimeline
-          events={timeline.filter((event) => !messageIds.has(event.id))}
+          events={auditTrail}
           language={language}
           isSupport={isSupport}
         />
@@ -1186,7 +1216,7 @@ export default function HelpDeskTicketThread({
         </div>
 
         <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3 pb-3 pt-2.5 sm:px-4">
-          {canAddRequirement ? (
+          {canReply ? (
             <div className="mb-2 flex w-fit items-center gap-1 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-1">
               {(
                 [
@@ -1197,12 +1227,22 @@ export default function HelpDeskTicketThread({
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setMode(tab.key)}
+                  disabled={tab.key === "requirement" && !canAddRequirement}
+                  title={
+                    tab.key === "requirement" && !canAddRequirement
+                      ? language === "bn"
+                        ? "শুধু গ্রাহকই অতিরিক্ত রিকোয়ারমেন্ট যোগ করতে পারেন"
+                        : "Only the customer may add an extra requirement"
+                      : undefined
+                  }
+                  onClick={() => { if (tab.key !== "requirement" || canAddRequirement) setMode(tab.key); }}
                   className={[
                     "rounded-lg px-2.5 py-1 text-[11.5px] font-semibold transition",
-                    mode === tab.key
-                      ? "bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_6px_14px_-10px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
-                      : "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:text-[var(--color-primary)]",
+                    tab.key === "requirement" && !canAddRequirement
+                      ? "cursor-not-allowed text-[color-mix(in_srgb,var(--color-primary)_32%,transparent)]"
+                      : mode === tab.key
+                        ? "bg-[var(--color-white)] text-[var(--color-primary)] shadow-[0_6px_14px_-10px_color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+                        : "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:text-[var(--color-primary)]",
                   ].join(" ")}
                 >
                   {tab.label}

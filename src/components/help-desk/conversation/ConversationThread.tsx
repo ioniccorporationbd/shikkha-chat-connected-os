@@ -680,28 +680,11 @@ export default function ConversationThread({
                           row.side === "mine" ? "items-end" : "items-start",
                         ].join(" ")}
                       >
-                        <div className="flex max-w-full items-center gap-1.5 px-1">
-                          <span
-                            className={[
-                              "h-[5px] w-[5px] flex-none rounded-full",
-                              row.side === "mine"
-                                ? "bg-[color-mix(in_srgb,var(--color-action)_70%,var(--color-white))]"
-                                : "bg-[color-mix(in_srgb,var(--color-primary)_45%,var(--color-white))]",
-                            ].join(" ")}
-                            aria-hidden
-                          />
-                          <span className="truncate text-[12px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-primary)_86%,transparent)]">
-                            {row.authorName ||
-                              (row.side === "mine" ? copy.conversationYou : copy.conversationSupport)}
-                          </span>
-                          <span
-                            className="h-[3px] w-[3px] flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_26%,transparent)]"
-                            aria-hidden
-                          />
-                          <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                            {row.label}
-                          </span>
-                        </div>
+                        {/* Side and timestamp carry the authorship, exactly as
+                            they do for every other bubble in the room: the
+                            customer's screen never printed a dot, a name and a
+                            kind chip above a reply, so the employee's screen
+                            does not either. */}
                         <div
                           className={[
                             "w-fit max-w-full select-text rounded-2xl px-3.5 py-2 text-[13.75px] leading-[1.55] text-[var(--color-primary)] shadow-[0_1px_2px_rgba(16,24,40,0.06)]",

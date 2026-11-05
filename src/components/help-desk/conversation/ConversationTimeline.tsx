@@ -72,14 +72,14 @@ export interface ConversationTimelineProps {
  * which is assembled from the same `Communication` rows the thread renders
  * plus Frappe's own `Version` log — nothing new is stored.
  */
-export default function ConversationTimeline({ events, language, isSupport = false }: ConversationTimelineProps) {
+export default function ConversationTimeline({ events, language }: ConversationTimelineProps) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [broken, setBroken] = useState<Record<string, boolean>>({});
 
   const labels: Record<ConversationTimelineType, string> = {
     created: copy.timelineCreated,
-    message: isSupport ? copy.timelineReplyCustomer : copy.timelineMessage,
+    message: copy.timelineMessage,
     requirement: copy.timelineRequirement,
     resolution: copy.timelineResolution,
     status: copy.timelineStatus,
@@ -139,7 +139,14 @@ export default function ConversationTimeline({ events, language, isSupport = fal
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`rounded-md px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide ${style.chip}`}>
-                    {labels[event.type] ?? copy.timelineMessage}
+                    {/* A message is labelled by who wrote it, not by who is
+                        reading: an employee reply and a customer reply must not
+                        both read "customer message" on the staff screen. */}
+                    {event.type === "message"
+                      ? event.author === "support"
+                        ? copy.timelineSupport
+                        : copy.timelineReplyCustomer
+                      : labels[event.type] ?? copy.timelineMessage}
                   </span>
                   <span className="text-[12px] font-semibold text-[var(--color-primary)]">
                     {event.authorName || (event.author === "support" ? copy.timelineSupport : copy.timelineYou)}
