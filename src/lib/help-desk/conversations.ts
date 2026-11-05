@@ -202,6 +202,36 @@ const CONTAIN_WINDOW_MS = 2 * 60 * 1000;
 const CONTAIN_MIN_CHARS = 12;
 
 /**
+ * How far apart two *same-channel* copies of the same words may sit and still
+ * count as one retried send.
+ *
+ * The browser gives up on a slow POST after ~15s and the reader presses send
+ * again; the ERP stores the second attempt as its own row, seconds later. That
+ * pair is one message. A person who types the same line again a minute later
+ * means to say it twice, and both must read — so the window is kept to the
+ * retry itself and never widened to "the same words this afternoon".
+ */
+const RETRY_WINDOW_MS = 20 * 1000;
+
+/**
+ * The wrappers an email copy of a reply carries around the words the employee
+ * actually typed: the quoted history, the original-message rule, the
+ * "From: …" header, the phone signature. A plain chat line never has them.
+ */
+const MAIL_WRAPPER_PATTERNS = [
+  /\bon\b.{4,160}\bwrote:/i,
+  /\bfrom:\s*\S+@/i,
+  /-{2,}\s*original message\b/i,
+  /\bsent from (my|iphone|ipad|android|mail)\b/i,
+  /(^|\n)\s*>/,
+];
+
+function hasMailWrapper(body: unknown): boolean {
+  const text = String(body ?? "");
+  return MAIL_WRAPPER_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+/**
  * What the reader actually reads, as a fold key.
  *
  * The two channels store the same words differently: a Comment often carries
@@ -309,7 +339,10 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
         return fileKey(prior.attachments) === files;
       }
       if (body.length < CONTAIN_MIN_CHARS) return false;
-      return gap <= DUPLICATE_WINDOW_MS;
+      // Same channel, same words: only a literally retried send. Anything
+      // further apart is the reader saying the same thing again on purpose,
+      // and every one of those rows has to read.
+      return gap <= RETRY_WINDOW_MS;
     });
     if (!twin) {
       candidates.push(message);
@@ -345,7 +378,15 @@ function foldChannelDuplicates<T extends ConversationMessage>(messages: T[]): {
             const other = bodyKey(prior.body);
             if (other.length < CONTAIN_MIN_CHARS || other === body) return false;
             const [small, big] = body.length <= other.length ? [body, other] : [other, body];
-            return big.startsWith(small) || big.endsWith(small);
+            if (!(big.startsWith(small) || big.endsWith(small))) return false;
+            // Containment is the mail-copy signature: one row holds the words,
+            // the other the same words under a quoted history. Rows on the
+            // *same* channel are a person's own successive lines — he typed a
+            // sentence, then a fuller version of it — and both have to read;
+            // only an actual email wrapper makes the longer one the quotation.
+            if ((prior.channel ?? "") !== (message.channel ?? "")) return true;
+            const bigRaw = body.length <= other.length ? prior.body : message.body;
+            return hasMailWrapper(bigRaw);
           })
         : undefined;
     if (host) {
