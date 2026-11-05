@@ -3309,7 +3309,149 @@ hdAppend(HD_0781, "user", "dhonnobad, wait korchi", {
   authorName: HD_0759_CUSTOMER,
 });
 
-// 0663 — the negative twin of 0662: the row lists a picture whose bytes may not be
+// 0793 — the desk's own ticket ("problem6666", customer tajul23), mirrored row
+// for row from dash.shikkhachat.com/helpdesk/tickets/0793: the customer opens
+// with a garbled body plus a screenshot, the employee mails three replies (one
+// carrying a picture), the customer answers "na sir" with a reaction, and the
+// team is reassigned in between. Both the client dashboard section and the
+// employee's কথোপকথন panel have to show exactly this, with each row's time.
+const HD_0793 = "0793";
+const HD_0793_AGENT = HD_0747_AGENT;
+const HD_0793_CUSTOMER = "tajul23";
+const HD_0793_EMAIL = "tajul789@gmail.com";
+const hd0793Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+hdThreads.set(HD_0793, {
+  name: HD_0793,
+  subject: "problem6666",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0793_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0793_EMAIL,
+  agent: HD_0793_AGENT,
+  team: "Support Team",
+  submittedAt: hd0793Ago(19),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0793Ago(19.75),
+      author: "user",
+      authorName: HD_0793_CUSTOMER,
+      text: "|||||||||||||||||||||||||||||||||||||",
+      attachments: 0,
+    },
+  ],
+});
+
+// The customer's two uploads: the ticket-opening screenshot and the one the
+// employee re-shares by email later.
+const HD_0793_IMG1_URL = "/private/files/Screenshot-1_-20261104-184603ac8be7.png";
+const HD_0793_IMG4_URL = "/private/files/Screenshot-4_-20261105-140926c5e72b.png";
+const hd0793Img1 = hdFileRow({
+  name: "MOCKFILE-07931",
+  url: HD_0793_IMG1_URL,
+  fileName: "Screenshot-1_-20261104-184603ac8be7.png",
+  size: 0,
+  owner: HD_0793_EMAIL,
+});
+hd0793Img1.attached_to_doctype = "Comment";
+hd0793Img1.attached_to_name = "MOCKCOMMENT-07931";
+hd0793Img1.is_private = 1;
+hd0793Img1.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0793_IMG1_URL, AVATAR_BYTES);
+const hd0793Img4 = hdFileRow({
+  name: "MOCKFILE-07934",
+  url: HD_0793_IMG4_URL,
+  fileName: "Screenshot-4_-20261105-140926c5e72b.png",
+  size: 0,
+  owner: "agent@shikkhachat.com",
+});
+hd0793Img4.attached_to_doctype = "Communication";
+hd0793Img4.attached_to_name = "MOCKCOMM-07934";
+hd0793Img4.is_private = 1;
+hd0793Img4.agent_only = true;
+hd0793Img4.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0793_IMG4_URL, AVATAR_BYTES);
+
+// 19 minutes ago — the customer attaches a screenshot right after opening.
+hdAppend(HD_0793, "user", "শুভেচ্ছা", {
+  at: hd0793Ago(19),
+  authorName: HD_0793_CUSTOMER,
+  attachments: [
+    {
+      id: hd0793Img1.name,
+      name: "Screenshot-1_-20261104-184603ac8be7.png",
+      size: hd0793Img1.file_size,
+      mime: "image/png",
+      url: HD_0793_IMG1_URL,
+    },
+  ],
+});
+
+// 18 / 17 minutes ago — the employee's first two mails.
+hdAppend(HD_0793, "support", "hello sir", {
+  at: hd0793Ago(18),
+  authorName: HD_0793_AGENT,
+  recipients: HD_0793_EMAIL,
+});
+
+hdAppend(HD_0793, "support", "problem ki", {
+  at: hd0793Ago(17),
+  authorName: HD_0793_AGENT,
+  recipients: HD_0793_EMAIL,
+});
+
+// 15 minutes ago — a mail that re-shares the customer's picture, then a follow-up.
+hdAppend(HD_0793, "support", "শুভেচ্ছা", {
+  at: hd0793Ago(15),
+  authorName: HD_0793_AGENT,
+  recipients: HD_0793_EMAIL,
+  attachments: [
+    {
+      id: hd0793Img4.name,
+      name: "Screenshot-4_-20261105-140926c5e72b.png",
+      size: hd0793Img4.file_size,
+      mime: "image/png",
+      url: HD_0793_IMG4_URL,
+    },
+  ],
+});
+
+hdAppend(HD_0793, "support", "solve hoi nai", {
+  at: hd0793Ago(15),
+  authorName: HD_0793_AGENT,
+  recipients: HD_0793_EMAIL,
+});
+
+// 14 minutes ago — the customer's short reply, with the emoji the desk shows.
+const hd0793NaSir = hdAppend(HD_0793, "user", "na sir", {
+  at: hd0793Ago(14),
+  authorName: HD_0793_CUSTOMER,
+});
+if (hd0793NaSir) hd0793NaSir.reactions.push({ emoji: "😊", count: 1, mine: false });
+
+// 4 minutes ago — the desk's activity line: the team was set to Support Team.
+hdThreads.get(HD_0793).timeline.push({
+  id: "team:0793",
+  type: "status",
+  at: hd0793Ago(4),
+  author: "support",
+  authorName: HD_0793_AGENT,
+  from: "—",
+  to: "Support Team",
+  text: `Team → Support Team`,
+  attachments: 0,
+});
+
+
+
 // handed over at all (neither the storage path nor the ticket streamer). The
 // portal must say so in the console and in Desk -> Error Log, and show a clear
 // "cannot be loaded" frame instead of a torn thumbnail.

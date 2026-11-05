@@ -162,6 +162,11 @@ export default function ConversationThread({
   // this snapshot: reading the live DOM inside the effect sees the already
   // grown layout and would wrongly think the reader had scrolled up.
   const bottomGap = useRef(0);
+  // True while the reader is parked on the newest message. The thread opens
+  // stuck to the bottom and stays there through the reflows that follow —
+  // pictures decoding, fonts landing — because a chat that opens on its oldest
+  // row instead of its newest hides the very message the reader came to read.
+  const stickBottom = useRef(false);
   const [pendingNew, setPendingNew] = useState(false);
   // Quoted-reply target flash: tapping the quote block scrolls to the original
   // message and rings it briefly, the way WhatsApp does it.
@@ -231,6 +236,7 @@ export default function ConversationThread({
   }, []);
 
   const jumpToBottom = useCallback(() => {
+    stickBottom.current = true;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     bottomGap.current = 0;
     setPendingNew(false);
@@ -253,8 +259,10 @@ export default function ConversationThread({
     lastId.current = newest;
     if (!newestChanged && previous > 0) return;
 
-    // First load of a thread: land on the newest message without animating.
+    // First load of a thread: land on the newest message without animating,
+    // and keep re-landing while the late reflows (images, fonts) settle.
     if (previous === 0) {
+      stickBottom.current = true;
       bottomRef.current?.scrollIntoView({ block: "end" });
       bottomGap.current = 0;
       return;
@@ -267,6 +275,7 @@ export default function ConversationThread({
     // someone else's only follows when you were already at the end.
     const mine = messages[count - 1]?.isMine === true;
     if (mine || bottomGap.current < 64) {
+      stickBottom.current = true;
       bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     } else {
       // Queued so the notice appears without a synchronous setState in the effect.
@@ -274,6 +283,30 @@ export default function ConversationThread({
       return () => window.clearTimeout(notice);
     }
     // The gap snapshot lives in a ref; the effect only re-runs on data.
+  }, [messages, loading, error]);
+
+  // Keep the parked reader parked. Images inside the bubbles and fonts that
+  // land after the first paint grow the thread *below* the viewport, and a chat
+  // pinned to the bottom has to follow that growth; without this the ticket
+  // detail page opened showing the top of the thread and left the newest reply
+  // (and its reaction) out of sight until the reader scrolled by hand.
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node || loading || error) return;
+
+    const pin = () => {
+      if (stickBottom.current) node.scrollTop = node.scrollHeight;
+    };
+
+    node.addEventListener("load", pin, true);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(pin);
+    Array.from(node.children).forEach((child) => observer?.observe(child));
+
+    return () => {
+      node.removeEventListener("load", pin, true);
+      observer?.disconnect();
+    };
   }, [messages, loading, error]);
 
   // Restore the reading position when an older page is prepended. A layout
@@ -303,6 +336,8 @@ export default function ConversationThread({
   const focusNonce = focus?.nonce ?? 0;
   useEffect(() => {
     if (!focus?.id || focusNonce === 0) return;
+    // The reader asked for a specific row: stop following the newest message.
+    stickBottom.current = false;
     const timer = window.setTimeout(() => jumpToMessage(focus.id), 30);
     return () => window.clearTimeout(timer);
   }, [focus?.id, focusNonce, jumpToMessage]);
@@ -552,6 +587,9 @@ export default function ConversationThread({
           const node = event.currentTarget;
           bottomGap.current = node.scrollHeight - node.scrollTop - node.clientHeight;
           metrics.current = { height: node.scrollHeight, top: node.scrollTop };
+          // Reading upwards unparks the thread; coming back to the end parks it.
+          if (bottomGap.current > 120) stickBottom.current = false;
+          else if (bottomGap.current < 8) stickBottom.current = true;
           if (pendingNew && atBottom()) setPendingNew(false);
           // Reading upwards in a chat means asking for the page above; the
           // caller de-duplicates while a page is already in flight.
