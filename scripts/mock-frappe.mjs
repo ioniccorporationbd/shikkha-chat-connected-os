@@ -1969,6 +1969,14 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
     messages = messages.slice().reverse();
   }
 
+  // Dev-only: the real client payload can leave the employee's channel out of
+  // `messages` while the timeline still lists every reply (the reported 0922
+  // shape). The chat card has to draw both sides anyway, so this hook
+  // reproduces that payload exactly.
+  if (thread.hideSupportFromMessages && !support) {
+    messages = messages.filter((message) => message.author !== "support");
+  }
+
   // Mirror `_timeline`: the opening description, then one row per message, with
   // requirement/resolution labelled and the description's own Communication
   // promoted to `created` instead of listed twice.
@@ -3728,6 +3736,7 @@ hdFileBytes.set(HD_0922_AGENT_IMG_URL, AVATAR_BYTES);
 
 hdThreads.set(HD_0922, {
   name: HD_0922,
+  hideSupportFromMessages: true,
   subject: "PROBLEM0922",
   status: "open",
   currentStatus: "Open",

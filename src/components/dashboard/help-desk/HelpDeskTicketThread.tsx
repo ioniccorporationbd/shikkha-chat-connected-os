@@ -961,17 +961,58 @@ export default function HelpDeskTicketThread({
   // thing the desk does on tickets it created itself.
   const displayTicket: Ticket = resolveTicketHeader(ticket, timeline, messages);
   const messageIds = new Set(messages.map((message) => message.id));
+
+  // The room must show both sides. The ERP files an employee's reply under
+  // `messages` only for the channels the viewer may read, but the very same
+  // words always reach `timeline` — that is what "সম্পূর্ণ কথোপকথন টাইমলাইন" below
+  // prints, and on this ticket it listed the employee's replies while the chat
+  // card above it showed the customer's side only. Every timeline reply the
+  // message list is missing is therefore drawn as a bubble on its author's side,
+  // in the trail's own position, so the card and the record agree row for row.
+  // Paged (immersive) routes keep the fold off: their timeline carries the whole
+  // history and would undo the page size.
+  const trailReplies: ConversationMessage[] = chatOnly
+    ? []
+    : timeline
+        .filter(
+          (event) =>
+            event.type === "message" &&
+            Boolean(String(event.text ?? "").trim()) &&
+            !messageIds.has(event.id),
+        )
+        .map((event) => ({
+          id: event.id,
+          author: event.author,
+          authorName: event.authorName,
+          recipients: event.recipients,
+          body: event.text,
+          createdAt: event.at,
+          kind: "message" as const,
+          channel: "message" as const,
+          replyTo: null,
+          attachments: (event.files ?? []).map((file) => ({
+            url: file.url,
+            fileName: file.fileName,
+            fileType: file.fileType,
+            size: 0,
+          })),
+          isMine: event.author === "user" ? !isSupport : isSupport,
+          seen: true,
+        }));
+  const roomMessages: ConversationMessage[] = trailReplies.length
+    ? [...messages, ...trailReplies]
+    : messages;
   // The chat above and this timeline below must read as one sequence, so the
   // timeline's own position for a row travels down with it. `ConversationThread`
   // prefers that position over any timestamp, which is what makes the two lists
   // agree row for row even when two entries share a second.
   const sequenceById = new Map(timeline.map((event, index) => [event.id, index]));
   const orderedMessages = sequenceById.size
-    ? messages.map((message) => {
+    ? roomMessages.map((message) => {
         const sequence = sequenceById.get(message.id);
         return sequence === undefined ? message : { ...message, sequence };
       })
-    : messages;
+    : roomMessages;
   const timelineLabels: Record<string, string> = {
     created: copy.timelineCreated,
     requirement: copy.timelineRequirement,
