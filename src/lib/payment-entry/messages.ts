@@ -269,12 +269,12 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
 
     statuses: {
       // The status column speaks the customer's word for the row, not ours:
-      // a draft that has been filed reads পরিশোধিত, a submitted one reads বকেয়া.
-      submitted: "বকেয়া",
+      // a submitted entry reads পরিশোধিত, one still in draft reads বকেয়া.
+      submitted: "পরিশোধিত",
       reconciled: "রিকনসাইলড",
       paid: "পরিশোধিত",
       received: "গৃহীত",
-      draft: "পরিশোধিত",
+      draft: "বকেয়া",
       cancelled: "বাতিল",
     },
     paymentTypes: {
