@@ -386,9 +386,11 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     chartHint: "Live with your filters",
     chartEmpty: "No payments match this filter.",
     chartTotal: "Total payment records",
-    chartShowing: "Showing",
-    chartFilteredAmount: "Filtered amount",
-    chartAvg: "Average payment",
+    // Same three figures as the Bangla copy: the whole bill, what has been
+    // paid, what is still owed.
+    chartShowing: "Total Amount",
+    chartFilteredAmount: "Total Paid Amount",
+    chartAvg: "Total Unpaid Amount",
     chartStatusBreakdown: "Status breakdown",
 
     totalRecordsLabel: "Total Records",
@@ -410,11 +412,13 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     reloadFailed: "Could not refresh. Please try again.",
 
     statuses: {
-      submitted: "Submitted",
+      // A submitted entry is money in (Paid), a draft is money still owed
+      // (Unpaid) — the same reading the Bangla copy gives these two rows.
+      submitted: "Paid",
       reconciled: "Reconciled",
       paid: "Paid",
       received: "Received",
-      draft: "Draft",
+      draft: "Unpaid",
       cancelled: "Cancelled",
     },
     paymentTypes: {
