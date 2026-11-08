@@ -1992,7 +1992,8 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
             : message.id === thread.duplicateId
               ? "created"
               : "message",
-      at: message.createdAt,
+      at:
+        thread.blankSupportTrailTimes && message.author === "support" ? "" : message.createdAt,
       author: message.author,
       // Matches the ERP: a customer's own Communication carries no name, so the
       // timeline shows "আপনি" for it.
@@ -3808,6 +3809,234 @@ hdAppend(HD_0922, "support", "apnar account e recording enable kore diyechi, ekh
     },
   ],
 });
+
+// 0932 — every reply on this ticket was filed by the desk as the Support Team's
+// own (MD Shahzalal Amin Surker): the client payload carries them in the
+// timeline only, never in `messages`. Read from /clientDashboard/help-desk/
+// tickets/0932: শিক্ষা চ্যাট সাপোর্ট must still list the whole thread — the
+// customer's words on the right, the Support Team's words and files on the
+// left, oldest first.
+const HD_0932 = "0932";
+const HD_0932_CUSTOMER = "tajul23";
+const HD_0932_EMAIL = "tajul789@gmail.com";
+const HD_0932_AGENT = "MD Shahzalal Amin Surker";
+const hd0932Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+const HD_0932_CUST_IMG_URL = "/private/files/screen-0932-20261108-1210001a2b3c.png";
+const HD_0932_AGENT_IMG_URL = "/private/files/reply-0932-20261108-1225004d5e6f.png";
+
+const hd0932CustImg = hdFileRow({
+  name: "MOCKFILE-09321",
+  url: HD_0932_CUST_IMG_URL,
+  fileName: "screen-0932-20261108-1210001a2b3c.png",
+  owner: HD_0932_EMAIL,
+});
+hd0932CustImg.attached_to_doctype = "Comment";
+hd0932CustImg.attached_to_name = "MOCKCOMMENT-09321";
+hd0932CustImg.is_private = 1;
+hd0932CustImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0932_CUST_IMG_URL, AVATAR_BYTES);
+
+const hd0932AgentImg = hdFileRow({
+  name: "MOCKFILE-09322",
+  url: HD_0932_AGENT_IMG_URL,
+  fileName: "reply-0932-20261108-1225004d5e6f.png",
+  owner: HD_0747_AGENT,
+});
+hd0932AgentImg.attached_to_doctype = "Communication";
+hd0932AgentImg.attached_to_name = "MOCKCOMM-09322";
+hd0932AgentImg.is_private = 1;
+hd0932AgentImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0932_AGENT_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0932, {
+  name: HD_0932,
+  // Dev-only: the ERP can file the desk's rows into the trail without their own
+  // `at` while the message row still knows its creation. The trail must then show
+  // the real filing date and time by borrowing that stamp — never a bare "—".
+  blankSupportTrailTimes: true,
+  subject: "PROBLEM0932",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0932_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0932_EMAIL,
+  agent: HD_0932_AGENT,
+  team: "Support Team",
+  submittedAt: hd0932Ago(45),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0932Ago(45),
+      author: "user",
+      authorName: HD_0932_CUSTOMER,
+      text: "PROBLEM0932\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+// 43 minutes ago — the customer describes the problem and shows the screen.
+hdAppend(HD_0932, "user", "result sheet e mark dekhacche na", {
+  at: hd0932Ago(43),
+  authorName: HD_0932_CUSTOMER,
+  attachments: [
+    {
+      id: hd0932CustImg.name,
+      name: "screen-0932-20261108-1210001a2b3c.png",
+      size: hd0932CustImg.file_size,
+      mime: "image/png",
+      url: HD_0932_CUST_IMG_URL,
+    },
+  ],
+});
+
+// 40 minutes ago — Support Team answer, filed in the timeline only.
+hdAppend(HD_0932, "support", "assalamu alaikum, apnar result sheet er access check korchi", {
+  at: hd0932Ago(40),
+  authorName: HD_0932_AGENT,
+  recipients: HD_0932_EMAIL,
+});
+
+// 35 minutes ago — Support Team follows up with the corrected sheet.
+hdAppend(HD_0932, "support", "access deya hoyeche, ekhon result dekha jabe", {
+  at: hd0932Ago(35),
+  authorName: HD_0932_AGENT,
+  recipients: HD_0932_EMAIL,
+  attachments: [
+    {
+      id: hd0932AgentImg.name,
+      name: "reply-0932-20261108-1225004d5e6f.png",
+      size: hd0932AgentImg.file_size,
+      mime: "image/png",
+      url: HD_0932_AGENT_IMG_URL,
+    },
+  ],
+});
+
+// 0937 — the ticket read at /clientDashboard/help-desk/tickets/0937. The desk's
+// own activity feed (Frappe Helpdesk, `message.activities[]`) is in true time
+// order; the portal payload is NOT — the mock hands the rows over grouped by
+// channel, exactly as a stale concatenation would, so the frontend must put the
+// serial back: customer, customer, Support, customer, Support, customer's
+// picture beside the words it was sent with, and so on. Set
+// `localStorage.hdDebug = "1"` to see every fetched row and its stamp.
+const HD_0937 = "0937";
+const HD_0937_CUSTOMER = "tajul23";
+const HD_0937_EMAIL = "tajul789@gmail.com";
+const HD_0937_AGENT = "MD Shahzalal Amin Surker";
+const hd0937Ago = (minutes, seconds = 0) =>
+  new Date(Date.now() - minutes * 60000 - seconds * 1000).toISOString();
+
+const HD_0937_IMG_URL = "/files/Screenshot-_17_-20261105-153500ed5085.png";
+const hd0937Img = hdFileRow({
+  name: "MOCKFILE-09371",
+  url: HD_0937_IMG_URL,
+  fileName: "Screenshot-_17_-20261105-153500ed5085.png",
+  owner: HD_0937_EMAIL,
+});
+hd0937Img.attached_to_doctype = "Communication";
+hd0937Img.attached_to_name = "MOCKCOMM-09371";
+hd0937Img.is_private = 0;
+hd0937Img.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0937_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0937, {
+  name: HD_0937,
+  subject: "problem900000000",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "incident",
+  customer: HD_0937_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0937_EMAIL,
+  agent: HD_0937_AGENT,
+  team: "Support Team",
+  submittedAt: hd0937Ago(52),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0937Ago(52),
+      author: "user",
+      authorName: HD_0937_CUSTOMER,
+      text: "problem900000000\nCategory: Incident\nDepartment: Support Team\nPreferred contact: mobile",
+      attachments: 0,
+    },
+  ],
+});
+
+// The desk's activity feed, in real order (see the payload quoted in the ticket):
+//   1–2  the customer writes twice            (-49m, -47m)
+//   3    Support answers                      (-40m)
+//   4    the customer sends words + a picture (-35m, the picture 3 s later)
+//   5–6  Support answers twice                (-30m, -25m)
+// The array below is filled channel-blocked on purpose: customer rows first,
+// then Support rows — the mock's stand-in for the out-of-series payload.
+const hd0937Seeds = {
+  custOne: () => hdAppend(HD_0937, "user", "problem900000000 llllllllllllllllllllllllllllllllllllllll", {
+    at: hd0937Ago(49),
+    authorName: HD_0937_CUSTOMER,
+  }),
+  custTwo: () => hdAppend(HD_0937, "user", "ekhon amar result sheet e mark dekhacche na", {
+    at: hd0937Ago(47),
+    authorName: HD_0937_CUSTOMER,
+  }),
+  custWords: () => hdAppend(HD_0937, "user", "ei screenshot e problem ta dekhun", {
+    at: hd0937Ago(35),
+    authorName: HD_0937_CUSTOMER,
+  }),
+  custPicture: () =>
+    hdAppend(HD_0937, "user", "সংযুক্তি — Screenshot-_17_-20261105-153500ed5085.png", {
+      at: hd0937Ago(35, -3), // three seconds after the words
+      authorName: HD_0937_CUSTOMER,
+      attachments: [
+        {
+          id: hd0937Img.name,
+          name: "Screenshot-_17_-20261105-153500ed5085.png",
+          size: hd0937Img.file_size,
+          mime: "image/png",
+          url: HD_0937_IMG_URL,
+        },
+      ],
+    }),
+  supportOne: () =>
+    hdAppend(HD_0937, "support", "assalamu alaikum, apnar problem ta dekhchi", {
+      at: hd0937Ago(40),
+      authorName: HD_0937_AGENT,
+      recipients: HD_0937_EMAIL,
+    }),
+  supportTwo: () =>
+    hdAppend(HD_0937, "support", "mark er issue ta fix kora hoyeche, ekhon check korun", {
+      at: hd0937Ago(30),
+      authorName: HD_0937_AGENT,
+      recipients: HD_0937_EMAIL,
+    }),
+  supportThree: () =>
+    hdAppend(HD_0937, "support", "aro kono problem hole janan", {
+      at: hd0937Ago(25),
+      authorName: HD_0937_AGENT,
+      recipients: HD_0937_EMAIL,
+    }),
+};
+// Channel-blocked arrival order: every customer row, then every Support row.
+hd0937Seeds.custOne();
+hd0937Seeds.custTwo();
+hd0937Seeds.custWords();
+hd0937Seeds.custPicture();
+hd0937Seeds.supportOne();
+hd0937Seeds.supportTwo();
+hd0937Seeds.supportThree();
 
 // 0850 — the detail-page twin of 0814: a customer opens with text + picture,
 // the employee answers with text and a picture, the customer replies. Read from

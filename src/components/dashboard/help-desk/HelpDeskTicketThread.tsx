@@ -985,6 +985,21 @@ export default function HelpDeskTicketThread({
   // left out: the thread already draws them, in the same order.
   const timeline: ConversationTimelineEvent[] = payload!.timeline ?? [];
 
+  // A filed row must never print "—" where its moment belongs. The desk's own
+  // rows (সাপোর্ট টিম, filed as the employee's Comment/Communication) can reach
+  // the trail without an `at` while the same row's creation is still known to
+  // the message list; that stamp is borrowed here, so both the trail and the
+  // folded bubble show the real filing time, and a row the trail cannot date at
+  // all falls back to its position in the record instead of an invented clock.
+  const messageStampById = new Map<string, string>();
+  for (const message of messages) {
+    if (message.createdAt) messageStampById.set(message.id, message.createdAt);
+  }
+  const trailAt = (event: ConversationTimelineEvent): string =>
+    event.at && !Number.isNaN(parseErpTimestamp(event.at).getTime())
+      ? event.at
+      : messageStampById.get(event.id) ?? event.at ?? "";
+
   // --- "Assigned employee" / "Submitted" must never read blank -------------
   // See resolveTicketHeader: the desk's Assignee / Customer values are resolved
   // from whichever column actually holds them, so the portal shows the same
@@ -1006,7 +1021,11 @@ export default function HelpDeskTicketThread({
     : timeline
         .filter(
           (event) =>
-            event.type === "message" &&
+            // Every filed row that carries words belongs in the room: a plain
+            // reply, a requirement the desk filed, or the employee's solution.
+            // Only the opening description ("created") and status moves stay out
+            // — they are markers, not conversation.
+            (event.type === "message" || event.type === "requirement" || event.type === "resolution") &&
             Boolean(String(event.text ?? "").trim()) &&
             !messageIds.has(event.id),
         )
@@ -1016,7 +1035,7 @@ export default function HelpDeskTicketThread({
           authorName: event.authorName,
           recipients: event.recipients,
           body: event.text,
-          createdAt: event.at,
+          createdAt: trailAt(event),
           kind: "message" as const,
           channel: "message" as const,
           replyTo: null,
@@ -1110,7 +1129,9 @@ export default function HelpDeskTicketThread({
   const auditTrail: ConversationTimelineEvent[] = chatOnly
     ? []
     : [
-        ...timeline.filter((event) => event.type !== "message" && !messageIds.has(event.id)),
+        ...timeline
+          .filter((event) => event.type !== "message" && !messageIds.has(event.id))
+          .map((event) => (event.at === trailAt(event) ? event : { ...event, at: trailAt(event) })),
         ...orderedMessages.map((message) => ({
           id: message.id,
           type: "message" as const,
@@ -1126,7 +1147,16 @@ export default function HelpDeskTicketThread({
             fileType: file.fileType,
           })),
         })),
-      ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+      ].sort((a, b) => {
+        const left = Date.parse(a.at);
+        const right = Date.parse(b.at);
+        if (Number.isFinite(left) && Number.isFinite(right)) return left - right;
+        // One side undated: keep the record's own order rather than letting an
+        // unparseable value shuffle the page.
+        if (Number.isFinite(left)) return -1;
+        if (Number.isFinite(right)) return 1;
+        return (sequenceById.get(a.id) ?? 0) - (sequenceById.get(b.id) ?? 0);
+      });
 
   return (
     <div className="flex flex-col gap-4">

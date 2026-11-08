@@ -12,6 +12,8 @@
  */
 
 import { reportClientError } from "@/lib/log/report-error";
+
+import { traceConversation } from "./debug";
 import { toast } from "@/lib/ui/toast";
 import { parseErpTimestamp } from "./format";
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
@@ -112,8 +114,10 @@ export async function getConversation(
       `${CONVERSATIONS_URL}/${encodeURIComponent(ticketId)}?${query.toString()}`
     );
     if (!payload) return payload;
+    traceConversation("fetched from ERP", ticketId, payload);
     const aligned = alignConversation(payload, options.viewAs);
     logAttachmentCensus(aligned, `read ${ticketId}`);
+    traceConversation("drawn order", ticketId, aligned);
     return aligned;
   } catch (error) {
     if (error instanceof HelpDeskError && (error.status === 404 || error.status === 403)) return null;
@@ -490,9 +494,57 @@ function normalizeMessage(message: ConversationMessage): ConversationMessage {
  * file-only row that is left with nothing at all disappears. Order matters:
  * this runs on the already-ordered list, so the *earliest* copy wins.
  */
-function settleAttachments<T extends { id?: string; body?: string; attachments?: ConversationAttachment[] }>(
-  messages: T[]
-): { kept: T[]; dropped: Set<string> } {
+/** Two rows written this close together are one send, not two. */
+const STUB_WINDOW_MS = 60 * 1000;
+
+/**
+ * True when a row's words are only the upload's own label — an empty body, the
+ * bare file name, or the desk's "সংযুক্তি — <file>" line. Such a row is the
+ * picture half of a message, not a message: when the words arrived a breath
+ * earlier, the two are one bubble.
+ */
+function isAttachmentStub(body: string | undefined, attachments: ConversationAttachment[]): boolean {
+  const text = String(body ?? "").replace(/\s+/g, " ").trim();
+  if (!text) return true;
+  const names = attachments
+    .map((file) => String(file.fileName ?? "").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (names.length === 0) return false;
+  const stripped = text
+    .replace(/^(সংযুক্তি|attachment|attachments|attached|file|ফাইল)\s*[:：\-–—]*\s*/i, "")
+    .trim();
+  return names.some((name) => stripped === name || text === name);
+}
+
+function sameAuthor(
+  a: { author?: string },
+  b: { author?: string }
+): boolean {
+  const left = String(a.author ?? "");
+  const right = String(b.author ?? "");
+  return Boolean(left) && left === right;
+}
+
+function momentsApart(
+  a: { createdAt?: string | null },
+  b: { createdAt?: string | null }
+): boolean {
+  const left = String(a.createdAt ?? "").trim();
+  const right = String(b.createdAt ?? "").trim();
+  if (!left || !right) return true;
+  const gap = parseErpTimestamp(right).getTime() - parseErpTimestamp(left).getTime();
+  return Number.isFinite(gap) && gap >= 0 && gap <= STUB_WINDOW_MS;
+}
+
+function settleAttachments<
+  T extends {
+    id?: string;
+    body?: string;
+    attachments?: ConversationAttachment[];
+    author?: string;
+    createdAt?: string | null;
+  }
+>(messages: T[]): { kept: T[]; dropped: Set<string> } {
   const shown = new Set<string>();
   const kept: T[] = [];
   const droppedIds = new Set<string>();
@@ -517,6 +569,26 @@ function settleAttachments<T extends { id?: string; body?: string; attachments?:
         dropped,
         text: Boolean(message.body && message.body.trim()),
       });
+    }
+    // "Sent a picture and a line at the same time": the ERP files them as two
+    // rows, the words first and an attachment-stub row a keystroke later. Side by
+    // side they read as two messages — the picture is given back to the words it
+    // was sent with, and the stub row leaves the thread.
+    if (here.length > 0 && isAttachmentStub(message.body, here)) {
+      const previous = kept[kept.length - 1];
+      if (previous && sameAuthor(previous, message) && momentsApart(previous, message)) {
+        kept[kept.length - 1] = {
+          ...previous,
+          attachments: [...(previous.attachments ?? []), ...here],
+        };
+        if (message.id) droppedIds.add(message.id);
+        console.info("[hd:attach] a picture sent with the words beside it was folded into them", {
+          into: previous.id ?? "",
+          from: message.id ?? "",
+          files: here.length,
+        });
+        continue;
+      }
     }
     if (here.length === 0 && !(message.body && message.body.trim())) {
       // A file-only row with nothing left to draw is a mirror, not a message.
