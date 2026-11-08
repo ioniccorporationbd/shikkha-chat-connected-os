@@ -228,7 +228,18 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
     const totalRecords = data?.summary?.total ?? payments.length;
     const filteredAmount = filtered.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
     const average = filtered.length > 0 ? filteredAmount / filtered.length : 0;
-    return { totalRecords, filteredAmount, average };
+    // The bill split the three headline figures are drawn from: পরিশোধিত is the
+    // money in submitted entries, বকেয়া the money still sitting in drafts, and
+    // মোট বিল the whole filtered bill they add up inside.
+    const statusOf = (row: (typeof filtered)[number]) =>
+      String(row.display_status || "").trim().toLowerCase();
+    const sumOf = (key: string) =>
+      filtered
+        .filter((row) => statusOf(row) === key)
+        .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const settledAmount = sumOf("submitted");
+    const dueAmount = sumOf("draft");
+    return { totalRecords, filteredAmount, average, settledAmount, dueAmount };
   }, [data, payments, filtered]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
@@ -437,14 +448,14 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                   <Stat label={copy.chartTotal} value={String(totals.totalRecords)} />
                   <Stat
                     label={copy.chartShowing}
-                    value={`${filtered.length} ${copy.ofLabel} ${totals.totalRecords}`}
+                    value={formatAmount(totals.filteredAmount, currency, language)}
                     accent
                   />
-                  <Stat label={copy.chartFilteredAmount} value={formatAmount(totals.filteredAmount, currency, language)} />
                   <Stat
-                    label={copy.chartAvg}
-                    value={filtered.length ? formatAmount(totals.average, currency, language) : copy.summaryNone}
+                    label={copy.chartFilteredAmount}
+                    value={formatAmount(totals.settledAmount, currency, language)}
                   />
+                  <Stat label={copy.chartAvg} value={formatAmount(totals.dueAmount, currency, language)} />
                   <Stat label={copy.summaryMonth} value={String(data.summary?.this_month_count ?? 0)} />
                   <Stat
                     label={copy.summaryLatest}

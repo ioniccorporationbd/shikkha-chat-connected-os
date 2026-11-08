@@ -242,9 +242,11 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     chartHint: "ফিল্টার অনুযায়ী চলমান",
     chartEmpty: "এই ফিল্টারে কোনো পেমেন্ট নেই।",
     chartTotal: "মোট পেমেন্ট রেকর্ড",
-    chartShowing: "দেখানো হচ্ছে",
-    chartFilteredAmount: "ফিল্টার করা পরিমাণ",
-    chartAvg: "গড় পেমেন্ট",
+    // The three headline figures read as the desk's own bill language: the whole
+    // bill, the part already settled, the part still owed.
+    chartShowing: "মোট বিল",
+    chartFilteredAmount: "পরিশোধিত",
+    chartAvg: "বকেয়া",
     chartStatusBreakdown: "স্ট্যাটাস অনুযায়ী বিভাজন",
 
     totalRecordsLabel: "মোট রেকর্ড",
@@ -266,11 +268,13 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     reloadFailed: "রিফ্রেশ করা যায়নি। আবার চেষ্টা করুন।",
 
     statuses: {
-      submitted: "সাবমিটেড",
+      // The status column speaks the customer's word for the row, not ours:
+      // a draft that has been filed reads পরিশোধিত, a submitted one reads বকেয়া.
+      submitted: "বকেয়া",
       reconciled: "রিকনসাইলড",
       paid: "পরিশোধিত",
       received: "গৃহীত",
-      draft: "ড্রাফট",
+      draft: "পরিশোধিত",
       cancelled: "বাতিল",
     },
     paymentTypes: {
