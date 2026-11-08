@@ -3737,6 +3737,7 @@ hdFileBytes.set(HD_0922_AGENT_IMG_URL, AVATAR_BYTES);
 hdThreads.set(HD_0922, {
   name: HD_0922,
   hideSupportFromMessages: true,
+  stripReplyTimestamps: true,
   subject: "PROBLEM0922",
   status: "open",
   currentStatus: "Open",
@@ -5353,7 +5354,10 @@ const server = createServer(async (request, response) => {
             author: row.support ? "support" : "user",
             authorName: row.support ? (ticket.agent || "Support") : (ticket.customer || ticket.contact?.name || ""),
             body: text,
-            createdAt: new Date().toISOString(),
+            // Dev-only: some ERP rows come back with a blank stamp, which used
+            // to print "—" in the trail right after sending. HD_0922 reproduces
+            // that shape so the composer's own stamping stays testable.
+            createdAt: ticket.stripReplyTimestamps ? "" : new Date().toISOString(),
             kind: "message",
             channel: "comment",
             replyTo: null,

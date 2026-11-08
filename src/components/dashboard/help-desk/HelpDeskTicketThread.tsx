@@ -26,6 +26,7 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
+import { parseErpTimestamp } from "@/lib/help-desk/format";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -41,6 +42,31 @@ import type {
 } from "@/lib/help-desk/types";
 
 const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
+
+/**
+ * Sends this tab has already shown on screen: message id -> ISO moment.
+ *
+ * A reply can come back from the ERP without a usable stamp — the desk's own
+ * rows have reached the payload with an empty `createdAt` — and the
+ * সম্পূর্ণ কথোপকথন টাইমলাইন then listed the words with a bare "—" where today's
+ * date and the sending time belong. The composer knows the true moment (it was
+ * pressed here), so the first rendering remembers it by id and every later
+ * payload refresh re-applies it instead of losing the clock again.
+ */
+const sentAtById = new Map<string, string>();
+
+/** Give a just-arrived reply the moment it reached this tab when the ERP left the clock blank. */
+function stampWhenBlank(ticket: string, message: ConversationMessage): ConversationMessage {
+  // Message ids are only unique inside their ticket, so the key carries both.
+  const key = `${ticket}:${message.id}`;
+  if (message.createdAt && !Number.isNaN(parseErpTimestamp(message.createdAt).getTime())) {
+    sentAtById.set(key, message.createdAt);
+    return message;
+  }
+  const stamp = sentAtById.get(key) ?? new Date().toISOString();
+  sentAtById.set(key, stamp);
+  return { ...message, createdAt: stamp };
+}
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
 /**
@@ -434,7 +460,11 @@ export default function HelpDeskTicketThread({
     setPayload((current) => {
       if (!current || !current.paged) return incoming;
       const seen = new Set(current.messages.map((message) => message.id));
-      const added = incoming.messages.filter((message) => !seen.has(message.id));
+      // Only rows that actually arrived now are stamped; history keeps whatever
+      // the ERP recorded, never a clock this browser made up.
+      const added = incoming.messages
+        .filter((message) => !seen.has(message.id))
+        .map((message) => stampWhenBlank(ticketId, message));
       // Re-establish the reading order instead of appending: a desk reply that
       // answers an older comment can arrive after rows already on screen.
       const merged = added.length ? orderConversation([...current.messages, ...added]) : current.messages;
@@ -452,7 +482,7 @@ export default function HelpDeskTicketThread({
         latest_cursor: incoming.latest_cursor ?? current.latest_cursor,
       };
     });
-  }, []);
+  }, [ticketId]);
 
   /**
    * One older page, fetched by cursor straight from the ERP query.
