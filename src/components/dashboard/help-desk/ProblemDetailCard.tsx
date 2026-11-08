@@ -8,6 +8,7 @@ import ConversationComposer, { type ComposerInput } from "@/components/help-desk
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
+import { makeStampBorrower } from "@/lib/help-desk/format";
 import { resolveTicketHeader } from "@/lib/help-desk/ticket-view";
 import { helpDeskHomeFor } from "@/components/dashboard/help-desk/HelpDeskBackButton";
 import {
@@ -421,7 +422,12 @@ export default function ProblemDetailCard({
                 </section>
               ) : null}
 
-              <ConversationTimeline events={payload.timeline ?? []} language={language} isSupport />
+              <ConversationTimeline
+                events={payload.timeline ?? []}
+                language={language}
+                isSupport
+                stampOf={makeStampBorrower(payload.messages ?? [])}
+              />
             </div>
           )}
         </div>

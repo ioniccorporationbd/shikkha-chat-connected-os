@@ -26,7 +26,7 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
-import { erpStampOf, parseErpTimestamp } from "@/lib/help-desk/format";
+import { displayBody, erpStampOf, makeStampBorrower, parseErpTimestamp } from "@/lib/help-desk/format";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -985,44 +985,14 @@ export default function HelpDeskTicketThread({
   // left out: the thread already draws them, in the same order.
   const timeline: ConversationTimelineEvent[] = payload!.timeline ?? [];
 
-  // A filed row must never print "—" where its moment belongs. The desk's own
-  // rows (সাপোর্ট টিম, filed as the employee's Comment/Communication) can reach
-  // the trail without an `at` while the same row's creation is still known to
-  // the message list; that stamp is borrowed here, so both the trail and the
-  // folded bubble show the real filing time, and a row the trail cannot date at
-  // all falls back to its position in the record instead of an invented clock.
-  const messageStampById = new Map<string, string>();
-  // The same words, filed under a different record name: a trail row and its
-  // chat twin do not always share an id (the row is the Communication, the
-  // bubble is the message the desk re-shaped), so the author + text is kept as
-  // a second key. Without it a Support row whose id changed kept printing "—".
-  const voiceKey = (author: unknown, text: unknown) =>
-    `${String(author ?? "").trim().toLowerCase()}|${String(text ?? "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .toLowerCase()}`;
-  const messageStampByVoice = new Map<string, string>();
-  for (const message of messages) {
-    const stamp = erpStampOf(message);
-    if (!stamp) continue;
-    messageStampById.set(message.id, stamp);
-    const key = voiceKey(message.author, message.body);
-    if (key !== "|") messageStampByVoice.set(key, stamp);
-  }
-  const isUsableStamp = (value: string) => Boolean(value) && !Number.isNaN(parseErpTimestamp(value).getTime());
-  const trailAt = (event: ConversationTimelineEvent): string =>
-    (() => {
-      const own = erpStampOf(event);
-      if (isUsableStamp(own)) return own;
-      // The desk's own row (Comment/Communication) can arrive without a stamp at
-      // all — under no name. The same record's chat twin still knows when it was
-      // filed, so the trail borrows that time rather than printing a bare "—":
-      // first the twin that shares the row's id, then the twin that says the
-      // same words on the same side.
-      const twin = messageStampById.get(event.id) ?? messageStampByVoice.get(voiceKey(event.author, event.text));
-      if (isUsableStamp(twin ?? "")) return twin as string;
-      return own;
-    })();
+  // A filed row must never print "—" where its moment belongs. The live ERP can
+  // hand a trail row over with no id and no stamp under any name (the error log
+  // caught exactly that on ticket 0968: `{id: "", rawStamp: ""}`), while the
+  // same words are still dated in the message list. The borrower finds that twin
+  // — by id, by the words it says on its own side, and failing both, by the next
+  // dated message of that side — so the Support side shows its clock exactly
+  // like the customer side, on both dashboards.
+  const trailAt = makeStampBorrower(messages);
 
   // --- "Assigned employee" / "Submitted" must never read blank -------------
   // See resolveTicketHeader: the desk's Assignee / Customer values are resolved
@@ -1040,6 +1010,15 @@ export default function HelpDeskTicketThread({
   // in the trail's own position, so the card and the record agree row for row.
   // Paged (immersive) routes keep the fold off: their timeline carries the whole
   // history and would undo the page size.
+  // A trail row whose id the desk dropped is still the same message the room
+  // already holds — matching it by id alone drew it a second time, so the words
+  // and the side are the second key. ("do not show same data twice")
+  const spokenInRoom = new Set(
+    messages.map(
+      (message) =>
+        `${String(message.author ?? "").trim().toLowerCase()}|${displayBody(message.body).replace(/\s+/g, " ").trim().toLowerCase()}`,
+    ),
+  );
   const trailReplies: ConversationMessage[] = chatOnly
     ? []
     : timeline
@@ -1051,7 +1030,10 @@ export default function HelpDeskTicketThread({
             // — they are markers, not conversation.
             (event.type === "message" || event.type === "requirement" || event.type === "resolution") &&
             Boolean(String(event.text ?? "").trim()) &&
-            !messageIds.has(event.id),
+            !messageIds.has(event.id) &&
+            !spokenInRoom.has(
+              `${String(event.author ?? "").trim().toLowerCase()}|${displayBody(event.text).replace(/\s+/g, " ").trim().toLowerCase()}`,
+            ),
         )
         .map((event) => ({
           id: event.id,
@@ -1230,6 +1212,7 @@ export default function HelpDeskTicketThread({
           events={auditTrail}
           language={language}
           isSupport={isSupport}
+          stampOf={trailAt}
         />
       )}
 

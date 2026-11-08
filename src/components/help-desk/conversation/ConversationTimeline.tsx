@@ -63,6 +63,13 @@ export interface ConversationTimelineProps {
   events: ConversationTimelineEvent[];
   language: string;
   isSupport?: boolean;
+  /**
+   * How each row is dated. The ERP can send a trail row with no time under any
+   * name while the same words are dated in the message list; the caller that
+   * holds both feeds passes a borrower (see makeStampBorrower) so a Support row
+   * is dated exactly like the customer's.
+   */
+  stampOf?: (event: ConversationTimelineEvent) => string;
 }
 
 /**
@@ -72,7 +79,7 @@ export interface ConversationTimelineProps {
  * which is assembled from the same `Communication` rows the thread renders
  * plus Frappe's own `Version` log — nothing new is stored.
  */
-export default function ConversationTimeline({ events, language }: ConversationTimelineProps) {
+export default function ConversationTimeline({ events, language, stampOf }: ConversationTimelineProps) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [broken, setBroken] = useState<Record<string, boolean>>({});
@@ -152,7 +159,7 @@ export default function ConversationTimeline({ events, language }: ConversationT
                     {event.authorName || (event.author === "support" ? copy.timelineSupport : copy.timelineYou)}
                   </span>
                   <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                    {formatDateTime(erpStampOf(event), language)}
+                    {formatDateTime((stampOf ?? erpStampOf)(event), language)}
                   </span>
                   {event.attachments > 0 && !event.files?.length ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-1.5 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">

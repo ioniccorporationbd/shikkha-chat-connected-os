@@ -53,6 +53,81 @@ export function erpStampOf(row: unknown): string {
   return "";
 }
 
+/**
+ * A per-row date reader for a trail whose rows may arrive with no time at all.
+ *
+ * The portal draws two feeds of the same conversation: the trail rows the desk
+ * files (which the ERP can hand over with no id and no stamp under any name) and
+ * the chat messages (whose `creation` is known). When a trail row cannot date
+ * itself it borrows the time of the message that says the same words on the
+ * same side — the twin it was re-shaped from. The words are compared after the
+ * desk's `To:`/`From:` header block is stripped, since a reply row carries the
+ * recipient line and the bubble does not; a row whose words match no twin takes
+ * the next unused dated message of its own side, so a Support row is never left
+ * printing a bare "—" while the customer side shows its clock.
+ */
+export function makeStampBorrower(messages: readonly unknown[]): (event: unknown) => string {
+  const sideOf = (row: unknown) =>
+    String((row as Record<string, unknown>)?.author ?? "").trim().toLowerCase();
+  const wordsOf = (text: unknown) =>
+    displayBody(text).replace(/\s+/g, " ").trim().toLowerCase();
+  const usable = (stamp: string) => Boolean(stamp) && !Number.isNaN(parseErpTimestamp(stamp).getTime());
+
+  const pool = messages
+    .map((message, index) => {
+      const stamp = erpStampOf(message);
+      return {
+        index,
+        stamp: usable(stamp) ? stamp : "",
+        side: sideOf(message),
+        words: wordsOf((message as Record<string, unknown>)?.body),
+      };
+    })
+    .filter((entry) => entry.stamp);
+  const spoken = new Set<number>();
+  // The same row is asked for its time once per pass (sort, room, audit list);
+  // the answer is remembered so a second pass cannot consume another twin.
+  const answered = new WeakMap<object, string>();
+
+  return (event: unknown): string => {
+    if (event && typeof event === "object" && answered.has(event as object)) {
+      return answered.get(event as object) as string;
+    }
+    const answer = resolve(event);
+    if (event && typeof event === "object") answered.set(event as object, answer);
+    return answer;
+  };
+
+  function resolve(event: unknown): string {
+    const own = erpStampOf(event);
+    if (usable(own)) return own;
+
+    const side = sideOf(event);
+    const words = wordsOf((event as Record<string, unknown>)?.text);
+
+    // The twin that says exactly these words on this side.
+    let hit = pool.find((entry) => !spoken.has(entry.index) && entry.side === side && entry.words && entry.words === words);
+    // Or the twin whose words these are a part of (the trail pads the bubble
+    // with the recipient block, the stored body keeps only what was typed).
+    if (!hit && words.length >= 12) {
+      hit = pool.find(
+        (entry) =>
+          !spoken.has(entry.index) &&
+          entry.side === side &&
+          entry.words.length >= 12 &&
+          (entry.words.includes(words) || words.includes(entry.words)),
+      );
+    }
+    // Or the next dated message of this side, in the order the desk filed them.
+    if (!hit) hit = pool.find((entry) => !spoken.has(entry.index) && entry.side === side);
+    if (hit) {
+      spoken.add(hit.index);
+      return hit.stamp;
+    }
+    return own;
+  };
+}
+
 export function parseErpTimestamp(iso: string): Date {
   const text = iso.trim();
   const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
