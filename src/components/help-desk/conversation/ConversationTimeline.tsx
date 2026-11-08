@@ -13,7 +13,7 @@ import type { IconType } from "react-icons";
 
 import { isImageAttachment } from "@/lib/help-desk/attachments";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
-import { displayBody, formatDateTime } from "@/lib/help-desk/format";
+import { displayBody, erpStampOf, formatDateTime } from "@/lib/help-desk/format";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationTimelineEvent, ConversationTimelineType } from "@/lib/help-desk/types";
 
@@ -152,7 +152,7 @@ export default function ConversationTimeline({ events, language }: ConversationT
                     {event.authorName || (event.author === "support" ? copy.timelineSupport : copy.timelineYou)}
                   </span>
                   <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                    {formatDateTime(event.at, language)}
+                    {formatDateTime(erpStampOf(event), language)}
                   </span>
                   {event.attachments > 0 && !event.files?.length ? (
                     <span className="inline-flex items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-1.5 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">

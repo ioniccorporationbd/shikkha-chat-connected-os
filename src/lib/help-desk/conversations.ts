@@ -15,7 +15,7 @@ import { reportClientError } from "@/lib/log/report-error";
 
 import { traceConversation } from "./debug";
 import { toast } from "@/lib/ui/toast";
-import { parseErpTimestamp } from "./format";
+import { erpStampOf, parseErpTimestamp } from "./format";
 import { currentLanguage, HelpDeskError, request, uploadAttachment } from "./service";
 import type {
   ConversationAttachment,
@@ -153,7 +153,18 @@ export async function getConversation(
  * last. `id` breaks a tie so two rows written in the same second still hold a
  * stable order between refreshes.
  */
-function orderByStamp<T>(items: T[], stampOf: (item: T) => { at?: string | null; id?: string }): T[] {
+function orderByStamp<T>(
+  items: T[],
+  stampOf: (item: T) => { at?: string | null; id?: string },
+  /**
+   * How to settle a tie: `id` (default) makes the order independent of the
+   * array, for rows that arrive channel-blocked. `index` keeps the payload's own
+   * order, for a timeline the ERP already wrote oldest-first — "created" and the
+   * opening line share a second, and sorting them by id hung the ticket's
+   * creation at the bottom of the trail.
+   */
+  tie: "id" | "index" = "id"
+): T[] {
   return items
     .map((item) => {
       const { at, id } = stampOf(item);
@@ -175,6 +186,7 @@ function orderByStamp<T>(items: T[], stampOf: (item: T) => { at?: string | null;
         if (b.parsed === null) return -1;
         return a.parsed - b.parsed;
       }
+      if (tie === "index") return 0; // Array.prototype.sort is stable
       if (a.text !== b.text) return a.text < b.text ? -1 : 1;
       if (a.id !== b.id) return a.id < b.id ? -1 : 1;
       return 0;
@@ -185,7 +197,7 @@ function orderByStamp<T>(items: T[], stampOf: (item: T) => { at?: string | null;
 export function orderConversation<T extends { createdAt?: string | null; id?: string }>(
   messages: T[]
 ): T[] {
-  return orderByStamp(messages, (message) => ({ at: message.createdAt, id: message.id }));
+  return orderByStamp(messages, (message) => ({ at: erpStampOf(message), id: message.id }));
 }
 
 /**
@@ -656,7 +668,8 @@ export function alignConversation(
               ? { ...event, attachments: counted.get(event.id) as number }
               : event
           ),
-        (event) => ({ at: event.at, id: event.id })
+        (event) => ({ at: erpStampOf(event), id: event.id }),
+        "index"
       )
     : payload.timeline;
 

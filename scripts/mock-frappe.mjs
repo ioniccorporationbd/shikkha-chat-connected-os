@@ -3920,6 +3920,170 @@ hdAppend(HD_0932, "support", "access deya hoyeche, ekhon result dekha jabe", {
   ],
 });
 
+// 0949 — the ticket that printed the two halves of its trail unevenly: every
+// customer row carried a date and a time, every Support row (and the desk's own
+// duplicate rows) drew a bare "—", on both the client and the staff side. The
+// cause is naming, not time: this payload stamps its rows the way the desk's
+// activity feed does — `timestamp` — and nothing carries `at`. Any reader that
+// asked for one field name went blind on the other author side.
+const HD_0949 = "0949";
+const HD_0949_CUSTOMER = "tajul23";
+const HD_0949_EMAIL = "tajul789@gmail.com";
+const HD_0949_AGENT = "MD Shahzalal Amin Surker";
+const hd0949Ago = (minutes, seconds = 0) =>
+  new Date(Date.now() - minutes * 60000 - seconds * 1000).toISOString();
+
+const HD_0949_IMG_URL = "/files/Screenshot-_22_-20261105-1451352cedd1.png";
+const hd0949Img = hdFileRow({
+  name: "MOCKFILE-09491",
+  url: HD_0949_IMG_URL,
+  fileName: "Screenshot-_22_-20261105-1451352cedd1.png",
+  owner: HD_0949_EMAIL,
+});
+hd0949Img.attached_to_doctype = "Communication";
+hd0949Img.attached_to_name = "MOCKCOMM-09491";
+hd0949Img.is_private = 0;
+hd0949Img.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0949_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0949, {
+  name: HD_0949,
+  subject: "pppppppppppppppppppppppp",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "incident",
+  customer: HD_0949_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0949_EMAIL,
+  agent: HD_0949_AGENT,
+  team: "Support Team",
+  submittedAt: hd0949Ago(5 * 60),
+  resolvedAt: null,
+  messages: [],
+  // The desk's rows, stamped only under `timestamp` — never `at`.
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      timestamp: hd0949Ago(5 * 60),
+      author: "user",
+      authorName: HD_0949_CUSTOMER,
+      text: "pppppppppppppppppppppppp",
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-share",
+      type: "message",
+      timestamp: hd0949Ago(5 * 60, -5),
+      author: "user",
+      authorName: HD_0949_CUSTOMER,
+      text: "শেয়ার — Screenshot-_22_-20261105-1451352cedd1.png",
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-hello",
+      type: "message",
+      timestamp: hd0949Ago(4 * 60),
+      author: "user",
+      authorName: HD_0949_CUSTOMER,
+      text: "hello cus1",
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-desc",
+      type: "requirement",
+      timestamp: hd0949Ago(5 * 60),
+      author: "user",
+      authorName: HD_0949_CUSTOMER,
+      text: "pppppppppppppppppppppppp\nCategory: Incident\nDepartment: Support Team\nPreferred contact: mobile\nRelated page: https:localhost3000",
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-stub",
+      type: "requirement",
+      timestamp: hd0949Ago(5 * 60, -5),
+      author: "user",
+      authorName: HD_0949_CUSTOMER,
+      text: "সংযুক্তি — Screenshot-_22_-20261105-1451352cedd1.png",
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-em1",
+      type: "message",
+      timestamp: hd0949Ago(3 * 60),
+      author: "support",
+      authorName: HD_0949_AGENT,
+      text: "hi em1",
+      recipients: HD_0949_EMAIL,
+      attachments: 0,
+    },
+    {
+      id: "HDMSG-0949-em2",
+      type: "message",
+      timestamp: hd0949Ago(2 * 60),
+      author: "support",
+      authorName: HD_0949_AGENT,
+      text: "helo em2",
+      recipients: HD_0949_EMAIL,
+      attachments: 0,
+    },
+  ],
+});
+
+const hd0949CustShare = hdAppend(HD_0949, "user", "শেয়ার — Screenshot-_22_-20261105-1451352cedd1.png", {
+  at: hd0949Ago(5 * 60, -5),
+  authorName: HD_0949_CUSTOMER,
+  attachments: [
+    {
+      id: hd0949Img.name,
+      name: "Screenshot-_22_-20261105-1451352cedd1.png",
+      size: hd0949Img.file_size,
+      mime: "image/png",
+      url: HD_0949_IMG_URL,
+    },
+  ],
+});
+const hd0949CustHello = hdAppend(HD_0949, "user", "hello cus1", {
+  at: hd0949Ago(4 * 60),
+  authorName: HD_0949_CUSTOMER,
+});
+const hd0949CustDesc = hdAppend(
+  HD_0949,
+  "user",
+  "pppppppppppppppppppppppp\nCategory: Incident\nDepartment: Support Team\nPreferred contact: mobile\nRelated page: https:localhost3000",
+  { at: hd0949Ago(5 * 60), authorName: HD_0949_CUSTOMER }
+);
+const hd0949CustStub = hdAppend(HD_0949, "user", "সংযুক্তি — Screenshot-_22_-20261105-1451352cedd1.png", {
+  at: hd0949Ago(5 * 60, -5),
+  authorName: HD_0949_CUSTOMER,
+});
+const hd0949Em1 = hdAppend(HD_0949, "support", "hi em1", {
+  at: hd0949Ago(3 * 60),
+  authorName: HD_0949_AGENT,
+  recipients: HD_0949_EMAIL,
+});
+const hd0949Em2 = hdAppend(HD_0949, "support", "helo em2", {
+  at: hd0949Ago(2 * 60),
+  authorName: HD_0949_AGENT,
+  recipients: HD_0949_EMAIL,
+});
+// Rename the message ids to match the trail rows, and swap `createdAt` for the
+// desk's `timestamp` — a row whose time is filed under the other name.
+for (const [row, id] of [
+  [hd0949CustShare, "HDMSG-0949-share"],
+  [hd0949CustHello, "HDMSG-0949-hello"],
+  [hd0949CustDesc, "HDMSG-0949-desc"],
+  [hd0949CustStub, "HDMSG-0949-stub"],
+  [hd0949Em1, "HDMSG-0949-em1"],
+  [hd0949Em2, "HDMSG-0949-em2"],
+]) {
+  row.timestamp = row.createdAt;
+  row.createdAt = "";
+  row.id = id;
+}
+
 // 0937 — the ticket read at /clientDashboard/help-desk/tickets/0937. The desk's
 // own activity feed (Frappe Helpdesk, `message.activities[]`) is in true time
 // order; the portal payload is NOT — the mock hands the rows over grouped by

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { displayBody, formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
+import { displayBody, erpStampOf, formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
 import { isAudioAttachment, isImageAttachment } from "@/lib/help-desk/attachments";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
@@ -131,7 +131,8 @@ export default function MessageBubble({
   const [brokenFiles, setBrokenFiles] = useState<Record<string, boolean>>({});
   const copiedTimer = useRef<number | null>(null);
 
-  const timeLabel = formatBubbleTime(message.createdAt, language);
+  const stamp = erpStampOf(message);
+  const timeLabel = formatBubbleTime(stamp, language);
   const reactions = message.reactions ?? [];
   const canAct = Boolean(onQuote || onReact || onCopied);
 
@@ -544,7 +545,7 @@ export default function MessageBubble({
               </span>
             ) : null}
             <time
-              dateTime={message.createdAt}
+              dateTime={stamp}
               className="flex-none text-[10.5px] font-normal tabular-nums tracking-[0.01em] text-[#667781]"
             >
               {timeLabel}

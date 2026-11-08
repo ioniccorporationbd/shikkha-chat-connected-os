@@ -1,6 +1,6 @@
 import { reportClientError } from "@/lib/log/report-error";
 
-import { parseErpTimestamp } from "./format";
+import { erpStampOf, parseErpTimestamp } from "./format";
 import type { ConversationPayload } from "./types";
 
 /**
@@ -52,7 +52,7 @@ function describeRow(
   message: ConversationPayload["messages"][number],
   index: number
 ): TraceRow {
-  const raw = String(message.createdAt ?? "");
+  const raw = erpStampOf(message);
   const date = raw.trim() ? parseErpTimestamp(raw) : null;
   const ms = date && !Number.isNaN(date.getTime()) ? date.getTime() : null;
   return {

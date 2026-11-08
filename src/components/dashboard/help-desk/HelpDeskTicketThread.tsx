@@ -26,7 +26,7 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
-import { parseErpTimestamp } from "@/lib/help-desk/format";
+import { erpStampOf, parseErpTimestamp } from "@/lib/help-desk/format";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -993,12 +993,18 @@ export default function HelpDeskTicketThread({
   // all falls back to its position in the record instead of an invented clock.
   const messageStampById = new Map<string, string>();
   for (const message of messages) {
-    if (message.createdAt) messageStampById.set(message.id, message.createdAt);
+    const stamp = erpStampOf(message);
+    if (stamp) messageStampById.set(message.id, stamp);
   }
   const trailAt = (event: ConversationTimelineEvent): string =>
-    event.at && !Number.isNaN(parseErpTimestamp(event.at).getTime())
-      ? event.at
-      : messageStampById.get(event.id) ?? event.at ?? "";
+    (() => {
+      const own = erpStampOf(event);
+      if (own && !Number.isNaN(parseErpTimestamp(own).getTime())) return own;
+      // The desk's own row (Comment/Communication) can arrive without a stamp at
+      // all — under no name. The same record's chat twin still knows when it was
+      // filed, so the trail borrows that time rather than printing a bare "—".
+      return messageStampById.get(event.id) ?? own;
+    })();
 
   // --- "Assigned employee" / "Submitted" must never read blank -------------
   // See resolveTicketHeader: the desk's Assignee / Customer values are resolved
@@ -1096,7 +1102,7 @@ export default function HelpDeskTicketThread({
         const move = event.from || event.to ? `${statusWord(event.from)} → ${statusWord(event.to)}` : "";
         return {
           id: event.id,
-          at: event.at,
+          at: erpStampOf(event),
           sequence,
           label: move ? `${copy.timelineStatus}: ${move}` : copy.timelineStatus,
         };
@@ -1131,11 +1137,15 @@ export default function HelpDeskTicketThread({
     : [
         ...timeline
           .filter((event) => event.type !== "message" && !messageIds.has(event.id))
-          .map((event) => (event.at === trailAt(event) ? event : { ...event, at: trailAt(event) })),
+          // The stamp is written onto `at` even when the payload named it
+          // something else: the sort below reads `at`, and a row whose time
+          // lived under `timestamp` sorted as if it were undated — the ticket's
+          // own creation fell to the bottom of its trail.
+          .map((event) => ({ ...event, at: trailAt(event) })),
         ...orderedMessages.map((message) => ({
           id: message.id,
           type: "message" as const,
-          at: message.createdAt,
+          at: erpStampOf(message),
           author: message.author === "support" ? ("support" as const) : ("user" as const),
           authorName: message.authorName ?? "",
           text: message.body,

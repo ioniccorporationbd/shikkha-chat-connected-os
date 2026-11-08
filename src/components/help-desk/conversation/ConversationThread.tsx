@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { FiArrowDown, FiCopy, FiMessageCircle, FiRefreshCw, FiTrash2, FiX } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { formatBubbleTime, formatChatDay, parseErpTimestamp } from "@/lib/help-desk/format";
+import { erpStampOf, formatBubbleTime, formatChatDay, parseErpTimestamp } from "@/lib/help-desk/format";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
 
 import MessageBubble from "./MessageBubble";
@@ -416,7 +416,7 @@ export default function ConversationThread({
         entries.push({
           kind: "event",
           key: `e-${event.id}`,
-          at: event.at,
+          at: erpStampOf(event),
           sequence: event.sequence,
           label: event.label,
           body: event.body,

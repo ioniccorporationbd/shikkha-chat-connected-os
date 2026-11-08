@@ -35,6 +35,24 @@ export function displayBody(body: unknown): string {
  *
  * Strings that already carry an offset or `Z` are respected as-is.
  */
+/**
+ * The stamp a stored row carries, whichever name its payload gives it.
+ *
+ * The desk names the same column differently per feed: the activity feed says
+ * `timestamp`, the portal rows say `at`, a raw Frappe document says `creation`.
+ * Reading only one name left whole author-sides undated — the row drew with a
+ * bare "—" while the other side showed its time. Every reader asks this
+ * function instead of reaching for one field.
+ */
+export function erpStampOf(row: unknown): string {
+  if (!row || typeof row !== "object") return "";
+  for (const key of ["at", "createdAt", "timestamp", "creation", "modified", "date", "communicationDate"]) {
+    const text = String((row as Record<string, unknown>)[key] ?? "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
 export function parseErpTimestamp(iso: string): Date {
   const text = iso.trim();
   const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
