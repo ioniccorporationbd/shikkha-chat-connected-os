@@ -992,18 +992,36 @@ export default function HelpDeskTicketThread({
   // folded bubble show the real filing time, and a row the trail cannot date at
   // all falls back to its position in the record instead of an invented clock.
   const messageStampById = new Map<string, string>();
+  // The same words, filed under a different record name: a trail row and its
+  // chat twin do not always share an id (the row is the Communication, the
+  // bubble is the message the desk re-shaped), so the author + text is kept as
+  // a second key. Without it a Support row whose id changed kept printing "—".
+  const voiceKey = (author: unknown, text: unknown) =>
+    `${String(author ?? "").trim().toLowerCase()}|${String(text ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()}`;
+  const messageStampByVoice = new Map<string, string>();
   for (const message of messages) {
     const stamp = erpStampOf(message);
-    if (stamp) messageStampById.set(message.id, stamp);
+    if (!stamp) continue;
+    messageStampById.set(message.id, stamp);
+    const key = voiceKey(message.author, message.body);
+    if (key !== "|") messageStampByVoice.set(key, stamp);
   }
+  const isUsableStamp = (value: string) => Boolean(value) && !Number.isNaN(parseErpTimestamp(value).getTime());
   const trailAt = (event: ConversationTimelineEvent): string =>
     (() => {
       const own = erpStampOf(event);
-      if (own && !Number.isNaN(parseErpTimestamp(own).getTime())) return own;
+      if (isUsableStamp(own)) return own;
       // The desk's own row (Comment/Communication) can arrive without a stamp at
       // all — under no name. The same record's chat twin still knows when it was
-      // filed, so the trail borrows that time rather than printing a bare "—".
-      return messageStampById.get(event.id) ?? own;
+      // filed, so the trail borrows that time rather than printing a bare "—":
+      // first the twin that shares the row's id, then the twin that says the
+      // same words on the same side.
+      const twin = messageStampById.get(event.id) ?? messageStampByVoice.get(voiceKey(event.author, event.text));
+      if (isUsableStamp(twin ?? "")) return twin as string;
+      return own;
     })();
 
   // --- "Assigned employee" / "Submitted" must never read blank -------------
