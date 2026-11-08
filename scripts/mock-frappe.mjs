@@ -3688,6 +3688,117 @@ hdAppend(HD_0860, "user", "ekhon kaj korche, dhonnobad", {
   authorName: HD_0860_CUSTOMER,
 });
 
+// 0922 — the client detail page reads /clientDashboard/help-desk/tickets/0922:
+// the শিক্ষা চ্যাট সাপোর্ট thread must place every গ্রাহকের বার্তা on the right
+// and every সাপোর্ট টিম reply on the left, exactly as the audit trail below
+// attributes them.
+const HD_0922 = "0922";
+const HD_0922_CUSTOMER = "tajul23";
+const HD_0922_EMAIL = "tajul789@gmail.com";
+const hd0922Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+const HD_0922_CUST_IMG_URL = "/private/files/recording-0922-20261108-101500bb11cc.png";
+const HD_0922_AGENT_IMG_URL = "/private/files/answer-0922-20261108-103100dd22ee.png";
+
+const hd0922CustImg = hdFileRow({
+  name: "MOCKFILE-09221",
+  url: HD_0922_CUST_IMG_URL,
+  fileName: "recording-0922-20261108-101500bb11cc.png",
+  size: 0,
+  owner: HD_0922_EMAIL,
+});
+hd0922CustImg.attached_to_doctype = "Comment";
+hd0922CustImg.attached_to_name = "MOCKCOMMENT-09221";
+hd0922CustImg.is_private = 1;
+hd0922CustImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0922_CUST_IMG_URL, AVATAR_BYTES);
+
+const hd0922AgentImg = hdFileRow({
+  name: "MOCKFILE-09222",
+  url: HD_0922_AGENT_IMG_URL,
+  fileName: "answer-0922-20261108-103100dd22ee.png",
+  size: 0,
+  owner: HD_0747_AGENT,
+});
+hd0922AgentImg.attached_to_doctype = "Communication";
+hd0922AgentImg.attached_to_name = "MOCKCOMM-09222";
+hd0922AgentImg.is_private = 1;
+hd0922AgentImg.file_size = AVATAR_BYTES.length;
+hdFileBytes.set(HD_0922_AGENT_IMG_URL, AVATAR_BYTES);
+
+hdThreads.set(HD_0922, {
+  name: HD_0922,
+  subject: "PROBLEM0922",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "bug",
+  customer: HD_0922_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: HD_0922_EMAIL,
+  agent: HD_0747_AGENT,
+  team: "Support Team",
+  submittedAt: hd0922Ago(30),
+  resolvedAt: null,
+  messages: [],
+  timeline: [
+    {
+      id: "created",
+      type: "created",
+      at: hd0922Ago(30),
+      author: "user",
+      authorName: HD_0922_CUSTOMER,
+      text: "PROBLEM0922\nCategory: Bug\nPreferred contact: chat",
+      attachments: 0,
+    },
+  ],
+});
+
+// 29 minutes ago — the customer opens the problem.
+hdAppend(HD_0922, "user", "class er recording load hocche na", {
+  at: hd0922Ago(29),
+  authorName: HD_0922_CUSTOMER,
+});
+
+// 26 minutes ago — an employee answer.
+hdAppend(HD_0922, "support", "hello sir, browser cache clear kore abar chesta korun", {
+  at: hd0922Ago(26),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0922_EMAIL,
+});
+
+// 24 minutes ago — the customer replies and shows the screen.
+hdAppend(HD_0922, "user", "cache clear korlam, tao hocche na", {
+  at: hd0922Ago(24),
+  authorName: HD_0922_CUSTOMER,
+  attachments: [
+    {
+      id: hd0922CustImg.name,
+      name: "recording-0922-20261108-101500bb11cc.png",
+      size: hd0922CustImg.file_size,
+      mime: "image/png",
+      url: HD_0922_CUST_IMG_URL,
+    },
+  ],
+});
+
+// 20 minutes ago — the employee closes the loop with a picture.
+hdAppend(HD_0922, "support", "apnar account e recording enable kore diyechi, ekhon dekhte paren", {
+  at: hd0922Ago(20),
+  authorName: HD_0747_AGENT,
+  recipients: HD_0922_EMAIL,
+  attachments: [
+    {
+      id: hd0922AgentImg.name,
+      name: "answer-0922-20261108-103100dd22ee.png",
+      size: hd0922AgentImg.file_size,
+      mime: "image/png",
+      url: HD_0922_AGENT_IMG_URL,
+    },
+  ],
+});
+
 // 0850 — the detail-page twin of 0814: a customer opens with text + picture,
 // the employee answers with text and a picture, the customer replies. Read from
 // /userDashboard/help-desk/tickets/0850 (staff detail: own text and files on

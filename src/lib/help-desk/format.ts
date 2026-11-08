@@ -8,6 +8,20 @@
 import type { TicketStatus } from "./types";
 
 /**
+ * The header lines an ERP Communication carries in front of the words the
+ * employee typed — `To: someone@example.com`, `From: …`, `Subject: …`. The chat
+ * bubble and the audit trail both print the stored body, so a bare `To:` line
+ * would read as the first sentence of the reply; strip that leading block only.
+ */
+const LEADING_HEADER_LINES = /^(?:\s*(?:to|from|cc|bcc|subject|date)\s*:[^\n]*\n?)+/i;
+
+export function displayBody(body: unknown): string {
+  return String(body ?? "")
+    .replace(LEADING_HEADER_LINES, "")
+    .replace(/^[\s\u00a0]+/, "");
+}
+
+/**
  * Parse an ERP timestamp without guessing the timezone.
  *
  * Frappe stores `creation`/`modified` as a *naive* datetime in the site's

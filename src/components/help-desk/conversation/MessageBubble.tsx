@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
+import { displayBody, formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
 import { isAudioAttachment, isImageAttachment } from "@/lib/help-desk/attachments";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
@@ -186,10 +186,21 @@ export default function MessageBubble({
             message menu rides at the end of that line. */}
         {grouped ? null : (
           <div className={["flex max-w-full items-center gap-1.5 px-1", mine ? "justify-end" : ""].join(" ")}>
-            {/* Whoever speaks is told apart by the side of the room and the
-                timestamp on the bubble, exactly as on the other dashboard; a
-                dot and a printed name above a reply only made the two screens
-                look unlike each other. */}
+            {/* The audit trail below names each row by its role — গ্রাহকের বার্তা
+                or সাপোর্ট টিম — so the thread above uses the very same two
+                labels, on the same side as the bubble they belong to. */}
+            <span
+              className={[
+                "max-w-[70%] truncate px-1 text-[11.5px] font-bold tracking-[0.01em]",
+                mine
+                  ? "text-[#008069]"
+                  : "text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]",
+              ].join(" ")}
+            >
+              {isResolution || message.author === "support"
+                ? copy.timelineSupport
+                : copy.timelineReplyCustomer}
+            </span>
             {canAct ? (
               <MessageActionMenu
                 copy={copy}
@@ -285,7 +296,7 @@ export default function MessageBubble({
             </p>
           ) : null}
 
-          {message.body ? <p className="whitespace-pre-wrap break-words">{message.body}</p> : null}
+          {message.body ? <p className="whitespace-pre-wrap break-words">{displayBody(message.body)}</p> : null}
 
           {!message.body && message.attachments.length > 0 ? (
             /* An attachment-only row on the desk carries the Attachment

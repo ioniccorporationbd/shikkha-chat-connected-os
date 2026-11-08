@@ -13,7 +13,7 @@ import type { IconType } from "react-icons";
 
 import { isImageAttachment } from "@/lib/help-desk/attachments";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
-import { formatDateTime } from "@/lib/help-desk/format";
+import { displayBody, formatDateTime } from "@/lib/help-desk/format";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationTimelineEvent, ConversationTimelineType } from "@/lib/help-desk/types";
 
@@ -184,7 +184,7 @@ export default function ConversationTimeline({ events, language }: ConversationT
                   </p>
                 ) : event.text ? (
                   <p className="mt-1 whitespace-pre-line break-words text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
-                    {event.text}
+                    {displayBody(event.text)}
                   </p>
                 ) : event.files?.length ? (
                   /* Desk's attachment-only row reads "Shared — <file>" (the
