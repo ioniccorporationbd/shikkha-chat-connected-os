@@ -27,9 +27,12 @@ export interface ServiceBuildCopy {
   chartHint: string;
   chartEmpty: string;
   chartTotal: string;
-  chartShowing: string;
-  chartFilteredAmount: string;
-  chartOutstanding: string;
+  /** Total billed (সব ইনভয়েসের মোট) — replaces the old "Showing" tile. */
+  chartBilled: string;
+  /** Money already settled on those invoices. */
+  chartPaid: string;
+  /** Still owed on draft/unpaid invoices. */
+  chartDue: string;
   chartStatusBreakdown: string;
   summaryMonth: string;
   summaryLatest: string;
@@ -154,9 +157,9 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     chartHint: "ফিল্টার অনুযায়ী চলমান",
     chartEmpty: "এই ফিল্টারে কোনো ইনভয়েস নেই।",
     chartTotal: "মোট সার্ভিস বিল",
-    chartShowing: "দেখানো হচ্ছে",
-    chartFilteredAmount: "মোট পরিমাণ",
-    chartOutstanding: "মোট বাকি",
+    chartBilled: "মোট বিল",
+    chartPaid: "পরিশোধিত",
+    chartDue: "বকেয়া",
     chartStatusBreakdown: "স্ট্যাটাস অনুযায়ী বিভাজন",
     summaryMonth: "এই মাসের ইনভয়েস",
     summaryLatest: "সর্বশেষ ইনভয়েস",
@@ -249,7 +252,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     iAmount: "মোট",
 
     statuses: {
-      draft: "ড্রাফট",
+      draft: "বকেয়া",
       submitted: "সাবমিটেড",
       unpaid: "অপরিশোধিত",
       paid: "পরিশোধিত",
@@ -282,9 +285,9 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     chartHint: "Live with your filters",
     chartEmpty: "No invoices match this filter.",
     chartTotal: "Total service bills",
-    chartShowing: "Showing",
-    chartFilteredAmount: "Total amount",
-    chartOutstanding: "Total outstanding",
+    chartBilled: "Total billed",
+    chartPaid: "Paid",
+    chartDue: "Due",
     chartStatusBreakdown: "Status breakdown",
     summaryMonth: "This month",
     summaryLatest: "Latest invoice",
@@ -377,7 +380,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     iAmount: "Amount",
 
     statuses: {
-      draft: "Draft",
+      draft: "Due",
       submitted: "Submitted",
       unpaid: "Unpaid",
       paid: "Paid",

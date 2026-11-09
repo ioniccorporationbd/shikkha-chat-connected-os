@@ -257,8 +257,21 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   const totals = useMemo(() => {
     const totalRecords = data?.summary?.total ?? invoices.length;
     const filteredAmount = filtered.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
-    const filteredOutstanding = filtered.reduce((sum, row) => sum + (Number(row.outstanding_amount) || 0), 0);
-    return { totalRecords, filteredAmount, filteredOutstanding };
+    // পরিশোধিত: money already settled on the filtered rows — what was billed
+    // minus what is still owed (clamped, so odd data can never show a credit).
+    const filteredPaid = filtered.reduce((sum, row) => {
+      const amount = Number(row.amount) || 0;
+      const owed = Number(row.outstanding_amount) || 0;
+      return sum + Math.max(0, amount - owed);
+    }, 0);
+    // বকেয়া: what is still owed on an invoice the customer has not settled —
+    // the draft (docstatus 0) and submitted-unpaid rows only.
+    const filteredDue = filtered.reduce((sum, row) => {
+      const key = String(row.display_status || "").trim().toLowerCase();
+      if (key !== "draft" && key !== "unpaid") return sum;
+      return sum + (Number(row.outstanding_amount) || 0);
+    }, 0);
+    return { totalRecords, filteredAmount, filteredPaid, filteredDue };
   }, [data, invoices, filtered]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
@@ -413,17 +426,18 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                 <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
                   <Stat label={copy.chartTotal} value={String(totals.totalRecords)} />
                   <Stat
-                    label={copy.chartShowing}
-                    value={`${filtered.length} ${copy.ofLabel} ${totals.totalRecords}`}
+                    label={copy.chartBilled}
+                    value={formatAmount(totals.filteredAmount, currency, language)}
+                    hint={`${filtered.length} ${copy.ofLabel} ${totals.totalRecords}`}
                     accent
                   />
                   <Stat
-                    label={copy.chartFilteredAmount}
-                    value={formatAmount(totals.filteredAmount, currency, language)}
+                    label={copy.chartPaid}
+                    value={formatAmount(totals.filteredPaid, currency, language)}
                   />
                   <Stat
-                    label={copy.chartOutstanding}
-                    value={formatAmount(totals.filteredOutstanding, currency, language)}
+                    label={copy.chartDue}
+                    value={formatAmount(totals.filteredDue, currency, language)}
                   />
                   <Stat label={copy.summaryMonth} value={String(data.summary?.this_month_count ?? 0)} />
                   <Stat
@@ -826,7 +840,18 @@ function serviceBillItems(
 }
 
 /** A single summary tile. */
-function Stat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function Stat({
+  label,
+  value,
+  hint,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  /** Optional second line — e.g. how many invoices this figure covers. */
+  hint?: string;
+  accent?: boolean;
+}) {
   return (
     <div
       className={`flex flex-col gap-1 rounded-2xl border px-3.5 py-3 ${
@@ -841,6 +866,11 @@ function Stat({ label, value, accent = false }: { label: string; value: string; 
       <span className="truncate text-[14px] font-semibold" title={value}>
         {value}
       </span>
+      {hint ? (
+        <span className="truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+          {hint}
+        </span>
+      ) : null}
     </div>
   );
 }
