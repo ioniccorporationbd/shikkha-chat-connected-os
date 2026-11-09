@@ -170,7 +170,7 @@ try {
     const usdCells = (await usdRow.locator("td").allInnerTexts()).map((text) => text.trim());
     check(
       `[${language}] the USD claim is listed`,
-      usdCells.length >= 8,
+      usdCells.length >= 7,
       `cells=${usdCells.length}`
     );
     const claimedCell = ascii(usdCells[3] ?? "");

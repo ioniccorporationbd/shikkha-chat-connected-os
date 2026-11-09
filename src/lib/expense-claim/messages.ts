@@ -41,7 +41,6 @@ export interface ExpenseClaimCopy {
   colClaimed: string;
   colSanctioned: string;
   colStatus: string;
-  colPaid: string;
   colAction: string;
   /** Display-only serial number (1, 2, 3…) column. */
   colSl: string;
@@ -169,7 +168,6 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     colClaimed: "দাবি করা পরিমাণ",
     colSanctioned: "অনুমোদিত পরিমাণ",
     colStatus: "স্ট্যাটাস",
-    colPaid: "পেমেন্ট",
     colAction: "অ্যাকশন",
     viewDetails: "বিস্তারিত দেখুন",
     emptyTitle: "এখনও কোনো Expense Claim তৈরি করা হয়নি।",
@@ -285,7 +283,6 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     colClaimed: "Claimed Amount",
     colSanctioned: "Sanctioned Amount",
     colStatus: "Status",
-    colPaid: "Paid",
     colAction: "Action",
     viewDetails: "View Details",
     emptyTitle: "No expense claims yet.",

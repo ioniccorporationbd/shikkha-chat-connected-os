@@ -598,7 +598,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                             copy.colClaimed,
                             copy.colSanctioned,
                             copy.colStatus,
-                            copy.colPaid,
                             copy.colAction,
                           ].map((heading) => (
                             <th
@@ -635,9 +634,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                                 raw={claim.status || claim.approval_status}
                                 copy={copy}
                               />
-                            </td>
-                            <td className="px-4 py-3">
-                              <PaidBadge paid={claim.is_paid} copy={copy} />
                             </td>
                             <td className="px-4 py-3">
                               <button
@@ -769,8 +765,7 @@ function ClaimCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <PaidBadge paid={claim.is_paid} copy={copy} />
+      <div className="flex items-center justify-end gap-3">
         <button
           type="button"
           onClick={onOpen}

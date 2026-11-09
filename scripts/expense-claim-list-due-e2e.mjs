@@ -28,8 +28,8 @@ const CHROME =
   process.env.PW_CHROME ?? "/root/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome";
 
 const COPY = {
-  bn: { due: "বকেয়া", print: "প্রিন্ট", download: "ডাউনলোড", view: "বিস্তারিত দেখুন" },
-  en: { due: "Due", print: "Print", download: "Download", view: "View Details" },
+  bn: { due: "বকেয়া", print: "প্রিন্ট", download: "ডাউনলোড", view: "বিস্তারিত দেখুন", paidColumn: "পেমেন্ট" },
+  en: { due: "Due", print: "Print", download: "Download", view: "View Details", paidColumn: "Paid" },
 };
 
 /** Bengali digits -> ASCII so "৳৬০০.০০" can be compared as 600. */
@@ -163,6 +163,14 @@ for (const language of ["bn", "en"]) {
     ascii(await viewButtons.first().innerText()).includes(copy.view)
   );
   await viewButtons.first().click();
+
+  // ---- the পেমেন্ট column is gone from the আপনার এক্সপেন্স ক্লেম table
+  const headers = await page.locator("table thead th").allInnerTexts();
+  check(
+    `[${language}] no "${copy.paidColumn}" column in the claims table`,
+    !headers.some((text) => ascii(text).trim().toLowerCase() === copy.paidColumn.toLowerCase()),
+    headers.join(" | ")
+  );
 
   const printButton = page.locator("[data-claim-print]").first();
   await printButton.waitFor({ timeout: 60000 });
