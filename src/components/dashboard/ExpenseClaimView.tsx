@@ -6,8 +6,11 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiChevronRight,
+  FiDownload,
   FiFileText,
+  FiLoader,
   FiPlus,
+  FiPrinter,
   FiRefreshCw,
   FiUserCheck,
   FiX,
@@ -25,6 +28,11 @@ import type {
 } from "@/lib/expense-claim/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
+import {
+  buildDetailDocumentHtml,
+  downloadDetailDocument,
+  printDetailDocument,
+} from "@/lib/dashboard/detail-document";
 import { reportClientError } from "@/lib/log/report-error";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -200,6 +208,9 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const [detailName, setDetailName] = useState<string | null>(null);
   const [detail, setDetail] = useState<ExpenseClaimDetails | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  /** Row whose details request is in flight — its action button shows a spinner
+   *  and the popup only appears once the payload is in hand. */
+  const [openingName, setOpeningName] = useState<string | null>(null);
   const [detailError, setDetailError] = useState("");
   const detailPresence = useOverlayPresence(Boolean(detailName), 240);
   /** The claim currently being fetched/shown — blocks duplicate fetches. */
@@ -266,13 +277,16 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
       if (!name) return;
       if (detailInFlightRef.current === name) return;
       detailInFlightRef.current = name;
-      setDetailName(name);
       setDetail(null);
       setDetailError("");
       setDetailLoading(true);
+      // Requirement: the row's button shows a spinner first and the popup opens
+      // only after the details have arrived.
+      setOpeningName(name);
       try {
         const payload = await fetchExpenseClaimDetails(name, language);
         setDetail(payload);
+        setDetailName(name);
       } catch (error) {
         detailInFlightRef.current = null;
         setDetailError((error as ApiError)?.message || copy.detailsFailed);
@@ -287,6 +301,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         });
       } finally {
         setDetailLoading(false);
+        setOpeningName(null);
       }
     },
     [language, copy.detailsFailed]
@@ -313,6 +328,14 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const claims = (data?.claims ?? []).filter((claim) => Boolean(claim?.name));
   const summary = data?.summary;
   const currency = summary?.currency || claims[0]?.currency || "BDT";
+  // বকেয়া = অনুমোদিত পরিমাণ − পরিশোধিত (never negative: an over-reimbursed claim
+  // is settled, not owed).
+  const summarySanctioned = summary
+    ? Number(summary.total_base_sanctioned_amount ?? summary.total_sanctioned_amount ?? 0)
+    : 0;
+  const dueSummaryAmount = summary
+    ? Math.max(0, summarySanctioned - Number(summary.total_amount_reimbursed || 0))
+    : 0;
 
   // Client-side paging — the table shows 10 rows by default; the row-of-buttons
   // control in the shared footer widens it to 20/50/100/500/1000.
@@ -486,7 +509,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                 </div>
 
                 {summary ? (
-                  <div className="grid gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4 sm:grid-cols-3">
+                  <div className="grid gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.colClaimed}
@@ -513,6 +536,14 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                       </span>
                       <span className="text-[15px] font-semibold">
                         {formatAmount(summary.total_amount_reimbursed, currency, language)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-0.5" data-summary-due="true">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {copy.summaryDue}
+                      </span>
+                      <span className="text-[15px] font-semibold" data-summary-due-value={dueSummaryAmount}>
+                        {formatAmount(dueSummaryAmount, currency, language)}
                       </span>
                     </div>
                   </div>
@@ -618,12 +649,32 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                               <button
                                 type="button"
                                 onClick={() => void openDetails(claim.name)}
-                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                                disabled={openingName === claim.name}
+                                data-claim-opening={openingName === claim.name ? "true" : "false"}
+                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-progress disabled:opacity-70"
                               >
-                                <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                  {copy.viewDetails}
-                                </span>
-                                <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+                                {openingName === claim.name ? (
+                                  <>
+                                    <FiLoader
+                                      size={14}
+                                      aria-hidden
+                                      className="animate-spin text-[var(--color-primary)]"
+                                    />
+                                    <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                                      {copy.openingDetails}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                                      {copy.viewDetails}
+                                    </span>
+                                    <FiChevronRight
+                                      size={14}
+                                      className="text-[var(--color-primary)]"
+                                    />
+                                  </>
+                                )}
                               </button>
                             </td>
                           </tr>
@@ -643,6 +694,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         language={language}
                         currency={currency}
                         onOpen={() => void openDetails(claim.name)}
+                        opening={openingName === claim.name}
                       />
                     ))}
                   </div>
@@ -693,6 +745,7 @@ function ClaimCard({
   language,
   currency,
   onOpen,
+  opening,
 }: {
   claim: ExpenseClaimRow;
   /** Display-only serial number within the current (sorted) list. */
@@ -701,6 +754,8 @@ function ClaimCard({
   language: string;
   currency: string;
   onOpen: () => void;
+  /** The details request for this card is in flight (button shows a spinner). */
+  opening: boolean;
 }) {
   const code = claim.currency || currency;
   return (
@@ -748,12 +803,25 @@ function ClaimCard({
         <button
           type="button"
           onClick={onOpen}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+          disabled={opening}
+          data-claim-opening={opening ? "true" : "false"}
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-progress disabled:opacity-70"
         >
-          <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-            {copy.viewDetails}
-          </span>
-          <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+          {opening ? (
+            <>
+              <FiLoader size={14} aria-hidden className="animate-spin text-[var(--color-primary)]" />
+              <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                {copy.openingDetails}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                {copy.viewDetails}
+              </span>
+              <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -807,6 +875,71 @@ function DetailsDialog({
     }
     push(copy.dApprover, detail.expense_approver);
   }
+
+  // Print / download render the SAME sections the popup shows, so the paper copy
+  // can never drift from the screen.
+  const buildDocumentHtml = (): string => {
+    if (!detail) return "";
+    return buildDetailDocumentHtml({
+      eyebrow: copy.detailsHeading,
+      title: name,
+      subtitle: [detail.employee_name || detail.employee, detail.company]
+        .filter(Boolean)
+        .join(" · "),
+      badges: [
+        statusLabel(effectiveStatus(detail), detail.status || detail.approval_status, copy),
+        detail.is_paid ? copy.summaryPaid : copy.summaryDue,
+        formatAmount(
+          Math.max(0, Number(sanctionedAmount(detail) || 0) - Number(detail.total_amount_reimbursed || 0)),
+          code,
+          language
+        ),
+      ],
+      sections: rows.length
+        ? [
+            {
+              title: copy.detailsHeading,
+              rows: rows.map((row) => ({ label: row.label, value: row.value })),
+            },
+          ]
+        : [],
+      tables: detail.expenses.length
+        ? [
+            {
+              title: copy.dExpenses,
+              columns: [
+                copy.dExpenseDate,
+                copy.dExpenseType,
+                copy.dDescription,
+                copy.dAmount,
+                copy.dSanctioned,
+              ],
+              rows: detail.expenses.map((row) => [
+                formatDate(String(row.expense_date ?? ""), language),
+                String(row.expense_type ?? ""),
+                String(row.description ?? ""),
+                formatAmount(Number(row.amount ?? 0), code, language),
+                Number(row.sanctioned_amount ?? 0) > 0
+                  ? formatAmount(Number(row.sanctioned_amount ?? 0), code, language)
+                  : "—",
+              ]),
+            },
+          ]
+        : undefined,
+      footerNote: copy.listHeading,
+      locale: language === "bn" ? "bn-BD" : "en-GB",
+    });
+  };
+
+  const handlePrint = () => {
+    const html = buildDocumentHtml();
+    if (html) printDetailDocument(html);
+  };
+
+  const handleDownload = () => {
+    const html = buildDocumentHtml();
+    if (html) downloadDetailDocument(html, `expense-claim-${name}`);
+  };
 
   return (
     <div
@@ -992,6 +1125,31 @@ function DetailsDialog({
                     </div>
                   </>
                 )}
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] pt-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  data-claim-download="true"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                >
+                  <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
+                    <FiDownload size={14} aria-hidden />
+                    {copy.downloadDocument}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  data-claim-print="true"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:bg-[var(--color-action)]"
+                >
+                  <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
+                    <FiPrinter size={14} aria-hidden />
+                    {copy.printDocument}
+                  </span>
+                </button>
               </div>
             </div>
           ) : null}

@@ -26,6 +26,8 @@ export interface ExpenseClaimCopy {
   summaryPending: string;
   summaryApproved: string;
   summaryPaid: string;
+  /** অনুমোদিত পরিমাণ − পরিশোধিত — the money still owed on the claim. */
+  summaryDue: string;
   summarySiteScope: string;
 
   /* list */
@@ -63,6 +65,11 @@ export interface ExpenseClaimCopy {
   detailsLoading: string;
   /** Details fetch failed (inline + toast). */
   detailsFailed: string;
+  /** Button/badge text while the details request is in flight. */
+  openingDetails: string;
+  /** Print + download actions inside the details popup. */
+  printDocument: string;
+  downloadDocument: string;
   close: string;
   dEmployee: string;
   dEmployeeId: string;
@@ -151,6 +158,7 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     summaryPending: "পেন্ডিং / অপরিশোধিত",
     summaryApproved: "অনুমোদিত",
     summaryPaid: "পরিশোধিত",
+    summaryDue: "বকেয়া",
     summarySiteScope: "আপনার ক্লেম",
     listHeading: "আপনার এক্সপেন্স ক্লেম",
     listHint: "সর্বশেষটি আগে দেখানো হয়েছে।",
@@ -180,6 +188,9 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     detailsHeading: "ক্লেমের বিস্তারিত",
     detailsLoading: "বিস্তারিত লোড হচ্ছে…",
     detailsFailed: "এক্সপেন্স ক্লেমের বিস্তারিত তথ্য লোড করা যাচ্ছে না।",
+    openingDetails: "খোলা হচ্ছে…",
+    printDocument: "প্রিন্ট",
+    downloadDocument: "ডাউনলোড",
     close: "বন্ধ করুন",
     dEmployee: "কর্মী",
     dEmployeeId: "কর্মী আইডি",
@@ -264,6 +275,7 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     summaryPending: "Pending / Unpaid",
     summaryApproved: "Approved",
     summaryPaid: "Paid",
+    summaryDue: "Due",
     summarySiteScope: "Your claims",
     listHeading: "Your Expense Claims",
     listHint: "Newest first.",
@@ -293,6 +305,9 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     detailsHeading: "Claim details",
     detailsLoading: "Loading details…",
     detailsFailed: "The expense claim details could not be loaded.",
+    openingDetails: "Opening…",
+    printDocument: "Print",
+    downloadDocument: "Download",
     close: "Close",
     dEmployee: "Employee",
     dEmployeeId: "Employee ID",
