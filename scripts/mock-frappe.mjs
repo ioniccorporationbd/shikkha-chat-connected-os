@@ -422,6 +422,12 @@ function expenseRowPayload(row) {
     is_paid: truthy(row.is_paid),
     total_claimed_amount: Number(row.total_claimed_amount || 0),
     total_sanctioned_amount: Number(row.total_sanctioned_amount || 0),
+    base_total_claimed_amount: Number(
+      row.base_total_claimed_amount ?? row.total_claimed_amount ?? 0
+    ),
+    base_total_sanctioned_amount: Number(
+      row.base_total_sanctioned_amount ?? row.total_sanctioned_amount ?? 0
+    ),
     grand_total: Number(row.grand_total || 0),
     total_amount_reimbursed: Number(row.total_amount_reimbursed || 0),
     remark: row.remark || "",
@@ -438,6 +444,7 @@ function expenseSummary(rows, currency) {
   let paid = 0;
   let claimed = 0;
   let sanctioned = 0;
+  let baseSanctioned = 0;
   let reimbursed = 0;
 
   for (const row of rows) {
@@ -452,6 +459,9 @@ function expenseSummary(rows, currency) {
     }
     claimed += Number(row.total_claimed_amount || 0);
     sanctioned += Number(row.total_sanctioned_amount || 0);
+    baseSanctioned += Number(
+      row.base_total_sanctioned_amount ?? row.total_sanctioned_amount ?? 0
+    );
     reimbursed += Number(row.total_amount_reimbursed || 0);
   }
 
@@ -465,6 +475,7 @@ function expenseSummary(rows, currency) {
     cancelled,
     total_claimed_amount: claimed,
     total_sanctioned_amount: sanctioned,
+    total_base_sanctioned_amount: baseSanctioned,
     total_amount_reimbursed: reimbursed,
     currency,
   };
@@ -627,6 +638,38 @@ expenseClaims.push({
   modified: "2026-10-01 12:00:00",
 });
 
+// Sanctioned in a foreign claim currency. ERPNext stores the sanctioned figure
+// twice — 100 USD in the claim, 12,000 BDT in the company's base currency — and
+// the portal reports the base figure, exactly like the desk.
+expenseClaims.push({
+  name: "HR-EXP-2026-00007",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Sales - MSL",
+  cost_center: "Main - MSL",
+  currency: "USD",
+  posting_date: "2026-09-29",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Approved",
+  status: "Submitted",
+  docstatus: 1,
+  total_claimed_amount: 100,
+  total_sanctioned_amount: 100,
+  base_total_claimed_amount: 12000,
+  base_total_sanctioned_amount: 12000,
+  grand_total: 100,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Overseas conference fee",
+  expenses: [
+    { expense_date: "2026-09-29", expense_type: "Travel", description: "Conference fee (USD)", amount: 100, sanctioned_amount: 100, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-09-29 07:40:00",
+  modified: "2026-09-29 08:10:00",
+});
+
 // Rejected.
 expenseClaims.push({
   name: "HR-EXP-2026-00005",
@@ -683,8 +726,8 @@ expenseClaims.push({
   modified: "2026-09-29 20:30:00",
 });
 
-// Keep created claim ids past the seeded range (next create -> HR-EXP-2026-00007).
-expenseClaimCounter = 6;
+// Keep created claim ids past the seeded range (next create -> HR-EXP-2026-00008).
+expenseClaimCounter = 7;
 
 // --- customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) --- //
 // The customer is resolved from the logged-in user (never the body), exactly

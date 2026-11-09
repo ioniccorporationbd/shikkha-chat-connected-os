@@ -25,6 +25,7 @@ import type {
 } from "@/lib/expense-claim/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
+import { reportClientError } from "@/lib/log/report-error";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { toast } from "@/lib/ui/toast";
@@ -74,6 +75,26 @@ function statusLabel(status: string, raw: string, copy: ExpenseClaimCopy): strin
     default:
       return raw && raw.trim() ? raw : copy.statusSubmitted;
   }
+}
+
+/**
+ * The sanctioned figure the portal reports.
+ *
+ * ERPNext keeps it twice: in the claim's own currency
+ * (`total_sanctioned_amount`) and in the company's base currency
+ * (`base_total_sanctioned_amount`). The desk shows the base amount, so the
+ * portal follows it, falling back to the claim-currency figure only when an
+ * older payload does not carry the base field at all.
+ */
+function sanctionedAmount(row: {
+  base_total_sanctioned_amount?: number | null;
+  total_sanctioned_amount?: number | null;
+}): number {
+  const base = row.base_total_sanctioned_amount;
+  if (base !== null && base !== undefined && Number.isFinite(Number(base))) {
+    return Number(base);
+  }
+  return Number(row.total_sanctioned_amount ?? 0);
 }
 
 interface ExpenseClaimViewProps {
@@ -171,6 +192,13 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         setData(null);
       } else {
         setLoadError(err?.message || copy.loadFailed);
+        // Requirement: a broken load must be visible in the console and in the
+        // ERP Error Log, not just in the panel's retry card.
+        reportClientError({
+          scope: "expense-claim:list",
+          message: "expense_claim.list_mine failed",
+          detail: { code: err?.code ?? null, message: err?.message ?? null },
+        });
       }
     } finally {
       setLoading(false);
@@ -220,6 +248,14 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         detailInFlightRef.current = null;
         setDetailError((error as ApiError)?.message || copy.detailsFailed);
         toast.error(copy.detailsFailed);
+        reportClientError({
+          scope: "expense-claim:details",
+          message: `expense_claim.details failed for ${name}`,
+          detail: {
+            code: (error as ApiError)?.code ?? null,
+            message: (error as ApiError)?.message ?? null,
+          },
+        });
       } finally {
         setDetailLoading(false);
       }
@@ -436,7 +472,11 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         {copy.colSanctioned}
                       </span>
                       <span className="text-[15px] font-semibold">
-                        {formatAmount(summary.total_sanctioned_amount, currency, language)}
+                        {formatAmount(
+                          summary.total_base_sanctioned_amount ?? summary.total_sanctioned_amount,
+                          currency,
+                          language
+                        )}
                       </span>
                     </div>
                     <div className="flex flex-col gap-0.5">
@@ -534,7 +574,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                               {formatAmount(claim.total_claimed_amount, claim.currency || currency, language)}
                             </td>
                             <td className="px-4 py-3 text-[13px]">
-                              {formatAmount(claim.total_sanctioned_amount, claim.currency || currency, language)}
+                              {formatAmount(sanctionedAmount(claim), currency, language)}
                             </td>
                             <td className="px-4 py-3">
                               <StatusBadge
@@ -670,7 +710,7 @@ function ClaimCard({
             {copy.colSanctioned}
           </span>
           <span className="text-[13px] font-semibold">
-            {formatAmount(claim.total_sanctioned_amount, code, language)}
+            {formatAmount(sanctionedAmount(claim), currency, language)}
           </span>
         </div>
       </div>
@@ -732,7 +772,7 @@ function DetailsDialog({
     push(copy.dStatus, statusLabel(detail.display_status, detail.status || detail.approval_status, copy));
     push(copy.dApproval, detail.approval_status);
     push(copy.dClaimed, formatAmount(detail.total_claimed_amount, code, language));
-    push(copy.dSanctioned, formatAmount(detail.total_sanctioned_amount, code, language));
+    push(copy.dSanctioned, formatAmount(sanctionedAmount(detail), code, language));
     push(copy.dGrandTotal, formatAmount(detail.grand_total || 0, code, language));
     if (Number(detail.total_amount_reimbursed) > 0) {
       push(copy.dReimbursed, formatAmount(detail.total_amount_reimbursed, code, language));

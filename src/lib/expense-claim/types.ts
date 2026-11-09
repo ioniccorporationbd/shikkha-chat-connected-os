@@ -70,6 +70,10 @@ export interface ExpenseClaimRow {
   is_paid: boolean;
   total_claimed_amount: number;
   total_sanctioned_amount: number;
+  /** Sanctioned amount in the company's base currency (what the portal shows). */
+  base_total_sanctioned_amount?: number;
+  /** Claimed amount in the company's base currency. */
+  base_total_claimed_amount?: number;
   grand_total: number;
   total_amount_reimbursed: number;
   remark?: string;
@@ -87,6 +91,8 @@ export interface ExpenseClaimSummary {
   cancelled?: number;
   total_claimed_amount: number;
   total_sanctioned_amount: number;
+  /** Sum of base_total_sanctioned_amount (company currency). */
+  total_base_sanctioned_amount?: number;
   total_amount_reimbursed: number;
   currency: string;
 }
