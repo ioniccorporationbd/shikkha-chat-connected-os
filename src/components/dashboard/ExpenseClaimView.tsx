@@ -908,7 +908,7 @@ function DetailsDialog({
       <div
         role="dialog"
         aria-modal="true"
-        className="absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-5 shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86vh] sm:w-[560px] sm:max-w-[92vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:border"
+        className="absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-5 shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86vh] sm:w-[720px] sm:max-w-[94vw] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[26px] sm:border"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -1074,9 +1074,9 @@ function DetailsDialog({
                   type="button"
                   onClick={handleDownload}
                   data-claim-download="true"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-action)] bg-[var(--color-white)] px-4 py-2.5 transition hover:bg-[var(--color-action-tint)]"
                 >
-                  <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
+                  <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-action)]">
                     <FiDownload size={14} aria-hidden />
                     {copy.downloadDocument}
                   </span>
@@ -1085,7 +1085,7 @@ function DetailsDialog({
                   type="button"
                   onClick={handlePrint}
                   data-claim-print="true"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] px-4 py-2.5 transition hover:bg-[var(--color-action)]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:bg-[var(--color-action-hover)]"
                 >
                   <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
                     <FiPrinter size={14} aria-hidden />

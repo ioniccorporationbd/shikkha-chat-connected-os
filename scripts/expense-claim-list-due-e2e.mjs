@@ -108,6 +108,15 @@ for (const language of ["bn", "en"]) {
   await context.addCookies([
     { name: "shikkha-chat-site-language", value: language, url: BASE },
   ]);
+  // the mock answers instantly, which can hide the in-sheet loader; slow only the
+  // single-claim details request so the loading state is deterministic
+  await context.route("**/*", async (route) => {
+    const request = route.request();
+    if (request.method() === "GET" && /\/api\/expense-claim\/[A-Z]/.test(request.url())) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
+    await route.continue();
+  });
   const page = await context.newPage();
   const noisy = [];
   page.on("console", (message) => {
@@ -179,6 +188,40 @@ for (const language of ["bn", "en"]) {
     `[${language}] the popup showed a loading state while fetching`,
     await page.evaluate(() => window.__sawLoading === true)
   );
+
+  // ---- popup shell + button styling follow the Create Customer popup
+  const shape = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const print = document.querySelector("[data-claim-print]");
+    const download = document.querySelector("[data-claim-download]");
+    const read = (el) => (el ? getComputedStyle(el) : null);
+    const p = read(print);
+    const d = read(download);
+    return {
+      width: dialog ? Math.round(dialog.getBoundingClientRect().width) : 0,
+      printBg: p ? p.backgroundColor : "",
+      printText: print ? getComputedStyle(print.querySelector("span")).color : "",
+      downloadBorder: d ? d.borderTopColor : "",
+      downloadWidth: d ? d.borderTopWidth : "",
+    };
+  });
+  const RED = "rgb(224, 5, 22)"; // --color-action
+  check(
+    `[${language}] the popup is wider than the old 560px sheet`,
+    shape.width >= 640,
+    `width=${shape.width}px`
+  );
+  check(
+    `[${language}] প্রিন্ট is red with white text`,
+    shape.printBg === RED && shape.printText === "rgb(255, 255, 255)",
+    `bg=${shape.printBg} text=${shape.printText}`
+  );
+  check(
+    `[${language}] ডাউনলোড keeps a red outline`,
+    shape.downloadBorder === RED && parseFloat(shape.downloadWidth) > 0,
+    `border=${shape.downloadBorder} width=${shape.downloadWidth}`
+  );
+
   const downloadButton = page.locator("[data-claim-download]").first();
   const downloadText = ascii(await downloadButton.innerText());
   const printText = ascii(await printButton.innerText());
