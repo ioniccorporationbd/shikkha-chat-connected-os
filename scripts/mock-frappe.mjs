@@ -391,6 +391,10 @@ function truthy(value) {
 // list and by an explicit owner check on details.
 const expenseClaims = [];
 let expenseClaimCounter = 1;
+// Payment Entries posted against portal-created claims (one per claim). Named
+// apart from the customer `paymentEntries` store above.
+const expensePaymentEntries = [];
+let expensePaymentEntryCounter = 1000;
 
 function displayStatus(row) {
   const docstatus = Number(row.docstatus || 0);
@@ -4739,6 +4743,16 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (url.pathname === "/__mock/expense-payment-entries") {
+    ok(response, { entries: expensePaymentEntries });
+    return;
+  }
+
+  if (url.pathname === "/__mock/expense-claims") {
+    ok(response, { entries: expenseClaims });
+    return;
+  }
+
   if (url.pathname === "/__mock/files") {
     // `_createdMs` is a local test knob; the ERP has no such column.
     const files = hdFileList.map(({ _createdMs, ...row }) => row);
@@ -6511,6 +6525,40 @@ const server = createServer(async (request, response) => {
     }
     const department = requestedDept || defaultDept;
 
+    // Mirror the real backend: the portal claim is sanctioned in full, approved
+    // and reimbursed at once with one Payment Entry whose paid amount is the
+    // claim's base sanctioned amount.
+    const sanctioned = total;
+    expensePaymentEntryCounter += 1;
+    const paymentName = `ACC-PAY-2026-${String(expensePaymentEntryCounter).padStart(5, "0")}`;
+    const paymentEntry = {
+      name: paymentName,
+      doctype: "Payment Entry",
+      payment_type: "Pay",
+      party_type: "Employee",
+      party: employee.name,
+      party_name: employee.employee_name,
+      company: "Magnetic Solution Limited",
+      currency: "BDT",
+      paid_amount: sanctioned,
+      received_amount: sanctioned,
+      reference_no: name,
+      reference_date: postingDate,
+      docstatus: 1,
+      status: "Submitted",
+      references: [
+        {
+          reference_doctype: "Expense Claim",
+          reference_name: name,
+          allocated_amount: sanctioned,
+        },
+      ],
+      owner: email,
+      posting_date: postingDate,
+      creation: nowStamp(),
+    };
+    expensePaymentEntries.push(paymentEntry);
+
     const record = {
       name,
       employee: employee.name,
@@ -6521,23 +6569,28 @@ const server = createServer(async (request, response) => {
       currency: "BDT",
       posting_date: postingDate,
       expense_approver: email,
-      approval_status: "Draft",
-      status: "Draft",
-      docstatus: 0,
+      approval_status: "Approved",
+      status: "Paid",
+      docstatus: 1,
       total_claimed_amount: total,
-      total_sanctioned_amount: total,
-      grand_total: total,
-      total_amount_reimbursed: 0,
-      is_paid: 0,
+      total_sanctioned_amount: sanctioned,
+      base_total_claimed_amount: total,
+      base_total_sanctioned_amount: sanctioned,
+      grand_total: sanctioned,
+      total_amount_reimbursed: sanctioned,
+      is_paid: 1,
+      payment_entry: paymentName,
       remark: String(data.remark || ""),
-      expenses,
+      expenses: expenses.map((row) => ({ ...row, sanctioned_amount: row.sanctioned_amount || row.amount })),
       owner: email,
       creation: nowStamp(),
       modified: nowStamp(),
     };
     expenseClaims.push(record);
 
-    console.log(`[mock-frappe] EXPENSE CLAIM CREATED ${name} (${employee.name}) by ${email}`);
+    console.log(
+      `[mock-frappe] EXPENSE CLAIM CREATED ${name} (${employee.name}) by ${email} -> PAYMENT ENTRY ${paymentName} paid=${sanctioned}`
+    );
 
     ok(response, {
       name,
@@ -6547,10 +6600,21 @@ const server = createServer(async (request, response) => {
       currency: record.currency,
       posting_date: postingDate,
       total_claimed_amount: total,
-      status: "Draft",
-      approval_status: "Draft",
-      docstatus: 0,
-      is_paid: false,
+      total_sanctioned_amount: sanctioned,
+      base_total_sanctioned_amount: sanctioned,
+      status: "Paid",
+      approval_status: "Approved",
+      docstatus: 1,
+      is_paid: true,
+      payment_entry: {
+        name: paymentName,
+        paid_amount: sanctioned,
+        currency: "BDT",
+        status: "Submitted",
+        docstatus: 1,
+        reference_name: name,
+      },
+      payment_error: null,
       owner: email,
       creation: record.creation,
       verified: true,

@@ -121,6 +121,9 @@ export interface ExpenseClaimCopy {
   errorTitle: string;
   createdLabel: string;
   createAnother: string;
+  paymentLabel: string;
+  paymentAmountLabel: string;
+  paymentMissing: string;
 }
 
 export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
@@ -232,6 +235,10 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     errorTitle: "ব্যর্থ",
     createdLabel: "তৈরি হয়েছে",
     createAnother: "আরেকটি তৈরি করুন",
+    paymentLabel: "পেমেন্ট এন্ট্রি",
+    paymentAmountLabel: "পরিশোধিত (অনুমোদিত পরিমাণ)",
+    paymentMissing:
+      "পেমেন্ট এন্ট্রি তৈরি হয়নি — ক্লেমটি অফিসে জমা আছে, Desk থেকে পেমেন্ট করা যাবে।",
   },
   en: {
     heading: "Expense Claim",
@@ -340,6 +347,10 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     errorTitle: "Failed",
     createdLabel: "Created",
     createAnother: "Create another",
+    paymentLabel: "Payment Entry",
+    paymentAmountLabel: "Paid (sanctioned amount)",
+    paymentMissing:
+      "Payment Entry was not posted — the claim stays with the desk for payment.",
   },
 };
 

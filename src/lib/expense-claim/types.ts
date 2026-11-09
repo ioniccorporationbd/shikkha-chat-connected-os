@@ -142,12 +142,30 @@ export interface ExpenseClaimCreateResult {
   currency: string;
   posting_date: string;
   total_claimed_amount: number;
+  total_sanctioned_amount?: number;
+  /** Sanctioned total in company currency — the Payment Entry's paid amount. */
+  base_total_sanctioned_amount?: number;
   status: string;
   approval_status: string;
   docstatus: number;
   is_paid: boolean;
+  /** The reimbursement the backend posted for this claim. */
+  payment_entry?: ExpenseClaimPaymentEntry | null;
+  /** Why no Payment Entry could be posted (claim stays with the desk). */
+  payment_error?: string | null;
   owner?: string;
   creation?: string;
   /** Backend self-check: the row exists in the Expense Claim table. */
   verified?: boolean;
+}
+
+/** The payment the portal posts against a freshly created claim. */
+export interface ExpenseClaimPaymentEntry {
+  name: string;
+  paid_amount: number;
+  currency?: string;
+  status?: string;
+  docstatus?: number;
+  /** The Expense Claim this payment settles. */
+  reference_name?: string;
 }

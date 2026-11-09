@@ -50,6 +50,19 @@ const HELPER = "text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--colo
 const TEXTAREA_TYPES = new Set(["Small Text", "Text", "Long Text", "Text Editor"]);
 const NUMBER_TYPES = new Set(["Int", "Float", "Currency", "Percent"]);
 
+/** The claim's state in the site language (the raw ERP word is English). */
+function statusLabel(
+  created: { approval_status?: string; is_paid?: boolean; status?: string },
+  copy: ExpenseClaimCopy
+): string {
+  if (created.is_paid) return copy.statusPaid;
+  const state = String(created.approval_status || created.status || "").toLowerCase();
+  if (state.includes("paid")) return copy.statusPaid;
+  if (state.includes("approv") || state.includes("submit")) return copy.statusApproved;
+  if (state.includes("reject") || state.includes("cancel")) return copy.statusRejected;
+  return copy.statusDraft;
+}
+
 /**
  * Localised labels for a few well-known fields whose ERPNext DocField label is
  * English-only. Falls back to the backend's label for anything not listed, so
@@ -422,8 +435,36 @@ export default function NewExpenseClaimView({ onBack }: NewExpenseClaimViewProps
             </p>
             <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
               {formatAmount(created.total_claimed_amount, created.currency || "BDT", language)} ·{" "}
-              {created.status}
+              {statusLabel(created, copy)}
             </p>
+            {created.payment_entry ? (
+              <>
+                <p
+                  className="mt-1 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+                  data-claim-payment-entry={created.payment_entry.name}
+                >
+                  {copy.paymentLabel}:{" "}
+                  <span className="font-semibold">{created.payment_entry.name}</span>
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                  {copy.paymentAmountLabel}:{" "}
+                  <span className="font-semibold">
+                    {formatAmount(
+                      created.payment_entry.paid_amount,
+                      created.payment_entry.currency || created.currency || "BDT",
+                      language
+                    )}
+                  </span>
+                </p>
+              </>
+            ) : created.payment_error ? (
+              <p
+                className="mt-1 rounded-xl border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-white))] px-3 py-2 text-[11.5px] leading-relaxed text-[var(--color-primary)]"
+                data-claim-payment-missing=""
+              >
+                {copy.paymentMissing}
+              </p>
+            ) : null}
             {created.verified ? (
               <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-success)]">
                 <FiCheckCircle size={14} />
