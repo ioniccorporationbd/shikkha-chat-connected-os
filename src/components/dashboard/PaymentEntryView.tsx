@@ -886,6 +886,17 @@ function paymentDetailSections(
   const num = (value: unknown) => Number(value ?? 0);
   const fmt = (value: unknown) => formatAmount(num(value), code, language);
 
+  // The settled-amount row speaks the row's own status: a submitted entry is
+  // money in ("Paid Amount"), one still in draft is money owed ("Unpaid
+  // Amount"). The same section object is what the Print / Download document is
+  // built from, so the two surfaces can never disagree.
+  const statusKey = String(detail.display_status || "").trim().toLowerCase();
+  const isUnpaid = statusKey === "draft" || statusKey === "unpaid";
+  const settledLabel = isUnpaid ? copy.dUnpaidAmount : copy.dPaidAmount;
+  // A draft keeps its figure in `amount` (paid_amount is still 0 there); fall
+  // back to it so the row never disappears on a real unpaid entry.
+  const settledValue = num(detail.paid_amount) || (isUnpaid ? num(detail.amount) : 0);
+
   const infoRows: DetailRow[] = (
     [
       { label: copy.dParty, value: detail.party_name || detail.party || "" },
@@ -901,7 +912,7 @@ function paymentDetailSections(
   const amountRows: DetailRow[] = (
     [
       { label: copy.dAmount, value: fmt(detail.amount), emphasis: true },
-      { label: copy.dPaidAmount, value: num(detail.paid_amount) ? fmt(detail.paid_amount) : "" },
+      { label: settledLabel, value: settledValue ? fmt(settledValue) : "" },
       { label: copy.dReceivedAmount, value: num(detail.received_amount) ? fmt(detail.received_amount) : "" },
       {
         label: copy.dAllocated,

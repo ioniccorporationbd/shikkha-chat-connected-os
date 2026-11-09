@@ -61,6 +61,8 @@ export interface PaymentEntryCopy {
   dPaidFrom: string;
   dPaidTo: string;
   dPaidAmount: string;
+  /** The same figure's label while the entry is still unpaid (Draft). */
+  dUnpaidAmount: string;
   dReceivedAmount: string;
   dAllocated: string;
   dUnallocated: string;
@@ -197,6 +199,7 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dPaidFrom: "যেখান থেকে",
     dPaidTo: "যেখানে জমা",
     dPaidAmount: "পরিশোধিত পরিমাণ",
+    dUnpaidAmount: "বকেয়া পরিমাণ",
     dReceivedAmount: "গৃহীত পরিমাণ",
     dAllocated: "বরাদ্দকৃত",
     dUnallocated: "অবরাদ্দ",
@@ -341,6 +344,7 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     dPaidFrom: "Paid From",
     dPaidTo: "Paid To",
     dPaidAmount: "Paid Amount",
+    dUnpaidAmount: "Unpaid Amount",
     dReceivedAmount: "Received Amount",
     dAllocated: "Allocated",
     dUnallocated: "Unallocated",
