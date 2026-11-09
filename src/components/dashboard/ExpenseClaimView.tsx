@@ -78,6 +78,35 @@ function statusLabel(status: string, raw: string, copy: ExpenseClaimCopy): strin
 }
 
 /**
+ * The state the table shows for a claim.
+ *
+ * The approval flag is the signal, exactly like the desk's approval column:
+ * `approval_status` Draft -> অপেক্ষমাণ, Approved -> অনুমোদিত, Rejected or
+ * Cancelled -> প্রত্যাখ্যাত. ERPNext leaves `status = "Draft"` on a claim after
+ * submission and keeps it there until approval, so the word "Draft" alone never
+ * proves anything — and a payload that predates this rule (display_status
+ * derived from that word) must not be trusted either.
+ */
+function effectiveStatus(row: {
+  display_status?: string | null;
+  docstatus?: number | null;
+  status?: string | null;
+  approval_status?: string | null;
+  is_paid?: number | boolean | null;
+}): string {
+  const docstatus = Number(row.docstatus ?? 0);
+  const approval = (row.approval_status ?? "").toString().trim().toLowerCase();
+  const status = (row.status ?? "").toString().trim().toLowerCase();
+  const paid = Boolean(row.is_paid) || status === "paid";
+
+  if (docstatus === 2 || status === "cancelled" || approval === "cancelled") return "cancelled";
+  if (approval === "rejected" || status === "rejected") return "rejected";
+  if (paid) return "paid";
+  if (approval === "approved" || status === "approved") return "approved";
+  return "draft";
+}
+
+/**
  * The sanctioned figure the portal reports.
  *
  * ERPNext keeps it twice: in the claim's own currency
@@ -297,7 +326,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
     ? [
         { key: "total", label: copy.summaryTotal, value: String(summary.total) },
         { key: "draft", label: copy.summaryDraft, value: String(summary.draft) },
-        { key: "pending", label: copy.summaryPending, value: String(summary.pending) },
         { key: "approved", label: copy.summaryApproved, value: String(summary.approved) },
         { key: "paid", label: copy.summaryPaid, value: String(summary.paid) },
       ]
@@ -578,7 +606,7 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                             </td>
                             <td className="px-4 py-3">
                               <StatusBadge
-                                status={claim.display_status}
+                                status={effectiveStatus(claim)}
                                 raw={claim.status || claim.approval_status}
                                 copy={copy}
                               />
@@ -690,7 +718,7 @@ function ClaimCard({
           </div>
         </div>
         <StatusBadge
-          status={claim.display_status}
+          status={effectiveStatus(claim)}
           raw={claim.status || claim.approval_status}
           copy={copy}
         />
@@ -769,7 +797,7 @@ function DetailsDialog({
     push(copy.dDepartment, detail.department);
     push(copy.dCostCenter, detail.cost_center);
     push(copy.dCurrency, detail.currency);
-    push(copy.dStatus, statusLabel(detail.display_status, detail.status || detail.approval_status, copy));
+    push(copy.dStatus, statusLabel(effectiveStatus(detail), detail.status || detail.approval_status, copy));
     push(copy.dApproval, detail.approval_status);
     push(copy.dClaimed, formatAmount(detail.total_claimed_amount, code, language));
     push(copy.dSanctioned, formatAmount(sanctionedAmount(detail), code, language));
@@ -843,7 +871,7 @@ function DetailsDialog({
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge
-                  status={detail.display_status}
+                  status={effectiveStatus(detail)}
                   raw={detail.status || detail.approval_status}
                   copy={copy}
                 />

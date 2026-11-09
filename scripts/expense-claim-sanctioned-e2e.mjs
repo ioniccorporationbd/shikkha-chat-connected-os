@@ -30,9 +30,11 @@ const EMAIL = process.env.E2E_STAFF ?? "tamim@ioniccorporation.com";
 /**
  * Mock seed facts this probe asserts against (scripts/mock-frappe.mjs):
  *   00001  Draft      sanction total 0     base 0
- *   00002  Submitted (docstatus 1, status still "Draft" as ERPNext keeps it)
- *          sanction total 0     base 0  -> স্ট্যাটাস must read অনুমোদিত, not প্রক্রিয়াধীন
+ *   00002  Submitted, approval_status Draft (status word still "Draft")
+ *          sanction total 0     base 0  -> স্ট্যাটাস অপেক্ষমাণ (approval decides)
  *   00003  Approved   sanction total 2100  base 2100
+ *   00008  Unpaid (approval Approved, is_paid 0) base 300 -> স্ট্যাটাস অনুমোদিত
+ *   00009  Submitted, approval_status still Draft -> স্ট্যাটাস অপেক্ষমাণ
  *   00004  Paid       sanction total 800   base 800
  *   00007  Submitted, USD claim: total_sanctioned_amount 100,
  *          base_total_sanctioned_amount 12000  <- the column must show 12,000
@@ -45,8 +47,9 @@ const COPY = {
     summaryHeading: "সারসংক্ষেপ",
     colSanctioned: "অনুমোদিত পরিমাণ",
     colStatus: "স্ট্যাটাস",
-    draft: "প্রক্রিয়াধীন",
+    draft: "অপেক্ষমাণ",
     submitted: "অনুমোদিত",
+    rejected: "প্রত্যাখ্যাত",
     loadFailed: "এক্সপেন্স ক্লেম লোড করা যায়নি",
   },
   en: {
@@ -54,8 +57,9 @@ const COPY = {
     summaryHeading: "Summary",
     colSanctioned: "Sanctioned Amount",
     colStatus: "Status",
-    draft: "In progress",
+    draft: "Pending",
     submitted: "Approved",
+    rejected: "Rejected",
     loadFailed: "could not be loaded",
   },
 };
@@ -195,15 +199,46 @@ try {
       await rowFor(page, "HR-EXP-2026-00002").locator("td").allInnerTexts()
     ).map((text) => text.trim());
     check(
-      `[${language}] a Submitted claim's স্ট্যাটাস reads ${copy.submitted}`,
-      (submittedCells[5] ?? "").toLowerCase() === copy.submitted.toLowerCase(),
+      `[${language}] a submitted-but-unapproved claim's স্ট্যাটাস reads ${copy.draft} (approval_status Draft)`,
+      (submittedCells[5] ?? "").toLowerCase() === copy.draft.toLowerCase(),
       submittedCells[5]
     );
 
-    // 5. সারসংক্ষেপ's অনুমোদিত পরিমাণ is the base total (14,900)
+    // 4b. the desk calls these "Unpaid"; the portal still says অনুমোদিত.
+    const unpaidCells = (
+      await rowFor(page, "HR-EXP-2026-00008").locator("td").allInnerTexts()
+    ).map((text) => text.trim());
     check(
-      `[${language}] the summary's ${copy.colSanctioned} shows the base total (14,900)`,
-      ascii(bodyText).includes("14,900"),
+      `[${language}] an Unpaid claim (approval_status Approved) স্ট্যাটাস reads ${copy.submitted}`,
+      (unpaidCells[5] ?? "").toLowerCase() === copy.submitted.toLowerCase(),
+      unpaidCells[5]
+    );
+
+    // 4c. approval_status is the signal: a submitted claim whose approval is
+    //     still Draft keeps reading অপেক্ষমাণ, whatever docstatus says.
+    const staleCells = (
+      await rowFor(page, "HR-EXP-2026-00009").locator("td").allInnerTexts()
+    ).map((text) => text.trim());
+    check(
+      `[${language}] approval_status Draft reads ${copy.draft} even at docstatus 1`,
+      (staleCells[5] ?? "").toLowerCase() === copy.draft.toLowerCase(),
+      staleCells[5]
+    );
+
+    // 4d. Rejected and Cancelled both read প্রত্যাখ্যাত.
+    for (const id of ["HR-EXP-2026-00005", "HR-EXP-2026-00006"]) {
+      const cells = (await rowFor(page, id).locator("td").allInnerTexts()).map((t) => t.trim());
+      check(
+        `[${language}] ${id} (rejected/cancelled) স্ট্যাটাস reads ${copy.rejected}`,
+        (cells[5] ?? "").toLowerCase() === copy.rejected.toLowerCase(),
+        cells[5]
+      );
+    }
+
+    // 5. সারসংক্ষেপ's অনুমোদিত পরিমাণ is the base total (15,200)
+    check(
+      `[${language}] the summary's ${copy.colSanctioned} shows the base total (15,200)`,
+      ascii(bodyText).includes("15,200"),
       ascii(bodyText).slice(0, 120)
     );
 

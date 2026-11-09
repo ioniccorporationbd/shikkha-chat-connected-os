@@ -397,14 +397,13 @@ function displayStatus(row) {
   const approval = String(row.approval_status || "").toLowerCase();
   const status = String(row.status || "").toLowerCase();
   const paid = truthy(row.is_paid);
-  // ERPNext leaves status "Draft" on a submitted claim until approval, so
-  // only docstatus 0 counts as a draft here.
-  if (docstatus === 0) return "draft";
-  if (docstatus === 2 || status === "cancelled") return "cancelled";
+  // Approval drives the label, like the desk's approval column: Draft ->
+  // অপেক্ষমাণ, Approved -> অনুমোদিত, Rejected/Cancelled -> প্রত্যাখ্যাত.
+  if (docstatus === 2 || status === "cancelled" || approval === "cancelled") return "cancelled";
   if (approval === "rejected" || status === "rejected") return "rejected";
   if (paid || status === "paid") return "paid";
   if (approval === "approved" || status === "approved") return "approved";
-  return "submitted";
+  return "draft";
 }
 
 function expenseRowPayload(row) {
@@ -433,7 +432,9 @@ function expenseRowPayload(row) {
     grand_total: Number(row.grand_total || 0),
     total_amount_reimbursed: Number(row.total_amount_reimbursed || 0),
     remark: row.remark || "",
-    display_status: displayStatus(row),
+    // A seed may pin display_status to model an older API build that derived
+    // the key from the status word; the frontend must still read it correctly.
+    display_status: row.display_status || displayStatus(row),
   };
 }
 
@@ -674,6 +675,70 @@ expenseClaims.push({
   modified: "2026-09-29 08:10:00",
 });
 
+// Unpaid — approved, money not yet reimbursed. The desk's Status column reads
+// "Unpaid" here, and the portal must show অনুমোদিত for it, not প্রক্রিয়াধীন.
+expenseClaims.push({
+  name: "HR-EXP-2026-00008",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Sales - MSL",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-09-28",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Approved",
+  status: "Unpaid",
+  docstatus: 1,
+  total_claimed_amount: 300,
+  total_sanctioned_amount: 300,
+  base_total_claimed_amount: 300,
+  base_total_sanctioned_amount: 300,
+  grand_total: 300,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Hotel bill, awaiting reimbursement",
+  expenses: [
+    { expense_date: "2026-09-28", expense_type: "Travel", description: "Hotel bill", amount: 300, sanctioned_amount: 300, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-09-28 09:00:00",
+  modified: "2026-09-28 10:30:00",
+});
+
+// Submitted, but the API still reports display_status "draft" (what an older
+// build derived from status == "Draft"). The frontend must correct this by
+// docstatus and still render অনুমোদিত.
+expenseClaims.push({
+  name: "HR-EXP-2026-00009",
+  employee: "HR-EMP-00001",
+  employee_name: "Tamim Hasan Tast",
+  company: "Magnetic Solution Limited",
+  department: "Sales - MSL",
+  cost_center: "Main - MSL",
+  currency: "BDT",
+  posting_date: "2026-09-27",
+  expense_approver: "magneticsolutionltdbd@gmail.com",
+  approval_status: "Draft",
+  status: "Draft",
+  docstatus: 1,
+  display_status: "draft",
+  total_claimed_amount: 250,
+  total_sanctioned_amount: 0,
+  base_total_claimed_amount: 250,
+  base_total_sanctioned_amount: 0,
+  grand_total: 250,
+  total_amount_reimbursed: 0,
+  is_paid: 0,
+  remark: "Submitted claim, status word still Draft",
+  expenses: [
+    { expense_date: "2026-09-27", expense_type: "Conveyance", description: "Rickshaw fare", amount: 250, sanctioned_amount: 0, cost_center: "Main - MSL" },
+  ],
+  owner: "tamim@ioniccorporation.com",
+  creation: "2026-09-27 16:00:00",
+  modified: "2026-09-27 16:20:00",
+});
+
 // Rejected.
 expenseClaims.push({
   name: "HR-EXP-2026-00005",
@@ -730,8 +795,8 @@ expenseClaims.push({
   modified: "2026-09-29 20:30:00",
 });
 
-// Keep created claim ids past the seeded range (next create -> HR-EXP-2026-00008).
-expenseClaimCounter = 7;
+// Keep created claim ids past the seeded range (next create -> HR-EXP-2026-00010).
+expenseClaimCounter = 9;
 
 // --- customer payment history (mirrors shikkha_os.api.v1.payment_entry.*) --- //
 // The customer is resolved from the logged-in user (never the body), exactly
