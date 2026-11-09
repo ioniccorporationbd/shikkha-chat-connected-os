@@ -244,6 +244,24 @@ try {
       JSON.stringify(entry?.references ?? []).slice(0, 240)
     );
     check(`[${language}] the entry is submitted (docstatus 1)`, entry?.docstatus === 1);
+    check(
+      `[${language}] it is shaped like the desk entry (Nagad -> Creditors, Main cost center)`,
+      entry?.payment_type === "Pay" &&
+        entry?.mode_of_payment === "Nagad" &&
+        entry?.paid_from === "Nagad - MSL" &&
+        entry?.paid_to === "Creditors - MSL" &&
+        entry?.cost_center === "Main - MSL" &&
+        Number(entry?.total_allocated_amount) === amount &&
+        Number(entry?.unallocated_amount) === 0,
+      JSON.stringify({
+        mode: entry?.mode_of_payment,
+        from: entry?.paid_from,
+        to: entry?.paid_to,
+        cc: entry?.cost_center,
+        allocated: entry?.total_allocated_amount,
+        unallocated: entry?.unallocated_amount,
+      })
+    );
 
     // ... and the claim it settles is now paid.
     const claimsEnvelope = await (await fetch(`${MOCK}/__mock/expense-claims`)).json().catch(() => null);
