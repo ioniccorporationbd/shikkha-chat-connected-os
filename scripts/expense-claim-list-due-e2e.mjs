@@ -141,30 +141,22 @@ for (const language of ["bn", "en"]) {
     `rendered=${dueValue} expected=${expected}`
   );
 
-  // ---- 2. view details: spinner first, popup after
+  // ---- 2. view details: popup opens at once with a loading state inside
+  //         (the Create Customer pattern), then fills in.
   await page.evaluate(() => {
-    window.__sawOpening = false;
-    const observe = () => {
-      new MutationObserver((records) => {
-        for (const record of records) {
-          const node = record.target;
-          if (
-            node instanceof Element &&
-            node.getAttribute("data-claim-opening") === "true"
-          ) {
-            window.__sawOpening = true;
-          }
-        }
-      }).observe(document.documentElement, {
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["data-claim-opening"],
-      });
-    };
-    if (document.documentElement) observe();
+    window.__sawLoading = false;
+    new MutationObserver(() => {
+      if (document.querySelector("[data-claim-detail-loading]")) {
+        window.__sawLoading = true;
+      }
+    }).observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+    });
   });
 
-  const viewButtons = page.locator("[data-claim-opening]");
+  const viewButtons = page.locator("[data-claim-details]");
   await viewButtons.first().waitFor({ timeout: 60000 });
   check(
     `[${language}] the অ্যাকশন button reads ${copy.view}`,
@@ -174,10 +166,10 @@ for (const language of ["bn", "en"]) {
 
   const printButton = page.locator("[data-claim-print]").first();
   await printButton.waitFor({ timeout: 60000 });
-  check(`[${language}] the popup opened after loading`, await printButton.isVisible());
+  check(`[${language}] the popup opened on click`, await printButton.isVisible());
   check(
-    `[${language}] the button showed a loading state before the popup`,
-    await page.evaluate(() => window.__sawOpening === true)
+    `[${language}] the popup showed a loading state while fetching`,
+    await page.evaluate(() => window.__sawLoading === true)
   );
   const downloadButton = page.locator("[data-claim-download]").first();
   const downloadText = ascii(await downloadButton.innerText());

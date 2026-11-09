@@ -8,7 +8,6 @@ import {
   FiChevronRight,
   FiDownload,
   FiFileText,
-  FiLoader,
   FiPlus,
   FiPrinter,
   FiRefreshCw,
@@ -16,6 +15,7 @@ import {
   FiX,
 } from "react-icons/fi";
 
+import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import { fetchExpenseClaimDetails, fetchExpenseClaims } from "@/lib/expense-claim/api";
 import { formatAmount, formatDate } from "@/lib/expense-claim/format";
@@ -208,9 +208,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const [detailName, setDetailName] = useState<string | null>(null);
   const [detail, setDetail] = useState<ExpenseClaimDetails | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  /** Row whose details request is in flight — its action button shows a spinner
-   *  and the popup only appears once the payload is in hand. */
-  const [openingName, setOpeningName] = useState<string | null>(null);
   const [detailError, setDetailError] = useState("");
   const detailPresence = useOverlayPresence(Boolean(detailName), 240);
   /** The claim currently being fetched/shown — blocks duplicate fetches. */
@@ -280,17 +277,15 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
       setDetail(null);
       setDetailError("");
       setDetailLoading(true);
-      // Requirement: the row's button shows a spinner first and the popup opens
-      // only after the details have arrived.
-      setOpeningName(name);
+      // Same interaction as the Create Customer list: the popup opens at once
+      // with a loading state inside and fills itself in when the details land.
+      setDetailName(name);
       try {
         const payload = await fetchExpenseClaimDetails(name, language);
         setDetail(payload);
-        setDetailName(name);
       } catch (error) {
         detailInFlightRef.current = null;
         setDetailError((error as ApiError)?.message || copy.detailsFailed);
-        toast.error(copy.detailsFailed);
         reportClientError({
           scope: "expense-claim:details",
           message: `expense_claim.details failed for ${name}`,
@@ -301,7 +296,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
         });
       } finally {
         setDetailLoading(false);
-        setOpeningName(null);
       }
     },
     [language, copy.detailsFailed]
@@ -649,32 +643,13 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                               <button
                                 type="button"
                                 onClick={() => void openDetails(claim.name)}
-                                disabled={openingName === claim.name}
-                                data-claim-opening={openingName === claim.name ? "true" : "false"}
-                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-progress disabled:opacity-70"
+                                data-claim-details={claim.name}
+                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
                               >
-                                {openingName === claim.name ? (
-                                  <>
-                                    <FiLoader
-                                      size={14}
-                                      aria-hidden
-                                      className="animate-spin text-[var(--color-primary)]"
-                                    />
-                                    <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                      {copy.openingDetails}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                      {copy.viewDetails}
-                                    </span>
-                                    <FiChevronRight
-                                      size={14}
-                                      className="text-[var(--color-primary)]"
-                                    />
-                                  </>
-                                )}
+                                <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+                                  {copy.viewDetails}
+                                </span>
+                                <FiChevronRight size={14} className="text-[var(--color-primary)]" />
                               </button>
                             </td>
                           </tr>
@@ -694,7 +669,6 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         language={language}
                         currency={currency}
                         onOpen={() => void openDetails(claim.name)}
-                        opening={openingName === claim.name}
                       />
                     ))}
                   </div>
@@ -745,7 +719,6 @@ function ClaimCard({
   language,
   currency,
   onOpen,
-  opening,
 }: {
   claim: ExpenseClaimRow;
   /** Display-only serial number within the current (sorted) list. */
@@ -754,8 +727,6 @@ function ClaimCard({
   language: string;
   currency: string;
   onOpen: () => void;
-  /** The details request for this card is in flight (button shows a spinner). */
-  opening: boolean;
 }) {
   const code = claim.currency || currency;
   return (
@@ -803,25 +774,13 @@ function ClaimCard({
         <button
           type="button"
           onClick={onOpen}
-          disabled={opening}
-          data-claim-opening={opening ? "true" : "false"}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-progress disabled:opacity-70"
+          data-claim-details={claim.name}
+          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
         >
-          {opening ? (
-            <>
-              <FiLoader size={14} aria-hidden className="animate-spin text-[var(--color-primary)]" />
-              <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                {copy.openingDetails}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                {copy.viewDetails}
-              </span>
-              <FiChevronRight size={14} className="text-[var(--color-primary)]" />
-            </>
-          )}
+          <span className="text-[12px] font-semibold text-[var(--color-primary)]">
+            {copy.viewDetails}
+          </span>
+          <FiChevronRight size={14} className="text-[var(--color-primary)]" />
         </button>
       </div>
     </div>
@@ -977,22 +936,10 @@ function DetailsDialog({
 
         <div className="mt-4">
           {loading ? (
-            <div className="flex flex-col gap-3 py-1">
-              <div className="flex flex-wrap gap-2">
-                <div className="h-6 w-24 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]" />
-                <div className="h-6 w-16 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]" />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <div
-                    key={index}
-                    className="h-11 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
-                  />
-                ))}
-              </div>
-              <p className="text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                {copy.detailsLoading}
-              </p>
+            /* Same loading state as the Create Customer popup: the sheet opens
+               first, the shared loader spins, then the details fill in. */
+            <div className="py-10" data-claim-detail-loading="true">
+              <ShikkhaLoader label={copy.detailsLoading} size="md" />
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] p-4">

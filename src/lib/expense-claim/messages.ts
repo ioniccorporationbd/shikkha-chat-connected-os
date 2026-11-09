@@ -65,8 +65,6 @@ export interface ExpenseClaimCopy {
   detailsLoading: string;
   /** Details fetch failed (inline + toast). */
   detailsFailed: string;
-  /** Button/badge text while the details request is in flight. */
-  openingDetails: string;
   /** Print + download actions inside the details popup. */
   printDocument: string;
   downloadDocument: string;
@@ -188,7 +186,6 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     detailsHeading: "ক্লেমের বিস্তারিত",
     detailsLoading: "বিস্তারিত লোড হচ্ছে…",
     detailsFailed: "এক্সপেন্স ক্লেমের বিস্তারিত তথ্য লোড করা যাচ্ছে না।",
-    openingDetails: "খোলা হচ্ছে…",
     printDocument: "প্রিন্ট",
     downloadDocument: "ডাউনলোড",
     close: "বন্ধ করুন",
@@ -305,7 +302,6 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     detailsHeading: "Claim details",
     detailsLoading: "Loading details…",
     detailsFailed: "The expense claim details could not be loaded.",
-    openingDetails: "Opening…",
     printDocument: "Print",
     downloadDocument: "Download",
     close: "Close",
