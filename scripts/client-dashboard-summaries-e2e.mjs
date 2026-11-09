@@ -92,7 +92,11 @@ function parseAmount(text) {
 
 const LOCALES = {
   bn: {
-    rail: {
+    headings: {
+      pay: "পেমেন্ট এন্ট্রি",
+      bill: "সার্ভিস বিল",
+    },
+    staffHeadings: {
       quick: "কুইক লিংক",
       system: "সিস্টেম",
     },
@@ -101,7 +105,11 @@ const LOCALES = {
     staffSystem: ["সার্ভার", "ভার্সন"],
   },
   en: {
-    rail: {
+    headings: {
+      pay: "Payment Entry",
+      bill: "Service Bill",
+    },
+    staffHeadings: {
       quick: "Quick links",
       system: "System",
     },
@@ -170,6 +178,19 @@ const LOCALES = {
 
     // The rail fills in after the client's own summary requests answer; wait for
     // the first payment tile / bill row instead of asserting on a pending fetch.
+    // Panel titles were renamed for clients: কুইক লিংক → পেমেন্ট এন্ট্রি,
+    // সিস্টেম → সার্ভিস বিল (staff keeps the original headings).
+    const quickHeadingText = (await quickPanel.innerText().catch(() => "")).split("\n")[0];
+    check(
+      quickHeadingText.trim() === copy.headings.pay,
+      `[${lang}] কুইক লিংক panel title is now "${copy.headings.pay}" (saw "${quickHeadingText.trim()}")`
+    );
+    const systemHeadingText = ((await systemPanel.innerText().catch(() => "")) || "").split("\n")[0];
+    check(
+      systemHeadingText.trim() === copy.headings.bill,
+      `[${lang}] সিস্টেম panel title is now "${copy.headings.bill}" (saw "${systemHeadingText.trim()}")`
+    );
+
     await quickPanel
       .locator("a")
       .first()
@@ -268,6 +289,12 @@ const LOCALES = {
   await staffPage.goto(`${NEXT}/userDashboard`, { waitUntil: "domcontentloaded", timeout: 120000 });
   const staffBody = (await staffPage.locator("body").innerText().catch(() => "")) || "";
   check(staffBody.includes("সার্ভার"), "staff dashboard keeps its System (সার্ভার) row");
+  check(staffBody.includes(LOCALES.bn.staffHeadings.quick), "staff dashboard keeps the কুইক লিংক heading");
+  check(staffBody.includes(LOCALES.bn.staffHeadings.system), "staff dashboard keeps the সিস্টেম heading");
+  check(
+    !staffBody.includes(LOCALES.bn.headings.bill),
+    "staff dashboard did not inherit the সার্ভিস বিল heading"
+  );
   check(
     !staffBody.includes(LOCALES.bn.pay[1]),
     "staff dashboard did not inherit the payment summary tiles"

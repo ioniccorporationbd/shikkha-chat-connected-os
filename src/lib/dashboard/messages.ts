@@ -69,6 +69,7 @@ export interface DashboardCopy {
   systemSession: string;
   hoursSuffix: string;
   /** Client rail: payment-entry summary tiles inside the quick-links panel. */
+  paySummaryHeading: string;
   paySummaryTotal: string;
   paySummaryAmount: string;
   paySummaryMonth: string;
@@ -76,6 +77,7 @@ export interface DashboardCopy {
   paySummaryEmpty: string;
   paySummaryHint: string;
   /** Client rail: service-bill (Sales Invoice) summary rows in the system panel. */
+  billSummaryHeading: string;
   billSummaryTotal: string;
   billSummaryAmount: string;
   billSummaryDue: string;
@@ -198,12 +200,14 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     systemServer: "সার্ভার",
     systemSession: "সেশন সময়সীমা",
     hoursSuffix: "ঘণ্টা",
+    paySummaryHeading: "পেমেন্ট এন্ট্রি",
     paySummaryTotal: "মোট পেমেন্ট এন্ট্রি",
     paySummaryAmount: "মোট পরিশোধিত",
     paySummaryMonth: "এই মাসে",
     paySummaryLatest: "সর্বশেষ পেমেন্ট",
     paySummaryEmpty: "এখনো কোনো পেমেন্ট এন্ট্রি নেই।",
     paySummaryHint: "আপনার পেমেন্ট এন্ট্রির সারসংক্ষেপ",
+    billSummaryHeading: "সার্ভিস বিল",
     billSummaryTotal: "মোট বিল",
     billSummaryAmount: "মোট বিলের পরিমাণ",
     billSummaryDue: "বকেয়া",
@@ -346,12 +350,14 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     systemServer: "Server",
     systemSession: "Session window",
     hoursSuffix: "hours",
+    paySummaryHeading: "Payment Entry",
     paySummaryTotal: "Payment entries",
     paySummaryAmount: "Total paid",
     paySummaryMonth: "This month",
     paySummaryLatest: "Latest payment",
     paySummaryEmpty: "No payment entries yet.",
     paySummaryHint: "A summary of your payment entries",
+    billSummaryHeading: "Service Bill",
     billSummaryTotal: "Service bills",
     billSummaryAmount: "Billed amount",
     billSummaryDue: "Outstanding",

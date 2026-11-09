@@ -1193,7 +1193,7 @@ export default function DashboardShell({
 
                   <div className="flex flex-col gap-4">
                     <PanelCard
-                      title={copy.quickLinksHeading}
+                      title={isClient ? copy.paySummaryHeading : copy.quickLinksHeading}
                       hint={isClient ? copy.paySummaryHint : copy.quickLinksHint}
                       testId="quick-links"
                     >
@@ -1204,7 +1204,10 @@ export default function DashboardShell({
                       />
                     </PanelCard>
 
-                    <PanelCard title={copy.systemHeading} testId="system">
+                    <PanelCard
+                      title={isClient ? copy.billSummaryHeading : copy.systemHeading}
+                      testId="system"
+                    >
                       <dl className="flex flex-col gap-2.5">
                         {(isClient && billSummary
                           ? [
