@@ -3,7 +3,14 @@
 import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import {
   FiCamera,
   FiClock,
@@ -44,8 +51,20 @@ import { authCopyFor } from "@/lib/auth/messages";
 import { useDashboardQuery } from "@/lib/auth/queries";
 import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCESS_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { useAuthStore } from "@/lib/auth/store";
-import type { DashboardPayload } from "@/lib/auth/types";
+import type { DashboardLink, DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { fetchPayments } from "@/lib/payment-entry/api";
+import type { PaymentEntrySummary } from "@/lib/payment-entry/types";
+import {
+  formatAmount as formatPayAmount,
+  formatDate as formatPayDate,
+} from "@/lib/payment-entry/format";
+import { fetchInvoices } from "@/lib/service-build/api";
+import type { SalesInvoiceSummary } from "@/lib/service-build/types";
+import {
+  formatAmount as formatBillAmount,
+  formatDate as formatBillDate,
+} from "@/lib/service-build/format";
 import { ReloadRegistryProvider, useReloadRegistry } from "@/lib/dashboard/reload-registry";
 import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
 import { runSmartReload } from "@/lib/dashboard/smart-reload";
@@ -132,6 +151,15 @@ export default function DashboardShell({
   const [rolesOpen, setRolesOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
 
+  // Client rail summaries. The quick-links panel shows the account's Payment
+  // Entry summary and the system panel shows the Service Build (Sales Invoice)
+  // summary, both read from the endpoints the client's own panels already use so
+  // the numbers match those pages exactly. Presentation is untouched: the tiles
+  // and the label/value rows keep their existing markup, and a failed fetch
+  // falls back to the payload the overview already shipped with.
+  const [paySummary, setPaySummary] = useState<PaymentEntrySummary | null>(null);
+  const [billSummary, setBillSummary] = useState<SalesInvoiceSummary | null>(null);
+
   // Help Desk navigation watchdog state: the link's live transition status and
   // the single pending poll timer (so a second click restarts the watch instead
   // of stacking timers).
@@ -142,6 +170,85 @@ export default function DashboardShell({
   }, []);
 
   useEffect(() => () => window.clearTimeout(navWatchRef.current), []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    let cancelled = false;
+
+    fetchPayments(language)
+      .then((payload) => {
+        if (!cancelled) setPaySummary(payload.summary);
+      })
+      .catch((error) => {
+        reportClientError({
+          scope: "client-dashboard:payment-summary",
+          message: "The payment entry summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    fetchInvoices(language)
+      .then((payload) => {
+        if (!cancelled) setBillSummary(payload.summary);
+      })
+      .catch((error) => {
+        reportClientError({
+          scope: "client-dashboard:service-summary",
+          message: "The service bill summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  // Payment Entry summary, laid out with the same tiles the quick-links panel
+  // already uses (icon + label + description); each tile opens the payments page.
+  const paymentTiles = useMemo<DashboardLink[]>(() => {
+    if (!isClient || !paySummary) return [];
+
+    // Counts follow the active language's digits, like the amounts beside them.
+    const count = (value: number) =>
+      new Intl.NumberFormat(language === "en" ? "en-BD" : "bn-BD").format(value);
+
+    return [
+      {
+        key: "pay_total",
+        label: copy.paySummaryTotal,
+        description: count(paySummary.total),
+        icon: "receipt",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_amount",
+        label: copy.paySummaryAmount,
+        description: formatPayAmount(paySummary.total_amount, paySummary.currency, language),
+        icon: "badge",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_month",
+        label: copy.paySummaryMonth,
+        description: `${formatPayAmount(paySummary.this_month_amount, paySummary.currency, language)} · ${count(paySummary.this_month_count)}`,
+        icon: "device",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_latest",
+        label: copy.paySummaryLatest,
+        description: formatPayDate(paySummary.latest_payment_date, language) || "—",
+        icon: "shield",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+    ];
+  }, [isClient, paySummary, copy, language]);
 
   // The active panel is driven by the URL, not local state: "Create Customer"
   // has its own route inside this shell, so the address bar reflects it and the
@@ -1085,25 +1192,59 @@ export default function DashboardShell({
                   </PanelCard>
 
                   <div className="flex flex-col gap-4">
-                    <PanelCard title={copy.quickLinksHeading} hint={copy.quickLinksHint}>
+                    <PanelCard
+                      title={copy.quickLinksHeading}
+                      hint={isClient ? copy.paySummaryHint : copy.quickLinksHint}
+                      testId="quick-links"
+                    >
                       <QuickLinks
-                        links={data.quick_links}
-                        labels={copy.links}
-                        emptyLabel={copy.quickLinksEmpty}
+                        links={isClient ? paymentTiles : data.quick_links}
+                        labels={isClient ? {} : copy.links}
+                        emptyLabel={isClient ? copy.paySummaryEmpty : copy.quickLinksEmpty}
                       />
                     </PanelCard>
 
-                    <PanelCard title={copy.systemHeading}>
+                    <PanelCard title={copy.systemHeading} testId="system">
                       <dl className="flex flex-col gap-2.5">
-                        {[
-                          [copy.systemApi, data.system.api],
-                          [copy.systemVersion, data.system.version],
-                          [copy.systemServer, data.system.base_url],
-                          [
-                            copy.systemSession,
-                            `${data.system.session_expiry_hours} ${copy.hoursSuffix}`,
-                          ],
-                        ].map(([label, value]) => (
+                        {(isClient && billSummary
+                          ? [
+                              [
+                                copy.billSummaryTotal,
+                                new Intl.NumberFormat(
+                                  language === "en" ? "en-BD" : "bn-BD"
+                                ).format(billSummary.total),
+                              ],
+                              [
+                                copy.billSummaryAmount,
+                                formatBillAmount(
+                                  billSummary.total_amount,
+                                  billSummary.currency,
+                                  language
+                                ),
+                              ],
+                              [
+                                copy.billSummaryDue,
+                                formatBillAmount(
+                                  billSummary.total_outstanding,
+                                  billSummary.currency,
+                                  language
+                                ),
+                              ],
+                              [
+                                copy.billSummaryLatest,
+                                formatBillDate(billSummary.latest_invoice_date, language) || "—",
+                              ],
+                            ]
+                          : [
+                              [copy.systemApi, data.system.api],
+                              [copy.systemVersion, data.system.version],
+                              [copy.systemServer, data.system.base_url],
+                              [
+                                copy.systemSession,
+                                `${data.system.session_expiry_hours} ${copy.hoursSuffix}`,
+                              ],
+                            ]
+                        ).map(([label, value]) => (
                           <div key={label} className="flex items-start justify-between gap-4">
                             <dt className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                               {label}

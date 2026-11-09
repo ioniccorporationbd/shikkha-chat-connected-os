@@ -6,11 +6,21 @@ interface PanelCardProps {
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Stable hook for e2e probes (renders as data-panel); never affects layout. */
+  testId?: string;
 }
 
-export default function PanelCard({ title, hint, action, children, className }: PanelCardProps) {
+export default function PanelCard({
+  title,
+  hint,
+  action,
+  children,
+  className,
+  testId,
+}: PanelCardProps) {
   return (
     <section
+      data-panel={testId}
       className={`relative overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] sm:p-5 ${
         className ?? ""
       }`}

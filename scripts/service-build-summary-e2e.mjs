@@ -10,6 +10,7 @@
 
 import { chromium } from "/root/arogga-UI/node_modules/playwright/index.mjs";
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import { promisify } from "node:util";
 
 const run_ = promisify(execFile);
@@ -88,7 +89,12 @@ function parseAmount(text) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ args: ["--no-sandbox"] });
+  const chromePath =
+    process.env.PW_CHROME ?? "/root/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome";
+  const browser = await chromium.launch({
+    ...(existsSync(chromePath) ? { executablePath: chromePath } : {}),
+    args: ["--no-sandbox"],
+  });
   const sid = await login();
   const { invoices, summary } = await fetchInvoices(sid);
 
