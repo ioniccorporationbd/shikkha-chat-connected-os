@@ -42,6 +42,8 @@ interface TraceRow {
   channel: string;
   author: string;
   rawStamp: string;
+  /** Every field the row actually carried — the clue when no clock is found. */
+  keys: string;
   localTime: string;
   epoch: number | "missing" | "invalid";
   words: string;
@@ -61,6 +63,7 @@ function describeRow(
     channel: String(message.channel ?? ""),
     author: String(message.author ?? ""),
     rawStamp: raw,
+    keys: Object.keys(message as unknown as Record<string, unknown>).join("|"),
     localTime: ms === null ? "—" : date!.toLocaleString("en-GB", { hour12: false }),
     epoch: ms ?? (raw.trim() ? "invalid" : "missing"),
     words: String(message.body ?? "").replace(/\s+/g, " ").slice(0, 70),
@@ -145,7 +148,12 @@ export function traceConversation(
       {
         ticket: ticketId,
         where,
-        rows: undated.map((row) => ({ id: row.id, channel: row.channel, rawStamp: row.rawStamp })),
+        rows: undated.map((row) => ({
+          id: row.id,
+          channel: row.channel,
+          rawStamp: row.rawStamp,
+          keys: row.keys,
+        })),
       }
     );
   }

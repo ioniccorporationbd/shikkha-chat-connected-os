@@ -46,9 +46,41 @@ export function displayBody(body: unknown): string {
  */
 export function erpStampOf(row: unknown): string {
   if (!row || typeof row !== "object") return "";
-  for (const key of ["at", "createdAt", "timestamp", "creation", "modified", "date", "communicationDate"]) {
-    const text = String((row as Record<string, unknown>)[key] ?? "").trim();
+  const record = row as Record<string, unknown>;
+  // One row, however the desk spelled its clock: camelCase from the current
+  // API, snake_case from an older build, the doctype's own `creation`/`modified`
+  // — any of them is the same moment.
+  for (const key of [
+    "at",
+    "createdAt",
+    "created_at",
+    "timestamp",
+    "sentAt",
+    "sent_at",
+    "postedAt",
+    "posted_at",
+    "creation",
+    "modified",
+    "modifiedAt",
+    "modified_at",
+    "lastUpdated",
+    "date",
+    "datetime",
+    "communicationDate",
+    "communication_date",
+  ]) {
+    const text = String(record[key] ?? "").trim();
     if (text) return text;
+  }
+  // A message the desk filed through its mail log carries the moment on the
+  // activity rows instead of the message itself.
+  const activities = record.activities;
+  if (Array.isArray(activities)) {
+    for (const activity of activities) {
+      if (!activity || typeof activity !== "object") continue;
+      const text = String((activity as Record<string, unknown>).timestamp ?? "").trim();
+      if (text) return text;
+    }
   }
   return "";
 }
@@ -126,6 +158,34 @@ export function makeStampBorrower(messages: readonly unknown[]): (event: unknown
     }
     return own;
   };
+}
+
+/**
+ * Last resort for a trail that arrived with holes: a row the desk filed with no
+ * time at all is dated by the row above it (the thread is chronological, so a
+ * reply never predates the message it answers). Only rows that still have
+ * nothing — an entirely undated thread — fall back to the ticket's own moment.
+ */
+export function fillBlankStamps<T>(rows: readonly T[], fallback?: string): T[] {
+  const usable = (value: unknown) => {
+    const text = String(value ?? "").trim();
+    return text && !Number.isNaN(parseErpTimestamp(text).getTime()) ? text : "";
+  };
+  const out = rows.map((row) => ({ ...(row as object) }) as Record<string, unknown>);
+  let last = "";
+  for (const row of out) {
+    const own = usable(row.at);
+    if (own) last = own;
+    else row.at = last;
+  }
+  let next = "";
+  for (let index = out.length - 1; index >= 0; index -= 1) {
+    const row = out[index];
+    const own = usable(row.at);
+    if (own) next = own;
+    else row.at = next || (fallback ?? "");
+  }
+  return out as unknown as T[];
 }
 
 export function parseErpTimestamp(iso: string): Date {
