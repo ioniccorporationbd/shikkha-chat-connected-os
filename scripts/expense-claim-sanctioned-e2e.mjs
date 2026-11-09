@@ -30,7 +30,8 @@ const EMAIL = process.env.E2E_STAFF ?? "tamim@ioniccorporation.com";
 /**
  * Mock seed facts this probe asserts against (scripts/mock-frappe.mjs):
  *   00001  Draft      sanction total 0     base 0
- *   00002  Submitted  sanction total 0     base 0
+ *   00002  Submitted (docstatus 1, status still "Draft" as ERPNext keeps it)
+ *          sanction total 0     base 0  -> স্ট্যাটাস must read অনুমোদিত, not প্রক্রিয়াধীন
  *   00003  Approved   sanction total 2100  base 2100
  *   00004  Paid       sanction total 800   base 800
  *   00007  Submitted, USD claim: total_sanctioned_amount 100,

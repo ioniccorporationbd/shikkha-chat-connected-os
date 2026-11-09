@@ -397,7 +397,9 @@ function displayStatus(row) {
   const approval = String(row.approval_status || "").toLowerCase();
   const status = String(row.status || "").toLowerCase();
   const paid = truthy(row.is_paid);
-  if (docstatus === 0 || status === "draft") return "draft";
+  // ERPNext leaves status "Draft" on a submitted claim until approval, so
+  // only docstatus 0 counts as a draft here.
+  if (docstatus === 0) return "draft";
   if (docstatus === 2 || status === "cancelled") return "cancelled";
   if (approval === "rejected" || status === "rejected") return "rejected";
   if (paid || status === "paid") return "paid";
@@ -553,7 +555,9 @@ expenseClaims.push({
   modified: "2026-10-04 10:00:00",
 });
 
-// Submitted — awaiting approval.
+// Submitted — awaiting approval. ERPNext keeps status "Draft" after submit
+// (only docstatus moves to 1), so this seed is the regression for the
+// "প্রক্রিয়াধীন must become অনুমোদিত once submitted" rule.
 expenseClaims.push({
   name: "HR-EXP-2026-00002",
   employee: "HR-EMP-00001",
@@ -565,7 +569,7 @@ expenseClaims.push({
   posting_date: "2026-10-03",
   expense_approver: "magneticsolutionltdbd@gmail.com",
   approval_status: "Draft",
-  status: "Submitted",
+  status: "Draft",
   docstatus: 1,
   total_claimed_amount: 1200,
   total_sanctioned_amount: 0,
