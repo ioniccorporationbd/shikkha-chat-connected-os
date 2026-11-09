@@ -26,7 +26,7 @@ import {
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
 import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
-import { displayBody, erpStampOf, makeStampBorrower, parseErpTimestamp } from "@/lib/help-desk/format";
+import { displayBody, erpStampOf, fillBlankStamps, makeStampBorrower, parseErpTimestamp } from "@/lib/help-desk/format";
 import { helpDeskCopyFor } from "@/lib/help-desk/messages";
 import { deleteMessage, forwardMessage, pinTicketMessage, reopenTicket } from "@/lib/help-desk/service";
 import { LOGIN_PATH } from "@/lib/auth/session";
@@ -999,7 +999,14 @@ export default function HelpDeskTicketThread({
   // from whichever column actually holds them, so the portal shows the same
   // thing the desk does on tickets it created itself.
   const displayTicket: Ticket = resolveTicketHeader(ticket, timeline, messages);
-  const messageIds = new Set(messages.map((message) => message.id));
+  // A row can come back with no id under any name — ticket 0975's live shape was
+  // `{id: "", rawStamp: ""}` on three rows. A blank id used to join this set, and
+  // every equally-blank trail row then read as "already in the room": the chat
+  // card drew the customer's side while the timeline below listed সাপোর্ট টিম
+  // replies the card never showed. A blank id must claim nothing.
+  const messageIds = new Set(
+    messages.map((message) => String(message.id ?? "").trim()).filter(Boolean),
+  );
 
   // The room must show both sides. The ERP files an employee's reply under
   // `messages` only for the channels the viewer may read, but the very same
@@ -1013,35 +1020,37 @@ export default function HelpDeskTicketThread({
   // A trail row whose id the desk dropped is still the same message the room
   // already holds — matching it by id alone drew it a second time, so the words
   // and the side are the second key. ("do not show same data twice")
-  const spokenInRoom = new Set(
-    messages.map(
-      (message) =>
-        `${String(message.author ?? "").trim().toLowerCase()}|${displayBody(message.body).replace(/\s+/g, " ").trim().toLowerCase()}`,
-    ),
-  );
+  // One key for "the same words from the same side", used wherever a row has to
+  // be told apart from its copy.
+  const foldKey = (author: unknown, text: unknown) =>
+    `${String(author ?? "").trim().toLowerCase()}|${displayBody(text).replace(/\s+/g, " ").trim().toLowerCase()}`;
+  const spokenInRoom = new Set(messages.map((message) => foldKey(message.author, message.body)));
   const trailReplies: ConversationMessage[] = chatOnly
     ? []
     : timeline
+        .map((event, index) => ({ event, index }))
         .filter(
-          (event) =>
+          ({ event }) =>
             // Every filed row that carries words belongs in the room: a plain
             // reply, a requirement the desk filed, or the employee's solution.
             // Only the opening description ("created") and status moves stay out
             // — they are markers, not conversation.
             (event.type === "message" || event.type === "requirement" || event.type === "resolution") &&
             Boolean(String(event.text ?? "").trim()) &&
-            !messageIds.has(event.id) &&
-            !spokenInRoom.has(
-              `${String(event.author ?? "").trim().toLowerCase()}|${displayBody(event.text).replace(/\s+/g, " ").trim().toLowerCase()}`,
-            ),
+            !messageIds.has(String(event.id ?? "").trim()) &&
+            !spokenInRoom.has(foldKey(event.author, event.text)),
         )
-        .map((event) => ({
-          id: event.id,
+        .map(({ event, index }) => ({
+          // A blank id (0975) still needs a React key of its own, and its place
+          // in the trail is its position — the same slot `sequenceById` hands
+          // the rows that do have ids.
+          id: String(event.id ?? "").trim() || `trail:${index}`,
           author: event.author,
           authorName: event.authorName,
           recipients: event.recipients,
           body: event.text,
           createdAt: trailAt(event),
+          sequence: index,
           kind: "message" as const,
           channel: "message" as const,
           replyTo: null,
@@ -1061,13 +1070,32 @@ export default function HelpDeskTicketThread({
   // timeline's own position for a row travels down with it. `ConversationThread`
   // prefers that position over any timestamp, which is what makes the two lists
   // agree row for row even when two entries share a second.
-  const sequenceById = new Map(timeline.map((event, index) => [event.id, index]));
+  // The error log caught the live shape on ticket 0975: three messages arrived
+  // as {id: "", rawStamp: ""} — no id under any name, no clock under any name —
+  // so a bubble that relied on the row's own date printed a bare "—" while the
+  // customer's rows above showed theirs. Each row borrows its twin's moment,
+  // then the row above it in this thread, and only a wholly undated thread
+  // falls back to the ticket's own moment. A row is never drawn dateless.
+  const ticketStamp = erpStampOf(payload?.ticket ?? {});
+  const dateRows = roomMessages.map((message) => ({
+    ...message,
+    createdAt: erpStampOf(message) ? message.createdAt : trailAt(message),
+  }));
+  const datedRows = fillBlankStamps(dateRows, ticketStamp);
+  // Only a real id can carry a position: blank ids would all land on one key and
+  // hand every undated row the same slot (ticket 0975's three blank rows). A row
+  // folded out of the trail brings its own index instead.
+  const sequenceById = new Map<string, number>();
+  timeline.forEach((event, index) => {
+    const key = String(event.id ?? "").trim();
+    if (key) sequenceById.set(key, index);
+  });
   const orderedMessages = sequenceById.size
-    ? roomMessages.map((message) => {
+    ? datedRows.map((message) => {
         const sequence = sequenceById.get(message.id);
         return sequence === undefined ? message : { ...message, sequence };
       })
-    : roomMessages;
+    : datedRows;
   const timelineLabels: Record<string, string> = {
     created: copy.timelineCreated,
     requirement: copy.timelineRequirement,
@@ -1132,18 +1160,35 @@ export default function HelpDeskTicketThread({
   // moment a send succeeds - while every non-message row (creation, an added
   // requirement, the employee's solution, ERP status moves) still comes from
   // the ERP timeline. Ids are carried through, so no row is drawn twice.
-  const auditTrail: ConversationTimelineEvent[] = chatOnly
+  // The trail's typed rows (an added requirement, the employee's solution) also
+  // reach the room as bubbles. Each card must tell the story once: a room row
+  // whose words a typed trail row already carries is left out of the trail
+  // card, which keeps the richer label for it.
+  const typedTrailKeys = new Set(
+    timeline
+      .filter(
+        (event) =>
+          (event.type === "requirement" || event.type === "resolution") &&
+          Boolean(String(event.text ?? "").trim()),
+      )
+      .map((event) => foldKey(event.author, event.text)),
+  );
+  const rawTrail: ConversationTimelineEvent[] = chatOnly
     ? []
     : [
         ...timeline
-          .filter((event) => event.type !== "message" && !messageIds.has(event.id))
+          .filter((event) => event.type !== "message" && !messageIds.has(String(event.id ?? "").trim()))
           // The stamp is written onto `at` even when the payload named it
           // something else: the sort below reads `at`, and a row whose time
           // lived under `timestamp` sorted as if it were undated — the ticket's
           // own creation fell to the bottom of its trail.
           .map((event) => ({ ...event, at: trailAt(event) })),
-        ...orderedMessages.map((message) => ({
-          id: message.id,
+        ...orderedMessages
+          .filter((message) => !typedTrailKeys.has(foldKey(message.author, message.body)))
+          .map((message, index) => ({
+          // A blank id gets a key of its own, and the sort below finds it by
+          // position instead of by id.
+          id: String(message.id ?? "").trim() || `room:${index}`,
           type: "message" as const,
           at: erpStampOf(message),
           author: message.author === "support" ? ("support" as const) : ("user" as const),
@@ -1167,6 +1212,7 @@ export default function HelpDeskTicketThread({
         if (Number.isFinite(right)) return 1;
         return (sequenceById.get(a.id) ?? 0) - (sequenceById.get(b.id) ?? 0);
       });
+  const auditTrail = fillBlankStamps(rawTrail, ticketStamp);
 
   return (
     <div className="flex flex-col gap-4">

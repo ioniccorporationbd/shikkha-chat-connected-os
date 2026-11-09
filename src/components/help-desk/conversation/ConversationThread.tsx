@@ -366,8 +366,15 @@ export default function ConversationThread({
     const DUPLICATE_WINDOW = 300; // seconds — the window the ERP uses
     const entries: ThreadRow[] = [];
     for (const message of messages) {
-      if (seen.has(message.id)) continue;
-      seen.add(message.id);
+      // A row can arrive with no id under any name — ticket 0975 handed over
+      // three `{id: ""}` rows — and a blank id used to make the first one
+      // swallow the two after it. A blank id claims nothing; the row keeps its
+      // place and a key of its own.
+      const rowId = String(message.id ?? "").trim();
+      if (rowId) {
+        if (seen.has(rowId)) continue;
+        seen.add(rowId);
+      }
       const rawWords = String(message.body ?? "")
         .replace(/<[^>]*>/g, " ")
         .replace(/\s+/g, " ")
@@ -400,7 +407,7 @@ export default function ConversationThread({
       }
       entries.push({
         kind: "message",
-        key: `m-${message.id}`,
+        key: `m-${rowId || `blank:${entries.length}`}`,
         at: message.createdAt,
         sequence: message.sequence,
         message,
@@ -410,12 +417,12 @@ export default function ConversationThread({
     }
 
     if (systemEvents?.length) {
-      const known = new Set(messages.map((message) => message.id));
+      const known = new Set(messages.map((message) => String(message.id ?? "").trim()).filter(Boolean));
       for (const event of systemEvents) {
-        if (known.has(event.id)) continue;
+        if (String(event.id ?? "").trim() && known.has(String(event.id ?? "").trim())) continue;
         entries.push({
           kind: "event",
-          key: `e-${event.id}`,
+          key: `e-${String(event.id ?? "").trim() || `blank:${entries.length}`}`,
           at: erpStampOf(event),
           sequence: event.sequence,
           label: event.label,

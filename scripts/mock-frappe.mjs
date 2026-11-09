@@ -1746,6 +1746,9 @@ function hdDiscardUploads(items, owner) {
 // other side so a Playwright run can prove the panel picks it up on its own.
 const HD_TICKET = "HD-2026-00001";
 const hdThreads = new Map();
+// Every frontend failure the portal reports through client_log.report, kept so
+// GET /__mock/client-log can hand them back to a probe.
+const clientLogEntries = [];
 let hdMessageSeq = 0;
 
 function hdKey(message) {
@@ -1894,8 +1897,13 @@ function hdOrder(messages) {
   const sent = new Map();
   const kept = [];
   for (const message of messages) {
-    if (seen.has(message.id)) continue;
-    seen.add(message.id);
+    // A row with no id under any name cannot be told apart from another blank
+    // row, and the live ERP does not drop them (ticket 0975 handed over three
+    // `{id: ""}` rows) — so blank ids never collapse here either.
+    if (message.id) {
+      if (seen.has(message.id)) continue;
+      seen.add(message.id);
+    }
     const words = hdBodyKey(message.body);
     const files = hdFileKey(message.attachments);
     const second = hdSeconds(message.createdAt);
@@ -4084,6 +4092,77 @@ for (const [row, id] of [
   row.id = id;
 }
 
+// 0975 — the live shape behind "the chat card's left side is empty while the
+// timeline lists সাপোর্ট টিম rows". The error log caught it: three message rows
+// arrived as `{id: "", rawStamp: ""}` — no id under any name, no clock under any
+// name — and the employee's replies lived only in `timeline` (the customer's
+// channel cannot read them). A chat that asked "is this id already in the room"
+// put a blank into its id set, so every equally-blank trail row read as already
+// drawn: the left side of শিক্ষা চ্যাট সাপোর্ট stayed customer-only while
+// সম্পূর্ণ কথোপকথন টাইমলাইন listed the team's answers.
+const HD_0975 = "0975";
+const HD_0975_CUSTOMER = "tajul23";
+const HD_0975_AGENT = "MD Shahzalal Amin Surker";
+const hd0975Ago = (minutes) => new Date(Date.now() - minutes * 60000).toISOString();
+
+hdThreads.set(HD_0975, {
+  name: HD_0975,
+  subject: "ক্লাস নাইনের রেজাল্ট খোলা যাচ্ছে না",
+  status: "open",
+  currentStatus: "Open",
+  statusCategory: "Open",
+  priority: "medium",
+  category: "technical",
+  customer: HD_0975_CUSTOMER,
+  customerEmail: "client@example.com",
+  customerContactEmail: "tajul789@gmail.com",
+  agent: HD_0975_AGENT,
+  team: "Support Team",
+  submittedAt: hd0975Ago(3 * 60),
+  resolvedAt: null,
+  messages: [],
+  // The employee's half, filed only in the trail — and with no id and no clock,
+  // exactly as the three rows the error log captured on the live ticket.
+  timeline: [
+    {
+      id: "",
+      type: "requirement",
+      at: "",
+      author: "support",
+      authorName: HD_0975_AGENT,
+      text: "রেজাল্ট পেজটি আমরা দেখছি, ইনভয়েস নম্বরটি দেবেন?",
+      attachments: 0,
+    },
+    {
+      id: "",
+      type: "resolution",
+      at: "",
+      author: "support",
+      authorName: HD_0975_AGENT,
+      text: "সমস্যাটি ঠিক করা হয়েছে — এখন আবার লগইন করে দেখুন।",
+      attachments: 0,
+    },
+  ],
+});
+
+const hd0975C1 = hdAppend(HD_0975, "user", "ক্লাস নাইনের রেজাল্ট খুললে সাদা পেজ আসে।", {
+  at: hd0975Ago(3 * 60),
+  authorName: HD_0975_CUSTOMER,
+});
+const hd0975C2 = hdAppend(HD_0975, "user", "তিন দিন ধরে একই সমস্যা।", {
+  at: hd0975Ago(2 * 60),
+  authorName: HD_0975_CUSTOMER,
+});
+const hd0975C3 = hdAppend(HD_0975, "user", "প্লিজ দ্রুত দেখুন।", {
+  at: hd0975Ago(60),
+  authorName: HD_0975_CUSTOMER,
+});
+// The live shape: no id under any name, no clock under any name.
+for (const row of [hd0975C1, hd0975C2, hd0975C3]) {
+  row.id = "";
+  row.createdAt = "";
+}
+
 // 0937 — the ticket read at /clientDashboard/help-desk/tickets/0937. The desk's
 // own activity feed (Frappe Helpdesk, `message.activities[]`) is in true time
 // order; the portal payload is NOT — the mock hands the rows over grouped by
@@ -4542,6 +4621,12 @@ const server = createServer(async (request, response) => {
   // Test-only view of the mocked `File` doctype: lets the Playwright/API suites
   // assert the attachment mapping (attached_to_doctype / attached_to_name)
   // without a live ERP.
+  if (url.pathname === "/__mock/client-log") {
+    response.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+    response.end(JSON.stringify({ entries: clientLogEntries }));
+    return;
+  }
+
   if (url.pathname === "/__mock/files") {
     // `_createdMs` is a local test knob; the ERP has no such column.
     const files = hdFileList.map(({ _createdMs, ...row }) => row);
@@ -6687,6 +6772,28 @@ const server = createServer(async (request, response) => {
       items: row.items || [],
       verified: true,
     });
+    return;
+  }
+
+  // --- The portal's own error log --------------------------------------------
+  // Mirrors shikkha_os.api.v1.client_log.report: a frontend failure is written
+  // into the ERP Error Log. The mock keeps the entries so a probe can read them
+  // back at GET /__mock/client-log.
+  if (method === "shikkha_os.api.v1.client_log.report") {
+    const email = userFor(request);
+    const body = await readBody(request);
+    const entry = {
+      at: new Date().toISOString(),
+      email: email ?? "",
+      scope: String(body.scope || "client"),
+      message: String(body.message || ""),
+      page: String(body.page || ""),
+      detail: body.detail ?? null,
+      userAgent: String(body.user_agent || ""),
+    };
+    clientLogEntries.push(entry);
+    console.log(`[mock] client_log.report ${entry.scope}: ${entry.message.slice(0, 160)}`);
+    ok(response, { ok: true });
     return;
   }
 
