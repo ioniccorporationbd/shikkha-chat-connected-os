@@ -146,6 +146,7 @@ export default function DetailSheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        data-detail-sheet="true"
         className={`relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[26px] border-t border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] shadow-[0_-30px_70px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] sm:max-h-[88vh] sm:w-[640px] sm:max-w-[93vw] sm:rounded-[26px] sm:border sm:shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
           exiting ? "u-shk-modal-out pointer-events-none" : "u-shk-modal-in"
         }`}

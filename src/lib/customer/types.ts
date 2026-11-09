@@ -112,3 +112,17 @@ export interface CustomerListPayload {
   customers: CustomerListRow[];
   verified?: boolean;
 }
+
+/**
+ * `customer.details` payload — one owned Customer with its stored values keyed
+ * by editable fieldname (`customer_name`, `mobile_no`, `tax_id`, ...). The ERP
+ * only hands this back for a Customer the caller owns.
+ */
+export interface CustomerDetailsPayload {
+  doctype: string;
+  name: string;
+  customer_name?: string;
+  owner?: string;
+  values?: Record<string, CustomerFieldValue | null>;
+  verified?: boolean;
+}

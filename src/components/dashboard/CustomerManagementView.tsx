@@ -4,20 +4,26 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FiAlertCircle,
   FiArrowLeft,
+  FiBriefcase,
+  FiClock,
+  FiEye,
   FiLock,
+  FiMail,
   FiPlus,
   FiRefreshCw,
   FiSearch,
   FiUsers,
 } from "react-icons/fi";
 
-import { fetchCustomerList } from "@/lib/customer/api";
+import { fetchCustomerDetails, fetchCustomerList } from "@/lib/customer/api";
 import { customerManagementCopyFor } from "@/lib/customer/management-messages";
-import type { CustomerListRow } from "@/lib/customer/types";
+import type { CustomerDetailsPayload, CustomerListRow } from "@/lib/customer/types";
 import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
+import { reportClientError } from "@/lib/log/report-error";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
+import DetailSheet, { type DetailSection } from "./DetailSheet";
 import ListPagination from "./ListPagination";
 
 /* ------------------------------------------------------------------ */
@@ -155,6 +161,108 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
   }, [query, rowsPerPage]);
 
   const cell = (value: string | undefined) => (value && String(value).trim() !== "" ? value : copy.notSet);
+
+  /* ------------------------------------------------------ details popup */
+
+  const [detailRow, setDetailRow] = useState<CustomerListRow | null>(null);
+  const [detail, setDetail] = useState<CustomerDetailsPayload | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Click → open the sheet with the loader already spinning, then fill it in.
+  const openDetails = useCallback(
+    (row: CustomerListRow) => {
+      setDetailRow(row);
+      setDetail(null);
+      setDetailError(null);
+      setDetailLoading(true);
+
+      void fetchCustomerDetails(row.name, language)
+        .then((payload) => setDetail(payload))
+        .catch((error: unknown) => {
+          const failure = error as { code?: string; message?: string };
+          setDetailError(failure?.message || copy.detailFailed);
+          // Constraint: a broken popup must leave a trace both in the browser
+          // console and in the ERP Error Log (`/desk/system/error-log`).
+          reportClientError({
+            scope: "customer:details",
+            message: `customer.details failed for ${row.name}`,
+            detail: { code: failure?.code ?? null, message: failure?.message ?? null },
+          });
+        })
+        .finally(() => setDetailLoading(false));
+    },
+    [language, copy.detailFailed]
+  );
+
+  const closeDetails = useCallback(() => {
+    setDetailRow(null);
+    setDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  }, []);
+
+  /**
+   * The popup reads the Customer's stored values, falling back to the list row
+   * (the row is the backend's own summary, so a sparse document still shows
+   * everything the table already knew). Print and Download render this very
+   * section array, so the paper copy can never drift from the screen.
+   */
+  const detailSections = useMemo<DetailSection[]>(() => {
+    const row = detailRow;
+    if (!row) return [];
+
+    const values = detail?.values ?? {};
+    const pick = (key: string, fallback?: string) => {
+      const raw = values[key];
+      const text = raw === null || raw === undefined ? "" : String(raw).trim();
+      return text || (fallback ?? "").trim() || copy.notSet;
+    };
+
+    return [
+      {
+        key: "identity",
+        title: copy.secIdentity,
+        icon: <FiUsers aria-hidden />,
+        rows: [
+          { label: copy.colId, value: row.name },
+          { label: copy.colName, value: pick("customer_name", row.customer_name), emphasis: true },
+          { label: copy.colType, value: pick("customer_type", row.customer_type) },
+          { label: copy.colGroup, value: pick("customer_group", row.customer_group) },
+          { label: copy.colTerritory, value: pick("territory", row.territory) },
+        ],
+      },
+      {
+        key: "contact",
+        title: copy.secContact,
+        icon: <FiMail aria-hidden />,
+        rows: [
+          { label: copy.colMobile, value: pick("mobile_no", row.mobile_no) },
+          { label: copy.colEmail, value: pick("email_id", row.email_id) },
+          { label: copy.fldWebsite, value: pick("website") },
+        ],
+      },
+      {
+        key: "business",
+        title: copy.secBusiness,
+        icon: <FiBriefcase aria-hidden />,
+        rows: [
+          { label: copy.fldTaxId, value: pick("tax_id") },
+          { label: copy.fldCurrency, value: pick("default_currency") },
+          { label: copy.fldPriceList, value: pick("default_price_list") },
+        ],
+      },
+      {
+        key: "record",
+        title: copy.secRecord,
+        icon: <FiClock aria-hidden />,
+        rows: [
+          { label: copy.colCreated, value: formatDate(row.creation, language) || copy.notSet },
+          { label: copy.fldOwner, value: (detail?.owner || row.owner || "").trim() || copy.notSet },
+        ],
+      },
+    ];
+  }, [detail, detailRow, language, copy]);
 
   const isAuth = loadError?.code === "not_authenticated";
   const isPermission = loadError ? isPermissionRefusal(loadError.code, loadError.message) : false;
@@ -327,7 +435,7 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
-                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colCreated].map(
+                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colCreated, copy.colAction].map(
                     (label, index) => (
                       <th
                         key={label}
@@ -377,6 +485,18 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     <td className="px-4 py-3 text-[12.5px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
                       {formatDate(row.creation, language) || copy.notSet}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => openDetails(row)}
+                        aria-label={copy.detailsFor(row.customer_name || row.name)}
+                        data-customer-details={row.name}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                      >
+                        <FiEye aria-hidden className="text-[13px] text-[var(--color-primary)]" />
+                        <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.details}</span>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -422,6 +542,17 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     </div>
                   ))}
                 </dl>
+
+                <button
+                  type="button"
+                  onClick={() => openDetails(row)}
+                  aria-label={copy.detailsFor(row.customer_name || row.name)}
+                  data-customer-details={row.name}
+                  className={`${BTN_SECONDARY} mt-3 w-full px-3 py-2`}
+                >
+                  <FiEye aria-hidden className="text-[var(--color-primary)]" />
+                  <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.details}</span>
+                </button>
               </section>
             ))}
           </div>
@@ -443,6 +574,37 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
           />
         </>
       )}
+
+      <DetailSheet
+        open={Boolean(detailRow)}
+        onClose={closeDetails}
+        closeLabel={copy.detailClose}
+        eyebrow={copy.detailEyebrow}
+        title={detailRow ? detail?.customer_name || detailRow.customer_name || detailRow.name : ""}
+        subtitle={detailRow?.name}
+        icon={<FiUsers aria-hidden />}
+        badges={
+          detailRow?.customer_type ? (
+            <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)]">
+              {detailRow.customer_type}
+            </span>
+          ) : undefined
+        }
+        sections={detailSections}
+        loading={detailLoading}
+        loadingText={copy.detailLoading}
+        error={detailError ?? undefined}
+        errorTitle={copy.detailFailed}
+        document={{
+          brand: "Shikkha Chat",
+          badges: detailRow?.customer_type ? [detailRow.customer_type] : undefined,
+          filename: detailRow ? `customer-${detailRow.name}` : "customer",
+          printLabel: copy.detailPrint,
+          downloadLabel: copy.detailDownload,
+          footerNote: copy.detailFooterNote,
+          locale: language === "en" ? "en-GB" : "bn-BD",
+        }}
+      />
     </div>
   );
 }

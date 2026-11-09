@@ -4,6 +4,7 @@ import { getJson, postJson } from "@/lib/api/http";
 
 import type {
   CustomerCreateResult,
+  CustomerDetailsPayload,
   CustomerFormValues,
   CustomerLinkOptionsPayload,
   CustomerListPayload,
@@ -40,4 +41,13 @@ export function createCustomer(
 export function fetchCustomerList(language: string): Promise<CustomerListPayload> {
   const params = new URLSearchParams({ language });
   return getJson<CustomerListPayload>(`/api/customer/list?${params.toString()}`);
+}
+
+/** `GET /api/customer/details` — one owned Customer's stored values (details popup). */
+export function fetchCustomerDetails(
+  name: string,
+  language: string
+): Promise<CustomerDetailsPayload> {
+  const params = new URLSearchParams({ name, language });
+  return getJson<CustomerDetailsPayload>(`/api/customer/details?${params.toString()}`);
 }

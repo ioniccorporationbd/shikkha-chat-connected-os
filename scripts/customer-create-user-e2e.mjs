@@ -113,7 +113,11 @@ async function mockCustomers() {
   return payload?.data?.customers ?? payload?.customers ?? [];
 }
 
-const browser = await chromium.launch({ args: ["--no-sandbox"] });
+const browser = await chromium.launch({
+  args: ["--no-sandbox"],
+  executablePath:
+    process.env.PW_CHROME || "/root/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome",
+});
 try {
   const context = await browser.newContext({ viewport: { width: WIDTH, height: 1000 } });
   const page = await context.newPage();

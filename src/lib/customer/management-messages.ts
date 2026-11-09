@@ -30,6 +30,31 @@ export interface CustomerManagementCopy {
   colMobile: string;
   colEmail: string;
   colCreated: string;
+  /** Action column header — its cells hold the বিস্তারিত button. */
+  colAction: string;
+  /** Row action: opens the customer-details popup. */
+  details: string;
+  /** Accessible name for the row button, e.g. "বিস্তারিত: Nusrat Jahan". */
+  detailsFor: (label: string) => string;
+  /** Popup copy. */
+  detailEyebrow: string;
+  detailLoading: string;
+  detailFailed: string;
+  detailClose: string;
+  detailPrint: string;
+  detailDownload: string;
+  detailFooterNote: string;
+  /** Popup section titles. */
+  secIdentity: string;
+  secContact: string;
+  secBusiness: string;
+  secRecord: string;
+  /** Field labels that are not already column headers. */
+  fldWebsite: string;
+  fldTaxId: string;
+  fldCurrency: string;
+  fldPriceList: string;
+  fldOwner: string;
 }
 
 export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy> = {
@@ -61,6 +86,25 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     colMobile: "মোবাইল",
     colEmail: "ইমেইল",
     colCreated: "তৈরির তারিখ",
+    colAction: "অ্যাকশন",
+    details: "বিস্তারিত",
+    detailsFor: (label) => `বিস্তারিত: ${label}`,
+    detailEyebrow: "কাস্টমার প্রোফাইল",
+    detailLoading: "কাস্টমারের তথ্য লোড হচ্ছে…",
+    detailFailed: "কাস্টমারের তথ্য আনা যায়নি। একটু পরে আবার চেষ্টা করুন।",
+    detailClose: "বন্ধ করুন",
+    detailPrint: "প্রিন্ট",
+    detailDownload: "ডাউনলোড",
+    detailFooterNote: "গ্রাহক কপি — শিক্ষা চ্যাট পোর্টাল",
+    secIdentity: "কাস্টমার তথ্য",
+    secContact: "যোগাযোগ",
+    secBusiness: "ব্যবসা ও কর",
+    secRecord: "রেকর্ড",
+    fldWebsite: "ওয়েবসাইট",
+    fldTaxId: "ট্যাক্স আইডি (TIN/BIN)",
+    fldCurrency: "ডিফল্ট মুদ্রা",
+    fldPriceList: "ডিফল্ট মূল্যতালিকা",
+    fldOwner: "তৈরি করেছেন",
   },
   en: {
     heading: "Customer Management",
@@ -90,6 +134,25 @@ export const customerManagementCopy: Record<"bn" | "en", CustomerManagementCopy>
     colMobile: "Mobile",
     colEmail: "Email",
     colCreated: "Created",
+    colAction: "Action",
+    details: "Details",
+    detailsFor: (label) => `Details: ${label}`,
+    detailEyebrow: "Customer profile",
+    detailLoading: "Loading the customer's details…",
+    detailFailed: "The customer's details could not be loaded. Please try again.",
+    detailClose: "Close",
+    detailPrint: "Print",
+    detailDownload: "Download",
+    detailFooterNote: "Customer copy — Shikkha Chat portal",
+    secIdentity: "Customer information",
+    secContact: "Contact",
+    secBusiness: "Business & tax",
+    secRecord: "Record",
+    fldWebsite: "Website",
+    fldTaxId: "Tax ID (TIN/BIN)",
+    fldCurrency: "Default currency",
+    fldPriceList: "Default price list",
+    fldOwner: "Created by",
   },
 };
 
