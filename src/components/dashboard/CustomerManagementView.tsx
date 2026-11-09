@@ -435,7 +435,7 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
-                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colCreated, copy.colAction].map(
+                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colAction].map(
                     (label, index) => (
                       <th
                         key={label}
@@ -481,9 +481,6 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     </td>
                     <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
                       {cell(row.email_id)}
-                    </td>
-                    <td className="px-4 py-3 text-[12.5px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
-                      {formatDate(row.creation, language) || copy.notSet}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -532,7 +529,6 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     [copy.colTerritory, cell(row.territory)],
                     [copy.colMobile, cell(row.mobile_no)],
                     [copy.colEmail, cell(row.email_id)],
-                    [copy.colCreated, formatDate(row.creation, language) || copy.notSet],
                   ].map(([label, value]) => (
                     <div key={label} className="min-w-0">
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">

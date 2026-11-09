@@ -54,6 +54,7 @@ const SEEDS = [
 const COPY = {
   bn: {
     action: "অ্যাকশন",
+    email: "ইমেইল",
     created: "তৈরির তারিখ",
     details: "বিস্তারিত",
     loading: "কাস্টমারের তথ্য লোড হচ্ছে…",
@@ -68,6 +69,7 @@ const COPY = {
   },
   en: {
     action: "Action",
+    email: "Email",
     created: "Created",
     details: "Details",
     loading: "Loading the customer's details…",
@@ -192,9 +194,20 @@ try {
       headerTexts.join(" | ")
     );
     check(
-      `[${language}] it comes directly after ${copy.created}`,
-      headerTexts[headerTexts.length - 2] === copy.created.toLowerCase(),
+      `[${language}] it comes directly after ${copy.email}`,
+      headerTexts[headerTexts.length - 2] === copy.email.toLowerCase(),
       headerTexts.join(" | ")
+    );
+    check(
+      `[${language}] the ${copy.created} column is gone from the table`,
+      !headerTexts.includes(copy.created.toLowerCase()),
+      headerTexts.join(" | ")
+    );
+    const firstRowCells = await page.locator("table tbody tr").first().locator("td").count();
+    check(
+      `[${language}] every row has exactly one cell per header (${headerTexts.length})`,
+      firstRowCells === headerTexts.length,
+      `cells=${firstRowCells} headers=${headerTexts.length}`
     );
 
     // 2. every row offers the বিস্তারিত button
@@ -351,6 +364,12 @@ try {
     await sleep(500);
     const phoneButtons = await page.locator("[data-customer-details]:visible").count();
     check(`[${language}] the button is reachable on a phone (390px)`, phoneButtons > 0, `count=${phoneButtons}`);
+    const phoneText = await page.locator("body").innerText();
+    check(
+      `[${language}] the phone cards drop ${copy.created} too`,
+      !phoneText.includes(copy.created),
+      phoneText.slice(0, 160)
+    );
 
     // reopen on phone to prove the popup fits
     await page.locator("[data-customer-details]:visible").first().click();
