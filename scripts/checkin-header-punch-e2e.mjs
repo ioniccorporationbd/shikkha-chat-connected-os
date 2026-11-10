@@ -123,11 +123,17 @@ const REFRESH_LABEL = "রিফ্রেশ";
     const punchBox = await punch.first().boundingBox();
     const refreshBox = await refresh.boundingBox();
     if (punchBox && refreshBox) {
+      const gap = refreshBox.x - (punchBox.x + punchBox.width);
       check(
         punchBox.x + punchBox.width <= refreshBox.x + 1,
         `[${viewport.tag}] punch button is LEFT of refresh (punch right ${Math.round(
           punchBox.x + punchBox.width
         )} ≤ refresh left ${Math.round(refreshBox.x)})`
+      );
+      const minGap = viewport.tag === "mobile" ? 10 : 14;
+      check(
+        gap >= minGap,
+        `[${viewport.tag}] visible margin between punch and refresh (${Math.round(gap)}px ≥ ${minGap}px)`
       );
       check(
         Math.abs(punchBox.y + punchBox.height / 2 - (refreshBox.y + refreshBox.height / 2)) <= 4,

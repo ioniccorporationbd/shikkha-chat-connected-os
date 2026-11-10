@@ -452,7 +452,7 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
       data-checkin-punch=""
       aria-label={punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
       title={punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="mr-1.5 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 sm:mr-2 transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
         {checkedIn ? <FiLogOut size={15} /> : <FiLogIn size={15} />}
