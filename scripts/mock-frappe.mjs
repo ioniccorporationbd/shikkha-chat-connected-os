@@ -602,6 +602,16 @@ function crmLeadDetailPayload(name, language) {
       at: iso(58 * 60 * 1000),
     },
     {
+      key: "comment:3",
+      kind: "comment",
+      actor: "MD Shahzalal Amin Surker",
+      actor_email: "magneticsolutionltdbd@gmail.com",
+      actor_image: "",
+      text: t("added a comment", "একটি মন্তব্য যোগ করেছেন"),
+      body: "hello",
+      at: iso(190 * 60 * 1000),
+    },
+    {
       key: "note:3",
       kind: "note",
       actor: actress,
@@ -6697,7 +6707,7 @@ const server = createServer(async (request, response) => {
     const extra = {
       key: `comment:${Date.now()}`,
       kind: "comment",
-      actor: String(account.full_name || account.name || email),
+      actor: String(account.full_name || (account.profile && account.profile.full_name) || account.name || email),
       actor_email: email,
       actor_image: "",
       text: String(url.searchParams.get("language") || "bn").toLowerCase().startsWith("bn")

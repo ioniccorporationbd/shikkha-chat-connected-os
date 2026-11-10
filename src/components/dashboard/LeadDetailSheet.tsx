@@ -155,6 +155,56 @@ function ActivityItem({ activity, copy }: { activity: LeadActivity; copy: LeadsC
   );
 }
 
+function CommentsList({ items, copy, empty }: { items: LeadActivity[]; copy: LeadsCopy; empty: string }) {
+  if (items.length === 0) return <EmptyTab text={empty} />;
+
+  return (
+    <ul className="flex flex-col gap-3" data-lead-comments="">
+      {items.map((entry) => (
+        <li
+          key={entry.key}
+          data-lead-comment-item={entry.key}
+          className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] px-4 py-3"
+        >
+          <div className="flex items-start gap-2.5">
+            {entry.actor_image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={entry.actor_image}
+                alt={entry.actor || ""}
+                className="h-7 w-7 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] text-[11px] font-bold text-[var(--color-primary)]">
+                {(entry.actor || "?").trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12.5px] font-semibold text-[var(--color-primary)]">
+                {entry.actor || entry.actor_email}
+              </p>
+              {entry.actor_email ? (
+                <p className="truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                  {entry.actor_email}
+                </p>
+              ) : null}
+            </div>
+            <RelativeTime at={entry.at} copy={copy} />
+          </div>
+          {entry.body ? (
+            <p
+              className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
+              data-lead-comment-body=""
+            >
+              {entry.body}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function NotesList({ items, copy, empty }: { items: LeadActivity[]; copy: LeadsCopy; empty: string }) {
   if (items.length === 0) return <EmptyTab text={empty} />;
 
@@ -634,7 +684,7 @@ function LeadDetailPanel({
         ) : activeTab === "emails" ? (
           <SimpleActivityList items={payload.emails} copy={copy} empty={detail.empty.emails} />
         ) : activeTab === "comments" ? (
-          <SimpleActivityList items={payload.comments} copy={copy} empty={detail.empty.comments} />
+          <CommentsList items={payload.comments} copy={copy} empty={detail.empty.comments} />
         ) : activeTab === "data" ? (
           <DataGrid payload={payload} />
         ) : activeTab === "calls" ? (

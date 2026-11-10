@@ -295,6 +295,18 @@ async function login() {
       `[${viewport.tag}] the uploaded file shows in the Attachments tab`
     );
 
+    // Comments tab: the comment stream Desk keeps (/desk/system/comment) —
+    // comments written in Desk show here, and the panel's own posts land here.
+    await page.locator('[data-lead-tab="comments"]').click();
+    await page.locator("[data-lead-comment-item]").first().waitFor({ state: "visible", timeout: 20000 });
+    const deskCommentCount = await page.locator("[data-lead-comment-item]").count();
+    check(deskCommentCount >= 2, `[${viewport.tag}] the Comments tab lists Desk comments (${deskCommentCount})`);
+    const commentsText = (await page.locator("[data-lead-comments]").innerText()) || "";
+    check(
+      commentsText.includes("hello") && commentsText.includes("portal probe comment"),
+      `[${viewport.tag}] Desk-written and panel-written comments both render`
+    );
+
     // Notes tab: the lead's CRM Note rows (title + body + author), newest first.
     await page.locator('[data-lead-tab="notes"]').click();
     await page.locator("[data-lead-note]").first().waitFor({ state: "visible", timeout: 20000 });
