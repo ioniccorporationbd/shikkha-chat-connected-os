@@ -212,6 +212,76 @@ async function login() {
       `[${viewport.tag}] the search hit mentions Rahman`
     );
 
+    // ------------------------------------------- 5b) Action column + details
+    // Desktop only: the table header. (Phones render cards, no thead.)
+    if (viewport.tag === "desktop") {
+      const thead = ((await page.locator("thead").first().innerText()) || "").replace(/\s+/g, " ");
+      check(thead.includes("অ্যাকশন"), `[${viewport.tag}] header carries the Action column (${thead})`);
+      check(!thead.includes("তারিখ"), `[${viewport.tag}] header no longer carries তারিখ`);
+
+      const detailButtons = page.locator("[data-lead-row] [data-lead-details]");
+      check(
+        (await detailButtons.count()) === (await page.locator("[data-lead-row]").count()),
+        `[${viewport.tag}] every table row has a View details button`
+      );
+      check(
+        ((await detailButtons.first().innerText()) || "").includes("বিস্তারিত দেখুন"),
+        `[${viewport.tag}] the button is labelled বিস্তারিত দেখুন`
+      );
+    }
+
+    // Clear the search so the board is complete before opening a lead.
+    await page.locator("[data-leads-search]").fill("");
+    await page.waitForTimeout(900);
+
+    await page.locator("[data-lead-details]:visible").first().click();
+    await page.locator("[data-lead-detail]").waitFor({ state: "visible", timeout: 60000 });
+    check(true, `[${viewport.tag}] View details opens the lead panel`);
+
+    const tabs = page.locator("[data-lead-tab]");
+    check((await tabs.count()) === 8, `[${viewport.tag}] desk tabs rendered (${await tabs.count()})`);
+
+    await page.locator("[data-lead-activity]").first().waitFor({ state: "visible", timeout: 30000 });
+    check(
+      (await page.locator("[data-lead-activity]").count()) >= 3,
+      `[${viewport.tag}] timeline shows the desk activity entries (${await page
+        .locator("[data-lead-activity]")
+        .count()})`
+    );
+
+    const panelText = ((await page.locator("[data-lead-tab-panel]").innerText()) || "").replace(/\s+/g, " ");
+    check(panelText.includes("hello tamim"), `[${viewport.tag}] the comment body renders in the timeline`);
+    check(panelText.includes("new notes"), `[${viewport.tag}] the note body renders in the timeline`);
+
+    // Data tab
+    await page.locator('[data-lead-tab="data"]').click();
+    await page.locator("[data-lead-data]").waitFor({ state: "visible", timeout: 30000 });
+    check(
+      (await page.locator("[data-lead-data] dd").count()) >= 5,
+      `[${viewport.tag}] Data tab lists the lead fields (${await page
+        .locator("[data-lead-data] dd")
+        .count()})`
+    );
+
+    // Comment from the panel (the Desk comment box)
+    await page.locator('[data-lead-tab="activity"]').click();
+    await page.locator("[data-lead-comment]").click();
+    await page.locator("[data-lead-composer]").fill("portal probe comment");
+    await page.locator("[data-lead-send]").click();
+    await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 30000 });
+    check(true, `[${viewport.tag}] a comment posted from the panel is accepted`);
+    await page.waitForTimeout(800);
+    check(
+      (((await page.locator("[data-lead-tab-panel]").innerText()) || "").includes(
+        "portal probe comment"
+      )),
+      `[${viewport.tag}] the posted comment appears in the timeline`
+    );
+
+    await page.locator("[data-lead-detail-close]").click();
+    await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });
+    check(true, `[${viewport.tag}] the panel closes without leaving the board`);
+
     // -------------------------------------------------- 6) layout sanity
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth

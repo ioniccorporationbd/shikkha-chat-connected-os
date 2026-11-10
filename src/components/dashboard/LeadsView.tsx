@@ -5,6 +5,7 @@ import {
   FiAlertCircle,
   FiInbox,
   FiMail,
+  FiEye,
   FiRefreshCw,
   FiSearch,
   FiPhone,
@@ -12,6 +13,7 @@ import {
   FiUser,
 } from "react-icons/fi";
 
+import LeadDetailSheet from "./LeadDetailSheet";
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import { fetchLeads } from "@/lib/leads/api";
@@ -86,6 +88,9 @@ export default function LeadsView() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Lead opened from the table's Action column (`View details`).
+  const [detailName, setDetailName] = useState<string | null>(null);
 
   // Only the newest request may write state (type-ahead search + load-more +
   // the navbar refresh can overlap).
@@ -307,7 +312,7 @@ export default function LeadsView() {
                     copy.columns.email,
                     copy.columns.status,
                     copy.columns.source,
-                    copy.columns.created,
+                    copy.columns.action,
                   ].map((heading) => (
                     <th
                       key={heading}
@@ -356,8 +361,16 @@ export default function LeadsView() {
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
                       {row.source || "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                      {formatDate(row.created, language)}
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setDetailName(row.name)}
+                        data-lead-details={row.name}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                      >
+                        <FiEye size={12} className="pointer-events-none" />
+                        <span className="pointer-events-none">{copy.viewDetails}</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -401,6 +414,15 @@ export default function LeadsView() {
                         {formatDate(row.created, language)}
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setDetailName(row.name)}
+                      data-lead-details={row.name}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                    >
+                      <FiEye size={12} className="pointer-events-none" />
+                      <span className="pointer-events-none">{copy.viewDetails}</span>
+                    </button>
                   </div>
                 </div>
               </li>
@@ -422,6 +444,12 @@ export default function LeadsView() {
           ) : null}
         </>
       )}
+
+      <LeadDetailSheet
+        open={detailName !== null}
+        name={detailName}
+        onClose={() => setDetailName(null)}
+      />
     </section>
   );
 }

@@ -505,6 +505,130 @@ function crmLeadPayload(query) {
   };
 }
 
+
+// --- CRM lead detail (mirrors shikkha_os.api.v1.leads.lead_detail) ---------- //
+// The desk lead page behind "View details": same tab strip, same timeline
+// entries (creation, owner, comment, note, e-mail) and the same Data labels.
+// Comments posted from the portal land in `crmLeadExtraComments` and show up
+// in the next detail read, exactly like a real `Comment` row.
+const crmLeadExtraComments = new Map();
+
+function crmLeadDetailPayload(name, language) {
+  const row = crmLeads.find((lead) => lead.name === name);
+  if (!row) return null;
+
+  const bn = String(language || "bn").toLowerCase().startsWith("bn");
+  const t = (en, bnText) => (bn ? bnText : en);
+  const actress = "MD Shahzalal Amin Surker";
+  const actorEmail = "shahzalal@ionicorporation.com";
+
+  const now = Date.now();
+  const iso = (offsetMs) => new Date(now - offsetMs).toISOString().replace("T", " ").slice(0, 19);
+
+  const activity = [
+    {
+      key: "created:0",
+      kind: "created",
+      actor: actress,
+      actor_email: actorEmail,
+      actor_image: "",
+      text: t("created this lead", "লিডটি তৈরি করেছেন"),
+      body: "",
+      at: row.created,
+    },
+    {
+      key: "owner:1",
+      kind: "owner",
+      actor: actress,
+      actor_email: actorEmail,
+      actor_image: "",
+      text: t("Lead Owner set to: " + actress, "লিড ওনার নির্ধারিত: " + actress),
+      body: "",
+      at: row.created,
+    },
+    {
+      key: "comment:2",
+      kind: "comment",
+      actor: actress,
+      actor_email: actorEmail,
+      actor_image: "",
+      text: t("added a comment", "একটি মন্তব্য যোগ করেছেন"),
+      body: "hello tamim",
+      at: iso(58 * 60 * 1000),
+    },
+    {
+      key: "note:3",
+      kind: "note",
+      actor: actress,
+      actor_email: actorEmail,
+      actor_image: "",
+      text: t("added a note", "একটি নোট যোগ করেছেন"),
+      body: "new notes",
+      at: iso(57 * 60 * 1000),
+    },
+  ];
+
+  for (const extra of crmLeadExtraComments.get(name) || []) {
+    activity.push(extra);
+  }
+
+  const emails = [
+    {
+      key: "email:0",
+      kind: "email",
+      actor: row.email,
+      actor_email: row.email,
+      actor_image: "",
+      text: t("sent an e-mail: Demo class schedule", "একটি ইমেইল পাঠিয়েছেন: ডেমো ক্লাসের সময়সূচি"),
+      body: "",
+      at: row.created,
+    },
+  ];
+
+  const lead = {
+    name: row.name,
+    lead_name: row.lead_name,
+    organization: row.organization,
+    email: row.email,
+    mobile: row.mobile,
+    status: row.status,
+    source: row.source,
+    owner: row.owner,
+    owner_name: actress,
+    created: row.created,
+    modified: row.created,
+    image: "",
+    fields: [
+      { label: t("Status", "স্ট্যাটাস"), value: row.status },
+      { label: t("Source", "সোর্স"), value: row.source },
+      { label: t("Organization", "প্রতিষ্ঠান"), value: row.organization },
+      { label: t("Website", "ওয়েবসাইট"), value: "https://example.com" },
+      { label: t("Territory", "টেরিটরি"), value: t("Dhaka", "ঢাকা") },
+      { label: t("Industry", "ইন্ডাস্ট্রি"), value: t("Education", "শিক্ষা") },
+      { label: t("E-mail", "ইমেইল"), value: row.email },
+      { label: t("Mobile", "মোবাইল"), value: row.mobile },
+      { label: t("Lead Owner", "লিড ওনার"), value: actress },
+      {
+        label: t("Created", "তৈরি হয়েছে"),
+        value: row.created,
+      },
+    ],
+  };
+
+  return {
+    doctype: "CRM Lead",
+    available: true,
+    lead,
+    activity,
+    emails,
+    comments: activity.filter((entry) => entry.kind === "comment"),
+    calls: [],
+    tasks: [],
+    notes: activity.filter((entry) => entry.kind === "note"),
+    attachments: [],
+  };
+}
+
 const expenseClaims = [];
 let expenseClaimCounter = 1;
 // Payment Entries posted against portal-created claims (one per claim). Named
@@ -6482,6 +6606,66 @@ const server = createServer(async (request, response) => {
     // search / status / start / limit for the paged board.
     const { language: _language, ...payload } = crmLeadPayload(url.searchParams);
     ok(response, payload);
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.lead_detail") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const name = (url.searchParams.get("name") || "").trim();
+    const payload = name ? crmLeadDetailPayload(name, url.searchParams.get("language")) : null;
+    if (!payload) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    ok(response, payload);
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.add_lead_comment") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const name = (url.searchParams.get("name") || "").trim();
+    const row = crmLeads.find((lead) => lead.name === name);
+    const content = String(body.content ?? "").trim();
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+    if (!content) {
+      failure(response, 417, "ValidationError", "The comment cannot be empty.", "CRM Lead");
+      return;
+    }
+
+    const extra = {
+      key: `comment:${Date.now()}`,
+      kind: "comment",
+      actor: String(account.full_name || account.name || email),
+      actor_email: email,
+      actor_image: "",
+      text: String(url.searchParams.get("language") || "bn").toLowerCase().startsWith("bn")
+        ? "একটি মন্তব্য যোগ করেছেন"
+        : "added a comment",
+      body: content,
+      at: new Date().toISOString().replace("T", " ").slice(0, 19),
+    };
+    const bucket = crmLeadExtraComments.get(name) || [];
+    bucket.push(extra);
+    crmLeadExtraComments.set(name, bucket);
+
+    ok(response, { comment: extra.key });
     return;
   }
 

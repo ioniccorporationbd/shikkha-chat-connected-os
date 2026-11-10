@@ -1,5 +1,50 @@
 /** Bilingual copy for the staff **Leads** page (`/userDashboard/leads`). */
 
+/** Copy for the desk-style lead detail panel (`View details`). */
+export interface LeadsDetailCopy {
+  tabs: {
+    activity: string;
+    emails: string;
+    comments: string;
+    data: string;
+    calls: string;
+    tasks: string;
+    notes: string;
+    attachments: string;
+  };
+  activityHeading: string;
+  newAction: string;
+  close: string;
+  loading: string;
+  errorTitle: string;
+  retry: string;
+  reply: string;
+  comment: string;
+  composerPlaceholder: string;
+  send: string;
+  sending: string;
+  commentAdded: string;
+  commentFailed: string;
+  leadOwner: string;
+  empty: {
+    activity: string;
+    emails: string;
+    comments: string;
+    data: string;
+    calls: string;
+    tasks: string;
+    notes: string;
+    attachments: string;
+  };
+  justNow: string;
+  minuteAgo: (n: string) => string;
+  hourAgo: (n: string) => string;
+  dayAgo: (n: string) => string;
+  weekAgo: (n: string) => string;
+  monthAgo: (n: string) => string;
+  yearAgo: (n: string) => string;
+}
+
 export interface LeadsCopy {
   title: string;
   subtitle: string;
@@ -27,8 +72,12 @@ export interface LeadsCopy {
     email: string;
     status: string;
     source: string;
-    created: string;
+    action: string;
   };
+  /** "View details" action button in the Action column. */
+  viewDetails: string;
+  /** The desk-style lead detail panel behind "View details". */
+  detail: LeadsDetailCopy;
   /** CRM status → display label; unknown statuses fall through verbatim. */
   statusLabels: Record<string, string>;
   total: (count: string, more?: boolean) => string;
@@ -61,7 +110,51 @@ const bn: LeadsCopy = {
     email: "ইমেইল",
     status: "স্ট্যাটাস",
     source: "সোর্স",
-    created: "তারিখ",
+    action: "অ্যাকশন",
+  },
+  viewDetails: "বিস্তারিত দেখুন",
+  detail: {
+    tabs: {
+      activity: "অ্যাক্টিভিটি",
+      emails: "ইমেইল",
+      comments: "মন্তব্য",
+      data: "ডেটা",
+      calls: "কল",
+      tasks: "টাস্ক",
+      notes: "নোট",
+      attachments: "সংযুক্তি",
+    },
+    activityHeading: "অ্যাক্টিভিটি",
+    newAction: "নতুন",
+    close: "বন্ধ করুন",
+    loading: "লিডের বিস্তারিত লোড হচ্ছে…",
+    errorTitle: "লিডের বিস্তারিত লোড করা যায়নি",
+    retry: "আবার চেষ্টা করুন",
+    reply: "রিপ্লাই",
+    comment: "মন্তব্য",
+    composerPlaceholder: "একটি মন্তব্য লিখুন…",
+    send: "পাঠান",
+    sending: "পাঠানো হচ্ছে…",
+    commentAdded: "মন্তব্য যোগ হয়েছে",
+    commentFailed: "মন্তব্য যোগ করা যায়নি",
+    leadOwner: "লিড ওনার",
+    empty: {
+      activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
+      emails: "কোনো ইমেইল নেই।",
+      comments: "কোনো মন্তব্য নেই।",
+      data: "কোনো তথ্য নেই।",
+      calls: "কোনো কল নেই।",
+      tasks: "কোনো টাস্ক নেই।",
+      notes: "কোনো নোট নেই।",
+      attachments: "কোনো সংযুক্তি নেই।",
+    },
+    justNow: "এইমাত্র",
+    minuteAgo: (n) => `${n} মিনিট আগে`,
+    hourAgo: (n) => `${n} ঘণ্টা আগে`,
+    dayAgo: (n) => `${n} দিন আগে`,
+    weekAgo: (n) => `${n} সপ্তাহ আগে`,
+    monthAgo: (n) => `${n} মাস আগে`,
+    yearAgo: (n) => `${n} বছর আগে`,
   },
   statusLabels: {
     New: "নতুন",
@@ -108,7 +201,51 @@ const en: LeadsCopy = {
     email: "Email",
     status: "Status",
     source: "Source",
-    created: "Date",
+    action: "Action",
+  },
+  viewDetails: "View details",
+  detail: {
+    tabs: {
+      activity: "Activity",
+      emails: "Emails",
+      comments: "Comments",
+      data: "Data",
+      calls: "Calls",
+      tasks: "Tasks",
+      notes: "Notes",
+      attachments: "Attachments",
+    },
+    activityHeading: "Activity",
+    newAction: "New",
+    close: "Close",
+    loading: "Loading the lead…",
+    errorTitle: "The lead could not be loaded",
+    retry: "Try again",
+    reply: "Reply",
+    comment: "Comment",
+    composerPlaceholder: "Write a comment…",
+    send: "Send",
+    sending: "Sending…",
+    commentAdded: "Comment added",
+    commentFailed: "The comment could not be added",
+    leadOwner: "Lead Owner",
+    empty: {
+      activity: "No activity yet.",
+      emails: "No e-mails.",
+      comments: "No comments.",
+      data: "No fields.",
+      calls: "No calls.",
+      tasks: "No tasks.",
+      notes: "No notes.",
+      attachments: "No attachments.",
+    },
+    justNow: "just now",
+    minuteAgo: (n) => `${n} minute${n === "1" ? "" : "s"} ago`,
+    hourAgo: (n) => `${n} hour${n === "1" ? "" : "s"} ago`,
+    dayAgo: (n) => `${n} day${n === "1" ? "" : "s"} ago`,
+    weekAgo: (n) => `${n} week${n === "1" ? "" : "s"} ago`,
+    monthAgo: (n) => `${n} month${n === "1" ? "" : "s"} ago`,
+    yearAgo: (n) => `${n} year${n === "1" ? "" : "s"} ago`,
   },
   statusLabels: {
     New: "New",
@@ -145,6 +282,28 @@ export function leadStatusTone(status: string): { bg: string; fg: string } {
   if (/(contacted|nurturing|interested|open)/.test(key)) return { bg: "rgba(21,101,192,0.12)", fg: "#1565c0" };
   if (/(lost|junk|unqualified|do not contact)/.test(key)) return { bg: "rgba(180,69,58,0.14)", fg: "#b4453a" };
   return { bg: "rgba(224,5,22,0.10)", fg: "#e00516" };
+}
+
+/**
+ * Desk-style relative timestamp ("2 hours ago" / "২ ঘণ্টা আগে"). Digits follow
+ * the language, like every other number on the dashboard.
+ */
+export function leadRelativeTime(copy: LeadsCopy, at: string, language: string): string {
+  const then = new Date(String(at).replace(" ", "T")).getTime();
+  if (!Number.isFinite(then)) return "";
+
+  const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+  const step = (unit: number, format: (n: string) => string) =>
+    format(formatCount(Math.max(1, Math.round(seconds / unit)), language));
+
+  const detail = copy.detail;
+  if (seconds < 60) return detail.justNow;
+  if (seconds < 3600) return step(60, detail.minuteAgo);
+  if (seconds < 86_400) return step(3600, detail.hourAgo);
+  if (seconds < 7 * 86_400) return step(86_400, detail.dayAgo);
+  if (seconds < 30 * 86_400) return step(7 * 86_400, detail.weekAgo);
+  if (seconds < 365 * 86_400) return step(30 * 86_400, detail.monthAgo);
+  return step(365 * 86_400, detail.yearAgo);
 }
 
 /** Locale-aware count (bn-BD digits for Bengali, en-BD for English). */
