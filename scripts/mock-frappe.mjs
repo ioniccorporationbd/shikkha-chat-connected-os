@@ -516,6 +516,48 @@ const crmLeadExtraComments = new Map();
 // Attachments tab, like a real `File` row attached to the doc.
 const crmLeadExtraFiles = new Map();
 
+
+// The Notes tab: what the desk lead page's #notes tab lists — `CRM Note` rows
+// attached to the lead, newest first, each with a title, its body and author.
+function crmLeadNotes(name, language) {
+  const bn = String(language || "bn").toLowerCase().startsWith("bn");
+  const t = (en, bnText) => (bn ? bnText : en);
+  const now = Date.now();
+  const iso = (offsetMs) => new Date(now - offsetMs).toISOString().replace("T", " ").slice(0, 19);
+
+  return [
+    {
+      key: "note:CRM-NOTE-00002",
+      kind: "note",
+      actor: "MD Shahzalal Amin Surker",
+      actor_email: "shahzalal@ionicorporation.com",
+      actor_image: "",
+      text: t("Call recap — revised quotation", "কল সারসংক্ষেপ — সংশোধিত কোটেশন"),
+      body: t(
+        "Called the office this morning. They asked for the revised quotation by Sunday and want the delivery window confirmed on the same call.",
+        "আজ সকালে অফিসে কল করা হয়েছে। রবিবারের মধ্যে সংশোধিত কোটেশন চেয়েছেন এবং একই কলে ডেলিভারির সময় নিশ্চিত করতে বলেছেন।"
+      ),
+      at: iso(5 * 60 * 60 * 1000),
+      updated: iso(5 * 60 * 60 * 1000),
+    },
+    {
+      key: "note:CRM-NOTE-00001",
+      kind: "note",
+      actor: "MD Shahzalal Amin Surker",
+      actor_email: "shahzalal@ionicorporation.com",
+      actor_image: "",
+      text: t("Budget approved for the demo batch", "ডেমো ব্যাচের বাজেট অনুমোদিত"),
+      body: t(
+        "Budget approved for one demo batch of 40 seats. Payment will follow after the trial session, so keep the invoice draft ready.",
+        "৪০ সিটের একটি ডেমো ব্যাচের বাজেট অনুমোদন হয়েছে। ট্রায়াল সেশনের পরে পেমেন্ট হবে, তাই ইনভয়েস ড্রাফট প্রস্তুত রাখুন।"
+      ),
+      at: iso(2 * 24 * 60 * 60 * 1000),
+      updated: iso(2 * 24 * 60 * 60 * 1000),
+    },
+  ];
+}
+
+
 function crmLeadDetailPayload(name, language) {
   const row = crmLeads.find((lead) => lead.name === name);
   if (!row) return null;
@@ -627,7 +669,7 @@ function crmLeadDetailPayload(name, language) {
     comments: activity.filter((entry) => entry.kind === "comment"),
     calls: [],
     tasks: [],
-    notes: activity.filter((entry) => entry.kind === "note"),
+    notes: crmLeadNotes(name, language),
     attachments: crmLeadExtraFiles.get(name) || [],
   };
 }

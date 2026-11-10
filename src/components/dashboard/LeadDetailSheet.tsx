@@ -155,6 +155,45 @@ function ActivityItem({ activity, copy }: { activity: LeadActivity; copy: LeadsC
   );
 }
 
+function NotesList({ items, copy, empty }: { items: LeadActivity[]; copy: LeadsCopy; empty: string }) {
+  if (items.length === 0) return <EmptyTab text={empty} />;
+
+  return (
+    <ul className="flex flex-col gap-3" data-lead-notes="">
+      {items.map((note) => (
+        <li
+          key={note.key}
+          data-lead-note={note.key}
+          className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] px-4 py-3"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p
+              className="min-w-0 text-[13px] font-semibold text-[var(--color-primary)]"
+              data-lead-note-title=""
+            >
+              {note.text}
+            </p>
+            <RelativeTime at={note.at} copy={copy} />
+          </div>
+          {note.body ? (
+            <p
+              className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]"
+              data-lead-note-body=""
+            >
+              {note.body}
+            </p>
+          ) : null}
+          {note.actor ? (
+            <p className="mt-2.5 text-[11.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              — {note.actor}
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function SimpleActivityList({
   items,
   copy,
@@ -603,7 +642,7 @@ function LeadDetailPanel({
         ) : activeTab === "tasks" ? (
           <SimpleActivityList items={payload.tasks} copy={copy} empty={detail.empty.tasks} />
         ) : activeTab === "notes" ? (
-          <SimpleActivityList items={payload.notes} copy={copy} empty={detail.empty.notes} />
+          <NotesList items={payload.notes} copy={copy} empty={detail.empty.notes} />
         ) : (
           <AttachmentList items={payload.attachments} empty={detail.empty.attachments} copy={copy} />
         )}

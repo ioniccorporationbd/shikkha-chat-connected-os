@@ -295,6 +295,17 @@ async function login() {
       `[${viewport.tag}] the uploaded file shows in the Attachments tab`
     );
 
+    // Notes tab: the lead's CRM Note rows (title + body + author), newest first.
+    await page.locator('[data-lead-tab="notes"]').click();
+    await page.locator("[data-lead-note]").first().waitFor({ state: "visible", timeout: 20000 });
+    const noteCount = await page.locator("[data-lead-note]").count();
+    check(noteCount >= 2, `[${viewport.tag}] the Notes tab lists the lead's notes (${noteCount})`);
+    const noteText = (await page.locator("[data-lead-notes]").innerText()) || "";
+    check(
+      noteText.length > 40 && !/undefined|null/.test(noteText),
+      `[${viewport.tag}] note titles and bodies render without placeholder text`
+    );
+
     await page.locator("[data-lead-detail-close]").click();
     await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });
     check(true, `[${viewport.tag}] the panel closes without leaving the board`);
