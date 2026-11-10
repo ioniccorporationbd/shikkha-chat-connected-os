@@ -29,6 +29,7 @@ import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
 import CheckInOutView from "@/components/dashboard/CheckInOutView";
 import CustomerRoutes from "@/components/dashboard/CustomerRoutes";
 import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
+import LeadsView from "@/components/dashboard/LeadsView";
 import EditProfileModal from "@/components/dashboard/EditProfileModal";
 import ProfileImageMenu from "@/components/dashboard/ProfileImageMenu";
 import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
@@ -256,10 +257,12 @@ export default function DashboardShell({
   const basePath = isClient ? CLIENT_DASHBOARD_PATH : STAFF_DASHBOARD_PATH;
   const createCustomerPath = `${basePath}/create-customer`;
   const checkinPath = `${basePath}/check-in-out`;
+  const leadsPath = `${basePath}/leads`;
   const expenseClaimPath = `${basePath}/expense-claim`;
   const expenseClaimNewPath = `${expenseClaimPath}/new`;
   const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
   const onCheckinView = !isClient && pathname.startsWith(checkinPath);
+  const onLeadsView = !isClient && pathname.startsWith(leadsPath);
   const onExpenseClaimNewView = !isClient && pathname.startsWith(expenseClaimNewPath);
   const onExpenseClaimView =
     !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
@@ -396,6 +399,8 @@ export default function DashboardShell({
     ? copy.nav.paymentHistory
     : onServiceBuildView
       ? copy.nav.serviceBuild
+      : onLeadsView
+      ? copy.nav.leads
       : onExpenseClaimNewView
       ? copy.nav.expenseClaim
       : onExpenseClaimView
@@ -485,6 +490,7 @@ export default function DashboardShell({
   // The "Create Customer" rail link is visible to a System User only, on the
   // staff panel — a Website User (portal customer) never sees it.
   const isSystemUser = accountType.toLowerCase() === "system user" || Boolean(user?.is_admin);
+  const showLeads = !isClient && isSystemUser;
   const showCreateCustomer = !isClient && isSystemUser;
   const showCheckin = !isClient && isSystemUser;
   const showExpenseClaim = !isClient && isSystemUser;
@@ -547,7 +553,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView && !onCheckinView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
+      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
 
       return (
         <button
@@ -558,6 +564,7 @@ export default function DashboardShell({
             setNavOpen(false);
           }}
           aria-current={active ? "page" : undefined}
+          data-nav-key={key}
           className={navButtonClass(active)}
         >
           <span className={navLabelClass(active)}>
@@ -567,6 +574,31 @@ export default function DashboardShell({
         </button>
       );
     });
+
+    // Leads sits directly under Overview (the rail order the desk team asked for).
+    if (showLeads) {
+      const LeadsIcon = NAV_ICONS.leads;
+      const active = onLeadsView;
+
+      items.push(
+        <button
+          key="leads"
+          type="button"
+          onClick={() => {
+            router.push(leadsPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          data-nav-leads=""
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <LeadsIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.leads}</span>
+          </span>
+        </button>
+      );
+    }
 
     if (showCreateCustomer) {
       const CreateIcon = NAV_ICONS.customers;
@@ -924,6 +956,8 @@ export default function DashboardShell({
               <CustomerRoutes path={createCustomerPath} onExit={() => router.push(basePath)} />
             ) : onCheckinView ? (
               <CheckInOutView onBack={() => router.push(basePath)} />
+            ) : onLeadsView ? (
+              <LeadsView />
             ) : onExpenseClaimNewView ? (
               <NewExpenseClaimView onBack={() => router.push(expenseClaimPath)} />
             ) : onExpenseClaimView ? (

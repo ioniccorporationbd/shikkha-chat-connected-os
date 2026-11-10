@@ -389,6 +389,122 @@ function truthy(value) {
 // The employee is resolved from the logged-in user (never the body), exactly
 // like the real endpoint; ownership is enforced by the `employee` filter on the
 // list and by an explicit owner check on details.
+// --- CRM lead board (mirrors shikkha_os.api.v1.leads.list_leads) ----------- //
+// The real endpoint reads `CRM Lead` through frappe.get_list, so the caller's
+// own permissions decide the rows. The mock keeps a small fixed board and the
+// same page/shape contract (statuses, has_more, start, limit).
+const crmLeads = [
+  {
+    name: "CRM-LEAD-2026-00021",
+    lead_name: "Md. Rakib Hasan",
+    organization: "Rahman Traders",
+    email: "rakib@rahmantraders.com",
+    mobile: "01711234567",
+    status: "Qualified",
+    source: "Website",
+    owner: "staff@shikkhachat.com",
+    created: "2026-11-08 10:24:11",
+  },
+  {
+    name: "CRM-LEAD-2026-00020",
+    lead_name: "Nusrat Jahan",
+    organization: "Ideal Coaching Centre",
+    email: "nusrat@idealcoaching.edu.bd",
+    mobile: "01822334456",
+    status: "Contacted",
+    source: "Facebook",
+    owner: "staff@shikkhachat.com",
+    created: "2026-11-07 15:02:47",
+  },
+  {
+    name: "CRM-LEAD-2026-00019",
+    lead_name: "Shafiq Ahmed",
+    organization: "Green Valley School",
+    email: "shafiq@greenvalley.edu",
+    mobile: "01933445567",
+    status: "New",
+    source: "Referral",
+    owner: "staff@shikkhachat.com",
+    created: "2026-11-06 09:41:03",
+  },
+  {
+    name: "CRM-LEAD-2026-00018",
+    lead_name: "Tahmina Akter",
+    organization: "Sunrise Kids Academy",
+    email: "tahmina@sunrisekids.edu.bd",
+    mobile: "01644556678",
+    status: "Converted",
+    source: "Walk-in",
+    owner: "staff@shikkhachat.com",
+    created: "2026-11-04 12:18:55",
+  },
+  {
+    name: "CRM-LEAD-2026-00017",
+    lead_name: "Kamal Uddin",
+    organization: "Uddin Book House",
+    email: "kamal@uddinbooks.com",
+    mobile: "01555667789",
+    status: "Nurturing",
+    source: "Instagram",
+    owner: "staff@shikkhachat.com",
+    created: "2026-11-02 17:36:29",
+  },
+  {
+    name: "CRM-LEAD-2026-00016",
+    lead_name: "Farhana Islam",
+    organization: "Bright Future School",
+    email: "farhana@brightfuture.edu.bd",
+    mobile: "01766778890",
+    status: "Unqualified",
+    source: "Cold Call",
+    owner: "staff@shikkhachat.com",
+    created: "2026-10-30 11:09:14",
+  },
+  {
+    name: "CRM-LEAD-2026-00015",
+    lead_name: "Anisur Rahman",
+    organization: "City Model Academy",
+    email: "anis@citymodel.edu.bd",
+    mobile: "01877889901",
+    status: "Contacted",
+    source: "Website",
+    owner: "staff@shikkhachat.com",
+    created: "2026-10-28 08:52:36",
+  },
+];
+const CRM_LEAD_STATUSES = ["New", "Contacted", "Nurturing", "Qualified", "Converted", "Unqualified"];
+
+function crmLeadPayload(query) {
+  const language = (query.get("language") || "bn").toLowerCase();
+  const search = (query.get("search") || "").trim().toLowerCase();
+  const status = (query.get("status") || "").trim();
+  const start = Math.max(Number(query.get("start") || 0) || 0, 0);
+  const limit = Math.min(Math.max(Number(query.get("limit") || 60) || 60, 1), 200);
+
+  let rows = crmLeads.slice();
+  if (status) rows = rows.filter((row) => row.status === status);
+  if (search) {
+    rows = rows.filter((row) =>
+      [row.lead_name, row.organization, row.email, row.mobile, row.name]
+        .join(" ")
+        .toLowerCase()
+        .includes(search)
+    );
+  }
+
+  const page = rows.slice(start, start + limit);
+  return {
+    doctype: "CRM Lead",
+    available: true,
+    leads: page,
+    statuses: CRM_LEAD_STATUSES,
+    has_more: rows.length > start + page.length,
+    start,
+    limit,
+    language,
+  };
+}
+
 const expenseClaims = [];
 let expenseClaimCounter = 1;
 // Payment Entries posted against portal-created claims (one per claim). Named
@@ -6354,6 +6470,21 @@ const server = createServer(async (request, response) => {
   }
 
   // --- Employee expense claim (mirrors shikkha_os.api.v1.expense_claim.*) ---
+  if (method === "shikkha_os.api.v1.leads.list_leads") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    // Same shape the backend returns through ok(): the query parameters carry
+    // search / status / start / limit for the paged board.
+    const { language: _language, ...payload } = crmLeadPayload(url.searchParams);
+    ok(response, payload);
+    return;
+  }
+
   if (method === "shikkha_os.api.v1.expense_claim.form_schema") {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;

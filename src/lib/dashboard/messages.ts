@@ -9,6 +9,8 @@ export interface DashboardCopy {
     overview: string;
     customers: string;
     checkin: string;
+    /** Staff-only CRM lead board (`/userDashboard/leads`). */
+    leads: string;
     expenseClaim: string;
     /** Customer-facing Payment History link (client scope only). */
     paymentHistory: string;
@@ -135,6 +137,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       overview: "ওভারভিউ",
       customers: "কাস্টমার",
       checkin: "চেক ইন / আউট",
+      leads: "লিডস",
       expenseClaim: "এক্সপেন্স ক্লেম",
       paymentHistory: "পেমেন্ট এন্ট্রি",
       serviceBuild: "সার্ভিস বিল্ড",
@@ -285,6 +288,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       overview: "Overview",
       customers: "Customers",
       checkin: "Check In / Out",
+      leads: "Leads",
       expenseClaim: "Expense Claim",
       paymentHistory: "Payment Entry",
       serviceBuild: "Service Build",
