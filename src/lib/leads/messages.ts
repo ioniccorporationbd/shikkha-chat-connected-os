@@ -48,6 +48,7 @@ export interface LeadsDetailCopy {
     assignedTo: string;
     assignedNone: string;
     dueDate: string;
+    status: string;
     create: string;
     creating: string;
     created: string;
@@ -189,8 +190,9 @@ const bn: LeadsCopy = {
       descriptionPlaceholder: "এই টাস্কটি সম্পর্কে বিস্তারিত…",
       priority: "প্রায়োরিটি",
       assignedTo: "অ্যাসাইন করা হবে",
-      assignedNone: "কোনো প্রায়োরিটি নেই",
+      assignedNone: "কেউ নির্বাচন করা হয়নি",
       dueDate: "শেষ তারিখ",
+      status: "স্ট্যাটাস",
       create: "টাস্ক তৈরি করুন",
       creating: "তৈরি হচ্ছে…",
       created: "টাস্কটি তৈরি হয়েছে",
@@ -311,8 +313,9 @@ const en: LeadsCopy = {
       descriptionPlaceholder: "What this task is about…",
       priority: "Priority",
       assignedTo: "Assigned To",
-      assignedNone: "No Priority",
+      assignedNone: "Not assigned",
       dueDate: "Due date",
+      status: "Status",
       create: "Create task",
       creating: "Creating…",
       created: "The task was created",

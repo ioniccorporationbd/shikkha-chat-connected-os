@@ -65,6 +65,8 @@ export interface LeadTaskPriority {
 /** `GET /api/leads/task-options` — the New-task form's dropdown data. */
 export interface LeadTaskOptions {
   priorities: LeadTaskPriority[];
+  statuses: LeadTaskPriority[];
+  status_default: string;
   employees: LeadTaskEmployee[];
   available: boolean;
 }
@@ -74,6 +76,7 @@ export interface LeadTaskDraft {
   title: string;
   description: string;
   priority: string;
+  status: string;
   assigned_to: string;
   due_date: string;
 }

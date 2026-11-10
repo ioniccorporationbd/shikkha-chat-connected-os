@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic";
 const MAX_TITLE = 140;
 const MAX_DESCRIPTION = 5000;
 
+/** CRM Task's own statuses; anything else is left for the ERP to default. */
+const TASK_STATUSES = ["Backlog", "Todo", "In Progress", "Done", "Cancelled"];
+
 /**
  * Same-origin proxy for the Tasks tab's **New task** form.
  *
@@ -54,11 +57,17 @@ export async function POST(
     return jsonFail("The task description is too long.", "validation_error", 400);
   }
 
+  const rawStatus = text(source.status).trim();
+  const status =
+    TASK_STATUSES.find((item) => item.toLowerCase() === rawStatus.toLowerCase()) ??
+    TASK_STATUSES.find((item) => item === "Todo")!;
+
   // Whitelisted keys only — anything else the browser sends is dropped here.
   const task = {
     title,
     description,
     priority: text(source.priority).trim(),
+    status,
     assigned_to: text(source.assigned_to).trim(),
     due_date: text(source.due_date).trim(),
   };

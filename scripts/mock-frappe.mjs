@@ -642,6 +642,18 @@ function crmTaskPriorityOptions(t) {
   ];
 }
 
+const crmTaskStatuses = ["Backlog", "Todo", "In Progress", "Done", "Cancelled"];
+
+function crmTaskStatusOptions(t) {
+  return [
+    { value: "Backlog", label: t("Backlog", "ব্যাকলগ") },
+    { value: "Todo", label: t("Todo", "করণীয়") },
+    { value: "In Progress", label: t("In Progress", "চলমান") },
+    { value: "Done", label: t("Done", "সম্পন্ন") },
+    { value: "Cancelled", label: t("Cancelled", "বাতিল") },
+  ];
+}
+
 function crmLeadTaskRows(name, t) {
   const rows = crmLeadTasks.get(name) || [];
   return rows.map((row) => ({
@@ -6839,6 +6851,8 @@ const server = createServer(async (request, response) => {
     const t = (en, bnText) => (bn ? bnText : en);
     ok(response, {
       priorities: crmTaskPriorityOptions(t),
+      statuses: crmTaskStatusOptions(t),
+      status_default: "Todo",
       employees: crmTaskEmployees,
       available: true,
     });
@@ -6903,12 +6917,18 @@ const server = createServer(async (request, response) => {
       }
     }
 
+    const rawStatus = String(task.status ?? "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    const status = crmTaskStatuses.find((item) => item.toLowerCase() === rawStatus) || "Todo";
+
     const dueDate = String(task.due_date ?? "").trim();
     const at = new Date().toISOString().replace("T", " ").slice(0, 19);
     const created = {
       name: `CRM-TASK-${String(crmLeadTaskCounter++).padStart(5, "0")}`,
       title,
-      status: "Todo",
+      status,
       priority,
       assigned_to: assignedTo,
       assigned_label: assignedLabel,

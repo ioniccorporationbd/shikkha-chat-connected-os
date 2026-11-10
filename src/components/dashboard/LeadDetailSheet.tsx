@@ -314,6 +314,15 @@ function SimpleActivityList({
 }
 
 
+/** Bengali labels for CRM Task's statuses; English is the stored value. */
+const TASK_STATUS_LABELS: Record<string, { en: string; bn: string }> = {
+  Backlog: { en: "Backlog", bn: "ব্যাকলগ" },
+  Todo: { en: "Todo", bn: "করণীয়" },
+  "In Progress": { en: "In Progress", bn: "চলমান" },
+  Done: { en: "Done", bn: "সম্পন্ন" },
+  Cancelled: { en: "Cancelled", bn: "বাতিল" },
+};
+
 /** Display labels for the fixed CRM Task priorities. */
 const TASK_PRIORITY_LABELS: Record<string, { en: string; bn: string }> = {
   High: { en: "High", bn: "হাই" },
@@ -416,7 +425,8 @@ function TasksPanel({
                     className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"
                     data-lead-task-status={item.status}
                   >
-                    {item.status}
+                    {TASK_STATUS_LABELS[item.status]?.[language === "bn" ? "bn" : "en"] ??
+                      item.status}
                   </span>
                 ) : null}
               </div>
@@ -448,6 +458,15 @@ const FALLBACK_TASK_PRIORITIES = [
   { value: "", label: "No Priority" },
 ];
 
+/** Used only when the options call fails; mirrors CRM Task's own statuses. */
+const FALLBACK_TASK_STATUSES = [
+  { value: "Backlog", label: "Backlog" },
+  { value: "Todo", label: "Todo" },
+  { value: "In Progress", label: "In Progress" },
+  { value: "Done", label: "Done" },
+  { value: "Cancelled", label: "Cancelled" },
+];
+
 /**
  * The New-task form: a popup over the lead sheet.
  *
@@ -475,6 +494,7 @@ function TaskFormModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -510,7 +530,11 @@ function TaskFormModal({
 
   const priorities =
     options && options.priorities.length > 0 ? options.priorities : FALLBACK_TASK_PRIORITIES;
+  const statuses =
+    options && options.statuses?.length ? options.statuses : FALLBACK_TASK_STATUSES;
   const employees = options?.employees ?? [];
+  // The ERP decides the default status ("Todo"); keep the dropdown in sync.
+  const statusValue = status || options?.status_default || "Todo";
 
   const submit = async () => {
     if (submitting) return;
@@ -531,6 +555,7 @@ function TaskFormModal({
           title: cleanTitle,
           description: description.trim(),
           priority,
+          status: statusValue,
           assigned_to: assignedTo,
           due_date: dueDate,
         },
@@ -661,18 +686,39 @@ function TaskFormModal({
             </div>
           </div>
 
-          <div>
-            <label className={labelClass} htmlFor="lead-task-due">
-              {cf.dueDate}
-            </label>
-            <input
-              id="lead-task-due"
-              type="date"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-              data-task-due=""
-              className={fieldClass}
-            />
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-due">
+                {cf.dueDate}
+              </label>
+              <input
+                id="lead-task-due"
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                data-task-due=""
+                className={fieldClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-status">
+                {cf.status}
+              </label>
+              <select
+                id="lead-task-status"
+                value={statusValue}
+                onChange={(event) => setStatus(event.target.value)}
+                data-task-status=""
+                className={fieldClass}
+              >
+                {statuses.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

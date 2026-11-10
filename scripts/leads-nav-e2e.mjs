@@ -411,6 +411,17 @@ async function login() {
       `[${viewport.tag}] priority offers High/Medium/Low/No Priority (${priorityValues.join(",")})`
     );
 
+    const statusValues = await page
+      .locator("[data-task-status] option")
+      .evaluateAll((nodes) => nodes.map((node) => node.value));
+    check(
+      JSON.stringify(statusValues) ===
+        JSON.stringify(["Backlog", "Todo", "In Progress", "Done", "Cancelled"]),
+      `[${viewport.tag}] Status offers Backlog/Todo/In Progress/Done/Cancelled (${statusValues.join(",")})`
+    );
+    const defaultStatus = await page.locator("[data-task-status]").inputValue();
+    check(defaultStatus === "Todo", `[${viewport.tag}] Status defaults to Todo (${defaultStatus})`);
+
     await page.waitForFunction(
       () => document.querySelectorAll("[data-task-assignee] option").length > 1,
       undefined,
@@ -434,6 +445,7 @@ async function login() {
     const chosenEmployeeLabel = (await page.locator("[data-task-assignee] option").nth(1).innerText()) || "";
     await page.locator("[data-task-assignee]").selectOption(chosenEmployee);
     await page.locator("[data-task-due]").fill("2026-12-31");
+    await page.locator("[data-task-status]").selectOption("In Progress");
     await page.locator("[data-task-create]").click();
     await page.locator("[data-task-modal]").waitFor({ state: "detached", timeout: 30000 });
     check(true, `[${viewport.tag}] the task form submits and closes`);
@@ -444,6 +456,10 @@ async function login() {
     check(
       (await page.locator('[data-lead-task-priority="High"]').count()) >= 1,
       `[${viewport.tag}] the task keeps its High priority`
+    );
+    check(
+      (await page.locator('[data-lead-task-status="In Progress"]').count()) >= 1,
+      `[${viewport.tag}] the task keeps its In Progress status`
     );
     const assigneeShown = chosenEmployeeLabel.split("·")[0].trim();
     check(
