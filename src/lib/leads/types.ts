@@ -49,8 +49,12 @@ export interface LeadAttachment {
 
 /** One label/value pair of the Data tab. */
 export interface LeadField {
+  /** Doctype fieldname — present when the Data tab may edit the row. */
+  field?: string;
   label: string;
   value: string;
+  /** The ERP endpoint will accept this field in `update_lead`. */
+  editable?: boolean;
 }
 
 export interface LeadDetail {

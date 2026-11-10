@@ -307,6 +307,36 @@ async function login() {
       `[${viewport.tag}] Desk-written and panel-written comments both render`
     );
 
+    // Avatars: production returns site-relative paths (/files/…) the portal
+    // origin cannot load — they must stream through /api/frappe-file, and when
+    // the picture is missing the monogram takes over (never a broken icon).
+    await page.waitForFunction(
+      () => {
+        const imgs = Array.from(document.querySelectorAll("[data-lead-comment-item] [data-lead-avatar]"));
+        return imgs.length > 0 && imgs.every((img) => img.complete);
+      },
+      undefined,
+      { timeout: 20000 }
+    );
+    const avatarState = await page.evaluate(() => {
+      const imgs = Array.from(document.querySelectorAll("[data-lead-comment-item] [data-lead-avatar]"));
+      return {
+        total: imgs.length,
+        loaded: imgs.filter((img) => img.naturalWidth > 0).length,
+        proxies: imgs.filter((img) => String(img.getAttribute("src")).startsWith("/api/frappe-file")).length,
+        fallbacks: document.querySelectorAll("[data-lead-comment-item] [data-lead-avatar-fallback]").length,
+      };
+    });
+    check(avatarState.total >= 1, `[${viewport.tag}] comment avatars render (${avatarState.total})`);
+    check(
+      avatarState.proxies === avatarState.total,
+      `[${viewport.tag}] avatars stream through the file proxy (${avatarState.proxies}/${avatarState.total})`
+    );
+    check(
+      avatarState.loaded === avatarState.total,
+      `[${viewport.tag}] every proxied avatar loads (${avatarState.loaded}/${avatarState.total}, ${avatarState.fallbacks} monograms)`
+    );
+
     // Notes tab: the lead's CRM Note rows (title + body + author), newest first.
     await page.locator('[data-lead-tab="notes"]').click();
     await page.locator("[data-lead-note]").first().waitFor({ state: "visible", timeout: 20000 });
@@ -317,6 +347,45 @@ async function login() {
       noteText.length > 40 && !/undefined|null/.test(noteText),
       `[${viewport.tag}] note titles and bodies render without placeholder text`
     );
+
+    // Data tab: the lead's fields, editable in place — First Name / Last Name /
+    // E-mail rows always exist, and a saved edit round-trips through the ERP.
+    await page.locator('[data-lead-tab="data"]').click();
+    await page.locator("[data-lead-data]").waitFor({ state: "visible", timeout: 20000 });
+    check(
+      (await page.locator("[data-lead-edit]").count()) === 1,
+      `[${viewport.tag}] the Data tab offers Edit`
+    );
+    await page.locator("[data-lead-edit]").click();
+    await page.locator('[data-lead-edit-field="first_name"]').waitFor({ state: "visible", timeout: 10000 });
+    check(
+      (await page.locator('[data-lead-edit-field="first_name"]').count()) === 1 &&
+        (await page.locator('[data-lead-edit-field="last_name"]').count()) === 1 &&
+        (await page.locator('[data-lead-edit-field="email"]').count()) === 1,
+      `[${viewport.tag}] First Name, Last Name and E-mail are editable rows`
+    );
+
+    const originalLast = await page.locator('[data-lead-edit-field="last_name"]').inputValue();
+    const newLast = `QA${Date.now() % 10000}`;
+    await page.locator('[data-lead-edit-field="last_name"]').fill(newLast);
+    await page.locator("[data-lead-save]").click();
+    await page.waitForFunction(
+      (expected) => {
+        const el = document.querySelector('[data-lead-field="last_name"]');
+        return el && (el.textContent || "").includes(expected);
+      },
+      newLast,
+      { timeout: 20000 }
+    );
+    check(true, `[${viewport.tag}] a saved Last Name edit round-trips through the ERP`);
+
+    // Restore the seed value so the rest of the suite sees pristine data.
+    await page.locator("[data-lead-edit]").click();
+    await page.locator('[data-lead-edit-field="last_name"]').waitFor({ state: "visible", timeout: 10000 });
+    await page.locator('[data-lead-edit-field="last_name"]').fill(originalLast);
+    await page.locator("[data-lead-save]").click();
+    // Save closes the editor; the empty original renders as an em dash.
+    await page.locator("[data-lead-edit]").waitFor({ state: "visible", timeout: 20000 });
 
     await page.locator("[data-lead-detail-close]").click();
     await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });

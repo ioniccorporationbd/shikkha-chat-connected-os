@@ -7,6 +7,7 @@ import {
   FiCheckSquare,
   FiChevronDown,
   FiDatabase,
+  FiEdit2,
   FiFileText,
   FiInbox,
   FiMail,
@@ -21,7 +22,13 @@ import {
 
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
-import { addLeadComment, fetchLeadDetail, uploadLeadAttachment } from "@/lib/leads/api";
+import {
+  addLeadComment,
+  fetchLeadDetail,
+  leadFileSrc,
+  updateLeadDetail,
+  uploadLeadAttachment,
+} from "@/lib/leads/api";
 import {
   formatCount,
   leadInitials,
@@ -155,6 +162,49 @@ function ActivityItem({ activity, copy }: { activity: LeadActivity; copy: LeadsC
   );
 }
 
+/**
+ * A person's picture with a monogram fallback.
+ *
+ * ERP avatars hold site-relative paths (`/files/sir_shakil_10.jpeg`) that the
+ * portal origin cannot load — before this component every timeline avatar was
+ * a broken-image icon. `leadFileSrc` routes them through the same-origin file
+ * proxy; when the picture is missing or not an image at all, the monogram wins.
+ */
+function PersonAvatar({
+  actor,
+  email,
+  image,
+}: {
+  actor?: string | null;
+  email?: string | null;
+  image?: string | null;
+}) {
+  const [broken, setBroken] = useState(false);
+  const src = broken ? "" : leadFileSrc(image);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={actor || email || ""}
+        data-lead-avatar=""
+        onError={() => setBroken(true)}
+        className="h-7 w-7 shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] object-cover"
+      />
+    );
+  }
+
+  return (
+    <span
+      data-lead-avatar-fallback=""
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] text-[11px] font-bold text-[var(--color-primary)]"
+    >
+      {(actor || email || "?").trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 function CommentsList({ items, copy, empty }: { items: LeadActivity[]; copy: LeadsCopy; empty: string }) {
   if (items.length === 0) return <EmptyTab text={empty} />;
 
@@ -167,18 +217,7 @@ function CommentsList({ items, copy, empty }: { items: LeadActivity[]; copy: Lea
           className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] px-4 py-3"
         >
           <div className="flex items-start gap-2.5">
-            {entry.actor_image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={entry.actor_image}
-                alt={entry.actor || ""}
-                className="h-7 w-7 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] text-[11px] font-bold text-[var(--color-primary)]">
-                {(entry.actor || "?").trim().charAt(0).toUpperCase()}
-              </span>
-            )}
+            <PersonAvatar actor={entry.actor} email={entry.actor_email} image={entry.actor_image} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[12.5px] font-semibold text-[var(--color-primary)]">
                 {entry.actor || entry.actor_email}
@@ -297,26 +336,195 @@ function AttachmentList({
   );
 }
 
-function DataGrid({ payload }: { payload: LeadDetailPayload }) {
-  const fields = payload.lead?.fields ?? [];
+/** Mirrors `_EDITABLE_FIELDS` in the ERP endpoint; only a UI ordering hint. */
+const FALLBACK_EDITABLE_FIELDS = [
+  "first_name",
+  "last_name",
+  "salutation",
+  "email",
+  "mobile_no",
+  "phone",
+  "organization",
+  "organization_name",
+  "company_name",
+  "job_title",
+  "website",
+  "territory",
+  "industry",
+  "status",
+  "source",
+];
+
+/**
+ * The Data tab: the lead's fields, editable in place.
+ *
+ * First Name / Last Name / E-mail are permanent rows (the ERP includes them
+ * even when empty) so a lead created without them can be completed here. The
+ * edit form only offers fields the ERP endpoint accepts — `editable` comes
+ * from `_EDITABLE_FIELDS` server-side, and the endpoint re-validates on save.
+ */
+function DataGrid({
+  payload,
+  name,
+  language,
+  detail,
+  onSaved,
+  onNotice,
+}: {
+  payload: LeadDetailPayload;
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onSaved: () => Promise<void> | void;
+  onNotice: (notice: { tone: "ok" | "error"; text: string } | null) => void;
+}) {
+  const fields = useMemo(() => payload.lead?.fields ?? [], [payload.lead?.fields]);
+
+  const editableFields = useMemo(() => {
+    const byField = new Map<string, (typeof fields)[number]>();
+    for (const field of fields) {
+      if (!field.field) continue;
+      if (!field.editable && !FALLBACK_EDITABLE_FIELDS.includes(field.field)) continue;
+      byField.set(field.field, field);
+    }
+    return byField;
+  }, [fields]);
+
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
   if (fields.length === 0) return null;
 
+  const startEditing = () => {
+    const next: Record<string, string> = {};
+    for (const field of editableFields.values()) {
+      if (field.field) next[field.field] = field.value;
+    }
+    setDraft(next);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setDraft({});
+  };
+
+  const save = async () => {
+    if (saving) return;
+
+    const updates: Record<string, string> = {};
+    for (const field of editableFields.values()) {
+      if (!field.field) continue;
+      const value = (draft[field.field] ?? "").trim();
+      if (value !== (field.value ?? "").trim()) updates[field.field] = value;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      cancelEditing();
+      return;
+    }
+
+    setSaving(true);
+    onNotice(null);
+    try {
+      await updateLeadDetail(name, updates, language);
+      onNotice({ tone: "ok", text: detail.saved });
+      setEditing(false);
+      setDraft({});
+      await onSaved();
+    } catch (cause) {
+      onNotice({
+        tone: "error",
+        text: cause instanceof ApiError && cause.message ? cause.message : detail.saveFailed,
+      });
+      reportClientError({
+        scope: "leads:update",
+        message: "The lead could not be saved",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <dl
-      className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2"
-      data-lead-data=""
-    >
-      {fields.map((field) => (
-        <div key={field.label} className="flex flex-col gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_7%,transparent)] pb-2">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
-            {field.label}
-          </dt>
-          <dd className="break-words text-[13px] text-[var(--color-primary)]">
-            {field.value || "—"}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div data-lead-data-wrapper="">
+      <div className="mb-3 flex items-center justify-end gap-2">
+        {editing ? (
+          <>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={saving}
+              data-lead-edit-cancel=""
+              className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {detail.cancel}
+            </button>
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={saving}
+              data-lead-save=""
+              className="rounded-full bg-[var(--color-action)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? detail.saving : detail.save}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={startEditing}
+            disabled={editableFields.size === 0}
+            data-lead-edit=""
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiEdit2 size={12} className="pointer-events-none" />
+            <span className="pointer-events-none">{detail.edit}</span>
+          </button>
+        )}
+      </div>
+
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2" data-lead-data="" data-editing={editing ? "true" : undefined}>
+        {fields.map((field) => {
+          const key = field.field || field.label;
+          const editable = Boolean(field.field && editableFields.has(field.field));
+
+          return (
+            <div
+              key={key}
+              className="flex flex-col gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_7%,transparent)] pb-2"
+            >
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                {field.label}
+              </dt>
+              {editing && editable && field.field ? (
+                <dd>
+                  <input
+                    value={draft[field.field] ?? ""}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, [field.field as string]: event.target.value }))
+                    }
+                    placeholder={field.label}
+                    aria-label={field.label}
+                    data-lead-edit-field={field.field}
+                    className="w-full rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+                  />
+                </dd>
+              ) : (
+                <dd
+                  className="break-words text-[13px] text-[var(--color-primary)]"
+                  data-lead-field={field.field || undefined}
+                >
+                  {field.value || "—"}
+                </dd>
+              )}
+            </div>
+          );
+        })}
+      </dl>
+    </div>
   );
 }
 
@@ -686,7 +894,14 @@ function LeadDetailPanel({
         ) : activeTab === "comments" ? (
           <CommentsList items={payload.comments} copy={copy} empty={detail.empty.comments} />
         ) : activeTab === "data" ? (
-          <DataGrid payload={payload} />
+          <DataGrid
+            payload={payload}
+            name={name}
+            language={language}
+            detail={detail}
+            onSaved={load}
+            onNotice={setNotice}
+          />
         ) : activeTab === "calls" ? (
           <SimpleActivityList items={payload.calls} copy={copy} empty={detail.empty.calls} />
         ) : activeTab === "tasks" ? (

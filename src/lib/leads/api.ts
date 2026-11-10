@@ -41,6 +41,36 @@ export function uploadLeadAttachment(
   );
 }
 
+/** `POST /api/leads/<name>/edit` — save the Data tab's whitelisted field edits. */
+export function updateLeadDetail(
+  name: string,
+  updates: Record<string, string>,
+  language: string
+): Promise<{ updated: Record<string, string> }> {
+  return postJson<{ updated: Record<string, string> }>(
+    `/api/leads/${encodeURIComponent(name)}/edit`,
+    { updates, language }
+  );
+}
+
+/**
+ * A same-origin URL for an ERP-hosted picture, or "" when there is none.
+ *
+ * ERP records carry `user_image` values like `/files/sir_shakil_10.jpeg`,
+ * which the browser cannot load from the portal's origin — every such avatar
+ * renders as a broken image. Timeline pictures therefore stream through
+ * `/api/frappe-file`, which forwards the caller's own session cookie.
+ */
+export function leadFileSrc(value: string | null | undefined): string {
+  const url = (value ?? "").trim();
+  if (!url) return "";
+
+  if (url.startsWith("data:") || url.startsWith("/api/")) return url;
+  if (!url.startsWith("/") && !/^https?:\/\//i.test(url)) return "";
+
+  return `/api/frappe-file?path=${encodeURIComponent(url)}`;
+}
+
 /** `POST /api/leads/<name>` — add a comment the way Desk's comment box does. */
 export function addLeadComment(
   name: string,

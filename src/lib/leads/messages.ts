@@ -31,6 +31,12 @@ export interface LeadsDetailCopy {
   attachmentFailed: string;
   attachmentTooLarge: string;
   leadOwner: string;
+  edit: string;
+  save: string;
+  cancel: string;
+  saving: string;
+  saved: string;
+  saveFailed: string;
   empty: {
     activity: string;
     emails: string;
@@ -148,6 +154,12 @@ const bn: LeadsCopy = {
     attachmentFailed: "সংযুক্তি আপলোড করা যায়নি",
     attachmentTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না",
     leadOwner: "লিড ওনার",
+    edit: "সম্পাদনা",
+    save: "সংরক্ষণ",
+    cancel: "বাতিল",
+    saving: "সংরক্ষণ হচ্ছে…",
+    saved: "লিডের তথ্য সংরক্ষণ হয়েছে",
+    saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -244,6 +256,12 @@ const en: LeadsCopy = {
     attachmentFailed: "The attachment could not be uploaded",
     attachmentTooLarge: "The file cannot be larger than 5 MB",
     leadOwner: "Lead Owner",
+    edit: "Edit",
+    save: "Save",
+    cancel: "Cancel",
+    saving: "Saving…",
+    saved: "The lead has been saved",
+    saveFailed: "The lead could not be saved",
     empty: {
       activity: "No activity yet.",
       emails: "No e-mails.",

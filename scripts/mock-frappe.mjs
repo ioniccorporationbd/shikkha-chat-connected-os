@@ -558,6 +558,67 @@ function crmLeadNotes(name, language) {
 }
 
 
+// --- CRM lead editable fields (mirrors `_EDITABLE_FIELDS` server-side) ----- //
+// Same whitelist the ERP endpoint writes; anything else a caller sends is
+// ignored, exactly like the real `update_lead`.
+const CRM_LEAD_WRITE_MAP = {
+  first_name: "first_name",
+  last_name: "last_name",
+  salutation: "salutation",
+  organization: "organization",
+  organization_name: "organization",
+  company_name: "organization",
+  email: "email",
+  mobile_no: "mobile",
+  phone: "mobile",
+  job_title: "job_title",
+  website: "website",
+  territory: "territory",
+  industry: "industry",
+  status: "status",
+  source: "source",
+};
+
+// Split the display name when the row has no explicit first/last name yet —
+// seed rows only carry `lead_name`.
+function crmLeadNameParts(row) {
+  const explicitFirst = String(row.first_name ?? "").trim();
+  const explicitLast = String(row.last_name ?? "").trim();
+  const parts = String(row.lead_name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return {
+    first: explicitFirst || parts[0] || "",
+    last: explicitLast || parts.slice(1).join(" ") || "",
+  };
+}
+
+// The Data tab rows: First Name / Last Name / E-mail always render (even when
+// empty) so the portal can fill them in, and each editable row carries its
+// doctype fieldname.
+function crmLeadFields(row, t, ownerName) {
+  const { first, last } = crmLeadNameParts(row);
+
+  return [
+    { field: "first_name", label: t("First Name", "প্রথম নাম"), value: first, editable: true },
+    { field: "last_name", label: t("Last Name", "শেষ নাম"), value: last, editable: true },
+    { field: "email", label: t("E-mail", "ইমেইল"), value: row.email || "", editable: true },
+    { field: "mobile_no", label: t("Mobile", "মোবাইল"), value: row.mobile || "", editable: true },
+    { field: "organization_name", label: t("Organization", "প্রতিষ্ঠান"), value: row.organization || "", editable: true },
+    { field: "job_title", label: t("Job Title", "পদবি"), value: row.job_title || "", editable: true },
+    { field: "website", label: t("Website", "ওয়েবসাইট"), value: row.website ?? "https://example.com", editable: true },
+    { field: "territory", label: t("Territory", "টেরিটরি"), value: row.territory ?? t("Dhaka", "ঢাকা"), editable: true },
+    { field: "industry", label: t("Industry", "ইন্ডাস্ট্রি"), value: row.industry ?? t("Education", "শিক্ষা"), editable: true },
+    { field: "status", label: t("Status", "স্ট্যাটাস"), value: row.status, editable: true },
+    { field: "source", label: t("Source", "সোর্স"), value: row.source, editable: true },
+    { label: t("Lead Owner", "লিড ওনার"), value: ownerName },
+    { label: t("Created", "তৈরি হয়েছে"), value: row.created },
+  ];
+}
+
+
 function crmLeadDetailPayload(name, language) {
   const row = crmLeads.find((lead) => lead.name === name);
   if (!row) return null;
@@ -596,7 +657,8 @@ function crmLeadDetailPayload(name, language) {
       kind: "comment",
       actor: actress,
       actor_email: actorEmail,
-      actor_image: "",
+      // Site-relative like production — the portal has to proxy it.
+      actor_image: "/files/tamim-hasan.png",
       text: t("added a comment", "একটি মন্তব্য যোগ করেছেন"),
       body: "hello tamim",
       at: iso(58 * 60 * 1000),
@@ -606,7 +668,7 @@ function crmLeadDetailPayload(name, language) {
       kind: "comment",
       actor: "MD Shahzalal Amin Surker",
       actor_email: "magneticsolutionltdbd@gmail.com",
-      actor_image: "",
+      actor_image: "/files/tamim-hasan.png",
       text: t("added a comment", "একটি মন্তব্য যোগ করেছেন"),
       body: "hello",
       at: iso(190 * 60 * 1000),
@@ -653,21 +715,7 @@ function crmLeadDetailPayload(name, language) {
     created: row.created,
     modified: row.created,
     image: "",
-    fields: [
-      { label: t("Status", "স্ট্যাটাস"), value: row.status },
-      { label: t("Source", "সোর্স"), value: row.source },
-      { label: t("Organization", "প্রতিষ্ঠান"), value: row.organization },
-      { label: t("Website", "ওয়েবসাইট"), value: "https://example.com" },
-      { label: t("Territory", "টেরিটরি"), value: t("Dhaka", "ঢাকা") },
-      { label: t("Industry", "ইন্ডাস্ট্রি"), value: t("Education", "শিক্ষা") },
-      { label: t("E-mail", "ইমেইল"), value: row.email },
-      { label: t("Mobile", "মোবাইল"), value: row.mobile },
-      { label: t("Lead Owner", "লিড ওনার"), value: actress },
-      {
-        label: t("Created", "তৈরি হয়েছে"),
-        value: row.created,
-      },
-    ],
+    fields: crmLeadFields(row, t, actress),
   };
 
   return {
@@ -6680,6 +6728,59 @@ const server = createServer(async (request, response) => {
     }
 
     ok(response, payload);
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.update_lead") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    // Body-only kwargs, like Frappe.
+    const name = String(body.name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    let updates = body.updates;
+    if (typeof updates === "string") {
+      try {
+        updates = JSON.parse(updates);
+      } catch {
+        updates = null;
+      }
+    }
+    if (!updates || typeof updates !== "object" || Array.isArray(updates)) {
+      failure(response, 417, "ValidationError", "There is nothing to save.", "CRM Lead");
+      return;
+    }
+
+    const changed = {};
+    for (const [field, value] of Object.entries(updates)) {
+      const target = CRM_LEAD_WRITE_MAP[field];
+      if (!target) continue; // unknown fields are ignored, like the ERP whitelist
+      const text = value === null || value === undefined ? "" : String(value).trim();
+      row[target] = text;
+      changed[field] = text;
+    }
+
+    if (Object.keys(changed).length === 0) {
+      failure(response, 417, "ValidationError", "There is nothing to save.", "CRM Lead");
+      return;
+    }
+
+    if (changed.first_name !== undefined || changed.last_name !== undefined) {
+      const next = [row.first_name, row.last_name].filter((part) => String(part ?? "").trim());
+      if (next.length > 0) row.lead_name = next.join(" ").trim();
+    }
+
+    ok(response, { updated: changed, lead: row.name });
     return;
   }
 
