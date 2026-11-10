@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FiActivity,
   FiArrowLeft,
@@ -167,6 +168,18 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
   const [applied, setApplied] = useState<{ from: string; to: string } | null>(null);
 
   const [clock, setClock] = useState(() => Date.now());
+
+  // The punch button lives in the dashboard navbar (left of the shell refresh
+  // button) — the shell renders an empty `[data-checkin-header-slot]` there and
+  // this view portals its button into it, so the punch logic + state stay here
+  // with a single source of truth. The slot resolves after mount (SSR-safe).
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // Syncing to an external DOM node the shell renders: this *is* the effect's
+    // job, and the slot only exists after mount (SSR renders the inline button).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHeaderSlot(document.querySelector<HTMLElement>("[data-checkin-header-slot]"));
+  }, []);
 
   const [deviceId] = useState(getDeviceId);
   const [point, setPoint] = useState<GeoPoint | null>(null);
@@ -429,6 +442,29 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
       ? copy.historyRangeHint(formatDate(history.from_date, language), formatDate(history.to_date, language))
       : copy.historyHint(history?.window_days ?? CHECKIN_HISTORY_DAYS);
 
+  // Navbar-sized variant of the punch CTA (the panel action bar no longer hosts
+  // it): pill shape + white label so it reads like the header's other controls.
+  const punchButton = (
+    <button
+      type="button"
+      onClick={handlePunch}
+      disabled={punching || !status}
+      data-checkin-punch=""
+      aria-label={punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
+      title={punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
+        {checkedIn ? <FiLogOut size={15} /> : <FiLogIn size={15} />}
+        {/* Phones keep the icon only: the header title needs the room, and the
+            aria-label above still names the action for assistive tech. */}
+        <span className="hidden whitespace-nowrap sm:inline">
+          {punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
+        </span>
+      </span>
+    </button>
+  );
+
   return (
     <section className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}>
       {/* ---------------------------------------------------------- header */}
@@ -677,18 +713,11 @@ export default function CheckInOutView({ onBack }: CheckInOutViewProps) {
             </div>
 
             {/* -------------------------------------------------- action bar */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={handlePunch}
-                disabled={punching}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-              >
-                <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[var(--color-white)]">
-                  {checkedIn ? <FiLogOut size={17} /> : <FiLogIn size={17} />}
-                  {punching ? copy.working : checkedIn ? copy.checkOut : copy.checkIn}
-                </span>
-              </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              {/* The punch button itself is portalled into the dashboard navbar
+                  (left of the shell refresh button); when that slot is absent we
+                  keep the previous inline placement so nothing is lost. */}
+              {headerSlot ? createPortal(punchButton, headerSlot) : punchButton}
 
               <button
                 type="button"

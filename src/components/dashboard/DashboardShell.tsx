@@ -870,6 +870,10 @@ export default function DashboardShell({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
+              {/* Check In/Out pages portal their punch button into this slot so it
+                  sits left of the refresh button; `empty:hidden` keeps the header
+                  spacing identical on every other view. */}
+              <div data-checkin-header-slot="" className="flex items-center empty:hidden" />
               <button
                 type="button"
                 onClick={handleReload}
