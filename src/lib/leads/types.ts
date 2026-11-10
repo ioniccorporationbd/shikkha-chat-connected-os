@@ -37,6 +37,56 @@ export interface LeadActivity {
   /** Comment / note text (plain), empty for the other kinds. */
   body: string;
   at: string;
+  /** Task rows only: the CRM Task's own fields. */
+  title?: string;
+  status?: string;
+  priority?: string;
+  assigned_to?: string;
+  assigned_label?: string;
+  due_date?: string;
+}
+
+/** One row of the Assigned-To dropdown — an HR Employee, with their User when they have one. */
+export interface LeadTaskEmployee {
+  /** Employee id — what the form submits. */
+  value: string;
+  label: string;
+  designation: string;
+  user: string;
+  user_image: string;
+}
+
+export interface LeadTaskPriority {
+  /** "" means No Priority — the CRM Task field stays empty. */
+  value: string;
+  label: string;
+}
+
+/** `GET /api/leads/task-options` — the New-task form's dropdown data. */
+export interface LeadTaskOptions {
+  priorities: LeadTaskPriority[];
+  employees: LeadTaskEmployee[];
+  available: boolean;
+}
+
+/** What the New-task form posts; empty strings are simply not saved. */
+export interface LeadTaskDraft {
+  title: string;
+  description: string;
+  priority: string;
+  assigned_to: string;
+  due_date: string;
+}
+
+export interface LeadTaskCreated {
+  key: string;
+  title: string;
+  status: string;
+  priority: string;
+  assigned_to: string;
+  assigned_label: string;
+  due_date: string;
+  at: string;
 }
 
 export interface LeadAttachment {

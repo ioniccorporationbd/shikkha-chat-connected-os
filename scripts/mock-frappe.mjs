@@ -619,6 +619,49 @@ function crmLeadFields(row, t, ownerName) {
 }
 
 
+// --- CRM tasks (mirrors `add_lead_task` / `get_task_options`) -------------- //
+// Keyed by lead so a created task shows up when the sheet reloads.
+const crmLeadTasks = new Map();
+let crmLeadTaskCounter = 1;
+
+// HR ▸ Employee — the same people the Desk employee list shows. `user` is the
+// linked User; the ERP endpoint resolves employee -> user itself.
+const crmTaskEmployees = [
+  { value: "HR-EMP-00001", label: "MD Shahzalal Amin Surker", designation: "Managing Director", user: "sales@ioniccorporation.com", user_image: "" },
+  { value: "HR-EMP-00002", label: "Tamim Hasan", designation: "Junior Developer", user: "tamim@ioniccorporation.com", user_image: "" },
+  { value: "HR-EMP-00003", label: "Nusrat Jahan", designation: "Sales Executive", user: "manager@ioniccorporation.com", user_image: "" },
+  { value: "HR-EMP-00004", label: "Rafiul Islam", designation: "Support Engineer", user: "", user_image: "" },
+];
+
+function crmTaskPriorityOptions(t) {
+  return [
+    { value: "", label: t("No Priority", "কোনো প্রায়োরিটি নেই") },
+    { value: "High", label: t("High", "হাই") },
+    { value: "Medium", label: t("Medium", "মিডিয়াম") },
+    { value: "Low", label: t("Low", "লো") },
+  ];
+}
+
+function crmLeadTaskRows(name, t) {
+  const rows = crmLeadTasks.get(name) || [];
+  return rows.map((row) => ({
+    key: row.name,
+    kind: "task",
+    actor: "Tamim Hasan",
+    actor_email: "tamim@ioniccorporation.com",
+    actor_image: "",
+    text: `${row.title}${row.status ? ` · ${row.status}` : ""}`,
+    body: "",
+    at: row.at,
+    title: row.title,
+    status: row.status,
+    priority: row.priority,
+    assigned_to: row.assigned_to,
+    assigned_label: row.assigned_label,
+    due_date: row.due_date,
+  }));
+}
+
 function crmLeadDetailPayload(name, language) {
   const row = crmLeads.find((lead) => lead.name === name);
   if (!row) return null;
@@ -726,7 +769,7 @@ function crmLeadDetailPayload(name, language) {
     emails,
     comments: activity.filter((entry) => entry.kind === "comment"),
     calls: [],
-    tasks: [],
+    tasks: crmLeadTaskRows(name, t),
     notes: crmLeadNotes(name, language),
     attachments: crmLeadExtraFiles.get(name) || [],
   };
@@ -6781,6 +6824,115 @@ const server = createServer(async (request, response) => {
     }
 
     ok(response, { updated: changed, lead: row.name });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.get_task_options") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const bn = String(url.searchParams.get("language") || "bn").toLowerCase().startsWith("bn");
+    const t = (en, bnText) => (bn ? bnText : en);
+    ok(response, {
+      priorities: crmTaskPriorityOptions(t),
+      employees: crmTaskEmployees,
+      available: true,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.add_lead_task") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    // Body-only kwargs, like Frappe.
+    const leadName = String(body.name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === leadName);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    let task = body.task;
+    if (typeof task === "string") {
+      try {
+        task = JSON.parse(task);
+      } catch {
+        task = null;
+      }
+    }
+    if (!task || typeof task !== "object" || Array.isArray(task)) {
+      failure(response, 417, "ValidationError", "Give the task a title.", "CRM Task");
+      return;
+    }
+
+    const title = String(task.title ?? "").trim().replace(/\s+/g, " ");
+    if (!title) {
+      failure(response, 417, "ValidationError", "Give the task a title.", "CRM Task");
+      return;
+    }
+    if (title.length > 140) {
+      failure(response, 417, "ValidationError", "The task title is too long.", "CRM Task");
+      return;
+    }
+
+    const priority = ["High", "Medium", "Low"].includes(
+      String(task.priority ?? "").trim().replace(/^./, (c) => c.toUpperCase())
+    )
+      ? String(task.priority).trim().replace(/^./, (c) => c.toUpperCase())
+      : "";
+
+    let assignedTo = "";
+    let assignedLabel = "";
+    const employeeId = String(task.assigned_to ?? "").trim();
+    if (employeeId) {
+      const employee = crmTaskEmployees.find((item) => item.value === employeeId);
+      if (employee) {
+        // Employee without a linked User stays unassigned, like the ERP endpoint.
+        assignedLabel = employee.user ? employee.label : "";
+        assignedTo = employee.user || "";
+      }
+    }
+
+    const dueDate = String(task.due_date ?? "").trim();
+    const at = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const created = {
+      name: `CRM-TASK-${String(crmLeadTaskCounter++).padStart(5, "0")}`,
+      title,
+      status: "Todo",
+      priority,
+      assigned_to: assignedTo,
+      assigned_label: assignedLabel,
+      due_date: /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : "",
+      at,
+    };
+
+    const list = crmLeadTasks.get(leadName) || [];
+    list.unshift(created);
+    crmLeadTasks.set(leadName, list);
+
+    ok(response, {
+      task: {
+        key: created.name,
+        title: created.title,
+        status: created.status,
+        priority: created.priority,
+        assigned_to: created.assigned_to,
+        assigned_label: created.assigned_label,
+        due_date: created.due_date,
+        at: created.at,
+      },
+      lead: leadName,
+    });
     return;
   }
 

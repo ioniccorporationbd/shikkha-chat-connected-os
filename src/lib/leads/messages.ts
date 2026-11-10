@@ -37,6 +37,27 @@ export interface LeadsDetailCopy {
   saving: string;
   saved: string;
   saveFailed: string;
+  /** Tasks tab: the top-right New-task button and its form. */
+  newTask: string;
+  taskForm: {
+    title: string;
+    titlePlaceholder: string;
+    description: string;
+    descriptionPlaceholder: string;
+    priority: string;
+    assignedTo: string;
+    assignedNone: string;
+    dueDate: string;
+    create: string;
+    creating: string;
+    created: string;
+    failed: string;
+    required: string;
+    noEmployees: string;
+    priorityLabel: string;
+    dueLabel: string;
+    unassigned: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -160,6 +181,26 @@ const bn: LeadsCopy = {
     saving: "সংরক্ষণ হচ্ছে…",
     saved: "লিডের তথ্য সংরক্ষণ হয়েছে",
     saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
+    newTask: "নতুন টাস্ক",
+    taskForm: {
+      title: "টাস্কের শিরোনাম",
+      titlePlaceholder: "যেমন: গ্রাহককে কলব্যাক করা",
+      description: "বিবরণ",
+      descriptionPlaceholder: "এই টাস্কটি সম্পর্কে বিস্তারিত…",
+      priority: "প্রায়োরিটি",
+      assignedTo: "অ্যাসাইন করা হবে",
+      assignedNone: "কোনো প্রায়োরিটি নেই",
+      dueDate: "শেষ তারিখ",
+      create: "টাস্ক তৈরি করুন",
+      creating: "তৈরি হচ্ছে…",
+      created: "টাস্কটি তৈরি হয়েছে",
+      failed: "টাস্কটি তৈরি করা যায়নি",
+      required: "টাস্কের শিরোনাম দিতে হবে",
+      noEmployees: "কোনো সক্রিয় কর্মচারী পাওয়া যায়নি",
+      priorityLabel: "প্রায়োরিটি",
+      dueLabel: "শেষ তারিখ",
+      unassigned: "অ্যাসাইন করা নেই",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -262,6 +303,26 @@ const en: LeadsCopy = {
     saving: "Saving…",
     saved: "The lead has been saved",
     saveFailed: "The lead could not be saved",
+    newTask: "New task",
+    taskForm: {
+      title: "Task title",
+      titlePlaceholder: "e.g. Call the customer back",
+      description: "Description",
+      descriptionPlaceholder: "What this task is about…",
+      priority: "Priority",
+      assignedTo: "Assigned To",
+      assignedNone: "No Priority",
+      dueDate: "Due date",
+      create: "Create task",
+      creating: "Creating…",
+      created: "The task was created",
+      failed: "The task could not be created",
+      required: "Give the task a title",
+      noEmployees: "No active employees found",
+      priorityLabel: "Priority",
+      dueLabel: "Due",
+      unassigned: "Unassigned",
+    },
     empty: {
       activity: "No activity yet.",
       emails: "No e-mails.",

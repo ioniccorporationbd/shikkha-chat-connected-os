@@ -387,6 +387,70 @@ async function login() {
     // Save closes the editor; the empty original renders as an em dash.
     await page.locator("[data-lead-edit]").waitFor({ state: "visible", timeout: 20000 });
 
+    // Tasks tab: the New-task button lives in the section's top-right corner
+    // and opens the task form popup; a created CRM Task must show in the list.
+    await page.locator('[data-lead-tab="tasks"]').click();
+    const newTaskBtn = page.locator("[data-lead-new-task]");
+    await newTaskBtn.waitFor({ state: "visible", timeout: 20000 });
+    const btnBox = await newTaskBtn.boundingBox();
+    const sectionBox = await page.locator("[data-lead-tab-panel]").boundingBox();
+    check(
+      Boolean(btnBox && sectionBox && btnBox.x + btnBox.width > sectionBox.x + sectionBox.width / 2),
+      `[${viewport.tag}] New task sits in the section's top-right corner`
+    );
+
+    await newTaskBtn.click();
+    await page.locator("[data-task-modal]").waitFor({ state: "visible", timeout: 20000 });
+    check(true, `[${viewport.tag}] New task opens the task form popup`);
+
+    const priorityValues = await page
+      .locator("[data-task-priority] option")
+      .evaluateAll((nodes) => nodes.map((node) => node.value));
+    check(
+      JSON.stringify(priorityValues) === JSON.stringify(["", "High", "Medium", "Low"]),
+      `[${viewport.tag}] priority offers High/Medium/Low/No Priority (${priorityValues.join(",")})`
+    );
+
+    await page.waitForFunction(
+      () => document.querySelectorAll("[data-task-assignee] option").length > 1,
+      undefined,
+      { timeout: 20000 }
+    );
+    const assigneeCount = await page.locator("[data-task-assignee] option").count();
+    check(
+      assigneeCount > 1,
+      `[${viewport.tag}] Assigned To is fed from the HR employee list (${assigneeCount - 1} staff)`
+    );
+
+    // Empty title must be refused before any round-trip.
+    await page.locator("[data-task-create]").click();
+    await page.locator("[data-task-error]").waitFor({ state: "visible", timeout: 10000 });
+    check(true, `[${viewport.tag}] the task form refuses an empty title`);
+
+    const taskTitle = `QA task ${Date.now() % 10000}`;
+    await page.locator("[data-task-title]").fill(taskTitle);
+    await page.locator("[data-task-priority]").selectOption("High");
+    const chosenEmployee = await page.locator("[data-task-assignee] option").nth(1).getAttribute("value");
+    const chosenEmployeeLabel = (await page.locator("[data-task-assignee] option").nth(1).innerText()) || "";
+    await page.locator("[data-task-assignee]").selectOption(chosenEmployee);
+    await page.locator("[data-task-due]").fill("2026-12-31");
+    await page.locator("[data-task-create]").click();
+    await page.locator("[data-task-modal]").waitFor({ state: "detached", timeout: 30000 });
+    check(true, `[${viewport.tag}] the task form submits and closes`);
+
+    await page.locator("[data-lead-task-item]").first().waitFor({ state: "visible", timeout: 30000 });
+    const tasksText = (await page.locator("[data-lead-tasks]").innerText()) || "";
+    check(tasksText.includes(taskTitle), `[${viewport.tag}] the created task appears in the Tasks tab`);
+    check(
+      (await page.locator('[data-lead-task-priority="High"]').count()) >= 1,
+      `[${viewport.tag}] the task keeps its High priority`
+    );
+    const assigneeShown = chosenEmployeeLabel.split("·")[0].trim();
+    check(
+      !assigneeShown || tasksText.includes(assigneeShown),
+      `[${viewport.tag}] the task shows its assignee (${assigneeShown || "n/a"})`
+    );
+
     await page.locator("[data-lead-detail-close]").click();
     await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });
     check(true, `[${viewport.tag}] the panel closes without leaving the board`);

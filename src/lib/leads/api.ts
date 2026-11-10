@@ -2,7 +2,13 @@
 
 import { getJson, postJson } from "@/lib/api/http";
 
-import type { LeadDetailPayload, LeadsPayload } from "./types";
+import type {
+  LeadDetailPayload,
+  LeadsPayload,
+  LeadTaskCreated,
+  LeadTaskDraft,
+  LeadTaskOptions,
+} from "./types";
 
 export interface LeadsQuery {
   language: string;
@@ -69,6 +75,24 @@ export function leadFileSrc(value: string | null | undefined): string {
   if (!url.startsWith("/") && !/^https?:\/\//i.test(url)) return "";
 
   return `/api/frappe-file?path=${encodeURIComponent(url)}`;
+}
+
+/** `GET /api/leads/task-options` — priorities + assignable staff for the New-task form. */
+export function fetchLeadTaskOptions(language: string): Promise<LeadTaskOptions> {
+  const params = new URLSearchParams({ language });
+  return getJson<LeadTaskOptions>(`/api/leads/task-options?${params.toString()}`);
+}
+
+/** `POST /api/leads/<name>/task` — create a CRM Task linked to this lead. */
+export function addLeadTask(
+  name: string,
+  task: LeadTaskDraft,
+  language: string
+): Promise<{ task: LeadTaskCreated; lead: string }> {
+  return postJson<{ task: LeadTaskCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/task`,
+    { task, language }
+  );
 }
 
 /** `POST /api/leads/<name>` — add a comment the way Desk's comment box does. */

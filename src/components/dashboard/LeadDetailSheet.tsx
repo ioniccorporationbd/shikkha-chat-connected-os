@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiActivity,
   FiAlertCircle,
+  FiCalendar,
   FiCheckSquare,
   FiChevronDown,
   FiDatabase,
@@ -24,7 +25,9 @@ import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import {
   addLeadComment,
+  addLeadTask,
   fetchLeadDetail,
+  fetchLeadTaskOptions,
   leadFileSrc,
   updateLeadDetail,
   uploadLeadAttachment,
@@ -39,8 +42,15 @@ import {
   type LeadsCopy,
   type LeadsDetailCopy,
 } from "@/lib/leads/messages";
-import type { LeadActivity, LeadAttachment, LeadDetailPayload } from "@/lib/leads/types";
+import type {
+  LeadActivity,
+  LeadAttachment,
+  LeadDetailPayload,
+  LeadTaskCreated,
+  LeadTaskOptions,
+} from "@/lib/leads/types";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+import { createPortal } from "react-dom";
 import { reportClientError } from "@/lib/log/report-error";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 
@@ -301,6 +311,405 @@ function SimpleActivityList({
       ))}
     </ul>
   );
+}
+
+
+/** Display labels for the fixed CRM Task priorities. */
+const TASK_PRIORITY_LABELS: Record<string, { en: string; bn: string }> = {
+  High: { en: "High", bn: "হাই" },
+  Medium: { en: "Medium", bn: "মিডিয়াম" },
+  Low: { en: "Low", bn: "লো" },
+};
+
+/** Priority chip for task rows and the form's dropdown. "" is No Priority. */
+function TaskPriorityChip({ priority, language }: { priority: string; language: string }) {
+  const value = (priority || "").trim();
+  if (!value) return null;
+  const label = TASK_PRIORITY_LABELS[value]?.[language === "bn" ? "bn" : "en"] ?? value;
+
+  const tone =
+    value === "High"
+      ? { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" }
+      : value === "Medium"
+        ? { bg: "color-mix(in srgb, #f5a524 18%, white)", fg: "#8a5a00" }
+        : { bg: "color-mix(in srgb, #12b76a 12%, white)", fg: "#067647" };
+
+  return (
+    <span
+      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+      style={{ backgroundColor: tone.bg, color: tone.fg }}
+      data-lead-task-priority={value}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** YYYY-MM-DD -> "5 Mar 2027" (Bengali numerals under the Bengali locale). */
+function formatDueDate(value: string, language: string): string {
+  if (!value) return "";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  try {
+    return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * The Tasks tab: the lead's CRM Tasks with a **New task** button in the
+ * section's top-right corner (the ask was explicit about the position).
+ */
+function TasksPanel({
+  items,
+  copy,
+  detail,
+  empty,
+  language,
+  onNew,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  empty: string;
+  language: string;
+  onNew: () => void;
+}) {
+  return (
+    <div data-lead-tasks="">
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-task=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newTask}</span>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyTab text={empty} />
+      ) : (
+        <ul className="flex flex-col gap-2" data-lead-task-list="">
+          {items.map((item) => (
+            <li
+              key={item.key}
+              data-lead-task-item={item.key}
+              className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-3.5 py-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <FiCheckSquare size={14} className="shrink-0 text-[var(--color-action)]" />
+                <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--color-primary)]">
+                  {item.title || item.text}
+                </p>
+                <TaskPriorityChip priority={item.priority || ""} language={language} />
+                {item.status ? (
+                  <span
+                    className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"
+                    data-lead-task-status={item.status}
+                  >
+                    {item.status}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[22px] text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                <span data-lead-task-assignee="">
+                  {item.assigned_label || detail.taskForm.unassigned}
+                </span>
+                {item.due_date ? (
+                  <span className="inline-flex items-center gap-1">
+                    <FiCalendar size={11} className="pointer-events-none" />
+                    {formatDueDate(item.due_date, language)}
+                  </span>
+                ) : null}
+                {item.at ? <RelativeTime at={item.at} copy={copy} /> : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Server priorities, with a local fallback when the options call fails. */
+const FALLBACK_TASK_PRIORITIES = [
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+  { value: "", label: "No Priority" },
+];
+
+/**
+ * The New-task form: a popup over the lead sheet.
+ *
+ * Field set mirrors Frappe CRM's own task form — Title (required),
+ * Description, Priority (High / Medium / Low / No Priority), Assigned To
+ * (HR ▸ Employee) and Due date. Submitting creates a real `CRM Task` linked
+ * to this lead, so the record shows up in Desk ▸ CRM ▸ Tasks.
+ */
+function TaskFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (task: LeadTaskCreated) => void | Promise<void>;
+}) {
+  const cf = detail.taskForm;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  const [optionsFailed, setOptionsFailed] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (!cancelled) setOptions(payload);
+      } catch (cause) {
+        if (cancelled) return;
+        // The form still works: priorities fall back to the four fixed
+        // choices and the assignee simply stays optional.
+        setOptionsFailed(true);
+        reportClientError({
+          scope: "leads:task-options",
+          message: "The task form options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const priorities =
+    options && options.priorities.length > 0 ? options.priorities : FALLBACK_TASK_PRIORITIES;
+  const employees = options?.employees ?? [];
+
+  const submit = async () => {
+    if (submitting) return;
+
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setFormError(cf.required);
+      titleRef.current?.focus();
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadTask(
+        name,
+        {
+          title: cleanTitle,
+          description: description.trim(),
+          priority,
+          assigned_to: assignedTo,
+          due_date: dueDate,
+        },
+        language
+      );
+      await onCreated(result.task);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.failed);
+      reportClientError({
+        scope: "leads:task",
+        message: "The lead task could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass = "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={detail.newTask}
+      data-task-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[520px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{detail.newTask}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-task-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className={labelClass} htmlFor="lead-task-title">
+              {cf.title}
+            </label>
+            <input
+              id="lead-task-title"
+              ref={titleRef}
+              value={title}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder={cf.titlePlaceholder}
+              maxLength={140}
+              data-task-title=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-description">
+              {cf.description}
+            </label>
+            <textarea
+              id="lead-task-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={cf.descriptionPlaceholder}
+              rows={3}
+              maxLength={5000}
+              data-task-description=""
+              className={`${fieldClass} resize-none`}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-priority">
+                {cf.priority}
+              </label>
+              <select
+                id="lead-task-priority"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value)}
+                data-task-priority=""
+                className={fieldClass}
+              >
+                {priorities.map((option) => (
+                  <option key={option.value || "none"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-assignee">
+                {cf.assignedTo}
+              </label>
+              <select
+                id="lead-task-assignee"
+                value={assignedTo}
+                onChange={(event) => setAssignedTo(event.target.value)}
+                data-task-assignee=""
+                className={fieldClass}
+              >
+                <option value="">—</option>
+                {employees.map((employee) => (
+                  <option key={employee.value} value={employee.value}>
+                    {employee.designation
+                      ? `${employee.label} · ${employee.designation}`
+                      : employee.label}
+                  </option>
+                ))}
+              </select>
+              {optionsFailed ? (
+                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-due">
+              {cf.dueDate}
+            </label>
+            <input
+              id="lead-task-due"
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+              data-task-due=""
+              className={fieldClass}
+            />
+          </div>
+        </div>
+
+        {formError ? (
+          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-task-error="">
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-task-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPlus size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body>: the sheet keeps an animation fill-mode transform,
+  // which would otherwise trap a `fixed` popup inside the sheet's box.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
 }
 
 function AttachmentList({
@@ -613,6 +1022,7 @@ function LeadDetailPanel({
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -905,7 +1315,17 @@ function LeadDetailPanel({
         ) : activeTab === "calls" ? (
           <SimpleActivityList items={payload.calls} copy={copy} empty={detail.empty.calls} />
         ) : activeTab === "tasks" ? (
-          <SimpleActivityList items={payload.tasks} copy={copy} empty={detail.empty.tasks} />
+          <TasksPanel
+            items={payload.tasks}
+            copy={copy}
+            detail={detail}
+            empty={detail.empty.tasks}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setTaskFormOpen(true);
+            }}
+          />
         ) : activeTab === "notes" ? (
           <NotesList items={payload.notes} copy={copy} empty={detail.empty.notes} />
         ) : (
@@ -1012,6 +1432,22 @@ function LeadDetailPanel({
           </button>
         </div>
       )}
+
+      {/* The New-task form floats over the whole sheet. */}
+      {taskFormOpen ? (
+        <TaskFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setTaskFormOpen(false)}
+          onCreated={async () => {
+            setTaskFormOpen(false);
+            setNotice({ tone: "ok", text: detail.taskForm.created });
+            setTabState({ name, tab: "tasks" });
+            await load();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
