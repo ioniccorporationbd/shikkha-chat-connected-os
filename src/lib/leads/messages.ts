@@ -25,6 +25,11 @@ export interface LeadsDetailCopy {
   sending: string;
   commentAdded: string;
   commentFailed: string;
+  attach: string;
+  attaching: string;
+  attachmentAdded: string;
+  attachmentFailed: string;
+  attachmentTooLarge: string;
   leadOwner: string;
   empty: {
     activity: string;
@@ -137,6 +142,11 @@ const bn: LeadsCopy = {
     sending: "পাঠানো হচ্ছে…",
     commentAdded: "মন্তব্য যোগ হয়েছে",
     commentFailed: "মন্তব্য যোগ করা যায়নি",
+    attach: "সংযুক্তি",
+    attaching: "সংযুক্তি আপলোড হচ্ছে…",
+    attachmentAdded: "সংযুক্তি যোগ হয়েছে — Desk → File-এ সংরক্ষিত",
+    attachmentFailed: "সংযুক্তি আপলোড করা যায়নি",
+    attachmentTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না",
     leadOwner: "লিড ওনার",
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
@@ -228,6 +238,11 @@ const en: LeadsCopy = {
     sending: "Sending…",
     commentAdded: "Comment added",
     commentFailed: "The comment could not be added",
+    attach: "Attachment",
+    attaching: "Uploading…",
+    attachmentAdded: "Attachment added — saved to Desk → File",
+    attachmentFailed: "The attachment could not be uploaded",
+    attachmentTooLarge: "The file cannot be larger than 5 MB",
     leadOwner: "Lead Owner",
     empty: {
       activity: "No activity yet.",

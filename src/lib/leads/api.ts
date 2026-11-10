@@ -29,6 +29,18 @@ export function fetchLeadDetail(name: string, language: string): Promise<LeadDet
   return getJson<LeadDetailPayload>(`/api/leads/${encodeURIComponent(name)}?${params.toString()}`);
 }
 
+/** `POST /api/leads/<name>/attachment` — store the paperclip as a Desk `File`. */
+export function uploadLeadAttachment(
+  name: string,
+  file: { file_name: string; content_base64: string },
+  language: string
+): Promise<{ attachment: unknown }> {
+  return postJson<{ attachment: unknown }>(
+    `/api/leads/${encodeURIComponent(name)}/attachment`,
+    { ...file, language }
+  );
+}
+
 /** `POST /api/leads/<name>` — add a comment the way Desk's comment box does. */
 export function addLeadComment(
   name: string,

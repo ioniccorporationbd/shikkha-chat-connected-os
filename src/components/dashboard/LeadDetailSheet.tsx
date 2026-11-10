@@ -21,7 +21,7 @@ import {
 
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
-import { addLeadComment, fetchLeadDetail } from "@/lib/leads/api";
+import { addLeadComment, fetchLeadDetail, uploadLeadAttachment } from "@/lib/leads/api";
 import {
   formatCount,
   leadInitials,
@@ -36,6 +36,28 @@ import type { LeadActivity, LeadAttachment, LeadDetailPayload } from "@/lib/lead
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 import { reportClientError } from "@/lib/log/report-error";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
+
+/** Must stay in sync with `MAX_ATTACHMENT_BYTES` in the attachment proxy route. */
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+/** What the file picker offers; the proxy and the ERP enforce size + name. */
+const ATTACHMENT_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip";
+
+/** `File` -> bare base64 (no data: prefix): what the JSON proxy forwards. */
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("The file could not be read."));
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 
 const TAB_KEYS = [
   "activity",
@@ -293,7 +315,10 @@ function LeadDetailPanel({
 
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const requestId = useRef(0);
 
@@ -373,6 +398,47 @@ function LeadDetailPanel({
     }
   };
 
+
+  const pickAttachment = () => {
+    if (uploading) return;
+    setNotice(null);
+    fileInputRef.current?.click();
+  };
+
+  const uploadAttachment = async (file: File) => {
+    if (uploading) return;
+
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setNotice({ tone: "error", text: detail.attachmentTooLarge });
+      return;
+    }
+
+    setUploading(true);
+    setNotice(null);
+    try {
+      // The proxy speaks JSON to the ERP, so the bytes travel base64-encoded.
+      const content_base64 = await readFileAsBase64(file);
+      await uploadLeadAttachment(name, { file_name: file.name, content_base64 }, language);
+      setNotice({ tone: "ok", text: detail.attachmentAdded });
+      // The File row now exists, so show it where the user expects to find it.
+      setTabState({ name, tab: "attachments" });
+      await load();
+    } catch (cause) {
+      setNotice({
+        tone: "error",
+        text: cause instanceof ApiError ? cause.message : detail.attachmentFailed,
+      });
+      reportClientError({
+        scope: "leads:attachment",
+        message: "The lead attachment could not be uploaded",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const statusTone = lead?.status ? leadStatusTone(lead.status) : null;
 
   return (
@@ -387,6 +453,19 @@ function LeadDetailPanel({
           : "animate-[u-shk-sheet-in_220ms_ease-out]"
       }`}
     >
+      {/* One hidden picker serves both the composer paperclip and the bar one. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ATTACHMENT_ACCEPT}
+        data-lead-attach-input=""
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void uploadAttachment(file);
+        }}
+      />
+
       {/* ------------------------------------------------------------- header */}
       <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
         <span
@@ -552,7 +631,20 @@ function LeadDetailPanel({
             data-lead-composer=""
             className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
           />
-          <div className="mt-2 flex items-center justify-end gap-2">
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={pickAttachment}
+              disabled={uploading}
+              data-lead-attach=""
+              aria-label={detail.attach}
+              title={detail.attach}
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiPaperclip size={13} className="pointer-events-none" />
+              <span className="pointer-events-none">{uploading ? detail.attaching : detail.attach}</span>
+            </button>
+            <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setComposerState({ name, mode: null })}
@@ -570,6 +662,7 @@ function LeadDetailPanel({
               <FiSend size={12} className="pointer-events-none" />
               <span className="pointer-events-none">{sending ? detail.sending : detail.send}</span>
             </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -597,6 +690,21 @@ function LeadDetailPanel({
           >
             <FiMessageSquare size={14} className="pointer-events-none" />
             <span className="pointer-events-none">{detail.comment}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setNotice(null);
+              setComposerState({ name, mode: "comment" });
+              // Open the picker on the next tick so the bar stays in place.
+              window.setTimeout(() => fileInputRef.current?.click(), 0);
+            }}
+            data-lead-attach-bar=""
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+            aria-label={detail.attach}
+            title={detail.attach}
+          >
+            <FiPaperclip size={14} className="pointer-events-none" />
           </button>
         </div>
       )}

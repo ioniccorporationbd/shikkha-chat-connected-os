@@ -512,6 +512,9 @@ function crmLeadPayload(query) {
 // Comments posted from the portal land in `crmLeadExtraComments` and show up
 // in the next detail read, exactly like a real `Comment` row.
 const crmLeadExtraComments = new Map();
+// Attachments uploaded from the portal land here and surface in the lead's
+// Attachments tab, like a real `File` row attached to the doc.
+const crmLeadExtraFiles = new Map();
 
 function crmLeadDetailPayload(name, language) {
   const row = crmLeads.find((lead) => lead.name === name);
@@ -625,7 +628,7 @@ function crmLeadDetailPayload(name, language) {
     calls: [],
     tasks: [],
     notes: activity.filter((entry) => entry.kind === "note"),
-    attachments: [],
+    attachments: crmLeadExtraFiles.get(name) || [],
   };
 }
 
@@ -6666,6 +6669,50 @@ const server = createServer(async (request, response) => {
     crmLeadExtraComments.set(name, bucket);
 
     ok(response, { comment: extra.key });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.add_lead_attachment") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const name = (url.searchParams.get("name") || "").trim();
+    const row = crmLeads.find((lead) => lead.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    const fileName = String(body.file_name ?? "").trim();
+    const contentBase64 = String(body.content_base64 ?? "").trim();
+    if (!fileName || !contentBase64) {
+      failure(response, 417, "ValidationError", "No file was received.", "CRM Lead");
+      return;
+    }
+    const size = Math.floor((contentBase64.length * 3) / 4);
+    if (size > 5 * 1024 * 1024) {
+      failure(response, 417, "ValidationError", "The file cannot be larger than 5 MB.", "CRM Lead");
+      return;
+    }
+
+    const key = `FILE-${String(crmLeadExtraFiles.get(name)?.length ?? 0) + 1}-${Date.now()}`;
+    const attachment = {
+      key,
+      file_name: fileName,
+      file_url: `/private/files/${fileName}`,
+      file_size: size,
+      at: new Date().toISOString().replace("T", " ").slice(0, 19),
+    };
+    const bucket = crmLeadExtraFiles.get(name) || [];
+    bucket.unshift(attachment);
+    crmLeadExtraFiles.set(name, bucket);
+
+    ok(response, { attachment: { name: key, file_name: fileName, file_url: attachment.file_url, file_size: size } });
     return;
   }
 

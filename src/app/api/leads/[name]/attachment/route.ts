@@ -1,0 +1,82 @@
+import { callFrappe } from "@/lib/api/frappe";
+import { clearSessionCookie, fromFrappeFailure, jsonFail, jsonOk } from "@/lib/api/respond";
+import { readCookie, SESSION_COOKIE } from "@/lib/auth/session";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/** Must stay in sync with `_MAX_ATTACHMENT_BYTES` in shikkha_os/api/v1/leads.py. */
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+/** Same allow-list the file picker offers — the ERP re-checks size, not type. */
+const ALLOWED_EXTENSION = /\.(png|jpe?g|gif|webp|svg|pdf|docx?|xlsx?|csv|txt|zip)$/i;
+
+/** Base64 length -> decoded byte length, without decoding the payload twice. */
+function base64Bytes(value: string): number {
+  const clean = value.replace(/[\r\n\s]/g, "");
+  if (!clean) return 0;
+  const padding = clean.endsWith("==") ? 2 : clean.endsWith("=") ? 1 : 0;
+  return Math.floor((clean.length * 3) / 4) - padding;
+}
+
+/**
+ * Same-origin proxy for the lead panel's paperclip (`/userDashboard/leads`).
+ *
+ * POST -> leads.add_lead_attachment: the bytes arrive here as base64 JSON (the
+ * proxy speaks JSON to the ERP) and the site writes a real `File` row attached
+ * to the lead — the same row Desk's upload produces, so the file appears under
+ * `/desk/data/file` and in the lead's Attachments tab.
+ */
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ name: string }> }
+) {
+  const sid = readCookie(request, SESSION_COOKIE);
+  if (!sid) return jsonFail("Please sign in to continue.", "not_authenticated", 401);
+
+  const { name } = await context.params;
+  const leadName = (name || "").trim();
+  if (!leadName) return jsonFail("A lead name is required.", "validation_error", 400);
+
+  let body: { file_name?: unknown; content_base64?: unknown; language?: unknown } = {};
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return jsonFail("A JSON body is required.", "validation_error", 400);
+  }
+
+  const fileName = typeof body.file_name === "string" ? body.file_name.trim() : "";
+  if (!fileName) return jsonFail("A file name is required.", "validation_error", 400);
+  if (!ALLOWED_EXTENSION.test(fileName)) {
+    return jsonFail("This file type is not allowed.", "validation_error", 400);
+  }
+
+  const contentBase64 =
+    typeof body.content_base64 === "string" ? body.content_base64.trim() : "";
+  if (!contentBase64) return jsonFail("The file is empty.", "validation_error", 400);
+
+  const bytes = base64Bytes(contentBase64);
+  if (bytes <= 0) return jsonFail("The file is empty.", "validation_error", 400);
+  if (bytes > MAX_ATTACHMENT_BYTES) {
+    return jsonFail("The file cannot be larger than 5 MB.", "validation_error", 400);
+  }
+
+  const language = typeof body.language === "string" && body.language ? body.language : "bn";
+  const query = new URLSearchParams({ name: leadName, language });
+  const result = await callFrappe<{ attachment: unknown }>(
+    `shikkha_os.api.v1.leads.add_lead_attachment?${query.toString()}`,
+    {
+      sid,
+      httpMethod: "POST",
+      body: { file_name: fileName, content_base64: contentBase64 },
+    }
+  );
+
+  if (!result.ok) {
+    console.error(`[leads] add_lead_attachment failed: status=${result.status} code=${result.code}`);
+    const response = fromFrappeFailure(result);
+    return result.status === 401 ? clearSessionCookie(response) : response;
+  }
+
+  return jsonOk(result.data);
+}

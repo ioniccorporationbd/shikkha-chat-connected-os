@@ -278,6 +278,23 @@ async function login() {
       `[${viewport.tag}] the posted comment appears in the timeline`
     );
 
+    // Paperclip: the bytes go through the JSON proxy and land in Desk's File
+    // list; the panel must show the new row in its Attachments tab.
+    await page.locator("[data-lead-attach-input]").setInputFiles({
+      name: "probe-attachment.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("portal probe attachment"),
+    });
+    await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 30000 });
+    check(true, `[${viewport.tag}] an attachment uploaded from the panel is accepted`);
+    await page.waitForTimeout(1200);
+    check(
+      ((await page.locator("[data-lead-tab-panel]").innerText()) || "").includes(
+        "probe-attachment.txt"
+      ),
+      `[${viewport.tag}] the uploaded file shows in the Attachments tab`
+    );
+
     await page.locator("[data-lead-detail-close]").click();
     await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });
     check(true, `[${viewport.tag}] the panel closes without leaving the board`);
