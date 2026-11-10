@@ -73,9 +73,12 @@ export async function POST(
 
   const language = typeof body.language === "string" && body.language ? body.language : "bn";
   const query = new URLSearchParams({ name: leadName, language });
+  // `name` must ride in the body: Frappe fills a POST's kwargs from the request
+  // body only, so a query-string name is invisible to the endpoint (it would
+  // answer "The lead was not found."). The query copy is kept for readability.
   const result = await callFrappe<{ comment: unknown }>(
     `shikkha_os.api.v1.leads.add_lead_comment?${query.toString()}`,
-    { sid, httpMethod: "POST", body: { content } }
+    { sid, httpMethod: "POST", body: { name: leadName, content, language } }
   );
 
   if (!result.ok) {

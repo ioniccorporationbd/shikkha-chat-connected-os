@@ -68,7 +68,9 @@ export async function POST(
     {
       sid,
       httpMethod: "POST",
-      body: { file_name: fileName, content_base64: contentBase64 },
+      // `name` must ride in the body — Frappe binds a POST's kwargs from the
+      // request body only, so a query-string name never reaches the endpoint.
+      body: { name: leadName, file_name: fileName, content_base64: contentBase64, language },
     }
   );
 

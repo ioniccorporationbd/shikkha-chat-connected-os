@@ -6692,7 +6692,10 @@ const server = createServer(async (request, response) => {
     }
 
     const body = await readBody(request);
-    const name = (url.searchParams.get("name") || "").trim();
+    // Frappe binds a POST's kwargs from the request body only — a name that
+    // rides solely in the query string never reaches the endpoint, so mirror
+    // that strictness here rather than reading searchParams.
+    const name = String(body.name ?? "").trim();
     const row = crmLeads.find((lead) => lead.name === name);
     const content = String(body.content ?? "").trim();
     if (!row) {
@@ -6710,7 +6713,7 @@ const server = createServer(async (request, response) => {
       actor: String(account.full_name || (account.profile && account.profile.full_name) || account.name || email),
       actor_email: email,
       actor_image: "",
-      text: String(url.searchParams.get("language") || "bn").toLowerCase().startsWith("bn")
+      text: String(body.language || "bn").toLowerCase().startsWith("bn")
         ? "একটি মন্তব্য যোগ করেছেন"
         : "added a comment",
       body: content,
@@ -6733,7 +6736,8 @@ const server = createServer(async (request, response) => {
     }
 
     const body = await readBody(request);
-    const name = (url.searchParams.get("name") || "").trim();
+    // POST kwargs come from the body on real Frappe — body only here too.
+    const name = String(body.name ?? "").trim();
     const row = crmLeads.find((lead) => lead.name === name);
     if (!row) {
       failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
