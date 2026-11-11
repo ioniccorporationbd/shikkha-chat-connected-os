@@ -674,6 +674,9 @@ function crmLeadFields(row, t, ownerName) {
 // Keyed by lead so a created task shows up when the sheet reloads.
 const crmLeadTasks = new Map();
 let crmLeadTaskCounter = 1;
+// Calls logged via the Calls tab, newest first per lead (mirrors CRM Call Log).
+const crmLeadCalls = new Map();
+let crmLeadCallCounter = 1;
 
 // HR ▸ Employee — the same people the Desk employee list shows. `user` is the
 // linked User; the ERP endpoint resolves employee -> user itself.
@@ -833,7 +836,78 @@ function crmLeadDetailPayload(name, language) {
     activity,
     emails,
     comments: activity.filter((entry) => entry.kind === "comment"),
-    calls: [],
+    calls: [
+      ...(crmLeadCalls.get(name) || []),
+      {
+        key: "call:seed-1",
+        kind: "call",
+        actor: actress,
+        actor_email: "agent@shikkhachat.com",
+        actor_image: "",
+        text: t("Outbound Call · Completed · 5:12", "আউটবাউন্ড কল · সম্পন্ন · 5:12"),
+        body: "",
+        at: iso(28 * 60 * 1000),
+        call: "CRM-CALL-00001",
+        type: "Outgoing",
+        status: "Completed",
+        from: "01300-000000",
+        to: row.mobile || "+8801700000000",
+        duration: "5:12",
+        caller: "agent@shikkhachat.com",
+        caller_label: actress,
+        caller_image: "",
+        receiver: "client@shikkhachat.com",
+        receiver_label: row.lead_name,
+        receiver_image: "",
+        telephony_medium: "",
+      },
+      {
+        key: "call:seed-2",
+        kind: "call",
+        actor: row.lead_name,
+        actor_email: row.email || "client@shikkhachat.com",
+        actor_image: "",
+        text: t("Inbound Call · No Answer", "ইনবাউন্ড কল · উত্তর নেই"),
+        body: "",
+        at: iso(3 * 60 * 60 * 1000),
+        call: "CRM-CALL-00002",
+        type: "Incoming",
+        status: "No Answer",
+        from: row.mobile || "+8801700000000",
+        to: "01300-000000",
+        duration: "",
+        caller: "client@shikkhachat.com",
+        caller_label: row.lead_name,
+        caller_image: "",
+        receiver: "agent@shikkhachat.com",
+        receiver_label: actress,
+        receiver_image: "",
+        telephony_medium: "",
+      },
+      {
+        key: "call:seed-3",
+        kind: "call",
+        actor: actress,
+        actor_email: "agent@shikkhachat.com",
+        actor_image: "",
+        text: t("Inbound Call · Declined", "ইনবাউন্ড কল · ডিক্লাইনড"),
+        body: "",
+        at: iso(26 * 60 * 60 * 1000),
+        call: "CRM-CALL-00003",
+        type: "Incoming",
+        status: "Busy",
+        from: row.mobile || "+8801700000000",
+        to: "01300-000000",
+        duration: "",
+        caller: "client@shikkhachat.com",
+        caller_label: row.lead_name,
+        caller_image: "",
+        receiver: "agent@shikkhachat.com",
+        receiver_label: actress,
+        receiver_image: "",
+        telephony_medium: "",
+      },
+    ],
     tasks: crmLeadTaskRows(name, t),
     notes: crmLeadNotes(name, language),
     attachments: [...(crmLeadExtraFiles.get(name) || []), ...crmLeadSeedAttachments()],
@@ -7119,6 +7193,96 @@ const server = createServer(async (request, response) => {
       },
       lead: leadName,
     });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.add_lead_call_log") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const leadName = String(body.name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === leadName);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    let call = body.call;
+    if (typeof call === "string") {
+      try {
+        call = JSON.parse(call);
+      } catch {
+        call = null;
+      }
+    }
+    if (!call || typeof call !== "object" || Array.isArray(call)) {
+      failure(response, 417, "ValidationError", "Choose the call type.", "CRM Call Log");
+      return;
+    }
+
+    const type = ["Incoming", "Outgoing"].includes(String(call.type ?? "").trim())
+      ? String(call.type).trim()
+      : "";
+    if (!type) {
+      failure(response, 417, "ValidationError", "Choose the call type.", "CRM Call Log");
+      return;
+    }
+    const from = String(call.from ?? "").trim().slice(0, 50);
+    const to = String(call.to ?? "").trim().slice(0, 50);
+    if (!from || !to) {
+      failure(response, 417, "ValidationError", "Enter the From and To numbers.", "CRM Call Log");
+      return;
+    }
+    const status = String(call.status ?? "Initiated").trim() || "Initiated";
+    const duration = String(call.duration ?? "").trim().slice(0, 20);
+
+    const employeeId = String(call.employee ?? "").trim();
+    const employee = employeeId ? crmTaskEmployees.find((item) => item.value === employeeId) : null;
+    const personUser = employee?.user || "";
+    const personLabel = employee?.label || "";
+
+    // Incoming -> receiver, Outgoing -> caller; the other side is the lead.
+    const caller = type === "Outgoing" ? personUser : "client@shikkhachat.com";
+    const caller_label = type === "Outgoing" ? personLabel : row.lead_name;
+    const receiver = type === "Incoming" ? personUser : "client@shikkhachat.com";
+    const receiver_label = type === "Incoming" ? personLabel : row.lead_name;
+
+    const at = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const docname = `CRM-CALL-${String(10000 + crmLeadCallCounter++).padStart(5, "0")}`;
+    const created = {
+      key: `call:${docname}`,
+      kind: "call",
+      actor: caller_label || caller,
+      actor_email: caller,
+      actor_image: "",
+      text: `${type === "Incoming" ? "Inbound Call" : "Outbound Call"} · ${status}`,
+      body: "",
+      at,
+      call: docname,
+      type,
+      status,
+      from,
+      to,
+      duration,
+      caller,
+      caller_label,
+      caller_image: "",
+      receiver,
+      receiver_label,
+      receiver_image: "",
+      telephony_medium: "",
+    };
+
+    const list = crmLeadCalls.get(leadName) || [];
+    list.unshift(created);
+    crmLeadCalls.set(leadName, list);
+
+    ok(response, { call: created, lead: leadName });
     return;
   }
 

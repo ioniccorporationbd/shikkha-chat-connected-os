@@ -190,6 +190,15 @@ export interface LeadsDetailCopy {
     toRequired: string;
     noEmployees: string;
   };
+  /** Calls tab rows: the Desk-style call card wording + status chips. */
+  callRow: {
+    inboundTitle: string;
+    outboundTitle: string;
+    reachedOut: string;
+    madeCall: string;
+  };
+  /** Localized call-status labels, keyed by the raw CRM Call Log status. */
+  callStatus: Record<string, string>;
   empty: {
     activity: string;
     emails: string;
@@ -448,6 +457,24 @@ const bn: LeadsCopy = {
       toRequired: "টু নম্বর দিন।",
       noEmployees: "কোনো সক্রিয় কর্মী পাওয়া যায়নি।",
     },
+    callRow: {
+      inboundTitle: "ইনবাউন্ড কল",
+      outboundTitle: "আউটবাউন্ড কল",
+      reachedOut: "যোগাযোগ করেছেন",
+      madeCall: "কল করেছেন",
+    },
+    callStatus: {
+      Completed: "সম্পন্ন",
+      Initiated: "শুরু হয়েছে",
+      Busy: "ডিক্লাইনড",
+      Failed: "ব্যর্থ",
+      Queued: "সারিতে",
+      Canceled: "বাতিল",
+      Ringing: "রিং হচ্ছে",
+      "No Answer": "উত্তর নেই",
+      "In Progress": "চলছে",
+      Missed: "মিসড কল",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -682,6 +709,24 @@ const en: LeadsCopy = {
       fromRequired: "Enter the From number.",
       toRequired: "Enter the To number.",
       noEmployees: "No active employees found.",
+    },
+    callRow: {
+      inboundTitle: "Inbound Call",
+      outboundTitle: "Outbound Call",
+      reachedOut: "has reached out",
+      madeCall: "has made a call",
+    },
+    callStatus: {
+      Completed: "Completed",
+      Initiated: "Initiated",
+      Busy: "Declined",
+      Failed: "Failed",
+      Queued: "Queued",
+      Canceled: "Canceled",
+      Ringing: "Ringing",
+      "No Answer": "No Answer",
+      "In Progress": "In Progress",
+      Missed: "Missed Call",
     },
     empty: {
       activity: "No activity yet.",

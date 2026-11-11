@@ -20,6 +20,11 @@ import {
   FiMail,
   FiMessageSquare,
   FiPhone,
+  FiPhoneIncoming,
+  FiPhoneOutgoing,
+  FiPhoneMissed,
+  FiPhoneOff,
+  FiClock,
   FiPaperclip,
   FiExternalLink,
   FiMaximize2,
@@ -804,11 +809,40 @@ const CALL_STATUSES = [
   "Canceled",
 ];
 
+/** Desk-style tones for the call status chip (mirrors CRM's statusColorMap). */
+const CALL_STATUS_TONE: Record<string, { bg: string; fg: string }> = {
+  Completed: { bg: "color-mix(in srgb, #12b76a 12%, white)", fg: "#067647" },
+  "In Progress": { bg: "color-mix(in srgb, #2e90fa 12%, white)", fg: "#0b5cab" },
+  Queued: { bg: "color-mix(in srgb, #2e90fa 12%, white)", fg: "#0b5cab" },
+  Failed: { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" },
+  "No Answer": { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" },
+  Busy: { bg: "color-mix(in srgb, #f5a524 18%, white)", fg: "#8a5a00" },
+};
+
+/** ISO/datetime -> "11 Nov, Wed" (Bengali numerals under the bn locale). */
+function formatCallDate(value: string, language: string): string {
+  if (!value) return "";
+  const date = new Date(value.replace(" ", "T").slice(0, 19));
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      weekday: "short",
+    }).format(date);
+  } catch {
+    return "";
+  }
+}
+
 /**
- * The Calls tab: a live count, the **Log a Call** button, and the call list.
- *
- * Rows are read-only here; the button opens `CallFormModal`, which creates a
- * real `CRM Call Log` (Desk ▸ CRM ▸ Call Logs) linked back to this lead.
+ * The Calls tab, mirroring the CRM Desk lead page's Calls section: a live
+ * count + **Log a Call** button over a timeline of calls. Each call is a
+ * rail icon (inbound / outbound / missed / declined), a "who has reached out /
+ * made a call" line with relative time, and a bordered card carrying the
+ * Inbound/Outbound title, caller + receiver avatars, and date / duration /
+ * status chips. Read-only here; the button opens `CallFormModal`, which creates
+ * a real `CRM Call Log` (Desk ▸ CRM ▸ Call Logs) linked back to this lead.
  */
 function CallsPanel({
   items,
@@ -845,7 +879,117 @@ function CallsPanel({
         </button>
       </div>
 
-      <SimpleActivityList items={items} copy={copy} empty={empty} />
+      {items.length === 0 ? (
+        <EmptyTab text={empty} />
+      ) : (
+        <ul className="flex flex-col">
+          {items.map((call) => {
+            const incoming = call.type === "Incoming";
+            const missed = call.status === "No Answer" && incoming;
+            const busy = call.status === "Busy";
+            const RailIcon = missed
+              ? FiPhoneMissed
+              : busy
+                ? FiPhoneOff
+                : incoming
+                  ? FiPhoneIncoming
+                  : FiPhoneOutgoing;
+            const tone = CALL_STATUS_TONE[call.status ?? ""] ?? {
+              bg: "color-mix(in srgb, var(--color-primary) 8%, var(--color-white))",
+              fg: "color-mix(in srgb, var(--color-primary) 62%, transparent)",
+            };
+            const statusText =
+              call.status === "No Answer" && incoming
+                ? detail.callStatus.Missed ?? call.status
+                : detail.callStatus[call.status ?? ""] ?? call.status;
+            const avatarA = { label: call.caller_label, email: call.caller, image: call.caller_image };
+            const avatarB = { label: call.receiver_label, email: call.receiver, image: call.receiver_image };
+
+            return (
+              <li
+                key={call.key}
+                className="relative flex gap-3 pb-4 last:pb-0"
+                data-lead-call={call.call || call.key}
+              >
+                <span
+                  aria-hidden
+                  className="absolute left-[13px] top-8 bottom-0 w-px bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] last:hidden"
+                />
+                <span
+                  className="relative z-[1] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+                  style={missed ? { color: "#e5484d" } : undefined}
+                >
+                  <RailIcon
+                    size={13}
+                    className={missed ? "" : "text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"}
+                  />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="min-w-0 text-[12.5px] leading-relaxed text-[var(--color-primary)]">
+                      <span className="font-semibold">{call.caller_label || call.actor || "—"}</span>{" "}
+                      <span className={MUTED}>{incoming ? detail.callRow.reachedOut : detail.callRow.madeCall}</span>
+                    </p>
+                    <RelativeTime at={call.at} copy={copy} />
+                  </div>
+
+                  <div
+                    className="mt-2 flex flex-col gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3 py-2.5"
+                    data-lead-call-card=""
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+                        {incoming ? detail.callRow.inboundTitle : detail.callRow.outboundTitle}
+                      </span>
+                      <span className="flex shrink-0 items-center -space-x-1.5">
+                        {avatarA.label || avatarA.email ? (
+                          <PersonAvatar
+                            actor={avatarA.label || avatarA.email}
+                            email={avatarA.email}
+                            image={avatarA.image}
+                          />
+                        ) : null}
+                        {avatarB.label || avatarB.email ? (
+                          <PersonAvatar
+                            actor={avatarB.label || avatarB.email}
+                            email={avatarB.email}
+                            image={avatarB.image}
+                          />
+                        ) : null}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {call.at ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-2 py-0.5 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                          <FiCalendar size={10} />
+                          {formatCallDate(call.at, language)}
+                        </span>
+                      ) : null}
+                      {call.duration && call.status === "Completed" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-2 py-0.5 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                          <FiClock size={10} />
+                          {call.duration}
+                        </span>
+                      ) : null}
+                      {call.status ? (
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                          style={{ backgroundColor: tone.bg, color: tone.fg }}
+                          data-lead-call-status={call.status}
+                        >
+                          {statusText}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

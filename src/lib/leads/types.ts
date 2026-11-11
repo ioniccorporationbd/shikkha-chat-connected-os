@@ -44,6 +44,19 @@ export interface LeadActivity {
   /** Task rows only: the CRM Task's own fields. */
   /** The CRM Task docname — what the details popup saves against. */
   task?: string;
+  /** Call rows only: the CRM Call Log docname + the Desk call-card fields. */
+  call?: string;
+  type?: string;
+  from?: string;
+  to?: string;
+  duration?: string;
+  caller?: string;
+  caller_label?: string;
+  caller_image?: string;
+  receiver?: string;
+  receiver_label?: string;
+  receiver_image?: string;
+  telephony_medium?: string;
   /** Note rows only: the CRM Note docname — what the note popup saves against. */
   note?: string;
   /** Note rows only: the `Comment` docname for Desk-style (comment) notes. */
