@@ -348,6 +348,62 @@ async function login() {
       `[${viewport.tag}] note titles and bodies render without placeholder text`
     );
 
+    // New note: the button sits top-right of the Notes tab and opens Desk's
+    // Create Note form (required title + rich-text content), which writes an
+    // FCRM Note so the row also shows up in Desk ▸ CRM ▸ Notes.
+    const newNoteBtn = page.locator("[data-lead-new-note]");
+    check(
+      (await newNoteBtn.count()) === 1,
+      `[${viewport.tag}] the Notes tab offers one New note button`
+    );
+    const noteSectionBox = await page.locator("[data-lead-tab-panel]").boundingBox();
+    const noteBtnBox = await newNoteBtn.boundingBox();
+    check(
+      Boolean(noteSectionBox && noteBtnBox) &&
+        noteBtnBox.x + noteBtnBox.width > noteSectionBox.x + noteSectionBox.width / 2 &&
+        noteBtnBox.y < noteSectionBox.y + 80,
+      `[${viewport.tag}] New note sits at the top-right of the Notes tab`
+    );
+
+    await newNoteBtn.click();
+    await page.locator("[data-note-modal]").waitFor({ state: "visible", timeout: 10000 });
+    check(
+      (await page.locator("[data-note-title]").count()) === 1 &&
+        (await page.locator("[data-note-content]").count()) === 1,
+      `[${viewport.tag}] the note form shows a title and a content box`
+    );
+    const noteTools = await page.locator('[data-note-modal] [role="toolbar"] button').count();
+    check(noteTools >= 12, `[${viewport.tag}] the content box has a full editing toolbar (${noteTools})`);
+
+    // A missing title is caught before anything is sent.
+    await page.locator("[data-note-create]").click();
+    await page.locator("[data-note-error]").first().waitFor({ state: "visible", timeout: 5000 });
+    check(
+      !!(await page.locator("[data-note-error]").first().innerText()),
+      `[${viewport.tag}] a note without a title is refused with a message`
+    );
+
+    const noteTitle = "E2E নোট — পোর্টাল থেকে তৈরি";
+    await page.locator("[data-note-title]").fill(noteTitle);
+    await page.locator("[data-note-content]").click();
+    await page.keyboard.type("এই নোটটি পোর্টালের নতুন নোট ফর্ম থেকে তৈরি হয়েছে।");
+    await page.locator("[data-note-create]").click();
+    await page.locator("[data-note-modal]").waitFor({ state: "detached", timeout: 20000 });
+    await page.waitForFunction(
+      (title) => document.body.innerText.includes(title),
+      noteTitle,
+      { timeout: 20000 }
+    );
+    const firstNote = (await page.locator("[data-lead-note]").first().innerText()) || "";
+    check(
+      firstNote.includes(noteTitle),
+      `[${viewport.tag}] the new note appears at the top of the Notes tab`
+    );
+    check(
+      (await page.locator("[data-lead-note]").count()) > noteCount,
+      `[${viewport.tag}] the Notes tab grew by the new note`
+    );
+
     // Data tab: the lead's fields, editable in place — First Name / Last Name /
     // E-mail rows always exist, and a saved edit round-trips through the ERP.
     await page.locator('[data-lead-tab="data"]').click();

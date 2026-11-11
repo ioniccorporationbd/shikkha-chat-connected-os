@@ -39,6 +39,30 @@ export interface LeadsDetailCopy {
   saveFailed: string;
   /** Tasks tab: the top-right New-task button and its form. */
   newTask: string;
+  newNote: string;
+  noteForm: {
+    title: string;
+    titlePlaceholder: string;
+    content: string;
+    contentPlaceholder: string;
+    create: string;
+    creating: string;
+    titleRequired: string;
+    created: string;
+    saveFailed: string;
+    heading: string;
+    bold: string;
+    italic: string;
+    strike: string;
+    bulletList: string;
+    numberedList: string;
+    insertLink: string;
+    inlineCode: string;
+    insertImage: string;
+    clearFormatting: string;
+    linkPrompt: string;
+    imagePrompt: string;
+  };
   taskForm: {
     title: string;
     titlePlaceholder: string;
@@ -183,6 +207,30 @@ const bn: LeadsCopy = {
     saved: "লিডের তথ্য সংরক্ষণ হয়েছে",
     saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
     newTask: "নতুন টাস্ক",
+    newNote: "নতুন নোট",
+    noteForm: {
+      title: "শিরোনাম",
+      titlePlaceholder: "শিরোনাম",
+      content: "বিষয়বস্তু",
+      contentPlaceholder: "বিষয়বস্তু",
+      create: "তৈরি করুন",
+      creating: "সংরক্ষণ হচ্ছে…",
+      titleRequired: "নোটের শিরোনাম দিতে হবে।",
+      created: "নোটটি সংরক্ষণ হয়েছে।",
+      saveFailed: "নোট সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
+      heading: "হেডিং",
+      bold: "বোল্ড",
+      italic: "ইটালিক",
+      strike: "স্ট্রাইকথ্রু",
+      bulletList: "বুলেট তালিকা",
+      numberedList: "ক্রমিক তালিকা",
+      insertLink: "লিংক যোগ করুন",
+      inlineCode: "কোড",
+      insertImage: "ছবি যোগ করুন",
+      clearFormatting: "ফরম্যাটিং মুছুন",
+      linkPrompt: "লিংকের ঠিকানা দিন (https://…)",
+      imagePrompt: "ছবির ঠিকানা দিন (https://…)",
+    },
     taskForm: {
       title: "টাস্কের শিরোনাম",
       titlePlaceholder: "যেমন: গ্রাহককে কলব্যাক করা",
@@ -306,6 +354,30 @@ const en: LeadsCopy = {
     saved: "The lead has been saved",
     saveFailed: "The lead could not be saved",
     newTask: "New task",
+    newNote: "New note",
+    noteForm: {
+      title: "Title",
+      titlePlaceholder: "Title",
+      content: "Content",
+      contentPlaceholder: "Content",
+      create: "Create",
+      creating: "Saving…",
+      titleRequired: "Give the note a title.",
+      created: "The note has been saved.",
+      saveFailed: "Could not save the note. Please try again.",
+      heading: "Heading",
+      bold: "Bold",
+      italic: "Italic",
+      strike: "Strikethrough",
+      bulletList: "Bulleted list",
+      numberedList: "Numbered list",
+      insertLink: "Insert link",
+      inlineCode: "Code",
+      insertImage: "Insert image",
+      clearFormatting: "Clear formatting",
+      linkPrompt: "Link URL (https://…)",
+      imagePrompt: "Image URL (https://…)",
+    },
     taskForm: {
       title: "Task title",
       titlePlaceholder: "e.g. Call the customer back",

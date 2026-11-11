@@ -4,6 +4,8 @@ import { getJson, postJson } from "@/lib/api/http";
 
 import type {
   LeadDetailPayload,
+  LeadNoteCreated,
+  LeadNoteDraft,
   LeadsPayload,
   LeadTaskCreated,
   LeadTaskDraft,
@@ -92,6 +94,21 @@ export function addLeadTask(
   return postJson<{ task: LeadTaskCreated; lead: string }>(
     `/api/leads/${encodeURIComponent(name)}/task`,
     { task, language }
+  );
+}
+
+/**
+ * `POST /api/leads/<name>/note` — create a CRM note (FCRM Note) from the
+ * Notes tab's New-note form; the row lands in /crm/notes like a Desk note.
+ */
+export function addLeadNote(
+  name: string,
+  note: LeadNoteDraft,
+  language: string
+): Promise<{ note: LeadNoteCreated; lead: string }> {
+  return postJson<{ note: LeadNoteCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/note`,
+    { note, language }
   );
 }
 

@@ -4,19 +4,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FiActivity,
   FiAlertCircle,
+  FiBold,
   FiCalendar,
   FiCheckSquare,
   FiChevronDown,
   FiDatabase,
   FiEdit2,
   FiFileText,
+  FiCode,
+  FiImage,
   FiInbox,
+  FiItalic,
+  FiLink,
+  FiList,
   FiMail,
   FiMessageSquare,
   FiPhone,
   FiPaperclip,
+  FiMoreHorizontal,
   FiPlus,
   FiSend,
+  FiType,
   FiUserPlus,
   FiX,
 } from "react-icons/fi";
@@ -25,6 +33,7 @@ import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import {
   addLeadComment,
+  addLeadNote,
   addLeadTask,
   fetchLeadDetail,
   fetchLeadTaskOptions,
@@ -46,6 +55,7 @@ import type {
   LeadActivity,
   LeadAttachment,
   LeadDetailPayload,
+  LeadNoteCreated,
   LeadTaskCreated,
   LeadTaskOptions,
 } from "@/lib/leads/types";
@@ -758,6 +768,308 @@ function TaskFormModal({
   return createPortal(modal, document.body);
 }
 
+/** The Notes tab's list plus the top-right "New note" button. */
+function NotesPanel({
+  items,
+  copy,
+  detail,
+  empty,
+  onNew,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  empty: string;
+  onNew: () => void;
+}) {
+  return (
+    <div data-lead-notes-panel="">
+      <div className="mb-3.5 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-note=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newNote}</span>
+        </button>
+      </div>
+      {items.length === 0 ? (
+        <EmptyTab text={empty} />
+      ) : (
+        <NotesList items={items} copy={copy} empty={empty} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Desk-style "Create Note" form: a required title and a rich-text content box,
+ * writing a `FCRM Note` linked to the lead (it then shows at /crm/notes too).
+ */
+function NoteFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (note: LeadNoteCreated) => void | Promise<void>;
+}) {
+  const cf = detail.noteForm;
+  const [title, setTitle] = useState("");
+  const [empty, setEmpty] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  const syncEmpty = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const hasMedia = editor.querySelector("img,hr,table,li") !== null;
+    setEmpty(!(editor.innerText || "").trim() && !hasMedia);
+  };
+
+  const exec = (command: string, value?: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    try {
+      document.execCommand(command, false, value);
+    } catch {
+      /* older engines simply ignore unsupported commands */
+    }
+    syncEmpty();
+  };
+
+  const escapeHtml = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const onlyHttpUrl = (value: string | null) => {
+    const url = (value || "").trim();
+    if (!url) return "";
+    return /^https?:\/\//i.test(url) ? url : "";
+  };
+
+  const addLink = () => {
+    const url = onlyHttpUrl(window.prompt(cf.linkPrompt));
+    if (url) exec("createLink", url);
+  };
+
+  const addImage = () => {
+    const url = onlyHttpUrl(window.prompt(cf.imagePrompt));
+    if (url) exec("insertImage", url);
+  };
+
+  const addCode = () => {
+    const editor = editorRef.current;
+    const selected = window.getSelection()?.toString() ?? "";
+    if (!editor || !selected.trim()) {
+      exec("insertHTML", `<code>${escapeHtml(selected || "code")}</code>`);
+      return;
+    }
+    exec("insertHTML", `<code>${escapeHtml(selected)}</code>`);
+  };
+
+  const submit = async () => {
+    if (submitting) return;
+
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setFormError(cf.titleRequired);
+      titleRef.current?.focus();
+      return;
+    }
+
+    const content = editorRef.current?.innerHTML ?? "";
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadNote(name, { title: cleanTitle, content }, language);
+      await onCreated(result.note);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.saveFailed);
+      reportClientError({
+        scope: "leads:note",
+        message: "The lead note could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+  const toolClass =
+    "inline-flex h-7 min-w-[26px] items-center justify-center rounded-md px-1.5 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={detail.newNote}
+      data-note-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[560px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{detail.newNote}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-note-close=""
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={15} />
+          </button>
+        </div>
+
+        <div className="space-y-3.5">
+          <div>
+            <label className={labelClass} htmlFor="lead-note-title">
+              {cf.title} <span className="text-[#e0483f]">*</span>
+            </label>
+            <input
+              id="lead-note-title"
+              ref={titleRef}
+              type="text"
+              value={title}
+              maxLength={140}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder={cf.titlePlaceholder}
+              data-note-title=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <span className={labelClass}>{cf.content}</span>
+            <div className="overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] focus-within:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]">
+              <div
+                role="toolbar"
+                aria-label={cf.content}
+                className="flex flex-wrap items-center gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-1.5 py-1"
+              >
+                <button type="button" title={cf.heading} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h1>"); }}>
+                  <FiType size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title="H2" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h2>"); }}>
+                  H2
+                </button>
+                <button type="button" title="H3" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h3>"); }}>
+                  H3
+                </button>
+                <button type="button" title="H4" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h4>"); }}>
+                  H4
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.bold} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}>
+                  <FiBold size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.italic} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}>
+                  <FiItalic size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.strike} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }}>
+                  <span className="line-through">S</span>
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.bulletList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}>
+                  <FiList size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.numberedList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertOrderedList"); }}>
+                  <span className="text-[11px]">1.</span>
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.insertLink} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addLink(); }}>
+                  <FiLink size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.inlineCode} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addCode(); }}>
+                  <FiCode size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.insertImage} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addImage(); }}>
+                  <FiImage size={13} className="pointer-events-none" />
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.clearFormatting} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("removeFormat"); }}>
+                  <FiMoreHorizontal size={14} className="pointer-events-none" />
+                </button>
+              </div>
+              <div className="relative">
+                {empty ? (
+                  <span className="pointer-events-none absolute inset-x-3 top-2.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]">
+                    {cf.contentPlaceholder}
+                  </span>
+                ) : null}
+                <div
+                  ref={editorRef}
+                  role="textbox"
+                  aria-multiline="true"
+                  aria-label={cf.content}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={syncEmpty}
+                  data-note-content=""
+                  className="min-h-[180px] max-h-[340px] w-full overflow-y-auto px-3 py-2.5 text-[12.5px] leading-relaxed text-[var(--color-primary)] outline-none [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
+                />
+              </div>
+            </div>
+          </div>
+
+          {formError ? (
+            <p role="alert" data-note-error="" className="text-[11.5px] font-medium text-[#d0453c]">
+              {formError}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-note-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body> for the same reason as the task form: the sheet's
+  // animation fill-mode transform would otherwise clip a `fixed` popup.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
 function AttachmentList({
   items,
   empty,
@@ -1069,6 +1381,7 @@ function LeadDetailPanel({
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1373,7 +1686,16 @@ function LeadDetailPanel({
             }}
           />
         ) : activeTab === "notes" ? (
-          <NotesList items={payload.notes} copy={copy} empty={detail.empty.notes} />
+          <NotesPanel
+            items={payload.notes}
+            copy={copy}
+            detail={detail}
+            empty={detail.empty.notes}
+            onNew={() => {
+              setNotice(null);
+              setNoteFormOpen(true);
+            }}
+          />
         ) : (
           <AttachmentList items={payload.attachments} empty={detail.empty.attachments} copy={copy} />
         )}
@@ -1490,6 +1812,21 @@ function LeadDetailPanel({
             setTaskFormOpen(false);
             setNotice({ tone: "ok", text: detail.taskForm.created });
             setTabState({ name, tab: "tasks" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {noteFormOpen ? (
+        <NoteFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setNoteFormOpen(false)}
+          onCreated={async () => {
+            setNoteFormOpen(false);
+            setNotice({ tone: "ok", text: detail.noteForm.created });
+            setTabState({ name, tab: "notes" });
             await load();
           }}
         />

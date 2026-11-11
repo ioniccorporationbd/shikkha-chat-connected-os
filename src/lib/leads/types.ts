@@ -81,6 +81,25 @@ export interface LeadTaskDraft {
   due_date: string;
 }
 
+/** What the New-note form sends: a title plus the editor's HTML. */
+export interface LeadNoteDraft {
+  title: string;
+  content: string;
+}
+
+/** The note row `add_lead_note` returns, shaped like the Notes tab's rows. */
+export interface LeadNoteCreated {
+  key: string;
+  kind: string;
+  actor: string;
+  actor_email: string;
+  text: string;
+  body: string;
+  at: string;
+  note?: string;
+  pinned?: number;
+}
+
 export interface LeadTaskCreated {
   key: string;
   title: string;

@@ -517,6 +517,11 @@ const crmLeadExtraComments = new Map();
 const crmLeadExtraFiles = new Map();
 
 
+// Notes written from the portal's New-note form; they prepend the seeded rows,
+// exactly like a freshly created `FCRM Note` shows up first in Desk.
+const crmLeadExtraNotes = new Map();
+let crmNoteCounter = 5;
+
 // The Notes tab: what the desk lead page's #notes tab lists — `CRM Note` rows
 // attached to the lead, newest first, each with a title, its body and author.
 function crmLeadNotes(name, language) {
@@ -526,6 +531,7 @@ function crmLeadNotes(name, language) {
   const iso = (offsetMs) => new Date(now - offsetMs).toISOString().replace("T", " ").slice(0, 19);
 
   return [
+    ...(crmLeadExtraNotes.get(name) || []),
     {
       key: "note:CRM-NOTE-00002",
       kind: "note",
@@ -6953,6 +6959,78 @@ const server = createServer(async (request, response) => {
       },
       lead: leadName,
     });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.add_lead_note") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    // Body-only kwargs, like Frappe.
+    const leadName = String(body.name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === leadName);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    let note = body.note;
+    if (typeof note === "string") {
+      try {
+        note = JSON.parse(note);
+      } catch {
+        note = null;
+      }
+    }
+    if (!note || typeof note !== "object" || Array.isArray(note)) {
+      failure(response, 417, "ValidationError", "Give the note a title.", "FCRM Note");
+      return;
+    }
+
+    const title = String(note.title ?? "").trim().replace(/\s+/g, " ");
+    if (!title) {
+      failure(response, 417, "ValidationError", "Give the note a title.", "FCRM Note");
+      return;
+    }
+    if (title.length > 140) {
+      failure(response, 417, "ValidationError", "The note title is too long.", "FCRM Note");
+      return;
+    }
+
+    const content = String(note.content ?? "");
+    // Preview text for the list row: tags stripped, entities left as written.
+    const preview = content
+      .replace(/<(br|\/p|\/div|\/li|\/h[1-6])[^>]*>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\n{2,}/g, "\n")
+      .trim();
+
+    const at = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const noteName = `CRM-NOTE-${String(crmNoteCounter++).padStart(5, "0")}`;
+    const entry = {
+      key: `note:${noteName}`,
+      kind: "note",
+      actor: account.full_name || account.profile?.full_name || account.name || "Portal user",
+      actor_email: email,
+      actor_image: "",
+      text: title,
+      body: preview,
+      at,
+      updated: at,
+      note: noteName,
+      pinned: 0,
+    };
+
+    const list = crmLeadExtraNotes.get(leadName) || [];
+    list.unshift(entry);
+    crmLeadExtraNotes.set(leadName, list);
+
+    ok(response, { note: entry, lead: leadName });
     return;
   }
 
