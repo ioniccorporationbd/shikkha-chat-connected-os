@@ -1815,11 +1815,16 @@ function NoteDetailModal({
       } catch (cause) {
         if (cancelled) return;
         setState("failed");
-        setLoadError(cause instanceof ApiError ? cause.message : nd.notFound);
+        const apiCause = cause instanceof ApiError ? cause : null;
+        setLoadError(apiCause ? apiCause.message : nd.notFound);
         reportClientError({
           scope: "leads:note-detail",
           message: "The lead note could not be opened",
-          detail: cause instanceof Error ? cause.message : cause,
+          detail: apiCause
+            ? `${apiCause.message} (code=${apiCause.code}, status=${apiCause.status})`
+            : cause instanceof Error
+              ? cause.message
+              : String(cause),
         });
       }
     })();
@@ -1908,17 +1913,38 @@ function NoteDetailModal({
       return;
     }
 
+    const describe = (cause: unknown): string => {
+      const api = cause instanceof ApiError ? cause : null;
+      const base = cause instanceof Error ? cause.message : String(cause);
+      return api ? `${base} (code=${api.code}, status=${api.status})` : base;
+    };
+
     setSaving(true);
     setFormError(null);
     try {
       await updateLeadNote(name, noteName, edits, language);
-      await onSaved();
     } catch (cause) {
+      // The write itself failed — keep the popup open so the user can retry.
       setFormError(cause instanceof ApiError ? cause.message : nd.updateFailed);
       reportClientError({
         scope: "leads:note-detail",
         message: "The lead note could not be saved",
-        detail: cause instanceof Error ? cause.message : cause,
+        detail: describe(cause),
+      });
+      setSaving(false);
+      return;
+    }
+
+    // Save succeeded. The refresh below is best-effort: onSaved closes the popup
+    // and reloads the lead, so a failed rebuild must NOT be reported as a failed
+    // save (that mislabels the Error Log and hides the real cause).
+    try {
+      await onSaved();
+    } catch (cause) {
+      reportClientError({
+        scope: "leads:note-refresh",
+        message: "The lead could not be refreshed after saving the note",
+        detail: describe(cause),
       });
     } finally {
       setSaving(false);
