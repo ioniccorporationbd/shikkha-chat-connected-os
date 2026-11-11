@@ -295,6 +295,46 @@ async function login() {
       `[${viewport.tag}] the uploaded file shows in the Attachments tab`
     );
 
+    // Clicking an attachment must show the file itself: pictures open in the
+    // panel's own preview (streamed through /api/frappe-file), other files
+    // open in a new tab — never a raw ERP-host URL the portal cannot reach.
+    const imageRow = page.locator('[data-attachment-open][title]').filter({ hasText: "site-visit.png" }).first();
+    await imageRow.waitFor({ state: "visible", timeout: 20000 });
+    const thumb = page.locator("[data-lead-attachments] [data-attachment-thumb]").first();
+    await thumb.waitFor({ state: "visible", timeout: 20000 });
+    await page.waitForFunction(() => {
+      const img = document.querySelector("[data-lead-attachments] [data-attachment-thumb]");
+      return Boolean(img) && img.complete && img.naturalWidth > 0;
+    }, null, { timeout: 20000 });
+    check(true, `[${viewport.tag}] an image attachment shows a loaded thumbnail`);
+
+    await imageRow.click();
+    await page.locator("[data-attachment-preview]").waitFor({ state: "visible", timeout: 20000 });
+    await page.waitForFunction(() => {
+      const img = document.querySelector("[data-attachment-image]");
+      return Boolean(img) && img.complete && img.naturalWidth > 0;
+    }, null, { timeout: 20000 });
+    const previewName = (await page.locator("[data-attachment-name]").innerText()) || "";
+    check(
+      previewName.includes("site-visit.png"),
+      `[${viewport.tag}] clicking the picture opens it full-size in the panel`
+    );
+    await page.locator("[data-attachment-close]").click();
+    await page.locator("[data-attachment-preview]").waitFor({ state: "detached", timeout: 10000 });
+    check(true, `[${viewport.tag}] the image preview closes back to the Attachments tab`);
+
+    const fileRow = page.locator('[data-attachment-open][title]').filter({ hasText: "quotation-2026.pdf" }).first();
+    const popupPromise = page.context().waitForEvent("page", { timeout: 15000 });
+    await fileRow.click();
+    const popup = await popupPromise;
+    await popup.waitForURL(/\/api\/frappe-file/, { timeout: 15000 }).catch(() => {});
+    const popupUrl = popup.url();
+    check(
+      popupUrl.includes("/api/frappe-file") && popupUrl.includes("raw=1"),
+      `[${viewport.tag}] a non-picture attachment opens through the portal's file proxy (${popupUrl.slice(0, 80)})`
+    );
+    await popup.close();
+
     // Comments tab: the comment stream Desk keeps (/desk/system/comment) —
     // comments written in Desk show here, and the panel's own posts land here.
     await page.locator('[data-lead-tab="comments"]').click();

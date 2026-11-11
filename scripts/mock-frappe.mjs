@@ -516,6 +516,33 @@ const crmLeadExtraComments = new Map();
 // Attachments tab, like a real `File` row attached to the doc.
 const crmLeadExtraFiles = new Map();
 
+// Seeded attachments so the Attachments tab has something to show: one picture
+// (the tab previews it) and one non-picture (the tab opens it in a new tab).
+const crmLeadSeedFilePaths = new Set([
+  "/files/lead-site-visit.png",
+  "/files/lead-quotation-2026.pdf",
+]);
+
+function crmLeadSeedAttachments() {
+  const at = "2026-11-05T09:20:00.000Z";
+  return [
+    {
+      key: "file:seed-site-visit",
+      file_name: "site-visit.png",
+      file_url: "/files/lead-site-visit.png",
+      file_size: 184320,
+      at,
+    },
+    {
+      key: "file:seed-quote",
+      file_name: "quotation-2026.pdf",
+      file_url: "/files/lead-quotation-2026.pdf",
+      file_size: 96256,
+      at,
+    },
+  ];
+}
+
 
 // Notes written from the portal's New-note form; they prepend the seeded rows,
 // exactly like a freshly created `FCRM Note` shows up first in Desk.
@@ -789,7 +816,7 @@ function crmLeadDetailPayload(name, language) {
     calls: [],
     tasks: crmLeadTaskRows(name, t),
     notes: crmLeadNotes(name, language),
-    attachments: crmLeadExtraFiles.get(name) || [],
+    attachments: [...(crmLeadExtraFiles.get(name) || []), ...crmLeadSeedAttachments()],
   };
 }
 
@@ -3294,6 +3321,9 @@ const HD_0658_IMAGE_BYTES = (() => {
   }
 })();
 hdFileBytes.set(HD_0658_IMAGE_URL, HD_0658_IMAGE_BYTES);
+// The lead Attachments tab demo picture reuses this real screenshot, so the
+// thumbnail and the preview look like an actual uploaded file.
+hdFileBytes.set("/files/lead-site-visit.png", HD_0658_IMAGE_BYTES);
 hd0658Image.file_size = HD_0658_IMAGE_BYTES.length;
 hdAppend(HD_0658, "support", "[0658-2] স্ক্রিনশট দেখুন", {
   at: "2026-11-02T11:10:00.000Z",
@@ -5186,7 +5216,7 @@ const server = createServer(async (request, response) => {
       );
     // Nothing claims this name and it is not the avatar: the real ERP answers 404,
     // so the mock must not invent bytes (otherwise a broken picture looks painted).
-    if (!fileRow && url.pathname !== AVATAR_PATH) {
+    if (!fileRow && url.pathname !== AVATAR_PATH && !crmLeadSeedFilePaths.has(url.pathname)) {
       failure(response, 404, "DoesNotExistError", "File not found.", "Help Desk");
       return;
     }

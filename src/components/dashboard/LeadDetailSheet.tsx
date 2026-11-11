@@ -21,6 +21,8 @@ import {
   FiMessageSquare,
   FiPhone,
   FiPaperclip,
+  FiExternalLink,
+  FiMaximize2,
   FiMoreHorizontal,
   FiPlus,
   FiSend,
@@ -43,6 +45,7 @@ import {
 } from "@/lib/leads/api";
 import {
   formatCount,
+  formatFileSize,
   leadInitials,
   leadRelativeTime,
   leadsCopyFor,
@@ -1070,38 +1073,202 @@ function NoteFormModal({
   return createPortal(modal, document.body);
 }
 
+/** Same-origin streamer for the lead's files — the ERP host stays hidden. */
+function attachmentSrc(file: LeadAttachment, raw = false): string {
+  const query = `path=${encodeURIComponent(file.file_url)}`;
+  return `/api/frappe-file?${query}${raw ? "&raw=1" : ""}`;
+}
+
+/** Pictures can be shown inline; everything else opens in a new tab. */
+function isImageAttachment(file: LeadAttachment): boolean {
+  const name = file.file_name || file.file_url || "";
+  return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(name);
+}
+
+/** The Attachments tab: thumbnails for pictures, click to open / preview. */
 function AttachmentList({
   items,
   empty,
   copy,
+  detail,
+  onOpen,
 }: {
   items: LeadAttachment[];
   empty: string;
   copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  onOpen: (file: LeadAttachment) => void;
 }) {
+  const [broken, setBroken] = useState<Record<string, true>>({});
+
   if (items.length === 0) return <EmptyTab text={empty} />;
 
   return (
     <ul className="flex flex-col gap-2" data-lead-attachments="">
-      {items.map((file) => (
-        <li key={file.key}>
-          <a
-            href={file.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-3.5 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
-          >
-            <FiPaperclip size={14} className="shrink-0 text-[var(--color-action)]" />
-            <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-[var(--color-primary)]">
-              {file.file_name}
-            </span>
-            <RelativeTime at={file.at} copy={copy} />
-          </a>
-        </li>
-      ))}
+      {items.map((file) => {
+        const image = isImageAttachment(file) && !broken[file.key];
+        return (
+          <li key={file.key}>
+            <button
+              type="button"
+              onClick={() => onOpen(file)}
+              data-attachment-open=""
+              title={isImageAttachment(file) ? detail.attachment.preview : detail.attachment.openTab}
+              className="flex w-full items-center gap-2.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-3 py-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+            >
+              {isImageAttachment(file) ? (
+                <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]">
+                  {image ? (
+                    <img
+                      src={attachmentSrc(file)}
+                      alt={file.file_name}
+                      loading="lazy"
+                      data-attachment-thumb=""
+                      className="h-full w-full object-cover"
+                      onError={() => {
+                        console.warn("[leads] attachment thumbnail failed", file.file_url);
+                        setBroken((current) => ({ ...current, [file.key]: true }));
+                      }}
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      <FiImage size={15} />
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] text-[var(--color-action)]">
+                  <FiPaperclip size={15} />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium text-[var(--color-primary)]">
+                  {file.file_name}
+                </span>
+                <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                  <RelativeTime at={file.at} copy={copy} />
+                  {formatFileSize(file.file_size) ? (
+                    <span aria-hidden="true">· {formatFileSize(file.file_size)}</span>
+                  ) : null}
+                </span>
+              </span>
+              <span className="shrink-0 text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
+                {isImageAttachment(file) ? <FiMaximize2 size={13} /> : <FiExternalLink size={13} />}
+              </span>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
+
+/**
+ * Clicking a picture attachment opens it right here, over the lead sheet —
+ * the file itself is streamed through the portal's session-aware proxy.
+ */
+function AttachmentPreview({
+  file,
+  detail,
+  copy,
+  onClose,
+}: {
+  file: LeadAttachment;
+  detail: LeadsDetailCopy;
+  copy: LeadsCopy;
+  onClose: () => void;
+}) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${detail.attachment.preview}: ${file.file_name}`}
+      data-attachment-preview=""
+      className="fixed inset-0 z-[170] flex items-center justify-center bg-[rgba(9,12,24,0.66)] p-4 sm:p-8"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="flex max-h-full w-full max-w-[880px] flex-col overflow-hidden rounded-2xl bg-[var(--color-white)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]">
+        <div className="flex items-start gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-[var(--color-primary)]" data-attachment-name="">
+              {file.file_name}
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+              <RelativeTime at={file.at} copy={copy} />
+              {formatFileSize(file.file_size) ? (
+                <span aria-hidden="true">· {formatFileSize(file.file_size)}</span>
+              ) : null}
+            </p>
+          </div>
+          <a
+            href={attachmentSrc(file, true)}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-attachment-newtab=""
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))]"
+          >
+            <FiExternalLink size={12} />
+            <span className="hidden sm:inline">{detail.attachment.openTab}</span>
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={detail.close}
+            data-attachment-close=""
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+          >
+            <FiX size={15} />
+          </button>
+        </div>
+
+        <div className="flex min-h-[220px] items-center justify-center overflow-auto bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-3">
+          {state === "failed" ? (
+            <div className="max-w-[320px] text-center">
+              <FiImage size={22} className="mx-auto mb-2 text-[color-mix(in_srgb,var(--color-primary)_35%,transparent)]" />
+              <p className="text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]" data-attachment-error="">
+                {detail.attachment.loadFailed}
+              </p>
+            </div>
+          ) : (
+            <img
+              src={attachmentSrc(file)}
+              alt={file.file_name}
+              data-attachment-image=""
+              onLoad={() => setState("ready")}
+              onError={() => {
+                console.error("[leads] attachment image failed", file.file_url);
+                setState("failed");
+                reportClientError({
+                  scope: "leads:attachment",
+                  message: "The attachment image could not be shown",
+                  detail: { file_url: file.file_url, file_name: file.file_name },
+                });
+              }}
+              className="max-h-[70vh] w-auto max-w-full rounded-lg object-contain shadow-[0_10px_30px_-18px_rgba(0,0,0,0.5)]"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+
 
 /** Mirrors `_EDITABLE_FIELDS` in the ERP endpoint; only a UI ordering hint. */
 const FALLBACK_EDITABLE_FIELDS = [
@@ -1382,6 +1549,7 @@ function LeadDetailPanel({
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [noteFormOpen, setNoteFormOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<LeadAttachment | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -1503,6 +1671,17 @@ function LeadDetailPanel({
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  /** A picture opens in the in-sheet preview; any other file opens a tab. */
+  const openAttachment = (file: LeadAttachment) => {
+    setNotice(null);
+    if (isImageAttachment(file)) {
+      setPreviewFile(file);
+      return;
+    }
+    const opened = window.open(attachmentSrc(file, true), "_blank", "noopener,noreferrer");
+    if (!opened) setNotice({ tone: "error", text: detail.attachment.blocked });
   };
 
   const statusTone = lead?.status ? leadStatusTone(lead.status) : null;
@@ -1697,7 +1876,13 @@ function LeadDetailPanel({
             }}
           />
         ) : (
-          <AttachmentList items={payload.attachments} empty={detail.empty.attachments} copy={copy} />
+          <AttachmentList
+            items={payload.attachments}
+            empty={detail.empty.attachments}
+            copy={copy}
+            detail={detail}
+            onOpen={openAttachment}
+          />
         )}
       </div>
 
@@ -1814,6 +1999,15 @@ function LeadDetailPanel({
             setTabState({ name, tab: "tasks" });
             await load();
           }}
+        />
+      ) : null}
+
+      {previewFile ? (
+        <AttachmentPreview
+          file={previewFile}
+          detail={detail}
+          copy={copy}
+          onClose={() => setPreviewFile(null)}
         />
       ) : null}
 

@@ -6,6 +6,8 @@ export const runtime = "nodejs";
 
 /** Pictures only — timeline avatars. Anything bigger/other is not proxied. */
 const MAX_BYTES = 4 * 1024 * 1024;
+/** `raw=1` (the Attachments tab) may hand over any file type, still bounded. */
+const MAX_RAW_BYTES = 25 * 1024 * 1024;
 
 /**
  * Resolve a site-relative path (`/files/x.png`, `/private/files/x.png`) to an
@@ -60,6 +62,11 @@ export async function GET(request: Request) {
   const remote = resolveFileUrl(url.searchParams.get("path") ?? "", frappeBaseUrl());
   if (!remote) return new Response(null, { status: 404 });
 
+  // `raw=1`: the Attachments tab opens the lead's files (PDFs, sheets, …) in a
+  // new tab — those need the caller's session too, so they stream through here
+  // instead of exposing the ERP host. Same host-only rule, larger size cap.
+  const raw = url.searchParams.get("raw") === "1";
+
   let upstream: Response;
   try {
     upstream = await fetch(remote, {
@@ -77,10 +84,15 @@ export async function GET(request: Request) {
   const contentType = upstream.headers.get("content-type") ?? "";
   const declaredLength = Number(upstream.headers.get("content-length") ?? 0);
 
+  // An HTML page served with 200 (Frappe's login wall) must never pass as a file.
+  const looksBlocked =
+    contentType.includes("text/html") || contentType.includes("application/json");
+
   if (
     !upstream.ok ||
-    !contentType.startsWith("image/") ||
-    declaredLength > MAX_BYTES ||
+    looksBlocked ||
+    (!raw && !contentType.startsWith("image/")) ||
+    declaredLength > (raw ? MAX_RAW_BYTES : MAX_BYTES) ||
     !upstream.body
   ) {
     return new Response(null, { status: 404 });

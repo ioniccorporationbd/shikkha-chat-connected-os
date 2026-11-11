@@ -93,6 +93,15 @@ export interface LeadsDetailCopy {
     notes: string;
     attachments: string;
   };
+  /** Copy for the Attachments tab: opening a file / its image preview. */
+  attachment: {
+    openTab: string;
+    preview: string;
+    loadFailed: string;
+    blocked: string;
+    /** e.g. "240 KB" */
+    size: (value: string) => string;
+  };
   justNow: string;
   minuteAgo: (n: string) => string;
   hourAgo: (n: string) => string;
@@ -261,6 +270,13 @@ const bn: LeadsCopy = {
       notes: "কোনো নোট নেই।",
       attachments: "কোনো সংযুক্তি নেই।",
     },
+    attachment: {
+      openTab: "নতুন ট্যাবে খুলুন",
+      preview: "সংযুক্তির ছবি",
+      loadFailed: "ছবিটি লোড করা যায়নি। ফাইলটি নতুন ট্যাবে খুলুন।",
+      blocked: "ব্রাউজার নতুন ট্যাব আটকে দিয়েছে — পপ-আপ অনুমোদন করুন।",
+      size: (value) => value,
+    },
     justNow: "এইমাত্র",
     minuteAgo: (n) => `${n} মিনিট আগে`,
     hourAgo: (n) => `${n} ঘণ্টা আগে`,
@@ -408,6 +424,13 @@ const en: LeadsCopy = {
       notes: "No notes.",
       attachments: "No attachments.",
     },
+    attachment: {
+      openTab: "Open in a new tab",
+      preview: "Attachment image",
+      loadFailed: "The picture did not load. Open the file in a new tab.",
+      blocked: "The browser blocked the new tab — allow pop-ups for this site.",
+      size: (value) => value,
+    },
     justNow: "just now",
     minuteAgo: (n) => `${n} minute${n === "1" ? "" : "s"} ago`,
     hourAgo: (n) => `${n} hour${n === "1" ? "" : "s"} ago`,
@@ -433,6 +456,15 @@ const en: LeadsCopy = {
   },
   total: (count, more) => `${count}${more ? "+" : ""} leads in total`,
 };
+
+/** "240 KB" / "1.4 MB" — the attachment row's file-size chip. */
+export function formatFileSize(bytes: number): string {
+  const value = Number(bytes) || 0;
+  if (value <= 0) return "";
+  const kb = value / 1024;
+  if (kb < 1024) return `${Math.max(1, Math.round(kb))} KB`;
+  return `${(kb / 1024).toFixed(kb / 1024 >= 10 ? 0 : 1)} MB`;
+}
 
 export function leadsCopyFor(language: string): LeadsCopy {
   return language === "en" ? en : bn;
