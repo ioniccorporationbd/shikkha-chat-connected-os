@@ -548,6 +548,9 @@ function crmLeadSeedAttachments() {
 // exactly like a freshly created `FCRM Note` shows up first in Desk.
 const crmLeadExtraNotes = new Map();
 let crmNoteCounter = 5;
+// Edits made through the note-details popup, keyed by note docname; merged back
+// into both the list rows and the single-note GET so a save round-trips.
+const crmNoteOverrides = new Map();
 
 // The Notes tab: what the desk lead page's #notes tab lists — `CRM Note` rows
 // attached to the lead, newest first, each with a title, its body and author.
@@ -557,7 +560,7 @@ function crmLeadNotes(name, language) {
   const now = Date.now();
   const iso = (offsetMs) => new Date(now - offsetMs).toISOString().replace("T", " ").slice(0, 19);
 
-  return [
+  const rows = [
     ...(crmLeadExtraNotes.get(name) || []),
     {
       key: "note:CRM-NOTE-00002",
@@ -588,6 +591,21 @@ function crmLeadNotes(name, language) {
       updated: iso(2 * 24 * 60 * 60 * 1000),
     },
   ];
+
+  return rows.map((row) => {
+    const noteId =
+      row.note ||
+      (typeof row.key === "string" && row.key.startsWith("note:") ? row.key.slice(5) : "");
+    if (!noteId) return row;
+    const ov = crmNoteOverrides.get(noteId);
+    return {
+      ...row,
+      note: noteId,
+      pinned: row.pinned ?? 0,
+      text: ov ? ov.title : row.text,
+      body: ov ? ov.preview : row.body,
+    };
+  });
 }
 
 
@@ -7173,6 +7191,128 @@ const server = createServer(async (request, response) => {
     crmLeadExtraNotes.set(leadName, list);
 
     ok(response, { note: entry, lead: leadName });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.get_lead_note") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const name = (url.searchParams.get("name") || "").trim();
+    const noteName = (url.searchParams.get("note_name") || "").trim();
+    const language = url.searchParams.get("language");
+    const row = crmLeads.find((lead) => lead.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+    const noteRow = crmLeadNotes(name, language).find(
+      (n) => n.note === noteName || n.key === `note:${noteName}`
+    );
+    if (!noteRow) {
+      failure(response, 404, "DoesNotExistError", "The note was not found.", "FCRM Note");
+      return;
+    }
+    const ov = crmNoteOverrides.get(noteName);
+    ok(response, {
+      note: {
+        note: noteName,
+        key: noteRow.key,
+        title: ov ? ov.title : noteRow.text,
+        content: ov ? ov.content : `<p>${String(noteRow.body ?? "")}</p>`,
+        at: noteRow.at,
+        updated: noteRow.updated ?? noteRow.at,
+        pinned: noteRow.pinned ?? 0,
+        actor: noteRow.actor ?? "",
+      },
+      lead: name,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.update_lead_note") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const name = String(body.name ?? "").trim();
+    const noteName = String(body.note_name ?? "").trim();
+    let edit = body.note;
+    if (typeof edit === "string") {
+      try {
+        edit = JSON.parse(edit);
+      } catch {
+        edit = null;
+      }
+    }
+    if (!edit || typeof edit !== "object" || Array.isArray(edit)) {
+      failure(response, 417, "ValidationError", "The note could not be read.", "FCRM Note");
+      return;
+    }
+
+    const row = crmLeads.find((lead) => lead.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+    const noteRow = crmLeadNotes(name, body.language || "bn").find(
+      (n) => n.note === noteName || n.key === `note:${noteName}`
+    );
+    if (!noteRow) {
+      failure(response, 404, "DoesNotExistError", "The note was not found.", "FCRM Note");
+      return;
+    }
+
+    const prev = crmNoteOverrides.get(noteName) || {
+      title: noteRow.text,
+      content: `<p>${String(noteRow.body ?? "")}</p>`,
+      preview: String(noteRow.body ?? ""),
+    };
+    const title = "title" in edit ? String(edit.title ?? "").trim() : prev.title;
+    if (!title) {
+      failure(response, 417, "ValidationError", "Give the note a title.", "FCRM Note");
+      return;
+    }
+    const content = "content" in edit ? String(edit.content ?? "") : prev.content;
+    const preview = content
+      .replace(/<(br|\/p|\/div|\/li|\/h[1-6])[^>]*>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\n{2,}/g, "\n")
+      .trim();
+    const at = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+    crmNoteOverrides.set(noteName, { title, content, preview });
+    const extra = crmLeadExtraNotes.get(name);
+    if (extra) {
+      const entry = extra.find((n) => n.note === noteName || n.key === `note:${noteName}`);
+      if (entry) {
+        entry.text = title;
+        entry.body = preview;
+        entry.updated = at;
+      }
+    }
+
+    ok(response, {
+      note: {
+        note: noteName,
+        key: noteRow.key,
+        title,
+        content,
+        at: noteRow.at,
+        updated: at,
+        pinned: noteRow.pinned ?? 0,
+        actor: noteRow.actor ?? "",
+      },
+      lead: name,
+    });
     return;
   }
 

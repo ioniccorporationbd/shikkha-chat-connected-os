@@ -1741,6 +1741,7 @@ function NoteDetailModal({
   detail,
   onClose,
   onSaved,
+  onOpenLead,
 }: {
   name: string;
   note: LeadActivity;
@@ -1748,6 +1749,8 @@ function NoteDetailModal({
   detail: LeadsDetailCopy;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
+  /** "Open Lead" — close the popup and jump back to the lead's overview. */
+  onOpenLead?: () => void;
 }) {
   const cf = detail.noteForm;
   const nd = detail.noteDetail;
@@ -1902,7 +1905,7 @@ function NoteDetailModal({
   const labelClass =
     "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
   const fieldClass =
-    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+    "w-full rounded-xl border border-transparent bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
   const toolClass =
     "inline-flex h-7 min-w-[26px] items-center justify-center rounded-md px-1.5 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]";
 
@@ -1919,26 +1922,41 @@ function NoteDetailModal({
         if (event.target === event.currentTarget && !busy) onClose();
       }}
     >
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[560px] sm:rounded-[20px]">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{nd.title}</h3>
-            {note.actor ? (
-              <p className="mt-0.5 truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                {nd.subtitle} · {note.actor}
-              </p>
-            ) : null}
+      <div className="max-h-[94vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[680px] sm:rounded-[20px] sm:p-7">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="text-[19px] font-bold text-[var(--color-primary)]" data-note-detail-heading="">
+            {nd.editTitle}
+          </h2>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onOpenLead}
+              disabled={saving}
+              data-note-detail-openlead=""
+              className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] disabled:opacity-50"
+            >
+              {nd.openLead}
+            </button>
+            <button
+              type="button"
+              onClick={onOpenLead}
+              disabled={saving}
+              aria-label={nd.openLead}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+            >
+              <FiExternalLink size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              aria-label={detail.close}
+              data-note-detail-close=""
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+            >
+              <FiX size={16} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            aria-label={detail.close}
-            data-note-detail-close=""
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-50"
-          >
-            <FiX size={15} />
-          </button>
         </div>
 
         {state === "loading" ? (
@@ -1976,8 +1994,8 @@ function NoteDetailModal({
                   aria-label={nd.contentLabel}
                   className="flex flex-wrap items-center gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-1.5 py-1"
                 >
-                  <button type="button" title={cf.heading} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h1>"); }}>
-                    <FiType size={13} className="pointer-events-none" />
+                  <button type="button" title={cf.heading} className="inline-flex h-7 items-center rounded-md px-2 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<p>"); }}>
+                    {cf.heading}
                   </button>
                   <button type="button" title="H2" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h2>"); }}>
                     H2
@@ -2035,7 +2053,7 @@ function NoteDetailModal({
                     suppressContentEditableWarning
                     onInput={syncEmpty}
                     data-note-detail-content=""
-                    className="min-h-[180px] max-h-[340px] w-full overflow-y-auto px-3 py-2.5 text-[12.5px] leading-relaxed text-[var(--color-primary)] outline-none [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
+                    className="min-h-[360px] max-h-[46vh] w-full overflow-y-auto px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)] outline-none [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
                   />
                 </div>
               </div>
@@ -2049,23 +2067,15 @@ function NoteDetailModal({
           </div>
         )}
 
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
-          >
-            {detail.cancel}
-          </button>
+        <div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => void submit()}
             disabled={busy || state !== "ready"}
             data-note-detail-save=""
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="pointer-events-none">{saving ? nd.saving : detail.save}</span>
+            <span className="pointer-events-none">{saving ? nd.saving : nd.update}</span>
           </button>
         </div>
       </div>
@@ -3070,6 +3080,10 @@ function LeadDetailPanel({
           language={language}
           detail={detail}
           onClose={() => setDetailNote(null)}
+          onOpenLead={() => {
+            setDetailNote(null);
+            setTabState({ name, tab: "activity" });
+          }}
           onSaved={async () => {
             setDetailNote(null);
             setNotice({ tone: "ok", text: detail.noteDetail.updated });

@@ -144,6 +144,12 @@ export interface LeadsDetailCopy {
     titleLabel: string;
     contentLabel: string;
     loading: string;
+    /** Heading of the edit popup ("Edit Note"). */
+    editTitle: string;
+    /** Button that jumps back to the lead overview. */
+    openLead: string;
+    /** Primary save button in the edit popup. */
+    update: string;
   };
   empty: {
     activity: string;
@@ -370,6 +376,9 @@ const bn: LeadsCopy = {
       titleLabel: "শিরোনাম",
       contentLabel: "বিষয়বস্তু",
       loading: "লোড হচ্ছে…",
+      editTitle: "নোট সম্পাদনা",
+      openLead: "লিড খুলুন",
+      update: "আপডেট",
     },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
@@ -573,6 +582,9 @@ const en: LeadsCopy = {
       titleLabel: "Title",
       contentLabel: "Content",
       loading: "Loading…",
+      editTitle: "Edit Note",
+      openLead: "Open Lead",
+      update: "Update",
     },
     empty: {
       activity: "No activity yet.",
