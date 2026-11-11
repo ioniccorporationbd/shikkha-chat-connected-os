@@ -151,6 +151,45 @@ export interface LeadsDetailCopy {
     /** Primary save button in the edit popup. */
     update: string;
   };
+  /** Calls tab: count caption, the Log-a-Call button, and its form. */
+  callTable: {
+    /** Caption above the calls list: how many calls, with a live count slot. */
+    count: string;
+    /** The primary button that opens the Create Call Log form. */
+    logCall: string;
+  };
+  callForm: {
+    /** The popup's heading. */
+    title: string;
+    /** Field captions. */
+    type: string;
+    typeIncoming: string;
+    typeOutgoing: string;
+    from: string;
+    to: string;
+    status: string;
+    duration: string;
+    /** Shown only when Type = Incoming. */
+    receivedBy: string;
+    /** Shown only when Type = Outgoing. */
+    caller: string;
+    /** Placeholders. */
+    fromPlaceholder: string;
+    toPlaceholder: string;
+    durationPlaceholder: string;
+    personPlaceholder: string;
+    /** Buttons + states. */
+    create: string;
+    creating: string;
+    cancel: string;
+    created: string;
+    failed: string;
+    /** Inline validation. */
+    typeRequired: string;
+    fromRequired: string;
+    toRequired: string;
+    noEmployees: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -380,6 +419,35 @@ const bn: LeadsCopy = {
       openLead: "লিড খুলুন",
       update: "আপডেট",
     },
+    callTable: {
+      count: "মোট কল",
+      logCall: "Log a Call",
+    },
+    callForm: {
+      title: "Create Call Log",
+      type: "ধরন",
+      typeIncoming: "ইনকামিং",
+      typeOutgoing: "আউটগোয়িং",
+      from: "ফ্রম নম্বর",
+      to: "টু নম্বর",
+      status: "স্ট্যাটাস",
+      duration: "সময়কাল",
+      receivedBy: "কল রিসিভ করেছেন",
+      caller: "কলার",
+      fromPlaceholder: "ফ্রম নম্বর",
+      toPlaceholder: "টু নম্বর",
+      durationPlaceholder: "সময়কাল",
+      personPlaceholder: "কর্মী নির্বাচন করুন",
+      create: "Create",
+      creating: "তৈরি হচ্ছে…",
+      cancel: "বাতিল",
+      created: "কল-লগটি তৈরি হয়েছে",
+      failed: "কল-লগটি তৈরি করা যায়নি।",
+      typeRequired: "কলের ধরন (ইনকামিং / আউটগোয়িং) বেছে নিন।",
+      fromRequired: "ফ্রম নম্বর দিন।",
+      toRequired: "টু নম্বর দিন।",
+      noEmployees: "কোনো সক্রিয় কর্মী পাওয়া যায়নি।",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -585,6 +653,35 @@ const en: LeadsCopy = {
       editTitle: "Edit Note",
       openLead: "Open Lead",
       update: "Update",
+    },
+    callTable: {
+      count: "Total calls",
+      logCall: "Log a Call",
+    },
+    callForm: {
+      title: "Create Call Log",
+      type: "Type",
+      typeIncoming: "Incoming",
+      typeOutgoing: "Outgoing",
+      from: "From Number",
+      to: "To Number",
+      status: "Status",
+      duration: "Duration",
+      receivedBy: "Call Received By",
+      caller: "Caller",
+      fromPlaceholder: "From Number",
+      toPlaceholder: "To Number",
+      durationPlaceholder: "Duration",
+      personPlaceholder: "Select an employee",
+      create: "Create",
+      creating: "Creating…",
+      cancel: "Cancel",
+      created: "The call log was created",
+      failed: "The call log could not be created.",
+      typeRequired: "Choose the call type.",
+      fromRequired: "Enter the From number.",
+      toRequired: "Enter the To number.",
+      noEmployees: "No active employees found.",
     },
     empty: {
       activity: "No activity yet.",

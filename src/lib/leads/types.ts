@@ -145,6 +145,32 @@ export interface LeadTaskCreated {
   at: string;
 }
 
+/** What the Log-a-Call form posts to create a CRM Call Log. */
+export interface LeadCallDraft {
+  /** "Incoming" | "Outgoing". */
+  type: string;
+  from: string;
+  to: string;
+  status: string;
+  /** Free-text duration ("5:30" or "330"); the ERP stores whole seconds. */
+  duration: string;
+  /** HR Employee id: the receiver (Incoming) or caller (Outgoing). */
+  employee: string;
+}
+
+/** The call row `add_lead_call_log` returns, shaped like the Calls tab's rows. */
+export interface LeadCallCreated {
+  key: string;
+  kind: string;
+  actor: string;
+  actor_email: string;
+  text: string;
+  body: string;
+  at: string;
+  status?: string;
+  type?: string;
+}
+
 export interface LeadAttachment {
   key: string;
   file_name: string;

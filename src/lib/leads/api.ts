@@ -3,6 +3,8 @@
 import { getJson, postJson } from "@/lib/api/http";
 
 import type {
+  LeadCallCreated,
+  LeadCallDraft,
   LeadDetailPayload,
   LeadNoteCreated,
   LeadNoteDetail,
@@ -132,6 +134,21 @@ export function updateLeadTask(
   return postJson<{ task: LeadTaskCreated; lead: string }>(
     `/api/leads/${encodeURIComponent(name)}/task/${encodeURIComponent(taskName)}`,
     { task, language }
+  );
+}
+
+/**
+ * `POST /api/leads/<name>/call` — log a CRM Call Log (Calls tab's Log-a-Call
+ * form) linked to this lead; the row lands in /crm/call-logs.
+ */
+export function addLeadCall(
+  name: string,
+  call: LeadCallDraft,
+  language: string
+): Promise<{ call: LeadCallCreated; lead: string }> {
+  return postJson<{ call: LeadCallCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/call`,
+    { call, language }
   );
 }
 

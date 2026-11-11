@@ -34,6 +34,7 @@ import {
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import {
+  addLeadCall,
   addLeadComment,
   addLeadNote,
   addLeadTask,
@@ -60,6 +61,7 @@ import {
 import type {
   LeadActivity,
   LeadAttachment,
+  LeadCallCreated,
   LeadDetailPayload,
   LeadNoteCreated,
   LeadNoteEdit,
@@ -788,6 +790,351 @@ const FALLBACK_TASK_STATUSES = [
   { value: "Done", label: "Done" },
   { value: "Cancelled", label: "Cancelled" },
 ];
+
+/** CRM Call Log statuses, in the order the Desk form shows them. */
+const CALL_STATUSES = [
+  "Initiated",
+  "Ringing",
+  "In Progress",
+  "Completed",
+  "Failed",
+  "Busy",
+  "No Answer",
+  "Queued",
+  "Canceled",
+];
+
+/**
+ * The Calls tab: a live count, the **Log a Call** button, and the call list.
+ *
+ * Rows are read-only here; the button opens `CallFormModal`, which creates a
+ * real `CRM Call Log` (Desk ▸ CRM ▸ Call Logs) linked back to this lead.
+ */
+function CallsPanel({
+  items,
+  copy,
+  detail,
+  empty,
+  language,
+  onLog,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  empty: string;
+  language: string;
+  onLog: () => void;
+}) {
+  return (
+    <div data-lead-calls="">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p
+          className="text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          data-lead-call-count=""
+        >
+          {detail.callTable.count} · {formatCount(items.length, language)}
+        </p>
+        <button
+          type="button"
+          onClick={onLog}
+          data-lead-log-call=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPhone size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.callTable.logCall}</span>
+        </button>
+      </div>
+
+      <SimpleActivityList items={items} copy={copy} empty={empty} />
+    </div>
+  );
+}
+
+/**
+ * The **Log a Call** form: a popup over the lead sheet that creates a real
+ * `CRM Call Log` linked to this lead (Desk ▸ CRM ▸ Call Logs).
+ *
+ * Type (Incoming / Outgoing) drives a conditional person field — **Call
+ * Received By** for Incoming, **Caller** for Outgoing — both sourced from HR ▸
+ * Employee (active), the same list the task form assigns from. The ERP resolves
+ * the employee to its User id for the Call Log's `receiver` / `caller`.
+ */
+function CallFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (call: LeadCallCreated) => void | Promise<void>;
+}) {
+  const cf = detail.callForm;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  const [optionsFailed, setOptionsFailed] = useState(false);
+  const [type, setType] = useState("Outgoing");
+  const [fromNo, setFromNo] = useState("");
+  const [toNo, setToNo] = useState("");
+  const [status, setStatus] = useState("Initiated");
+  const [duration, setDuration] = useState("");
+  const [employee, setEmployee] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (!cancelled) setOptions(payload);
+      } catch (cause) {
+        if (cancelled) return;
+        setOptionsFailed(true);
+        reportClientError({
+          scope: "leads:call-options",
+          message: "The call form employee list could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const employees = options?.employees ?? [];
+  const isIncoming = type === "Incoming";
+  const personLabel = isIncoming ? cf.receivedBy : cf.caller;
+
+  const submit = async () => {
+    if (submitting) return;
+    if (!type) {
+      setFormError(cf.typeRequired);
+      return;
+    }
+    if (!fromNo.trim()) {
+      setFormError(cf.fromRequired);
+      return;
+    }
+    if (!toNo.trim()) {
+      setFormError(cf.toRequired);
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadCall(
+        name,
+        {
+          type,
+          from: fromNo.trim(),
+          to: toNo.trim(),
+          status,
+          duration: duration.trim(),
+          employee,
+        },
+        language
+      );
+      await onCreated(result.call);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.failed);
+      reportClientError({
+        scope: "leads:call",
+        message: "The lead call log could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus:bg-[var(--color-white)]";
+  const requiredDot = <span className="text-[var(--color-danger)]">*</span>;
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={cf.title}
+      data-call-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[560px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{cf.title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-call-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-type">
+                {cf.type} {requiredDot}
+              </label>
+              <select
+                id="lead-call-type"
+                value={type}
+                onChange={(event) => {
+                  setType(event.target.value);
+                  setEmployee("");
+                  if (formError) setFormError(null);
+                }}
+                data-call-type=""
+                className={fieldClass}
+              >
+                <option value="Incoming">{cf.typeIncoming}</option>
+                <option value="Outgoing">{cf.typeOutgoing}</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-to">
+                {cf.to} {requiredDot}
+              </label>
+              <input
+                id="lead-call-to"
+                value={toNo}
+                onChange={(event) => {
+                  setToNo(event.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder={cf.toPlaceholder}
+                maxLength={50}
+                data-call-to=""
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-from">
+                {cf.from} {requiredDot}
+              </label>
+              <input
+                id="lead-call-from"
+                value={fromNo}
+                onChange={(event) => {
+                  setFromNo(event.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder={cf.fromPlaceholder}
+                maxLength={50}
+                data-call-from=""
+                className={fieldClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-status">
+                {cf.status} {requiredDot}
+              </label>
+              <select
+                id="lead-call-status"
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                data-call-status=""
+                className={fieldClass}
+              >
+                {CALL_STATUSES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-person">
+                {personLabel}
+              </label>
+              <select
+                id="lead-call-person"
+                value={employee}
+                onChange={(event) => setEmployee(event.target.value)}
+                data-call-person={type}
+                className={fieldClass}
+              >
+                <option value="">{cf.personPlaceholder}</option>
+                {employees.map((emp) => (
+                  <option key={emp.value} value={emp.value}>
+                    {emp.designation ? `${emp.label} · ${emp.designation}` : emp.label}
+                  </option>
+                ))}
+              </select>
+              {optionsFailed ? (
+                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
+              ) : null}
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-duration">
+                {cf.duration}
+              </label>
+              <input
+                id="lead-call-duration"
+                value={duration}
+                onChange={(event) => setDuration(event.target.value)}
+                placeholder={cf.durationPlaceholder}
+                maxLength={20}
+                data-call-duration=""
+                className={fieldClass}
+              />
+            </div>
+          </div>
+        </div>
+
+        {formError ? (
+          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-call-error="">
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-call-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPhone size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
 
 /**
  * The New-task form: a popup over the lead sheet.
@@ -2616,6 +2963,7 @@ function LeadDetailPanel({
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [callFormOpen, setCallFormOpen] = useState(false);
   // The task whose own popup is open (Tasks tab -> বিস্তারিত).
   const [detailTask, setDetailTask] = useState<LeadActivity | null>(null);
   const [detailNote, setDetailNote] = useState<LeadActivity | null>(null);
@@ -2940,7 +3288,17 @@ function LeadDetailPanel({
             onNotice={setNotice}
           />
         ) : activeTab === "calls" ? (
-          <SimpleActivityList items={payload.calls} copy={copy} empty={detail.empty.calls} />
+          <CallsPanel
+            items={payload.calls}
+            copy={copy}
+            detail={detail}
+            empty={detail.empty.calls}
+            language={language}
+            onLog={() => {
+              setNotice(null);
+              setCallFormOpen(true);
+            }}
+          />
         ) : activeTab === "tasks" ? (
           <TasksPanel
             items={payload.tasks}
@@ -3158,6 +3516,22 @@ function LeadDetailPanel({
             setNoteFormOpen(false);
             setNotice({ tone: "ok", text: detail.noteForm.created });
             setTabState({ name, tab: "notes" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* The Log-a-Call form: creates a CRM Call Log for this lead. */}
+      {callFormOpen ? (
+        <CallFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setCallFormOpen(false)}
+          onCreated={async () => {
+            setCallFormOpen(false);
+            setNotice({ tone: "ok", text: detail.callForm.created });
+            setTabState({ name, tab: "calls" });
             await load();
           }}
         />
