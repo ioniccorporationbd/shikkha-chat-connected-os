@@ -1754,11 +1754,29 @@ function NoteDetailModal({
 }) {
   const cf = detail.noteForm;
   const nd = detail.noteDetail;
-  const noteName = note.note || "";
+  // The row may arrive with a CRM-note docname (`note`) or, for older Desk
+  // notes, only a `note:<comment>` key / `source`; any of these identifies the
+  // record the popup loads and saves.
+  const noteName = (
+    note.note ||
+    (typeof note.key === "string" && note.key.startsWith("note:") ? note.key.slice(5) : "") ||
+    note.source ||
+    ""
+  ).trim();
+
+  // Seed the form from the row itself so the popup is never blank — the list
+  // carries the note's plain text, and the full HTML replaces it once loaded.
+  const seedContent = note.body
+    ? `<p>${String(note.body)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</p>`
+    : "";
+
   const [state, setState] = useState<"loading" | "ready" | "failed">(
     noteName ? "loading" : "failed"
   );
-  const [title, setTitle] = useState(note.text || "");
+  const [title, setTitle] = useState(note.title || note.text || "");
   const [empty, setEmpty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -1767,8 +1785,8 @@ function NoteDetailModal({
   const editorRef = useRef<HTMLDivElement | null>(null);
   // What the note looked like when the popup opened — used to send only diffs.
   const baselineRef = useRef<{ title: string; content: string }>({
-    title: note.text || "",
-    content: "",
+    title: note.title || note.text || "",
+    content: seedContent,
   });
 
   const syncEmpty = useCallback(() => {
@@ -1810,17 +1828,22 @@ function NoteDetailModal({
     };
   }, [name, noteName, language, nd.notFound]);
 
-  // Once the record is in, paint its HTML into the contentEditable box (React
-  // must never own that node's children) and focus the title.
+  // Paint the contentEditable box (React must never own its children): the
+  // loaded HTML once ready, or the row's own text while loading / on failure
+  // so the popup is never empty.
   useEffect(() => {
-    if (state !== "ready") return;
     const editor = editorRef.current;
-    if (editor && editor.innerHTML !== baselineRef.current.content) {
-      editor.innerHTML = baselineRef.current.content;
+    if (!editor) return;
+    if (state === "ready") {
+      if (editor.innerHTML !== baselineRef.current.content) {
+        editor.innerHTML = baselineRef.current.content;
+      }
+      titleRef.current?.focus();
+    } else if (!editor.innerHTML.trim()) {
+      editor.innerHTML = seedContent;
     }
     syncEmpty();
-    titleRef.current?.focus();
-  }, [state, syncEmpty]);
+  }, [state, seedContent, syncEmpty]);
 
   const exec = (command: string, value?: string) => {
     const editor = editorRef.current;
@@ -1864,7 +1887,7 @@ function NoteDetailModal({
   };
 
   const submit = async () => {
-    if (saving || state !== "ready" || !noteName) return;
+    if (saving || state === "loading" || !noteName) return;
 
     const cleanTitle = title.trim();
     if (!cleanTitle) {
@@ -1959,16 +1982,22 @@ function NoteDetailModal({
           </div>
         </div>
 
-        {state === "loading" ? (
-          <p className="py-10 text-center text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]" data-note-detail-loading="">
-            {nd.loading}
-          </p>
-        ) : state === "failed" ? (
+        {!noteName ? (
           <p role="alert" data-note-detail-error="" className="py-8 text-center text-[12.5px] font-medium text-[#d0453c]">
             {loadError || nd.notFound}
           </p>
         ) : (
           <div className="space-y-3.5">
+            {state === "loading" ? (
+              <p data-note-detail-loading="" className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {nd.loading}
+              </p>
+            ) : null}
+            {state === "failed" ? (
+              <p role="status" data-note-detail-warn="" className="text-[11.5px] font-medium text-[#b26b00]">
+                {loadError || nd.notFound}
+              </p>
+            ) : null}
             <div>
               <label className={labelClass} htmlFor="lead-note-detail-title">
                 {nd.titleLabel} <span className="text-[#e0483f]">*</span>
@@ -2071,7 +2100,7 @@ function NoteDetailModal({
           <button
             type="button"
             onClick={() => void submit()}
-            disabled={busy || state !== "ready"}
+            disabled={busy || !noteName}
             data-note-detail-save=""
             className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
           >

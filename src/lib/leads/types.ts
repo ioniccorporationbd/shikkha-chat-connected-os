@@ -46,6 +46,8 @@ export interface LeadActivity {
   task?: string;
   /** Note rows only: the CRM Note docname — what the note popup saves against. */
   note?: string;
+  /** Note rows only: the `Comment` docname for Desk-style (comment) notes. */
+  source?: string;
   title?: string;
   description?: string;
   status?: string;

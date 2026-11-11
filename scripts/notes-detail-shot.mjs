@@ -94,6 +94,12 @@ async function login() {
   const tools = await page.locator('[data-note-detail-modal] [role="toolbar"] button').count();
   check(tools >= 12, `content box has a full editing toolbar (${tools} buttons)`);
 
+  // The whole point: opening the popup must show the note's data, editable.
+  const titleVal = (await page.locator("[data-note-detail-title]").inputValue()).trim();
+  const contentText = (await page.locator("[data-note-detail-content]").innerText()).trim();
+  check(titleVal.length > 0, `popup shows the note's Title on open ("${titleVal}")`);
+  check(contentText.length > 0, `popup shows the note's Content on open ("${contentText.slice(0, 44)}")`);
+
   const before = await page.locator("[data-note-detail-title]").inputValue();
   await page.screenshot({ path: `${OUT}/note-popup-before.png` });
   await modal.screenshot({ path: `${OUT}/note-popup-modal.png` });
@@ -118,8 +124,36 @@ async function login() {
   check(true, `edited title persisted and reopens correctly (was "${before}")`);
   await modal.screenshot({ path: `${OUT}/note-popup-after.png` });
 
-  check(errors.length === 0, `no console errors (${errors.length})`);
+  // Console must be clean across the happy path (before we deliberately force
+  // an error in the failure-mode block below).
+  check(errors.length === 0, `no console errors on the happy path (${errors.length})`);
   if (errors.length) console.log(errors.slice(0, 5).join("\n"));
+
+  // --- Failure mode: if the note fetch errors, the popup must STILL show the
+  // row's data (editable), not a blank/dead dialog. Force the GET to 500.
+  await page.locator("[data-note-detail-close]").click();
+  await modal.waitFor({ state: "detached", timeout: 20000 });
+  await page.route("**/api/leads/*/note/*", (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ exc_type: "DoesNotExistError", message: "The note was not found." }),
+        })
+      : route.continue()
+  );
+  await page.locator("[data-lead-note-details]").first().click();
+  await modal.waitFor({ state: "visible", timeout: 20000 });
+  await page.locator("[data-note-detail-warn]").waitFor({ state: "visible", timeout: 20000 });
+  const fTitle = (await page.locator("[data-note-detail-title]").inputValue()).trim();
+  const fContent = (await page.locator("[data-note-detail-content]").innerText()).trim();
+  check(fTitle.length > 0, `failed load still shows seeded Title ("${fTitle}")`);
+  check(fContent.length > 0, `failed load still shows seeded Content ("${fContent.slice(0, 40)}")`);
+  check(!(await page.locator("[data-note-detail-save]").isDisabled()), "Update stays enabled on a failed load");
+  await modal.screenshot({ path: `${OUT}/note-popup-fallback.png` });
+  await page.unroute("**/api/leads/*/note/*");
+
+  console.log(`(failure-mode console errors seen, expected: ${errors.length})`);
 
   await browser.close();
   console.log(`\nScreenshots: ${OUT}/note-popup-modal.png , note-popup-before.png , note-popup-after.png`);
