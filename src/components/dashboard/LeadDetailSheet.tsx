@@ -41,7 +41,7 @@ import {
   fetchLeadTaskOptions,
   leadFileSrc,
   updateLeadDetail,
-  uploadLeadAttachment,
+  addLeadCommentFile,
 } from "@/lib/leads/api";
 import {
   formatCount,
@@ -228,7 +228,104 @@ function PersonAvatar({
   );
 }
 
-function CommentsList({ items, copy, empty }: { items: LeadActivity[]; copy: LeadsCopy; empty: string }) {
+/** `/files/dokhina-1f5fe50.jpeg` -> the shape the preview/lightbox expects. */
+function fileFromUrl(url: string): LeadAttachment {
+  let name = url.split("/").pop() || url;
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    /* keep the raw name */
+  }
+  return { key: `url:${url}`, file_name: name, file_url: url, file_size: 0, at: "" };
+}
+
+/** The picture(s) a comment embeds — click one to see it full size. */
+function CommentImages({
+  images,
+  detail,
+  onPreview,
+}: {
+  images: string[];
+  detail: LeadsDetailCopy;
+  onPreview: (file: LeadAttachment) => void;
+}) {
+  const [broken, setBroken] = useState<Record<string, true>>({});
+
+  return (
+    <div className="mt-2 flex flex-wrap items-start gap-2" data-lead-comment-images="">
+      {images.map((url) => {
+        const file = fileFromUrl(url);
+
+        if (!isImageAttachment(file)) {
+          return (
+            <a
+              key={url}
+              href={attachmentSrc(file, true)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-lead-comment-file={url}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
+            >
+              <FiPaperclip size={11} className="pointer-events-none shrink-0" />
+              <span className="truncate">{file.file_name}</span>
+            </a>
+          );
+        }
+
+        if (broken[url]) {
+          return (
+            <button
+              key={url}
+              type="button"
+              onClick={() => onPreview(file)}
+              data-lead-comment-file={url}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-primary)]"
+              title={detail.attachment.loadFailed}
+            >
+              <FiPaperclip size={11} className="pointer-events-none shrink-0" />
+              <span className="truncate">{file.file_name}</span>
+            </button>
+          );
+        }
+
+        return (
+          <button
+            key={url}
+            type="button"
+            onClick={() => onPreview(file)}
+            data-lead-comment-image={url}
+            title={file.file_name}
+            className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={attachmentSrc(file)}
+              alt={file.file_name}
+              loading="lazy"
+              data-lead-comment-thumb=""
+              className="h-full w-full object-cover transition group-hover:scale-[1.04]"
+              onError={() => setBroken((prev) => (prev[url] ? prev : { ...prev, [url]: true }))}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CommentsList({
+  items,
+  copy,
+  empty,
+  detail,
+  onPreview,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  empty: string;
+  detail: LeadsDetailCopy;
+  onPreview: (file: LeadAttachment) => void;
+}) {
   if (items.length === 0) return <EmptyTab text={empty} />;
 
   return (
@@ -260,6 +357,9 @@ function CommentsList({ items, copy, empty }: { items: LeadActivity[]; copy: Lea
             >
               {entry.body}
             </p>
+          ) : null}
+          {entry.images && entry.images.length > 0 ? (
+            <CommentImages images={entry.images} detail={detail} onPreview={onPreview} />
           ) : null}
         </li>
       ))}
@@ -1639,11 +1739,17 @@ function LeadDetailPanel({
     fileInputRef.current?.click();
   };
 
-  const uploadAttachment = async (file: File) => {
+  /**
+   * The comment box's paperclip: the file becomes a PUBLIC `File` row on the
+   * lead (is_private=0 — unchecked in /desk/data/file) and its comment shows
+   * the picture right in the thread. Any text already typed rides along as the
+   * caption, exactly like Desk's comment editor.
+   */
+  const uploadCommentFile = async (file: File) => {
     if (uploading) return;
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      setNotice({ tone: "error", text: detail.attachmentTooLarge });
+      setNotice({ tone: "error", text: detail.commentFileTooLarge });
       return;
     }
 
@@ -1652,19 +1758,25 @@ function LeadDetailPanel({
     try {
       // The proxy speaks JSON to the ERP, so the bytes travel base64-encoded.
       const content_base64 = await readFileAsBase64(file);
-      await uploadLeadAttachment(name, { file_name: file.name, content_base64 }, language);
-      setNotice({ tone: "ok", text: detail.attachmentAdded });
-      // The File row now exists, so show it where the user expects to find it.
-      setTabState({ name, tab: "attachments" });
+      await addLeadCommentFile(
+        name,
+        { file_name: file.name, content_base64, content: draft.trim() },
+        language
+      );
+      setDraft("");
+      setNotice({ tone: "ok", text: detail.commentFileAdded });
+      // Show the result where the user expects it: the comment stream.
+      setComposerState({ name, mode: null });
+      setTabState({ name, tab: "comments" });
       await load();
     } catch (cause) {
       setNotice({
         tone: "error",
-        text: cause instanceof ApiError ? cause.message : detail.attachmentFailed,
+        text: cause instanceof ApiError ? cause.message : detail.commentFileFailed,
       });
       reportClientError({
-        scope: "leads:attachment",
-        message: "The lead attachment could not be uploaded",
+        scope: "leads:comment-file",
+        message: "The comment attachment could not be uploaded",
         detail: cause instanceof Error ? cause.message : cause,
       });
     } finally {
@@ -1707,7 +1819,7 @@ function LeadDetailPanel({
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
-          if (file) void uploadAttachment(file);
+          if (file) void uploadCommentFile(file);
         }}
       />
 
@@ -1840,7 +1952,13 @@ function LeadDetailPanel({
         ) : activeTab === "emails" ? (
           <SimpleActivityList items={payload.emails} copy={copy} empty={detail.empty.emails} />
         ) : activeTab === "comments" ? (
-          <CommentsList items={payload.comments} copy={copy} empty={detail.empty.comments} />
+          <CommentsList
+            items={payload.comments}
+            copy={copy}
+            empty={detail.empty.comments}
+            detail={detail}
+            onPreview={(file) => setPreviewFile(file)}
+          />
         ) : activeTab === "data" ? (
           <DataGrid
             payload={payload}
@@ -1914,8 +2032,8 @@ function LeadDetailPanel({
               onClick={pickAttachment}
               disabled={uploading}
               data-lead-attach=""
-              aria-label={detail.attach}
-              title={detail.attach}
+              aria-label={detail.commentAttach}
+              title={detail.commentAttach}
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <FiPaperclip size={13} className="pointer-events-none" />

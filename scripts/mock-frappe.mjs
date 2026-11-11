@@ -7108,6 +7108,89 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  // The comment box's paperclip: a PUBLIC File (is_private=0) plus the comment
+  // whose HTML embeds the picture — mirrors add_lead_comment_attachment.
+  if (method === "shikkha_os.api.v1.leads.add_lead_comment_attachment") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const name = String(body.name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === name);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    const text = String(body.content ?? "").replace(/<[^>]*>/g, "").trim();
+    const fileName = String(body.file_name ?? "").trim();
+    const base64 = String(body.content_base64 ?? "").replace(/\s+/g, "");
+
+    let file = null;
+    if (base64) {
+      const bytes = Buffer.from(base64, "base64");
+      if (!bytes.length) {
+        failure(response, 417, "ValidationError", "The file is empty.", "CRM Lead");
+        return;
+      }
+      if (bytes.length > 5 * 1024 * 1024) {
+        failure(response, 417, "ValidationError", "The file cannot be larger than 5 MB.", "CRM Lead");
+        return;
+      }
+
+      const safe = (fileName || "attachment").replace(/[^\w.\- ()]+/g, "_").replace(/^\.+/, "") || "attachment";
+      const url = `/files/${safe}`;
+      hdFileBytes.set(url, bytes);
+      // Let the file server hand these bytes back like a stored upload.
+      crmLeadSeedFilePaths.add(url);
+
+      file = {
+        key: `file:${Date.now()}`,
+        file_name: safe,
+        file_url: url,
+        file_size: bytes.length,
+        at: new Date().toISOString(),
+        is_private: 0,
+      };
+      const files = crmLeadExtraFiles.get(name) || [];
+      files.push({ ...file });
+      crmLeadExtraFiles.set(name, files);
+    }
+
+    if (!text && !file) {
+      failure(response, 417, "ValidationError", "Add a comment or attach a file.", "CRM Lead");
+      return;
+    }
+
+    const extra = {
+      key: `comment:${Date.now()}:file`,
+      kind: "comment",
+      actor: String(account.full_name || (account.profile && account.profile.full_name) || account.name || email),
+      actor_email: email,
+      actor_image: "",
+      text: String(body.language || "bn").toLowerCase().startsWith("bn")
+        ? "একটি মন্তব্য যোগ করেছেন"
+        : "added a comment",
+      body: text,
+      at: new Date().toISOString(),
+      images: file ? [file.file_url] : [],
+    };
+    const bucket = crmLeadExtraComments.get(name) || [];
+    bucket.push(extra);
+    crmLeadExtraComments.set(name, bucket);
+
+    ok(response, {
+      comment: extra.key,
+      file,
+      images: file ? [file.file_url] : [],
+    });
+    return;
+  }
+
   if (method === "shikkha_os.api.v1.leads.add_lead_attachment") {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;

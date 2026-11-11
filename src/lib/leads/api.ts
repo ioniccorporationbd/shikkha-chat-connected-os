@@ -49,6 +49,24 @@ export function uploadLeadAttachment(
   );
 }
 
+/**
+ * `POST /api/leads/<name>/comment-file` — the comment box's paperclip.
+ *
+ * The ERP writes a PUBLIC `File` (is_private=0, so `/desk/data/file` shows the
+ * box unchecked) attached to the lead and posts the comment with the picture
+ * embedded; an empty `content_base64` is a plain text comment.
+ */
+export function addLeadCommentFile(
+  name: string,
+  payload: { file_name?: string; content_base64?: string; content?: string },
+  language: string
+): Promise<{ comment: unknown; file?: unknown; images?: string[] }> {
+  return postJson<{ comment: unknown; file?: unknown; images?: string[] }>(
+    `/api/leads/${encodeURIComponent(name)}/comment-file`,
+    { ...payload, language }
+  );
+}
+
 /** `POST /api/leads/<name>/edit` — save the Data tab's whitelisted field edits. */
 export function updateLeadDetail(
   name: string,

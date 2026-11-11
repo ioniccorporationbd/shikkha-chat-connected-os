@@ -37,6 +37,8 @@ export interface LeadActivity {
   /** Comment / note text (plain), empty for the other kinds. */
   body: string;
   at: string;
+  /** Comment rows only: picture URLs the comment embeds (`/files/…`). */
+  images?: string[];
   /** Task rows only: the CRM Task's own fields. */
   title?: string;
   status?: string;

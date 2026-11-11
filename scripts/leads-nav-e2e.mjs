@@ -12,6 +12,10 @@
 import { chromium } from "/root/arogga-UI/node_modules/playwright/index.mjs";
 import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+
+/** A 1x1 PNG — enough for `<img>.naturalWidth` to prove the proxy returned it. */
+const PNG_1X1_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==";
 import { promisify } from "node:util";
 
 const run_ = promisify(execFile);
@@ -278,26 +282,76 @@ async function login() {
       `[${viewport.tag}] the posted comment appears in the timeline`
     );
 
-    // Paperclip: the bytes go through the JSON proxy and land in Desk's File
-    // list; the panel must show the new row in its Attachments tab.
+    // Paperclip in the comment box: the bytes go through the JSON proxy as a
+    // PUBLIC File (is_private=0 — unchecked in /desk/data/file) and the new
+    // comment must show the picture itself.
+    await page.locator('[data-lead-tab="comments"]').click();
+    await page.locator("[data-lead-attachments], [data-lead-comments]").first().waitFor({ state: "visible", timeout: 20000 });
+    await page.locator("[data-lead-attach-input]").setInputFiles({
+      name: "portal-note.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(PNG_1X1_BASE64, "base64"),
+    });
+    await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 30000 });
+    check(true, `[${viewport.tag}] a picture attached in the comment box is accepted`);
+    await page.waitForTimeout(1200);
+    await page.locator("[data-lead-comment-image]").first().waitFor({ state: "visible", timeout: 20000 });
+    const commentThumbLoaded = await page.waitForFunction(
+      () => {
+        const img = document.querySelector("[data-lead-comment-image] img");
+        return Boolean(img) && img.complete && img.naturalWidth > 0;
+      },
+      null,
+      { timeout: 20000 }
+    ).then(() => true).catch(() => false);
+    check(commentThumbLoaded, `[${viewport.tag}] the comment shows the attached picture`);
+
+    await page.locator("[data-lead-comment-image]").first().click();
+    await page.locator("[data-attachment-preview]").waitFor({ state: "visible", timeout: 20000 });
+    check(true, `[${viewport.tag}] the comment's picture opens in the panel preview`);
+    await page.locator("[data-attachment-close]").click();
+    await page.locator("[data-attachment-preview]").waitFor({ state: "detached", timeout: 10000 });
+
+    // A non-picture attachment still becomes a comment, shown as a file chip.
+    await page.locator('[data-lead-tab="comments"]').click();
     await page.locator("[data-lead-attach-input]").setInputFiles({
       name: "probe-attachment.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("portal probe attachment"),
     });
     await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 30000 });
-    check(true, `[${viewport.tag}] an attachment uploaded from the panel is accepted`);
     await page.waitForTimeout(1200);
     check(
       ((await page.locator("[data-lead-tab-panel]").innerText()) || "").includes(
         "probe-attachment.txt"
       ),
-      `[${viewport.tag}] the uploaded file shows in the Attachments tab`
+      `[${viewport.tag}] a non-picture attachment shows as a file chip in the comment`
+    );
+
+    // The API contract Desk cares about: is_private must be 0 on the new File.
+    const commentFileResponse = await context.request.post(
+      `${NEXT}/api/leads/CRM-LEAD-2026-00021/comment-file`,
+      {
+        data: {
+          file_name: "api-probe.png",
+          content_base64: PNG_1X1_BASE64,
+          content: "api probe",
+          language: "bn",
+        },
+      }
+    );
+    const commentFileBody = await commentFileResponse.json().catch(() => ({}));
+    check(
+      commentFileResponse.ok() && commentFileBody?.data?.file?.is_private === 0,
+      `[${viewport.tag}] the comment file is posted with is_private 0`
     );
 
     // Clicking an attachment must show the file itself: pictures open in the
     // panel's own preview (streamed through /api/frappe-file), other files
     // open in a new tab — never a raw ERP-host URL the portal cannot reach.
+    // (The comment upload above parks the panel on the Comments tab.)
+    await page.locator('[data-lead-tab="attachments"]').click();
+    await page.locator("[data-lead-attachments]").waitFor({ state: "visible", timeout: 20000 });
     const imageRow = page.locator('[data-attachment-open][title]').filter({ hasText: "site-visit.png" }).first();
     await imageRow.waitFor({ state: "visible", timeout: 20000 });
     const thumb = page.locator("[data-lead-attachments] [data-attachment-thumb]").first();

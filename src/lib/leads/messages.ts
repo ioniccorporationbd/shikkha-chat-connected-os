@@ -27,6 +27,11 @@ export interface LeadsDetailCopy {
   commentFailed: string;
   attach: string;
   attaching: string;
+  commentAttach: string;
+  commentFileAdded: string;
+  commentFileFailed: string;
+  commentFileTooLarge: string;
+  commentFileBlocked: string;
   attachmentAdded: string;
   attachmentFailed: string;
   attachmentTooLarge: string;
@@ -205,6 +210,11 @@ const bn: LeadsCopy = {
     commentFailed: "মন্তব্য যোগ করা যায়নি",
     attach: "সংযুক্তি",
     attaching: "সংযুক্তি আপলোড হচ্ছে…",
+    commentAttach: "ফাইল সংযুক্ত করুন",
+    commentFileAdded: "ফাইলসহ মন্তব্য যোগ হয়েছে",
+    commentFileFailed: "ফাইলটি পাঠানো যায়নি। আবার চেষ্টা করুন।",
+    commentFileTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না।",
+    commentFileBlocked: "এই ধরনের ফাইল অনুমোদিত নয়।",
     attachmentAdded: "সংযুক্তি যোগ হয়েছে — Desk → File-এ সংরক্ষিত",
     attachmentFailed: "সংযুক্তি আপলোড করা যায়নি",
     attachmentTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না",
@@ -359,6 +369,11 @@ const en: LeadsCopy = {
     commentFailed: "The comment could not be added",
     attach: "Attachment",
     attaching: "Uploading…",
+    commentAttach: "Attach a file",
+    commentFileAdded: "Comment added with the file",
+    commentFileFailed: "The file could not be sent. Try again.",
+    commentFileTooLarge: "The file cannot be larger than 5 MB.",
+    commentFileBlocked: "This file type is not allowed.",
     attachmentAdded: "Attachment added — saved to Desk → File",
     attachmentFailed: "The attachment could not be uploaded",
     attachmentTooLarge: "The file cannot be larger than 5 MB",
