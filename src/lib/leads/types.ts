@@ -40,7 +40,10 @@ export interface LeadActivity {
   /** Comment rows only: picture URLs the comment embeds (`/files/…`). */
   images?: string[];
   /** Task rows only: the CRM Task's own fields. */
+  /** The CRM Task docname — what the details popup saves against. */
+  task?: string;
   title?: string;
+  description?: string;
   status?: string;
   priority?: string;
   assigned_to?: string;
@@ -83,6 +86,9 @@ export interface LeadTaskDraft {
   due_date: string;
 }
 
+/** What the details popup sends: only the fields the user actually changed. */
+export type LeadTaskEdit = Partial<LeadTaskDraft>;
+
 /** What the New-note form sends: a title plus the editor's HTML. */
 export interface LeadNoteDraft {
   title: string;
@@ -104,7 +110,11 @@ export interface LeadNoteCreated {
 
 export interface LeadTaskCreated {
   key: string;
+  /** The CRM Task docname (same value as `key` for task rows). */
+  task?: string;
   title: string;
+  /** Free-text body; "" when the task has none. */
+  description?: string;
   status: string;
   priority: string;
   assigned_to: string;

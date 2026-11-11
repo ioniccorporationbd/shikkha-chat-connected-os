@@ -9,6 +9,7 @@ import type {
   LeadsPayload,
   LeadTaskCreated,
   LeadTaskDraft,
+  LeadTaskEdit,
   LeadTaskOptions,
 } from "./types";
 
@@ -111,6 +112,23 @@ export function addLeadTask(
 ): Promise<{ task: LeadTaskCreated; lead: string }> {
   return postJson<{ task: LeadTaskCreated; lead: string }>(
     `/api/leads/${encodeURIComponent(name)}/task`,
+    { task, language }
+  );
+}
+
+/**
+ * `POST /api/leads/<name>/task/<task>` — save the details popup's edits to one
+ * CRM Task. Only the changed keys are forwarded, so nothing is blanked by
+ * accident.
+ */
+export function updateLeadTask(
+  name: string,
+  taskName: string,
+  task: LeadTaskEdit,
+  language: string
+): Promise<{ task: LeadTaskCreated; lead: string }> {
+  return postJson<{ task: LeadTaskCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/task/${encodeURIComponent(taskName)}`,
     { task, language }
   );
 }

@@ -88,6 +88,22 @@ export interface LeadsDetailCopy {
     dueLabel: string;
     unassigned: string;
   };
+  taskDetail: {
+    /** The row button that opens the task's own popup. */
+    viewDetails: string;
+    /** The popup's heading. */
+    title: string;
+    /** Eyebrow under the heading: the task's docname. */
+    subtitle: string;
+    saving: string;
+    updated: string;
+    updateFailed: string;
+    notFound: string;
+    emptyDescription: string;
+    /** Section captions inside the popup. */
+    sectionDetails: string;
+    sectionPeople: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -270,6 +286,18 @@ const bn: LeadsCopy = {
       dueLabel: "শেষ তারিখ",
       unassigned: "অ্যাসাইন করা নেই",
     },
+    taskDetail: {
+      viewDetails: "বিস্তারিত",
+      title: "টাস্কের বিবরণ",
+      subtitle: "টাস্ক",
+      saving: "সংরক্ষণ হচ্ছে…",
+      updated: "টাস্কটি আপডেট হয়েছে",
+      updateFailed: "টাস্কটি সংরক্ষণ করা যায়নি।",
+      notFound: "টাস্কটি পাওয়া যায়নি।",
+      emptyDescription: "এই টাস্কে কোনো বিবরণ লেখা হয়নি।",
+      sectionDetails: "বিবরণ",
+      sectionPeople: "দায়িত্ব ও সময়সূচি",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -428,6 +456,18 @@ const en: LeadsCopy = {
       priorityLabel: "Priority",
       dueLabel: "Due",
       unassigned: "Unassigned",
+    },
+    taskDetail: {
+      viewDetails: "View details",
+      title: "Task details",
+      subtitle: "Task",
+      saving: "Saving…",
+      updated: "The task was updated",
+      updateFailed: "The task could not be saved.",
+      notFound: "The task was not found.",
+      emptyDescription: "This task has no description yet.",
+      sectionDetails: "Details",
+      sectionPeople: "Ownership & schedule",
     },
     empty: {
       activity: "No activity yet.",

@@ -617,6 +617,99 @@ async function login() {
       `[${viewport.tag}] the task shows its assignee (${assigneeShown || "n/a"})`
     );
 
+    // Task details: every row carries a বিস্তারিত button that opens that task's
+    // own popup, pre-filled and editable, and Save round-trips to the ERP.
+    const detailsBtn = page.locator("[data-lead-task-details]").first();
+    await detailsBtn.waitFor({ state: "visible", timeout: 20000 });
+    await detailsBtn.click();
+    await page.locator("[data-task-detail-modal]").waitFor({ state: "visible", timeout: 20000 });
+    check(true, `[${viewport.tag}] the task row's বিস্তারিত button opens the task popup`);
+
+    const prefilledTitle = await page.locator("[data-task-detail-title]").inputValue();
+    check(
+      prefilledTitle === taskTitle,
+      `[${viewport.tag}] the task popup is pre-filled with the task title (${prefilledTitle})`
+    );
+    const prefilledPriority = await page.locator("[data-task-detail-priority]").inputValue();
+    check(
+      prefilledPriority === "High",
+      `[${viewport.tag}] the task popup is pre-filled with its priority (${prefilledPriority})`
+    );
+    const prefilledStatus = await page.locator("[data-task-detail-status]").inputValue();
+    check(
+      prefilledStatus === "In Progress",
+      `[${viewport.tag}] the task popup is pre-filled with its status (${prefilledStatus})`
+    );
+    const prefilledDue = await page.locator("[data-task-detail-due]").inputValue();
+    check(
+      prefilledDue === "2026-12-31",
+      `[${viewport.tag}] the task popup is pre-filled with its due date (${prefilledDue})`
+    );
+    const prefilledAssignee = await page.locator("[data-task-detail-assignee]").inputValue();
+    check(
+      !chosenEmployee || prefilledAssignee === chosenEmployee,
+      `[${viewport.tag}] the task popup resolves the assignee to the right employee (${prefilledAssignee})`
+    );
+
+    // Editable: every field accepts typing/selection.
+    const detailTitle = `${taskTitle} edited`;
+    await page.locator("[data-task-detail-title]").fill(detailTitle);
+    await page.locator("[data-task-detail-description]").fill("QA detail description");
+    await page.locator("[data-task-detail-priority]").selectOption("Low");
+    await page.locator("[data-task-detail-status]").selectOption("Done");
+    await page.locator("[data-task-detail-due]").fill("2027-01-15");
+    check(true, `[${viewport.tag}] all task fields accept edits in the popup`);
+
+    // An emptied title is refused before any round-trip.
+    await page.locator("[data-task-detail-title]").fill("   ");
+    await page.locator("[data-task-detail-save]").click();
+    await page.locator("[data-task-detail-error]").waitFor({ state: "visible", timeout: 10000 });
+    check(true, `[${viewport.tag}] the task popup refuses an empty title`);
+    await page.locator("[data-task-detail-title]").fill(detailTitle);
+
+    await page.locator("[data-task-detail-save]").click();
+    await page.locator("[data-task-detail-modal]").waitFor({ state: "detached", timeout: 30000 });
+    check(true, `[${viewport.tag}] saving the task popup closes it`);
+    await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 20000 });
+    check(true, `[${viewport.tag}] saving the task shows the success notice`);
+
+    await page.locator("[data-lead-tasks]").waitFor({ state: "visible", timeout: 20000 });
+    const editedTasksText = (await page.locator("[data-lead-tasks]").innerText()) || "";
+    check(
+      editedTasksText.includes(detailTitle),
+      `[${viewport.tag}] the edited title shows in the Tasks tab`
+    );
+    check(
+      (await page.locator('[data-lead-task-status="Done"]').count()) >= 1,
+      `[${viewport.tag}] the edited status shows in the Tasks tab`
+    );
+    check(
+      (await page.locator('[data-lead-task-priority="Low"]').count()) >= 1,
+      `[${viewport.tag}] the edited priority shows in the Tasks tab`
+    );
+
+    // Re-opening proves the change was really written, not just echoed.
+    await page.locator("[data-lead-task-details]").first().click();
+    await page.locator("[data-task-detail-modal]").waitFor({ state: "visible", timeout: 20000 });
+    const reopenedTitle = await page.locator("[data-task-detail-title]").inputValue();
+    const reopenedDescription = await page
+      .locator("[data-task-detail-description]")
+      .inputValue();
+    const reopenedStatus = await page.locator("[data-task-detail-status]").inputValue();
+    const reopenedDue = await page.locator("[data-task-detail-due]").inputValue();
+    check(
+      reopenedTitle === detailTitle && reopenedDescription === "QA detail description",
+      `[${viewport.tag}] the saved title and description come back from the ERP`
+    );
+    check(
+      reopenedStatus === "Done" && reopenedDue === "2027-01-15",
+      `[${viewport.tag}] the saved status and due date come back from the ERP`
+    );
+    // Closing without edits must not write anything.
+    await page.locator("[data-task-detail-cancel]").click();
+    await page.locator("[data-task-detail-modal]").waitFor({ state: "detached", timeout: 15000 });
+    check(true, `[${viewport.tag}] the task popup closes without saving when nothing changed`);
+
     await page.locator("[data-lead-detail-close]").click();
     await page.locator("[data-lead-detail]").waitFor({ state: "detached", timeout: 15000 });
     check(true, `[${viewport.tag}] the panel closes without leaving the board`);

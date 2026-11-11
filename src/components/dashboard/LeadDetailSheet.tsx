@@ -41,6 +41,7 @@ import {
   fetchLeadTaskOptions,
   leadFileSrc,
   updateLeadDetail,
+  updateLeadTask,
   addLeadCommentFile,
 } from "@/lib/leads/api";
 import {
@@ -60,6 +61,7 @@ import type {
   LeadDetailPayload,
   LeadNoteCreated,
   LeadTaskCreated,
+  LeadTaskEdit,
   LeadTaskOptions,
 } from "@/lib/leads/types";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
@@ -495,6 +497,7 @@ function TasksPanel({
   empty,
   language,
   onNew,
+  onOpenTask,
 }: {
   items: LeadActivity[];
   copy: LeadsCopy;
@@ -502,6 +505,8 @@ function TasksPanel({
   empty: string;
   language: string;
   onNew: () => void;
+  /** Opens one task's own editable popup (the row's বিস্তারিত button). */
+  onOpenTask: (item: LeadActivity) => void;
 }) {
   return (
     <div data-lead-tasks="">
@@ -542,6 +547,15 @@ function TasksPanel({
                       item.status}
                   </span>
                 ) : null}
+                <button
+                  type="button"
+                  onClick={() => onOpenTask(item)}
+                  data-lead-task-details={item.key}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] hover:text-[var(--color-action)]"
+                >
+                  <FiEdit2 size={11} className="pointer-events-none" />
+                  <span className="pointer-events-none">{detail.taskDetail.viewDetails}</span>
+                </button>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[22px] text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 <span data-lead-task-assignee="">
@@ -867,6 +881,340 @@ function TaskFormModal({
 
   // Rendered into <body>: the sheet keeps an animation fill-mode transform,
   // which would otherwise trap a `fixed` popup inside the sheet's box.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/**
+ * One task's own popup, opened from the Tasks tab's **বিস্তারিত** button.
+ *
+ * Same field set as the New-task form (title, description, priority,
+ * assigned-to, due date, status) but pre-filled from the CRM Task and
+ * **editable**: Save patches only the fields the user actually changed, so a
+ * concurrent edit elsewhere is never blanked. Saving goes through
+ * `POST /api/leads/<name>/task/<task>` -> leads.update_lead_task.
+ */
+function TaskDetailModal({
+  name,
+  task,
+  language,
+  detail,
+  onClose,
+  onSaved,
+}: {
+  name: string;
+  task: LeadActivity;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onSaved: (updated: LeadTaskCreated) => void | Promise<void>;
+}) {
+  const cf = detail.taskForm;
+  const dt = detail.taskDetail;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  const [optionsFailed, setOptionsFailed] = useState(false);
+  const [title, setTitle] = useState(task.title || task.text || "");
+  const [description, setDescription] = useState(task.description || "");
+  const [priority, setPriority] = useState(task.priority || "");
+  const [status, setStatus] = useState(task.status || "");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [dueDate, setDueDate] = useState(task.due_date || "");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  // The values as loaded — Save only sends what changed from here.
+  const baselineRef = useRef<LeadTaskEdit>({
+    title: task.title || task.text || "",
+    description: task.description || "",
+    priority: task.priority || "",
+    status: task.status || "",
+    due_date: task.due_date || "",
+  });
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (cancelled) return;
+        setOptions(payload);
+
+        // The row carries the assignee's User, the dropdown lists Employees —
+        // resolve once so the select shows the right person, not "—".
+        const assigneeUser = (task.assigned_to || "").trim();
+        const match = assigneeUser
+          ? payload.employees.find((employee) => employee.user === assigneeUser)
+          : undefined;
+        if (match) {
+          setAssignedTo(match.value);
+          baselineRef.current = { ...baselineRef.current, assigned_to: match.value };
+        }
+      } catch (cause) {
+        if (cancelled) return;
+        setOptionsFailed(true);
+        reportClientError({
+          scope: "leads:task-detail-options",
+          message: "The task details options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language, task.assigned_to]);
+
+  const priorities =
+    options && options.priorities.length > 0 ? options.priorities : FALLBACK_TASK_PRIORITIES;
+  const statuses = options && options.statuses?.length ? options.statuses : FALLBACK_TASK_STATUSES;
+  const employees = options?.employees ?? [];
+  const statusValue = status || options?.status_default || "Todo";
+
+  const submit = async () => {
+    if (saving) return;
+
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setFormError(cf.required);
+      titleRef.current?.focus();
+      return;
+    }
+
+    const base = baselineRef.current;
+    const edits: LeadTaskEdit = {};
+    if (cleanTitle !== (base.title ?? "")) edits.title = cleanTitle;
+    if (description.trim() !== (base.description ?? "")) edits.description = description.trim();
+    if (priority !== (base.priority ?? "")) edits.priority = priority;
+    if (statusValue !== (base.status ?? "")) edits.status = statusValue;
+    if (assignedTo !== (base.assigned_to ?? "")) edits.assigned_to = assignedTo;
+    if (dueDate !== (base.due_date ?? "")) edits.due_date = dueDate;
+
+    const taskName = task.task || task.key;
+    if (!taskName) {
+      setFormError(dt.notFound);
+      return;
+    }
+
+    // Nothing changed — closing is the honest outcome, no write, no noise.
+    if (Object.keys(edits).length === 0) {
+      onClose();
+      return;
+    }
+
+    setSaving(true);
+    setFormError(null);
+    try {
+      const result = await updateLeadTask(name, taskName, edits, language);
+      await onSaved(result.task);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : dt.updateFailed);
+      reportClientError({
+        scope: "leads:task-detail",
+        message: "The lead task could not be saved",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={dt.title}
+      data-task-detail-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !saving) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[540px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{dt.title}</h3>
+            <p
+              className="mt-0.5 truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+              data-task-detail-name=""
+            >
+              {`${dt.subtitle} · ${task.task || task.key}`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            aria-label={detail.close}
+            data-task-detail-close=""
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className={labelClass} htmlFor="lead-task-detail-title">
+              {cf.title}
+            </label>
+            <input
+              id="lead-task-detail-title"
+              ref={titleRef}
+              value={title}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder={cf.titlePlaceholder}
+              maxLength={140}
+              data-task-detail-title=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-detail-description">
+              {cf.description}
+            </label>
+            <textarea
+              id="lead-task-detail-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={cf.descriptionPlaceholder || dt.emptyDescription}
+              rows={4}
+              maxLength={5000}
+              data-task-detail-description=""
+              className={`${fieldClass} resize-none`}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-detail-priority">
+                {cf.priority}
+              </label>
+              <select
+                id="lead-task-detail-priority"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value)}
+                data-task-detail-priority=""
+                className={fieldClass}
+              >
+                {priorities.map((option) => (
+                  <option key={option.value || "none"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-detail-status">
+                {cf.status}
+              </label>
+              <select
+                id="lead-task-detail-status"
+                value={statusValue}
+                onChange={(event) => setStatus(event.target.value)}
+                data-task-detail-status=""
+                className={fieldClass}
+              >
+                {statuses.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-detail-assignee">
+                {cf.assignedTo}
+              </label>
+              <select
+                id="lead-task-detail-assignee"
+                value={assignedTo}
+                onChange={(event) => setAssignedTo(event.target.value)}
+                data-task-detail-assignee=""
+                className={fieldClass}
+              >
+                <option value="">—</option>
+                {employees.map((employee) => (
+                  <option key={employee.value} value={employee.value}>
+                    {employee.designation
+                      ? `${employee.label} · ${employee.designation}`
+                      : employee.label}
+                  </option>
+                ))}
+              </select>
+              {optionsFailed ? (
+                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
+              ) : null}
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-detail-due">
+                {cf.dueDate}
+              </label>
+              <input
+                id="lead-task-detail-due"
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                data-task-detail-due=""
+                className={fieldClass}
+              />
+            </div>
+          </div>
+        </div>
+
+        {formError ? (
+          <p
+            className="mt-3 text-[12px] font-medium text-[var(--color-danger)]"
+            data-task-detail-error=""
+          >
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            data-task-detail-cancel=""
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={saving}
+            data-task-detail-save=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiEdit2 size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body>: the sheet's animation fill-mode transform would
+  // otherwise trap a `fixed` popup inside the sheet's box.
   if (typeof document === "undefined") return null;
   return createPortal(modal, document.body);
 }
@@ -1648,6 +1996,8 @@ function LeadDetailPanel({
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
+  // The task whose own popup is open (Tasks tab -> বিস্তারিত).
+  const [detailTask, setDetailTask] = useState<LeadActivity | null>(null);
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<LeadAttachment | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -1981,6 +2331,10 @@ function LeadDetailPanel({
               setNotice(null);
               setTaskFormOpen(true);
             }}
+            onOpenTask={(item) => {
+              setNotice(null);
+              setDetailTask(item);
+            }}
           />
         ) : activeTab === "notes" ? (
           <NotesPanel
@@ -2114,6 +2468,23 @@ function LeadDetailPanel({
           onCreated={async () => {
             setTaskFormOpen(false);
             setNotice({ tone: "ok", text: detail.taskForm.created });
+            setTabState({ name, tab: "tasks" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* One task's own editable popup, opened from its row. */}
+      {detailTask ? (
+        <TaskDetailModal
+          name={name}
+          task={detailTask}
+          language={language}
+          detail={detail}
+          onClose={() => setDetailTask(null)}
+          onSaved={async () => {
+            setDetailTask(null);
+            setNotice({ tone: "ok", text: detail.taskDetail.updated });
             setTabState({ name, tab: "tasks" });
             await load();
           }}

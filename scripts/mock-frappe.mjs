@@ -698,7 +698,9 @@ function crmLeadTaskRows(name, t) {
     text: `${row.title}${row.status ? ` · ${row.status}` : ""}`,
     body: "",
     at: row.at,
+    task: row.name,
     title: row.title,
+    description: row.description || "",
     status: row.status,
     priority: row.priority,
     assigned_to: row.assigned_to,
@@ -6964,6 +6966,7 @@ const server = createServer(async (request, response) => {
     const created = {
       name: `CRM-TASK-${String(crmLeadTaskCounter++).padStart(5, "0")}`,
       title,
+      description: String(task.description ?? "").trim().slice(0, 5000),
       status,
       priority,
       assigned_to: assignedTo,
@@ -6979,13 +6982,122 @@ const server = createServer(async (request, response) => {
     ok(response, {
       task: {
         key: created.name,
+        task: created.name,
         title: created.title,
+        description: created.description,
         status: created.status,
         priority: created.priority,
         assigned_to: created.assigned_to,
         assigned_label: created.assigned_label,
         due_date: created.due_date,
         at: created.at,
+      },
+      lead: leadName,
+    });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.update_lead_task") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    // Body-only kwargs, like Frappe.
+    const leadName = String(body.name ?? "").trim();
+    const taskName = String(body.task_name ?? "").trim();
+    const row = crmLeads.find((lead) => lead.name === leadName);
+    if (!row) {
+      failure(response, 404, "DoesNotExistError", "The lead was not found.", "CRM Lead");
+      return;
+    }
+
+    const list = crmLeadTasks.get(leadName) || [];
+    const existing = list.find((item) => item.name === taskName);
+    if (!existing) {
+      failure(response, 404, "DoesNotExistError", "The task was not found.", "CRM Task");
+      return;
+    }
+
+    let task = body.task;
+    if (typeof task === "string") {
+      try {
+        task = JSON.parse(task);
+      } catch {
+        task = null;
+      }
+    }
+    if (!task || typeof task !== "object" || Array.isArray(task)) {
+      failure(response, 417, "ValidationError", "The task could not be saved.", "CRM Task");
+      return;
+    }
+
+    // Only the keys present are written — a partial patch keeps the rest.
+    if ("title" in task) {
+      const title = String(task.title ?? "").trim().replace(/\s+/g, " ");
+      if (!title) {
+        failure(response, 417, "ValidationError", "Give the task a title.", "CRM Task");
+        return;
+      }
+      if (title.length > 140) {
+        failure(response, 417, "ValidationError", "The task title is too long.", "CRM Task");
+        return;
+      }
+      existing.title = title;
+    }
+
+    if ("description" in task) {
+      existing.description = String(task.description ?? "").trim().slice(0, 5000);
+    }
+
+    if ("priority" in task) {
+      const priority = String(task.priority ?? "").trim();
+      existing.priority = ["High", "Medium", "Low"].includes(priority) ? priority : "";
+    }
+
+    if ("status" in task) {
+      const rawStatus = String(task.status ?? "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+      const status = crmTaskStatuses.find((item) => item.toLowerCase() === rawStatus);
+      if (status) existing.status = status;
+    }
+
+    if ("due_date" in task) {
+      const dueDate = String(task.due_date ?? "").trim();
+      existing.due_date = /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : "";
+    }
+
+    if ("assigned_to" in task) {
+      const employeeId = String(task.assigned_to ?? "").trim();
+      if (!employeeId) {
+        existing.assigned_to = "";
+        existing.assigned_label = "";
+      } else {
+        const employee = crmTaskEmployees.find((item) => item.value === employeeId);
+        if (employee) {
+          existing.assigned_label = employee.user ? employee.label : "";
+          existing.assigned_to = employee.user || "";
+        }
+      }
+    }
+
+    ok(response, {
+      task: {
+        key: existing.name,
+        task: existing.name,
+        title: existing.title,
+        description: existing.description || "",
+        status: existing.status,
+        priority: existing.priority,
+        assigned_to: existing.assigned_to,
+        assigned_label: existing.assigned_label,
+        due_date: existing.due_date,
+        at: existing.at,
       },
       lead: leadName,
     });
