@@ -553,6 +553,16 @@ async function login() {
     await page.locator("[data-task-modal]").waitFor({ state: "visible", timeout: 20000 });
     check(true, `[${viewport.tag}] New task opens the task form popup`);
 
+    // The selects are filled from the options call, so wait for it to land
+    // before asserting the server's own order.
+    await page.waitForFunction(
+      () => {
+        const select = document.querySelector("[data-task-priority]");
+        return Boolean(select && select.options.length > 0 && select.options[0].value === "");
+      },
+      undefined,
+      { timeout: 20000 }
+    );
     const priorityValues = await page
       .locator("[data-task-priority] option")
       .evaluateAll((nodes) => nodes.map((node) => node.value));
@@ -615,6 +625,37 @@ async function login() {
     check(
       !assigneeShown || tasksText.includes(assigneeShown),
       `[${viewport.tag}] the task shows its assignee (${assigneeShown || "n/a"})`
+    );
+
+    // The Tasks tab is a table: 7 columns (task / priority / status / assignee /
+    // due / created / action) with one row per task.
+    const tableShape = await page.locator("[data-lead-task-list]").evaluate((node) => ({
+      tag: node.tagName,
+      headCount: node.querySelectorAll("thead th").length,
+      headText: Array.from(node.querySelectorAll("thead th"))
+        .map((cell) => (cell.textContent || "").trim())
+        .join("|"),
+      bodyRows: node.querySelectorAll("tbody tr").length,
+      firstRowCells: node.querySelectorAll("tbody tr")[0]?.children.length ?? 0,
+    }));
+    check(
+      tableShape.tag === "TABLE" && tableShape.bodyRows >= 1,
+      `[${viewport.tag}] the Tasks tab renders tasks in a table (${tableShape.bodyRows} row(s))`
+    );
+    check(
+      tableShape.headCount === 7 && tableShape.firstRowCells === 7,
+      `[${viewport.tag}] the task table has 7 aligned columns (${tableShape.headCount}/${tableShape.firstRowCells})`
+    );
+    check(
+      ["টাস্ক", "প্রায়োরিটি", "স্ট্যাটাস", "দায়িত্বপ্রাপ্ত", "শেষ তারিখ", "তৈরি", "অ্যাকশন"].every(
+        (label) => tableShape.headText.includes(label)
+      ),
+      `[${viewport.tag}] the task table headers are the Bengali column names (${tableShape.headText})`
+    );
+    const countText = ((await page.locator("[data-lead-task-count]").innerText()) || "").trim();
+    check(
+      countText.includes("মোট টাস্ক"),
+      `[${viewport.tag}] the task table shows a total-task count (${countText})`
     );
 
     // Task details: every row carries a বিস্তারিত button that opens that task's

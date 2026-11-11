@@ -487,8 +487,10 @@ function formatDueDate(value: string, language: string): string {
 }
 
 /**
- * The Tasks tab: the lead's CRM Tasks with a **New task** button in the
- * section's top-right corner (the ask was explicit about the position).
+ * The Tasks tab: the lead's CRM Tasks as a **table** (task, priority, status,
+ * assignee, due date, created, action) with a **New task** button in the
+ * section's top-right corner. Each row's বিস্তারিত button opens that task's own
+ * editable popup.
  */
 function TasksPanel({
   items,
@@ -508,14 +510,25 @@ function TasksPanel({
   /** Opens one task's own editable popup (the row's বিস্তারিত button). */
   onOpenTask: (item: LeadActivity) => void;
 }) {
+  const th = detail.taskTable;
+  const headClass =
+    "whitespace-nowrap px-3 py-2 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] max-sm:px-2";
+  const cellClass = "px-3 py-2.5 align-middle max-sm:px-2";
+
   return (
     <div data-lead-tasks="">
-      <div className="mb-4 flex items-center justify-end">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p
+          className="text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          data-lead-task-count=""
+        >
+          {th.count} · {formatCount(items.length, language)}
+        </p>
         <button
           type="button"
           onClick={onNew}
           data-lead-new-task=""
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
         >
           <FiPlus size={13} className="pointer-events-none" />
           <span className="pointer-events-none">{detail.newTask}</span>
@@ -525,53 +538,145 @@ function TasksPanel({
       {items.length === 0 ? (
         <EmptyTab text={empty} />
       ) : (
-        <ul className="flex flex-col gap-2" data-lead-task-list="">
-          {items.map((item) => (
-            <li
-              key={item.key}
-              data-lead-task-item={item.key}
-              className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-3.5 py-3"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <FiCheckSquare size={14} className="shrink-0 text-[var(--color-action)]" />
-                <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--color-primary)]">
-                  {item.title || item.text}
-                </p>
-                <TaskPriorityChip priority={item.priority || ""} language={language} />
-                {item.status ? (
-                  <span
-                    className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"
-                    data-lead-task-status={item.status}
-                  >
-                    {TASK_STATUS_LABELS[item.status]?.[language === "bn" ? "bn" : "en"] ??
-                      item.status}
-                  </span>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => onOpenTask(item)}
-                  data-lead-task-details={item.key}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] hover:text-[var(--color-action)]"
+        <div
+          className="overflow-x-auto rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+          data-lead-task-scroll=""
+        >
+          <table
+            className="w-full border-collapse text-left sm:min-w-[640px]"
+            data-lead-task-list=""
+          >
+            <thead>
+              <tr className="bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
+                <th scope="col" className={headClass}>
+                  {th.task}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.priority}
+                </th>
+                <th scope="col" className={headClass}>
+                  {th.status}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.assignee}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.due}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.created}
+                </th>
+                <th scope="col" className={`${headClass} text-right`}>
+                  {th.actions}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr
+                  key={item.key}
+                  data-lead-task-item={item.key}
+                  className="border-t border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] align-top transition hover:bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]"
                 >
-                  <FiEdit2 size={11} className="pointer-events-none" />
-                  <span className="pointer-events-none">{detail.taskDetail.viewDetails}</span>
-                </button>
-              </div>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[22px] text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                <span data-lead-task-assignee="">
-                  {item.assigned_label || detail.taskForm.unassigned}
-                </span>
-                {item.due_date ? (
-                  <span className="inline-flex items-center gap-1">
-                    <FiCalendar size={11} className="pointer-events-none" />
-                    {formatDueDate(item.due_date, language)}
-                  </span>
-                ) : null}
-                {item.at ? <RelativeTime at={item.at} copy={copy} /> : null}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  <td className={cellClass}>
+                    <div className="flex items-start gap-2">
+                      <FiCheckSquare
+                        size={13}
+                        className="mt-0.5 shrink-0 text-[var(--color-action)]"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] font-semibold leading-snug text-[var(--color-primary)]">
+                          {item.title || item.text}
+                        </p>
+                        {/* Phones drop the priority/assignee/created columns, so
+                            their information rides along under the title. */}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:hidden">
+                          <TaskPriorityChip priority={item.priority || ""} language={language} />
+                          <span className="truncate">
+                            {item.assigned_label || detail.taskForm.unassigned}
+                          </span>
+                          {item.due_date ? (
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                              <FiCalendar size={10} className="pointer-events-none" />
+                              {formatDueDate(item.due_date, language)}
+                            </span>
+                          ) : null}
+                          {item.at ? (
+                            <span className="whitespace-nowrap">
+                              <RelativeTime at={item.at} copy={copy} />
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`${cellClass} max-sm:hidden`}>
+                    <TaskPriorityChip priority={item.priority || ""} language={language} />
+                  </td>
+                  <td className={cellClass}>
+                    {item.status ? (
+                      <span
+                        className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"
+                        data-lead-task-status={item.status}
+                      >
+                        {TASK_STATUS_LABELS[item.status]?.[language === "bn" ? "bn" : "en"] ??
+                          item.status}
+                      </span>
+                    ) : (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td className={`${cellClass} max-sm:hidden`}>
+                    <span
+                      className="block text-[11.5px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+                      data-lead-task-assignee=""
+                    >
+                      {item.assigned_label || detail.taskForm.unassigned}
+                    </span>
+                  </td>
+                  <td className={`${cellClass} whitespace-nowrap max-sm:hidden`}>
+                    <span className="inline-flex items-center gap-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
+                      {item.due_date ? (
+                        <>
+                          <FiCalendar size={11} className="pointer-events-none" />
+                          {formatDueDate(item.due_date, language)}
+                        </>
+                      ) : (
+                        <span className="text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                          —
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className={`${cellClass} whitespace-nowrap max-sm:hidden`}>
+                    {item.at ? (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                        <RelativeTime at={item.at} copy={copy} />
+                      </span>
+                    ) : (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td className={`${cellClass} text-right`}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenTask(item)}
+                      data-lead-task-details={item.key}
+                      className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] hover:text-[var(--color-action)]"
+                    >
+                      <FiEdit2 size={11} className="pointer-events-none" />
+                      <span className="pointer-events-none">{detail.taskDetail.viewDetails}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
@@ -579,10 +684,10 @@ function TasksPanel({
 
 /** Server priorities, with a local fallback when the options call fails. */
 const FALLBACK_TASK_PRIORITIES = [
+  { value: "", label: "No Priority" },
   { value: "High", label: "High" },
   { value: "Medium", label: "Medium" },
   { value: "Low", label: "Low" },
-  { value: "", label: "No Priority" },
 ];
 
 /** Used only when the options call fails; mirrors CRM Task's own statuses. */

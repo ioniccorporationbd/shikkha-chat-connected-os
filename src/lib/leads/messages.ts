@@ -104,6 +104,18 @@ export interface LeadsDetailCopy {
     sectionDetails: string;
     sectionPeople: string;
   };
+  taskTable: {
+    /** Column headers of the Tasks tab table. */
+    task: string;
+    priority: string;
+    status: string;
+    assignee: string;
+    due: string;
+    created: string;
+    actions: string;
+    /** Caption above the table: how many tasks, with a live count slot. */
+    count: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -298,6 +310,16 @@ const bn: LeadsCopy = {
       sectionDetails: "বিবরণ",
       sectionPeople: "দায়িত্ব ও সময়সূচি",
     },
+    taskTable: {
+      task: "টাস্ক",
+      priority: "প্রায়োরিটি",
+      status: "স্ট্যাটাস",
+      assignee: "দায়িত্বপ্রাপ্ত",
+      due: "শেষ তারিখ",
+      created: "তৈরি",
+      actions: "অ্যাকশন",
+      count: "মোট টাস্ক",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -468,6 +490,16 @@ const en: LeadsCopy = {
       emptyDescription: "This task has no description yet.",
       sectionDetails: "Details",
       sectionPeople: "Ownership & schedule",
+    },
+    taskTable: {
+      task: "Task",
+      priority: "Priority",
+      status: "Status",
+      assignee: "Assignee",
+      due: "Due",
+      created: "Created",
+      actions: "Action",
+      count: "Total tasks",
     },
     empty: {
       activity: "No activity yet.",
