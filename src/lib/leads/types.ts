@@ -37,11 +37,15 @@ export interface LeadActivity {
   /** Comment / note text (plain), empty for the other kinds. */
   body: string;
   at: string;
+  /** Note rows only: last-saved time (ISO) — the Notes table's "updated" column. */
+  updated?: string;
   /** Comment rows only: picture URLs the comment embeds (`/files/…`). */
   images?: string[];
   /** Task rows only: the CRM Task's own fields. */
   /** The CRM Task docname — what the details popup saves against. */
   task?: string;
+  /** Note rows only: the CRM Note docname — what the note popup saves against. */
+  note?: string;
   title?: string;
   description?: string;
   status?: string;
@@ -106,6 +110,22 @@ export interface LeadNoteCreated {
   at: string;
   note?: string;
   pinned?: number;
+}
+
+/** What the per-note details popup sends: only the fields the user changed. */
+export type LeadNoteEdit = Partial<LeadNoteDraft>;
+
+/** One note's full record (`get_lead_note`) for the editable details popup. */
+export interface LeadNoteDetail {
+  note: string;
+  key: string;
+  title: string;
+  /** The note's stored HTML — what the popup edits. */
+  content: string;
+  at: string;
+  updated: string;
+  pinned: number;
+  actor: string;
 }
 
 export interface LeadTaskCreated {

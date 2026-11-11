@@ -116,6 +116,35 @@ export interface LeadsDetailCopy {
     /** Caption above the table: how many tasks, with a live count slot. */
     count: string;
   };
+  noteTable: {
+    /** Column headers of the Notes tab table. */
+    note: string;
+    updated: string;
+    created: string;
+    actor: string;
+    actions: string;
+    /** Caption above the table: how many notes, with a live count slot. */
+    count: string;
+    /** Fallback title when a note has none. */
+    untitled: string;
+  };
+  noteDetail: {
+    /** The row button that opens the note's own popup. */
+    viewDetails: string;
+    /** The popup's heading. */
+    title: string;
+    /** Eyebrow under the heading. */
+    subtitle: string;
+    saving: string;
+    updated: string;
+    updateFailed: string;
+    notFound: string;
+    emptyContent: string;
+    /** Field captions inside the popup. */
+    titleLabel: string;
+    contentLabel: string;
+    loading: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -320,6 +349,28 @@ const bn: LeadsCopy = {
       actions: "অ্যাকশন",
       count: "মোট টাস্ক",
     },
+    noteTable: {
+      note: "নোট",
+      updated: "সর্বশেষ হালনাগাদ",
+      created: "তৈরি",
+      actor: "লিখেছেন",
+      actions: "অ্যাকশন",
+      count: "মোট নোট",
+      untitled: "শিরোনামহীন নোট",
+    },
+    noteDetail: {
+      viewDetails: "বিস্তারিত",
+      title: "নোটের বিবরণ",
+      subtitle: "নোট",
+      saving: "সংরক্ষণ হচ্ছে…",
+      updated: "নোটটি আপডেট হয়েছে",
+      updateFailed: "নোটটি সংরক্ষণ করা যায়নি।",
+      notFound: "নোটটি পাওয়া যায়নি।",
+      emptyContent: "এই নোটে কিছু লেখা হয়নি।",
+      titleLabel: "শিরোনাম",
+      contentLabel: "বিষয়বস্তু",
+      loading: "লোড হচ্ছে…",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -500,6 +551,28 @@ const en: LeadsCopy = {
       created: "Created",
       actions: "Action",
       count: "Total tasks",
+    },
+    noteTable: {
+      note: "Note",
+      updated: "Last updated",
+      created: "Created",
+      actor: "Author",
+      actions: "Action",
+      count: "Total notes",
+      untitled: "Untitled note",
+    },
+    noteDetail: {
+      viewDetails: "View details",
+      title: "Note details",
+      subtitle: "Note",
+      saving: "Saving…",
+      updated: "The note was updated",
+      updateFailed: "The note could not be saved.",
+      notFound: "The note was not found.",
+      emptyContent: "This note has no content yet.",
+      titleLabel: "Title",
+      contentLabel: "Content",
+      loading: "Loading…",
     },
     empty: {
       activity: "No activity yet.",

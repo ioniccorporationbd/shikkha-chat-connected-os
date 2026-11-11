@@ -5,7 +5,9 @@ import { getJson, postJson } from "@/lib/api/http";
 import type {
   LeadDetailPayload,
   LeadNoteCreated,
+  LeadNoteDetail,
   LeadNoteDraft,
+  LeadNoteEdit,
   LeadsPayload,
   LeadTaskCreated,
   LeadTaskDraft,
@@ -144,6 +146,34 @@ export function addLeadNote(
 ): Promise<{ note: LeadNoteCreated; lead: string }> {
   return postJson<{ note: LeadNoteCreated; lead: string }>(
     `/api/leads/${encodeURIComponent(name)}/note`,
+    { note, language }
+  );
+}
+
+/** `GET /api/leads/<name>/note/<note>` — one note's full HTML for the details popup. */
+export function fetchLeadNote(
+  name: string,
+  noteName: string,
+  language: string
+): Promise<{ note: LeadNoteDetail; lead: string }> {
+  const params = new URLSearchParams({ language });
+  return getJson<{ note: LeadNoteDetail; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/note/${encodeURIComponent(noteName)}?${params.toString()}`
+  );
+}
+
+/**
+ * `POST /api/leads/<name>/note/<note>` — save the details popup's edits to one
+ * note. Only the changed keys are forwarded, so nothing is blanked by accident.
+ */
+export function updateLeadNote(
+  name: string,
+  noteName: string,
+  note: LeadNoteEdit,
+  language: string
+): Promise<{ note: LeadNoteCreated; lead: string }> {
+  return postJson<{ note: LeadNoteCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/note/${encodeURIComponent(noteName)}`,
     { note, language }
   );
 }
