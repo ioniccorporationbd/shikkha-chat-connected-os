@@ -14,10 +14,16 @@ import {
 } from "react-icons/fi";
 
 import LeadDetailSheet from "./LeadDetailSheet";
+import ListPagination from "./ListPagination";
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import { fetchLeads } from "@/lib/leads/api";
 import { formatDate } from "@/lib/payment-entry/format";
+import {
+  DEFAULT_ROWS_PER_PAGE,
+  ROWS_PER_PAGE_OPTIONS,
+  genericPaginationCopy,
+} from "@/lib/dashboard/list-controls";
 import {
   formatCount,
   leadInitials,
@@ -35,7 +41,8 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transpar
 const CARD_SHADOW =
   "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 200; // fetch-chunk; the whole list is loaded then paginated
+const MAX_LOADED_ROWS = 10_000; // safety cap on the full-list fetch
 
 /** Debounce for the search box so a keystroke does not fire one ERP query each. */
 const SEARCH_DEBOUNCE_MS = 350;
@@ -75,17 +82,17 @@ export default function LeadsView() {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [doctype, setDoctype] = useState<string | null>(null);
   const [available, setAvailable] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
-  // Page cursor for "load more". A ref (not state) so appending a page does not
-  // change `load`'s identity and re-trigger the filter effect.
-  const startRef = useRef(0);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
 
+  // Client-side pagination over the fully-loaded matching set (parity with the
+  // expense-claim table): the whole list is fetched once, then sliced below.
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
+
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,39 +104,52 @@ export default function LeadsView() {
   const requestId = useRef(0);
 
   const load = useCallback(
-    async (options: { append?: boolean; silent?: boolean } = {}) => {
-      const { append = false, silent = false } = options;
+    async (options: { silent?: boolean } = {}) => {
+      const { silent = false } = options;
       const ticket = ++requestId.current;
 
-      if (append) setLoadingMore(true);
-      else if (silent) setRefreshing(true);
+      if (silent) setRefreshing(true);
       else setLoading(true);
 
-      if (!append) setError(null);
+      setError(null);
+      setPage(1);
 
       try {
-        const payload: LeadsPayload = await fetchLeads({
-          language,
-          search: search || undefined,
-          status: status || undefined,
-          start: append ? startRef.current : 0,
-          limit: PAGE_SIZE,
-        });
+        // Fetch the whole filtered list in 200-row pages so the client-side
+        // pagination below the table covers every row (matching expense-claim).
+        const collected: LeadRow[] = [];
+        let offset = 0;
+        let firstPayload: LeadsPayload | null = null;
 
-        if (ticket !== requestId.current) return;
+        for (;;) {
+          const payload: LeadsPayload = await fetchLeads({
+            language,
+            search: search || undefined,
+            status: status || undefined,
+            start: offset,
+            limit: PAGE_SIZE,
+          });
 
-        setAvailable(payload.available);
-        setDoctype(payload.doctype);
-        setStatuses(payload.statuses ?? []);
-        setHasMore(Boolean(payload.has_more));
-        setRows((previous) => (append ? [...previous, ...payload.leads] : payload.leads));
-        startRef.current = (append ? startRef.current : 0) + payload.leads.length;
+          if (ticket !== requestId.current) return;
+          if (!firstPayload) firstPayload = payload;
+
+          collected.push(...payload.leads);
+          if (!payload.has_more || payload.leads.length === 0) break;
+
+          offset += payload.leads.length;
+          // Hard safety cap so a misbehaving backend can never spin forever.
+          if (collected.length >= MAX_LOADED_ROWS) break;
+        }
+
+        if (!firstPayload) return;
+        setAvailable(firstPayload.available);
+        setDoctype(firstPayload.doctype);
+        setStatuses(firstPayload.statuses ?? []);
+        setRows(collected);
       } catch (cause) {
         if (ticket !== requestId.current) return;
-        if (!append) {
-          setRows([]);
-          setError(cause instanceof ApiError ? cause.message : copy.errorTitle);
-        }
+        setRows([]);
+        setError(cause instanceof ApiError ? cause.message : copy.errorTitle);
         reportClientError({
           scope: "leads:list",
           message: "The CRM lead list could not be loaded",
@@ -138,7 +158,6 @@ export default function LeadsView() {
       } finally {
         if (ticket === requestId.current) {
           setLoading(false);
-          setLoadingMore(false);
           setRefreshing(false);
         }
       }
@@ -171,13 +190,20 @@ export default function LeadsView() {
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  // Loaded rows only: the ERP list is paged, so "+" marks a further page.
+  // The full matching set is loaded, so the count is exact (no "+").
   const totalLabel = useMemo(
-    () => copy.total(formatCount(rows.length, language), hasMore),
-    [copy, rows.length, hasMore, language]
+    () => copy.total(formatCount(rows.length, language)),
+    [copy, rows.length, language]
   );
 
   const filtered = Boolean(search || status);
+
+  // Client-side pagination window over the fully-loaded rows.
+  const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * rowsPerPage;
+  const pageRows = rows.slice(pageStart, pageStart + rowsPerPage);
+  const paginationCopy = genericPaginationCopy(language);
 
   return (
     <section
@@ -324,14 +350,14 @@ export default function LeadsView() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, index) => (
+                {pageRows.map((row, index) => (
                   <tr
                     key={row.name}
                     data-lead-row={row.name}
                     className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                      {formatCount(index + 1, language)}
+                      {formatCount(pageStart + index + 1, language)}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
@@ -380,7 +406,7 @@ export default function LeadsView() {
 
           {/* mobile cards */}
           <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] md:hidden">
-            {rows.map((row) => (
+            {pageRows.map((row) => (
               <li key={row.name} data-lead-row={row.name} className="px-4 py-3.5">
                 <div className="flex items-start gap-2.5">
                   <LeadAvatar name={row.lead_name || row.name} />
@@ -429,17 +455,23 @@ export default function LeadsView() {
             ))}
           </ul>
 
-          {hasMore ? (
-            <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-5 py-4 text-center">
-              <button
-                type="button"
-                onClick={() => void load({ append: true })}
-                disabled={loadingMore}
-                data-leads-load-more=""
-                className="rounded-full border border-[color-mix(in_srgb,var(--color-action)_28%,transparent)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loadingMore ? copy.loading : copy.loadMore}
-              </button>
+          {rows.length > 0 ? (
+            <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-4 py-4 sm:px-5">
+              <ListPagination
+                copy={paginationCopy}
+                page={currentPage}
+                pageCount={totalPages}
+                onPageChange={setPage}
+                rangeStart={pageStart + 1}
+                rangeEnd={pageStart + pageRows.length}
+                total={rows.length}
+                rowsPerPage={rowsPerPage}
+                rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                onRowsPerPageChange={(rows) => {
+                  setRowsPerPage(rows);
+                  setPage(1);
+                }}
+              />
             </div>
           ) : null}
         </>
