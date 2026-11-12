@@ -440,7 +440,7 @@ export default function NewLeadModal({ open, language, onClose, onCreated }: New
             <DashboardSelect
               value={form.status}
               onChange={set("status")}
-              options={selectOpts(options.statuses)}
+              options={options.statuses.map((s) => ({ value: s.value, label: s.label, color: s.color }))}
               placeholder={copy.placeholders.status}
               ariaLabel={copy.fields.status}
               className="w-full"
@@ -451,7 +451,11 @@ export default function NewLeadModal({ open, language, onClose, onCreated }: New
             <DashboardSelect
               value={form.leadOwner}
               onChange={set("leadOwner")}
-              options={options.leadOwners}
+              options={options.leadOwners.map((o) => ({
+                value: o.value,
+                label: o.label,
+                avatar: (o.label || o.value).trim().charAt(0).toUpperCase(),
+              }))}
               placeholder={copy.placeholders.leadOwner}
               ariaLabel={copy.fields.leadOwner}
               className="w-full"

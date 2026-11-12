@@ -260,11 +260,18 @@ export interface LeadOwnerOption {
   label: string;
 }
 
+/** A Status option with its indicator colour (Frappe colour name). */
+export interface LeadStatusOption {
+  value: string;
+  label: string;
+  color?: string;
+}
+
 /** Choices for the New-Lead form (`lead_form_options`). */
 export interface LeadFormOptions {
   salutations: string[];
   genders: string[];
-  statuses: string[];
+  statuses: LeadStatusOption[];
   employeeRanges: string[];
   defaultEmployees: string;
   defaultStatus: string;

@@ -231,7 +231,7 @@ export function addLeadComment(
 interface LeadFormOptionsRaw {
   salutations?: string[];
   genders?: string[];
-  statuses?: string[];
+  statuses?: (string | { value?: string; label?: string; color?: string })[];
   employee_ranges?: string[];
   default_employees?: string;
   default_status?: string;
@@ -252,7 +252,17 @@ export async function fetchLeadFormOptions(language: string): Promise<LeadFormOp
   return {
     salutations: raw.salutations ?? [],
     genders: raw.genders ?? [],
-    statuses: raw.statuses ?? [],
+    statuses: (raw.statuses ?? [])
+      .map((s) =>
+        typeof s === "string"
+          ? { value: s, label: s }
+          : {
+              value: String(s.value ?? ""),
+              label: String(s.label ?? s.value ?? ""),
+              color: s.color ? String(s.color) : undefined,
+            }
+      )
+      .filter((s) => Boolean(s.value)),
     employeeRanges: raw.employee_ranges ?? [],
     defaultEmployees: raw.default_employees ?? "1-10",
     defaultStatus: raw.default_status ?? "New",

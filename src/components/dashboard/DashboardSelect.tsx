@@ -8,6 +8,53 @@ import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
 export interface DashboardSelectOption {
   value: string;
   label: string;
+  /** Optional leading status dot (Frappe indicator colour name, e.g. "gray"). */
+  color?: string;
+  /** Optional leading avatar initial (1–2 chars) shown in a soft circle. */
+  avatar?: string;
+}
+
+/** Frappe indicator colour names → CSS colours for the optional leading dot. */
+const INDICATOR_COLORS: Record<string, string> = {
+  black: "#111827",
+  gray: "#8a94a6",
+  grey: "#8a94a6",
+  blue: "#2f9bff",
+  green: "#22c55e",
+  red: "#ef4444",
+  pink: "#ec4899",
+  orange: "#f97316",
+  amber: "#f59e0b",
+  yellow: "#eab308",
+  cyan: "#06b6d4",
+  teal: "#14b8a6",
+  violet: "#8b5cf6",
+  purple: "#a855f7",
+};
+
+/** Leading dot (status colour) or avatar initial rendered before an option. */
+function LeadingVisual({ option }: { option?: DashboardSelectOption }) {
+  if (!option) return null;
+  if (option.color) {
+    return (
+      <span
+        aria-hidden
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={{ backgroundColor: INDICATOR_COLORS[option.color] ?? option.color }}
+      />
+    );
+  }
+  if (option.avatar) {
+    return (
+      <span
+        aria-hidden
+        className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--color-action-tint)] text-[10px] font-semibold uppercase text-[var(--color-action)]"
+      >
+        {option.avatar.slice(0, 2)}
+      </span>
+    );
+  }
+  return null;
 }
 
 /**
@@ -129,12 +176,15 @@ export default function DashboardSelect({
         onKeyDown={onKeyDown}
         className={`flex h-10 w-full items-center justify-between gap-2 rounded-2xl border ${border} bg-[var(--color-white)] px-3 text-left outline-none transition hover:border-[var(--color-action)] focus-visible:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]`}
       >
-        <span
-          className={`truncate text-[13px] ${
-            selected ? "font-medium text-[var(--color-primary)]" : "text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
-          }`}
-        >
-          {selected?.label ?? placeholder ?? ""}
+        <span className="flex min-w-0 items-center gap-2">
+          <LeadingVisual option={selected} />
+          <span
+            className={`truncate text-[13px] ${
+              selected ? "font-medium text-[var(--color-primary)]" : "text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+            }`}
+          >
+            {selected?.label ?? placeholder ?? ""}
+          </span>
         </span>
         <FiChevronDown
           aria-hidden
@@ -169,14 +219,17 @@ export default function DashboardSelect({
                     isActive ? "bg-[var(--color-action-tint)]" : "hover:bg-[var(--color-action-tint)]"
                   }`}
                 >
-                  <span
-                    className={`min-w-0 truncate text-[13px] ${
-                      isSelected
-                        ? "font-semibold text-[var(--color-action)]"
-                        : "font-medium text-[var(--color-primary)]"
-                    }`}
-                  >
-                    {option.label}
+                  <span className="flex min-w-0 items-center gap-2">
+                    <LeadingVisual option={option} />
+                    <span
+                      className={`min-w-0 truncate text-[13px] ${
+                        isSelected
+                          ? "font-semibold text-[var(--color-action)]"
+                          : "font-medium text-[var(--color-primary)]"
+                      }`}
+                    >
+                      {option.label}
+                    </span>
                   </span>
                   {isSelected ? (
                     <FiCheck aria-hidden size={15} className="shrink-0 text-[var(--color-action)]" />
