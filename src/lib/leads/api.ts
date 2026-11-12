@@ -18,6 +18,7 @@ import type {
   LeadTaskDraft,
   LeadTaskEdit,
   LeadTaskOptions,
+  LeadTasksPayload,
   NewLeadCreated,
   NewLeadDraft,
 } from "./types";
@@ -28,6 +29,8 @@ export interface LeadsQuery {
   status?: string;
   start?: number;
   limit?: number;
+  /** "My Leads" tab — restrict to leads whose Lead Owner is the caller. */
+  mine?: boolean;
 }
 
 /** `GET /api/leads` — one page of CRM leads, scoped by the caller's ERP permissions. */
@@ -37,8 +40,30 @@ export function fetchLeads(query: LeadsQuery): Promise<LeadsPayload> {
   if (query.status) params.set("status", query.status);
   if (typeof query.start === "number") params.set("start", String(query.start));
   if (typeof query.limit === "number") params.set("limit", String(query.limit));
+  if (query.mine) params.set("mine", "1");
 
   return getJson<LeadsPayload>(`/api/leads?${params.toString()}`);
+}
+
+export interface LeadTasksQuery {
+  language: string;
+  /** Assigned Tasks tab — only tasks assigned to the caller. */
+  mine?: boolean;
+  assignee?: string;
+  taskType?: string;
+  /** "today" | "week" */
+  window?: string;
+}
+
+/** `GET /api/leads/tasks` — the Leads ▸ Tasks board (global CRM Task list). */
+export function fetchLeadTasks(query: LeadTasksQuery): Promise<LeadTasksPayload> {
+  const params = new URLSearchParams({ language: query.language });
+  if (query.mine) params.set("mine", "1");
+  if (query.assignee) params.set("assignee", query.assignee);
+  if (query.taskType) params.set("task_type", query.taskType);
+  if (query.window) params.set("window", query.window);
+
+  return getJson<LeadTasksPayload>(`/api/leads/tasks?${params.toString()}`);
 }
 
 /** `GET /api/leads/<name>` — one lead with its full desk timeline (activity, e-mails, comments…). */

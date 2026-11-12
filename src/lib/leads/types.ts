@@ -303,3 +303,52 @@ export interface NewLeadCreated {
   name: string;
   lead_name: string;
 }
+
+/* ----------------------------- Leads ▸ Tasks ----------------------------- */
+
+/** One CRM Task row for the Assigned Tasks / All Tasks tabs. */
+export interface LeadTaskRow {
+  name: string;
+  title: string;
+  status: string;
+  priority: string;
+  type: string;
+  due_date: string;
+  assigned_to: string;
+  assigned_label: string;
+  assigned_image: string;
+  /** The linked lead docname (e.g. CRM-LEAD-2026-00015), empty for unlinked tasks. */
+  lead: string;
+  created: string;
+  modified: string;
+}
+
+/** The four counters shown above the Tasks table. */
+export interface LeadTasksSummary {
+  today: number;
+  week: number;
+  completed_week: number;
+  overdue: number;
+}
+
+export interface LeadTaskAssignee {
+  value: string;
+  label: string;
+  image: string;
+}
+
+export interface LeadTaskTypeOption {
+  value: string;
+  label: string;
+}
+
+export interface LeadTasksPayload {
+  available: boolean;
+  /** "today" | "week" — which slice `tasks` holds. */
+  window: string;
+  tasks: LeadTaskRow[];
+  summary: LeadTasksSummary;
+  assignees: LeadTaskAssignee[];
+  task_types: LeadTaskTypeOption[];
+  has_type: boolean;
+}

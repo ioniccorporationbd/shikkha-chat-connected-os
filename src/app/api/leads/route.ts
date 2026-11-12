@@ -24,12 +24,14 @@ export async function GET(request: Request) {
   const status = (params.get("status") || "").trim();
   const start = (params.get("start") || "").trim();
   const limit = (params.get("limit") || "").trim();
+  const mine = (params.get("mine") || "").trim();
 
   const query = new URLSearchParams({ language });
   if (search) query.set("search", search);
   if (status) query.set("status", status);
   if (start) query.set("start", start);
   if (limit) query.set("limit", limit);
+  if (mine === "1") query.set("mine", "1");
 
   const method = `shikkha_os.api.v1.leads.list_leads?${query.toString()}`;
   const result = await callFrappe<LeadsPayload>(method, { sid });

@@ -340,12 +340,94 @@ export interface LeadsCopy {
   /** CRM status → display label; unknown statuses fall through verbatim. */
   statusLabels: Record<string, string>;
   total: (count: string, more?: boolean) => string;
+  /** View tabs above the list (All Leads / My Leads / Assigned Tasks / All Tasks). */
+  tabs: {
+    allLeads: string;
+    myLeads: string;
+    assignedTasks: string;
+    allTasks: string;
+  };
+  /** The Leads ▸ Tasks board (summary + window toggle + filters + table). */
+  tasksBoard: LeadsTasksBoardCopy;
+}
+
+/** Copy for the Leads ▸ Tasks / Assigned Tasks board. */
+export interface LeadsTasksBoardCopy {
+  summary: {
+    today: string;
+    week: string;
+    completed: string;
+    overdue: string;
+  };
+  window: {
+    today: string;
+    week: string;
+  };
+  allAssignees: string;
+  allTaskTypes: string;
+  columns: {
+    task: string;
+    lead: string;
+    dueDate: string;
+    assignedTo: string;
+    status: string;
+  };
+  /** The "Due Date" chip when the task is due today. */
+  today: string;
+  loading: string;
+  errorTitle: string;
+  retry: string;
+  emptyTitle: string;
+  emptyHint: string;
+  unavailable: string;
+  unassigned: string;
+  /** CRM Task status → display label; unknown statuses fall through verbatim. */
+  statusLabels: Record<string, string>;
 }
 
 const bn: LeadsCopy = {
   title: "লিডস",
   subtitle: "CRM-এর লিড বোর্ড — ডেস্কের লিড লিস্টের সাথে একই ডেটা",
   sourceNote: "সোর্স: dash.shikkhachat.com/crm/leads/view/list",
+  tabs: {
+    allLeads: "সব লিড",
+    myLeads: "আমার লিড",
+    assignedTasks: "অ্যাসাইনড টাস্ক",
+    allTasks: "সব টাস্ক",
+  },
+  tasksBoard: {
+    summary: {
+      today: "আজকের টাস্ক",
+      week: "গত ৭ দিনের টাস্ক",
+      completed: "সম্পন্ন (৭ দিন)",
+      overdue: "ওভারডিউ",
+    },
+    window: { today: "আজ", week: "গত ৭ দিন" },
+    allAssignees: "সব অ্যাসাইনি",
+    allTaskTypes: "সব টাস্ক টাইপ",
+    columns: {
+      task: "টাস্ক",
+      lead: "লিড",
+      dueDate: "ডিউ তারিখ",
+      assignedTo: "অ্যাসাইন করা",
+      status: "স্ট্যাটাস",
+    },
+    today: "আজ",
+    loading: "টাস্ক লোড হচ্ছে…",
+    errorTitle: "টাস্ক লোড করা যায়নি",
+    retry: "আবার চেষ্টা করুন",
+    emptyTitle: "কোনো টাস্ক নেই",
+    emptyHint: "এই তালিকায় এখন কোনো টাস্ক নেই।",
+    unavailable: "এই সাইটে টাস্ক মডিউল চালু নেই।",
+    unassigned: "অ্যাসাইন করা হয়নি",
+    statusLabels: {
+      Backlog: "ব্যাকলগ",
+      Todo: "করণীয়",
+      "In Progress": "চলমান",
+      Done: "সম্পন্ন",
+      Cancelled: "বাতিল",
+    },
+  },
   searchPlaceholder: "নাম, প্রতিষ্ঠান, মোবাইল বা ইমেইল দিয়ে খুঁজুন…",
   allStatuses: "সব স্ট্যাটাস",
   statusLabel: "স্ট্যাটাস",
@@ -680,6 +762,45 @@ const en: LeadsCopy = {
   title: "Leads",
   subtitle: "The CRM lead board — same data as the Desk lead list",
   sourceNote: "Source: dash.shikkhachat.com/crm/leads/view/list",
+  tabs: {
+    allLeads: "All Leads",
+    myLeads: "My Leads",
+    assignedTasks: "Assigned Tasks",
+    allTasks: "All Tasks",
+  },
+  tasksBoard: {
+    summary: {
+      today: "Today's Tasks",
+      week: "Last 7 Days Tasks",
+      completed: "Completed (7 Days)",
+      overdue: "Overdue",
+    },
+    window: { today: "Today", week: "Last 7 Days" },
+    allAssignees: "All Assignees",
+    allTaskTypes: "All Task Types",
+    columns: {
+      task: "Task",
+      lead: "Lead",
+      dueDate: "Due Date",
+      assignedTo: "Assigned To",
+      status: "Status",
+    },
+    today: "Today",
+    loading: "Loading tasks…",
+    errorTitle: "The tasks could not be loaded",
+    retry: "Try again",
+    emptyTitle: "No tasks",
+    emptyHint: "There are no tasks in this list yet.",
+    unavailable: "The task module is not enabled on this site.",
+    unassigned: "Unassigned",
+    statusLabels: {
+      Backlog: "Backlog",
+      Todo: "Todo",
+      "In Progress": "In Progress",
+      Done: "Done",
+      Cancelled: "Cancelled",
+    },
+  },
   searchPlaceholder: "Search name, organisation, mobile or email…",
   allStatuses: "All statuses",
   statusLabel: "Status",

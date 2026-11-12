@@ -16,6 +16,7 @@ import {
 
 import LeadDetailSheet from "./LeadDetailSheet";
 import NewLeadModal from "./NewLeadModal";
+import LeadsTaskList from "./LeadsTaskList";
 import ListPagination from "./ListPagination";
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
@@ -104,6 +105,13 @@ export default function LeadsView() {
   // The toolbar's "New Lead" form.
   const [newLeadOpen, setNewLeadOpen] = useState(false);
 
+  // Which Leads view is showing: All Leads / My Leads (filtered) / Assigned Tasks
+  // / All Tasks (the last two render the shared task board instead of the table).
+  type LeadTab = "all" | "mine" | "assigned" | "tasks";
+  const [tab, setTab] = useState<LeadTab>("all");
+  const isTasksTab = tab === "assigned" || tab === "tasks";
+  const mine = tab === "mine";
+
   // Only the newest request may write state (type-ahead search + load-more +
   // the navbar refresh can overlap).
   const requestId = useRef(0);
@@ -133,6 +141,7 @@ export default function LeadsView() {
             status: status || undefined,
             start: offset,
             limit: PAGE_SIZE,
+            mine: mine || undefined,
           });
 
           if (ticket !== requestId.current) return;
@@ -167,7 +176,7 @@ export default function LeadsView() {
         }
       }
     },
-    [language, search, status, copy.errorTitle]
+    [language, mine, search, status, copy.errorTitle]
   );
 
   // First paint + every filter change (search / status / language) refetches
@@ -175,6 +184,7 @@ export default function LeadsView() {
   // body (same pattern as ExpenseClaimView) and the `active` guard drops the
   // response of a request whose effect was already torn down.
   useEffect(() => {
+    if (isTasksTab) return;
     let active = true;
     queueMicrotask(() => {
       if (active) void load();
@@ -182,10 +192,11 @@ export default function LeadsView() {
     return () => {
       active = false;
     };
-  }, [load]);
+  }, [load, isTasksTab]);
 
   // Navbar ⟳ drives this panel too (see reload-registry).
   useReloadHandler(() => {
+    if (isTasksTab) return;
     void load({ silent: true });
   });
 
@@ -214,6 +225,7 @@ export default function LeadsView() {
     <section
       className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}
       data-leads-view=""
+      data-leads-doctype={doctype ?? undefined}
     >
       {/* ------------------------------------------------------------- header */}
       <div className="flex flex-col gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-5 sm:px-6">
@@ -225,13 +237,6 @@ export default function LeadsView() {
             <h2 className="text-[18px] font-bold text-[var(--color-primary)]" data-leads-title="">
               {copy.title}
             </h2>
-            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-              {copy.subtitle}
-            </p>
-            <p className="mt-1 truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]" data-leads-source="">
-              {copy.sourceNote}
-              {doctype ? ` · ${doctype}` : ""}
-            </p>
           </div>
           <button
             type="button"
@@ -253,7 +258,48 @@ export default function LeadsView() {
           </button>
         </div>
 
-        {/* search + status */}
+        {/* view tabs — All Leads / My Leads / Assigned Tasks / All Tasks */}
+        <div
+          role="tablist"
+          className="flex flex-wrap items-center gap-1 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]"
+          data-leads-tabs=""
+        >
+          {(
+            [
+              { key: "all", label: copy.tabs.allLeads },
+              { key: "mine", label: copy.tabs.myLeads },
+              { key: "assigned", label: copy.tabs.assignedTasks },
+              { key: "tasks", label: copy.tabs.allTasks },
+            ] as const
+          ).map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                data-leads-tab={t.key}
+                onClick={() => setTab(t.key)}
+                className={`relative rounded-t-lg px-3 py-2 text-[12.5px] font-semibold transition ${
+                  active
+                    ? "text-[var(--color-action)]"
+                    : "text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] hover:text-[var(--color-primary)]"
+                }`}
+              >
+                {t.label}
+                <span
+                  className={`pointer-events-none absolute inset-x-1 -bottom-px h-[2.5px] rounded-full transition ${
+                    active ? "bg-[var(--color-action)]" : "bg-transparent"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* search + status (leads views only) */}
+        {!isTasksTab ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="relative flex-1">
             <FiSearch
@@ -297,10 +343,13 @@ export default function LeadsView() {
             </span>
           ) : null}
         </div>
+        ) : null}
       </div>
 
       {/* -------------------------------------------------------------- body */}
-      {loading ? (
+      {isTasksTab ? (
+        <LeadsTaskList mine={tab === "assigned"} language={language} />
+      ) : loading ? (
         <div className="grid place-items-center py-16" data-leads-loading="true">
           <ShikkhaLoader label={copy.loading} />
         </div>
