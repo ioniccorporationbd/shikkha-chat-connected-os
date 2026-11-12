@@ -7,7 +7,6 @@ import {
   FiMail,
   FiEye,
   FiPlus,
-  FiRefreshCw,
   FiSearch,
   FiPhone,
   FiTarget,
@@ -96,7 +95,8 @@ export default function LeadsView() {
   const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
 
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  // The visible হালনাগাদ button is gone; the navbar ⟳ still drives refresh.
+  const [, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Lead opened from the table's Action column (`View details`).
@@ -238,15 +238,6 @@ export default function LeadsView() {
               {copy.title}
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={() => void load({ silent: true })}
-            disabled={loading || refreshing}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_28%,transparent)] px-3 py-2 text-[12px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <FiRefreshCw size={14} className={refreshing ? "animate-spin" : undefined} />
-            <span className="hidden sm:inline">{refreshing ? copy.refreshing : copy.refresh}</span>
-          </button>
           <button
             type="button"
             data-leads-new=""

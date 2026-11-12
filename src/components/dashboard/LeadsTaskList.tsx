@@ -345,7 +345,9 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                 <th className="px-3 py-2.5">{board.columns.dueDate}</th>
                 <th className="px-3 py-2.5">{board.columns.assignedTo}</th>
                 <th className="px-3 py-2.5">{board.columns.status}</th>
-                <th className="px-3 py-2.5 text-right">{board.columns.action}</th>
+                {mine ? (
+                  <th className="px-3 py-2.5 text-right">{board.columns.action}</th>
+                ) : null}
               </tr>
             </thead>
             <tbody>
@@ -403,17 +405,19 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                         {statusLabel || "—"}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setDetailTask(task)}
-                        data-task-view={task.name}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
-                      >
-                        <FiEye size={13} className="pointer-events-none" />
-                        <span className="pointer-events-none">{board.viewDetails}</span>
-                      </button>
-                    </td>
+                    {mine ? (
+                      <td className="px-3 py-2.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setDetailTask(task)}
+                          data-task-view={task.name}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                        >
+                          <FiEye size={13} className="pointer-events-none" />
+                          <span className="pointer-events-none">{board.viewDetails}</span>
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
