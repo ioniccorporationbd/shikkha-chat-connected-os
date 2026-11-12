@@ -361,7 +361,9 @@ export interface LeadsTasksBoardCopy {
   };
   window: {
     today: string;
-    week: string;
+    next: string;
+    all: string;
+    overdue: string;
   };
   allAssignees: string;
   allTaskTypes: string;
@@ -398,11 +400,11 @@ const bn: LeadsCopy = {
   tasksBoard: {
     summary: {
       today: "আজকের টাস্ক",
-      week: "গত ৭ দিনের টাস্ক",
+      week: "পরবর্তী ৭ দিনের টাস্ক",
       completed: "সম্পন্ন (৭ দিন)",
       overdue: "ওভারডিউ",
     },
-    window: { today: "আজ", week: "গত ৭ দিন" },
+    window: { today: "আজ", next: "পরবর্তী ৭ দিন", all: "সব টাস্ক", overdue: "ওভারডিউ" },
     allAssignees: "সব অ্যাসাইনি",
     allTaskTypes: "সব টাস্ক টাইপ",
     columns: {
@@ -771,11 +773,11 @@ const en: LeadsCopy = {
   tasksBoard: {
     summary: {
       today: "Today's Tasks",
-      week: "Last 7 Days Tasks",
+      week: "Next 7 Days Tasks",
       completed: "Completed (7 Days)",
       overdue: "Overdue",
     },
-    window: { today: "Today", week: "Last 7 Days" },
+    window: { today: "Today", next: "Next 7 Days", all: "All Tasks", overdue: "Overdue" },
     allAssignees: "All Assignees",
     allTaskTypes: "All Task Types",
     columns: {

@@ -22,7 +22,7 @@ interface LeadsTaskListProps {
   language: string;
 }
 
-type Window = "today" | "week";
+type Window = "today" | "next" | "all" | "overdue";
 
 /** Status pill colours (CRM Task status → tone). Unknown statuses fall back to slate. */
 const STATUS_TONES: Record<string, string> = {
@@ -141,20 +141,27 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
     return allTasks.filter((task) => {
       const due = task.due_date ? task.due_date.slice(0, 10) : "";
       const diff = dayDiff(due, today);
+      const done = ["Done", "Closed", "Cancelled"].includes(task.status);
       const windowOk =
-        window === "today" ? diff === 0 : diff >= 0 && diff <= 6;
+        window === "today"
+          ? diff === 0
+          : window === "next"
+            ? diff >= 1 && diff <= 7
+            : window === "all"
+              ? true
+              : due !== "" && diff > 0 && !done;
       const assigneeOk = !assignee || task.assigned_to === assignee;
       const typeOk = !taskType || task.type === taskType;
       return windowOk && assigneeOk && typeOk;
     });
   }, [data, window, assignee, taskType, today]);
 
-  const summary = data?.summary ?? { today: 0, week: 0, completed_week: 0, overdue: 0 };
+  const summary = data?.summary ?? { today: 0, week: 0, completed_week: 0, overdue: 0, all: 0 };
   const cards = [
-    { key: "today", label: board.summary.today, value: summary.today, icon: FiClock, tone: "text-[#7c3aed]", bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]" },
-    { key: "week", label: board.summary.week, value: summary.week, icon: FiCalendar, tone: "text-[#2f9bff]", bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]" },
-    { key: "completed", label: board.summary.completed, value: summary.completed_week, icon: FiCheckSquare, tone: "text-[#16a34a]", bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]" },
-    { key: "overdue", label: board.summary.overdue, value: summary.overdue, icon: FiAlertCircle, tone: "text-[#ef4444]", bg: "bg-[color-mix(in_srgb,#ef4444_10%,var(--color-white))]" },
+    { key: "today", label: board.summary.today, value: summary.today, icon: FiClock, tone: "text-[#7c3aed]", bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]", target: "today" as Window },
+    { key: "week", label: board.summary.week, value: summary.week, icon: FiCalendar, tone: "text-[#2f9bff]", bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]", target: "next" as Window },
+    { key: "completed", label: board.summary.completed, value: summary.completed_week, icon: FiCheckSquare, tone: "text-[#16a34a]", bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]", target: null },
+    { key: "overdue", label: board.summary.overdue, value: summary.overdue, icon: FiAlertCircle, tone: "text-[#ef4444]", bg: "bg-[color-mix(in_srgb,#ef4444_10%,var(--color-white))]", target: "overdue" as Window },
   ] as const;
 
   const changeWindow = (next: Window) => {
@@ -212,10 +219,22 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
+          const active = card.target !== null && window === card.target;
           return (
-            <div
+            <button
               key={card.key}
-              className={`flex items-center gap-3 rounded-2xl ${card.bg} px-3.5 py-3`}
+              type="button"
+              onClick={() => {
+                if (card.target) changeWindow(card.target);
+              }}
+              aria-pressed={card.target ? active : undefined}
+              className={`flex items-center gap-3 rounded-2xl ${card.bg} px-3.5 py-3 text-left transition ${
+                card.target ? "cursor-pointer hover:shadow-sm" : "cursor-default"
+              } ${
+                active
+                  ? "ring-2 ring-[color-mix(in_srgb,var(--color-action)_55%,transparent)]"
+                  : "ring-0"
+              }`}
               data-leads-task-card={card.key}
             >
               <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-white)] ${card.tone} shadow-sm`}>
@@ -227,38 +246,36 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                 </p>
                 <p className="text-[17px] font-bold leading-tight text-[var(--color-primary)]">{card.value}</p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
       {/* window toggle + filters */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] p-0.5">
-          <button
-            type="button"
-            onClick={() => changeWindow("today")}
-            data-leads-window="today"
-            className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-              window === "today"
-                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-sm"
-                : "text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
-            }`}
-          >
-            {board.window.today} ({summary.today})
-          </button>
-          <button
-            type="button"
-            onClick={() => changeWindow("week")}
-            data-leads-window="week"
-            className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-              window === "week"
-                ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-sm"
-                : "text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
-            }`}
-          >
-            {board.window.week} ({summary.week})
-          </button>
+        <div className="inline-flex flex-wrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] p-0.5">
+          {(
+            [
+              { key: "today", label: board.window.today, count: summary.today },
+              { key: "next", label: board.window.next, count: summary.week },
+              { key: "all", label: board.window.all, count: summary.all },
+              { key: "overdue", label: board.window.overdue, count: summary.overdue },
+            ] as const
+          ).map((seg) => (
+            <button
+              key={seg.key}
+              type="button"
+              onClick={() => changeWindow(seg.key)}
+              data-leads-window={seg.key}
+              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+                window === seg.key
+                  ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-sm"
+                  : "text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+              }`}
+            >
+              {seg.label} ({seg.count})
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

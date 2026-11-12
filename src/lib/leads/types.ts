@@ -323,12 +323,15 @@ export interface LeadTaskRow {
   modified: string;
 }
 
-/** The four counters shown above the Tasks table. */
+/** The counters shown above the Tasks table. */
 export interface LeadTasksSummary {
   today: number;
+  /** Due tomorrow → today + 7 days (forward-looking window). */
   week: number;
   completed_week: number;
   overdue: number;
+  /** Every task in the current (mine / assignee / type) scope. */
+  all: number;
 }
 
 export interface LeadTaskAssignee {
