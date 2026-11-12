@@ -167,6 +167,32 @@ export function updateLeadTask(
   );
 }
 
+/** `GET /api/leads/tasks/<task>` — one CRM Task's full record for the board popup. */
+export function fetchLeadTaskDetail(
+  taskName: string,
+  language: string
+): Promise<{ task: LeadTaskCreated }> {
+  const params = new URLSearchParams({ language });
+  return getJson<{ task: LeadTaskCreated }>(
+    `/api/leads/tasks/${encodeURIComponent(taskName)}?${params.toString()}`
+  );
+}
+
+/**
+ * `POST /api/leads/tasks/<task>` — save the global Tasks board detail popup's
+ * edits to one CRM Task (not scoped to a single lead).
+ */
+export function updateLeadTaskGlobal(
+  taskName: string,
+  task: LeadTaskEdit,
+  language: string
+): Promise<{ task: LeadTaskCreated }> {
+  return postJson<{ task: LeadTaskCreated }>(
+    `/api/leads/tasks/${encodeURIComponent(taskName)}`,
+    { task, language }
+  );
+}
+
 /**
  * `POST /api/leads/<name>/call` — log a CRM Call Log (Calls tab's Log-a-Call
  * form) linked to this lead; the row lands in /crm/call-logs.

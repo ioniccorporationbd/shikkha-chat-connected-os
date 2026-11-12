@@ -373,7 +373,10 @@ export interface LeadsTasksBoardCopy {
     dueDate: string;
     assignedTo: string;
     status: string;
+    action: string;
   };
+  /** Row action button label that opens the editable task-detail popup. */
+  viewDetails: string;
   /** The "Due Date" chip when the task is due today. */
   today: string;
   loading: string;
@@ -413,7 +416,9 @@ const bn: LeadsCopy = {
       dueDate: "ডিউ তারিখ",
       assignedTo: "অ্যাসাইন করা",
       status: "স্ট্যাটাস",
+      action: "অ্যাকশন",
     },
+    viewDetails: "বিস্তারিত দেখুন",
     today: "আজ",
     loading: "টাস্ক লোড হচ্ছে…",
     errorTitle: "টাস্ক লোড করা যায়নি",
@@ -786,7 +791,9 @@ const en: LeadsCopy = {
       dueDate: "Due Date",
       assignedTo: "Assigned To",
       status: "Status",
+      action: "Action",
     },
+    viewDetails: "View details",
     today: "Today",
     loading: "Loading tasks…",
     errorTitle: "The tasks could not be loaded",

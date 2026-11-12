@@ -6,6 +6,7 @@ import {
   FiCalendar,
   FiCheckSquare,
   FiClock,
+  FiEye,
   FiInbox,
 } from "react-icons/fi";
 
@@ -15,6 +16,8 @@ import { fetchLeadTasks } from "@/lib/leads/api";
 import { leadsCopyFor } from "@/lib/leads/messages";
 import type { LeadTaskRow, LeadTasksPayload } from "@/lib/leads/types";
 import { reportClientError } from "@/lib/log/report-error";
+
+import TaskDetailModal from "./TaskDetailModal";
 
 interface LeadsTaskListProps {
   /** Assigned Tasks tab: only tasks whose "Assigned To" is the caller. */
@@ -86,6 +89,9 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+
+  /** The task whose details popup is open, if any. */
+  const [detailTask, setDetailTask] = useState<LeadTaskRow | null>(null);
 
   const beginReload = useCallback(() => {
     setLoading(true);
@@ -326,7 +332,7 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
-          <table className="w-full min-w-[640px] border-collapse text-left" data-leads-tasks-table="">
+          <table className="w-full min-w-[720px] border-collapse text-left" data-leads-tasks-table="">
             <thead>
               <tr className="bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
                 <th className="px-3 py-2.5 font-semibold">
@@ -338,6 +344,7 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                 <th className="px-3 py-2.5">{board.columns.dueDate}</th>
                 <th className="px-3 py-2.5">{board.columns.assignedTo}</th>
                 <th className="px-3 py-2.5">{board.columns.status}</th>
+                <th className="px-3 py-2.5 text-right">{board.columns.action}</th>
               </tr>
             </thead>
             <tbody>
@@ -395,6 +402,17 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                         {statusLabel || "—"}
                       </span>
                     </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <button
+                        type="button"
+                        onClick={() => setDetailTask(task)}
+                        data-task-view={task.name}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                      >
+                        <FiEye size={13} className="pointer-events-none" />
+                        <span className="pointer-events-none">{board.viewDetails}</span>
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -402,6 +420,26 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
           </table>
         </div>
       )}
+
+      {detailTask ? (
+        <TaskDetailModal
+          taskName={detailTask.name}
+          language={language}
+          initial={{
+            title: detailTask.title,
+            priority: detailTask.priority,
+            status: detailTask.status,
+            due_date: detailTask.due_date,
+            assigned_to: detailTask.assigned_to,
+          }}
+          onClose={() => setDetailTask(null)}
+          onSaved={() => {
+            setDetailTask(null);
+            beginReload();
+            setReloadKey((key) => key + 1);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
