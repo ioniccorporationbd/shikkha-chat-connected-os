@@ -47,6 +47,7 @@ import {
   fetchLeadNote,
   fetchLeadTaskOptions,
   leadFileSrc,
+  sendLeadEmail,
   updateLeadDetail,
   updateLeadNote,
   updateLeadTask,
@@ -68,6 +69,7 @@ import type {
   LeadAttachment,
   LeadCallCreated,
   LeadDetailPayload,
+  LeadEmailDraft,
   LeadNoteCreated,
   LeadNoteEdit,
   LeadTaskCreated,
@@ -504,27 +506,6 @@ function NotesTable({
     </div>
   );
 }
-
-function SimpleActivityList({
-  items,
-  copy,
-  empty,
-}: {
-  items: LeadActivity[];
-  copy: LeadsCopy;
-  empty: string;
-}) {
-  if (items.length === 0) return <EmptyTab text={empty} />;
-
-  return (
-    <ul className="flex flex-col">
-      {items.map((item) => (
-        <ActivityItem key={item.key} activity={item} copy={copy} />
-      ))}
-    </ul>
-  );
-}
-
 
 /** Bengali labels for CRM Task's statuses; English is the stored value. */
 const TASK_STATUS_LABELS: Record<string, { en: string; bn: string }> = {
@@ -992,6 +973,417 @@ function CallsPanel({
       )}
     </div>
   );
+}
+
+/**
+ * The Emails tab, mirroring the CRM Desk lead page's Emails section: a heading
+ * with a live count + a **New Email** button over the lead's email thread. Each
+ * row is the sender avatar, subject, body preview, a Sent/Received badge and the
+ * relative time. Empty state matches Desk's "No Emails Found". This list is
+ * read-only; **New Email** opens `EmailComposerModal`, which sends a real email
+ * and writes the linked `Communication` this list reads back.
+ */
+function EmailsPanel({
+  items,
+  copy,
+  detail,
+  language,
+  onNew,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  language: string;
+  onNew: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 px-5 py-4" data-lead-emails="">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+          {detail.emailTable.count} · {formatCount(items.length, language)}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-email=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.emailTable.newEmail}</span>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-6 py-14 text-center">
+          <FiMail size={26} className="text-[color-mix(in_srgb,var(--color-primary)_30%,transparent)]" />
+          <p className="mt-1.5 text-[13px] font-semibold text-[var(--color-primary)]">{detail.emailTable.emptyTitle}</p>
+          <p className="max-w-[280px] text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {detail.emailTable.emptyHint}
+          </p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {items.map((item) => {
+            const sent = (item.sent_or_received || "").toLowerCase() === "sent";
+            const subject = (item.subject || "").trim();
+            const preview = (item.body || "").trim();
+            return (
+              <li
+                key={item.key}
+                className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3.5 py-3"
+                data-lead-email={item.key}
+              >
+                <div className="flex items-start gap-2.5">
+                  <PersonAvatar actor={item.actor} email={item.actor_email} image={item.actor_image} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-[var(--color-primary)]">
+                        {subject || detail.tabs.emails}
+                      </p>
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={
+                          sent
+                            ? { backgroundColor: "color-mix(in srgb, #12b76a 14%, white)", color: "#067647" }
+                            : { backgroundColor: "color-mix(in srgb, #2e90fa 14%, white)", color: "#0b5cab" }
+                        }
+                      >
+                        {sent ? detail.emailTable.sent : detail.emailTable.received}
+                      </span>
+                    </div>
+                    {item.recipients ? (
+                      <p className="mt-0.5 truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {item.recipients}
+                      </p>
+                    ) : null}
+                    {preview ? (
+                      <p
+                        className="mt-1 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {preview}
+                      </p>
+                    ) : null}
+                    <div className="mt-1.5 flex items-center gap-2.5 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      {item.at ? <span>{leadRelativeTime(copy, item.at, language)}</span> : null}
+                      {item.has_attachment ? (
+                        <span className="inline-flex items-center gap-1">
+                          <FiPaperclip size={10} className="pointer-events-none" />
+                          {detail.emailTable.attachment}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The **New Email** composer: a popup over the lead sheet that sends a real
+ * email to the lead's customer through Frappe's own mailer. On success the sent
+ * message is written as a linked `Communication` (reference_doctype/_name), so
+ * it immediately shows in the Emails tab and in Desk. If the site has no
+ * outgoing Email Account the ERP returns a clear message pointing at
+ * /desk/system/email-account; every failure is logged to the browser console AND
+ * to Desk's Error Log via `reportClientError`.
+ */
+function EmailComposerModal({
+  name,
+  leadEmail,
+  defaultSubject,
+  language,
+  detail,
+  onClose,
+  onSent,
+}: {
+  name: string;
+  leadEmail: string;
+  defaultSubject: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const ef = detail.emailForm;
+  const [to, setTo] = useState<string[]>(() => {
+    const seed = (leadEmail || "").trim();
+    return seed ? [seed] : [];
+  });
+  const [toInput, setToInput] = useState("");
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    window.setTimeout(() => bodyRef.current?.focus(), 40);
+  }, []);
+
+  const addAddress = (raw: string) => {
+    const value = raw.trim().replace(/,$/, "");
+    if (!value) return;
+    setTo((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    setToInput("");
+    if (formError) setFormError(null);
+  };
+
+  const removeAddress = (value: string) => {
+    setTo((prev) => prev.filter((item) => item !== value));
+  };
+
+  const splitList = (value: string) =>
+    value
+      .split(/[,;]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const submit = async () => {
+    if (sending) return;
+
+    const pending = toInput.trim();
+    const recipients = pending && !to.includes(pending) ? [...to, pending] : to;
+    if (recipients.length === 0) {
+      setFormError(ef.toRequired);
+      return;
+    }
+    if (!body.trim()) {
+      setFormError(ef.bodyRequired);
+      return;
+    }
+
+    setSending(true);
+    setFormError(null);
+    try {
+      const payload: LeadEmailDraft = {
+        to: recipients,
+        cc: splitList(cc),
+        bcc: splitList(bcc),
+        subject: subject.trim() || defaultSubject,
+        content: body,
+      };
+      await sendLeadEmail(name, payload, language);
+      onSent();
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : ef.failed);
+      reportClientError({
+        scope: "leads:email",
+        message: "The lead email could not be sent",
+        detail: {
+          error: cause instanceof Error ? cause.message : String(cause),
+          to: recipients,
+          subject: subject.trim() || defaultSubject,
+        },
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus:bg-[var(--color-white)]";
+  const chipClass =
+    "inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-2 py-0.5 text-[12px] font-medium text-[var(--color-primary)]";
+  const toggleClass =
+    "text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:text-[var(--color-primary)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={ef.heading}
+      data-email-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !sending) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[600px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{ef.heading}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            aria-label={detail.close}
+            data-email-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className={`${labelClass} mb-0`} htmlFor="lead-email-to">
+                {ef.to} <span className="text-[var(--color-danger)]">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <button type="button" className={toggleClass} onClick={() => setShowCc((v) => !v)} data-email-cc-toggle="">
+                  {ef.cc}
+                </button>
+                <button type="button" className={toggleClass} onClick={() => setShowBcc((v) => !v)} data-email-bcc-toggle="">
+                  {ef.bcc}
+                </button>
+              </div>
+            </div>
+            <div
+              data-email-to=""
+              className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-2.5 py-2 focus-within:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus-within:bg-[var(--color-white)]"
+            >
+              {to.map((addr) => (
+                <span key={addr} className={chipClass}>
+                  {addr}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${addr}`}
+                    onClick={() => removeAddress(addr)}
+                    className="grid place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:text-[var(--color-danger)]"
+                  >
+                    <FiX size={11} className="pointer-events-none" />
+                  </button>
+                </span>
+              ))}
+              <input
+                id="lead-email-to"
+                value={toInput}
+                onChange={(event) => setToInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === ",") {
+                    event.preventDefault();
+                    addAddress(toInput);
+                  }
+                }}
+                onBlur={() => addAddress(toInput)}
+                placeholder={ef.toPlaceholder}
+                className="min-w-[140px] flex-1 bg-transparent py-0.5 text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+              />
+            </div>
+          </div>
+
+          {showCc ? (
+            <div>
+              <label className={labelClass} htmlFor="lead-email-cc">
+                {ef.cc}
+              </label>
+              <input
+                id="lead-email-cc"
+                value={cc}
+                onChange={(event) => setCc(event.target.value)}
+                placeholder={ef.toPlaceholder}
+                data-email-cc=""
+                className={fieldClass}
+              />
+            </div>
+          ) : null}
+
+          {showBcc ? (
+            <div>
+              <label className={labelClass} htmlFor="lead-email-bcc">
+                {ef.bcc}
+              </label>
+              <input
+                id="lead-email-bcc"
+                value={bcc}
+                onChange={(event) => setBcc(event.target.value)}
+                placeholder={ef.toPlaceholder}
+                data-email-bcc=""
+                className={fieldClass}
+              />
+            </div>
+          ) : null}
+
+          <div>
+            <label className={labelClass} htmlFor="lead-email-subject">
+              {ef.subject}
+            </label>
+            <input
+              id="lead-email-subject"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder={ef.subjectPlaceholder}
+              maxLength={140}
+              data-email-subject=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-email-body">
+              {ef.body} <span className="text-[var(--color-danger)]">*</span>
+            </label>
+            <textarea
+              id="lead-email-body"
+              ref={bodyRef}
+              value={body}
+              onChange={(event) => {
+                setBody(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                  event.preventDefault();
+                  void submit();
+                }
+              }}
+              placeholder={ef.bodyPlaceholder}
+              rows={7}
+              data-email-body=""
+              className={`${fieldClass} resize-y leading-relaxed`}
+            />
+          </div>
+        </div>
+
+        {formError ? (
+          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-email-error="">
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {ef.discard}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={sending}
+            data-email-send=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiSend size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{sending ? ef.sending : ef.send}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
 }
 
 /**
@@ -3108,6 +3500,7 @@ function LeadDetailPanel({
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [callFormOpen, setCallFormOpen] = useState(false);
+  const [emailFormOpen, setEmailFormOpen] = useState(false);
   // The task whose own popup is open (Tasks tab -> বিস্তারিত).
   const [detailTask, setDetailTask] = useState<LeadActivity | null>(null);
   const [detailNote, setDetailNote] = useState<LeadActivity | null>(null);
@@ -3413,7 +3806,16 @@ function LeadDetailPanel({
             )}
           </>
         ) : activeTab === "emails" ? (
-          <SimpleActivityList items={payload.emails} copy={copy} empty={detail.empty.emails} />
+          <EmailsPanel
+            items={payload.emails}
+            copy={copy}
+            detail={detail}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setEmailFormOpen(true);
+            }}
+          />
         ) : activeTab === "comments" ? (
           <CommentsList
             items={payload.comments}
@@ -3548,7 +3950,8 @@ function LeadDetailPanel({
             type="button"
             onClick={() => {
               setNotice(null);
-              setComposerState({ name, mode: "reply" });
+              setComposerState({ name, mode: null });
+              setEmailFormOpen(true);
             }}
             data-lead-reply=""
             className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
@@ -3676,6 +4079,24 @@ function LeadDetailPanel({
             setCallFormOpen(false);
             setNotice({ tone: "ok", text: detail.callForm.created });
             setTabState({ name, tab: "calls" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* The New Email composer: sends a real email to this lead's customer. */}
+      {emailFormOpen ? (
+        <EmailComposerModal
+          name={name}
+          leadEmail={(lead?.email || "").trim()}
+          defaultSubject={`${lead?.lead_name || name} (#${name})`}
+          language={language}
+          detail={detail}
+          onClose={() => setEmailFormOpen(false)}
+          onSent={async () => {
+            setEmailFormOpen(false);
+            setNotice({ tone: "ok", text: detail.emailForm.sent });
+            setTabState({ name, tab: "emails" });
             await load();
           }}
         />

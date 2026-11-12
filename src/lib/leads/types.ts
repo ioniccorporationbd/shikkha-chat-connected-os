@@ -57,6 +57,12 @@ export interface LeadActivity {
   receiver_label?: string;
   receiver_image?: string;
   telephony_medium?: string;
+  /** Email rows only: the Communication docname + Desk email-thread fields. */
+  email_id?: string;
+  subject?: string;
+  recipients?: string;
+  sent_or_received?: string;
+  has_attachment?: number;
   /** Note rows only: the CRM Note docname — what the note popup saves against. */
   note?: string;
   /** Note rows only: the `Comment` docname for Desk-style (comment) notes. */
@@ -182,6 +188,23 @@ export interface LeadCallCreated {
   at: string;
   status?: string;
   type?: string;
+}
+export interface LeadEmailDraft {
+  /** Recipients — one or many; blank falls back to the lead's own address. */
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  subject: string;
+  /** Plain text or HTML body of the message. */
+  content: string;
+}
+export interface LeadEmailCreated {
+  key: string;
+  kind: string;
+  subject: string;
+  recipients: string;
+  sent_or_received: string;
+  at: string;
 }
 
 export interface LeadAttachment {

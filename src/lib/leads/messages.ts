@@ -199,6 +199,40 @@ export interface LeadsDetailCopy {
   };
   /** Localized call-status labels, keyed by the raw CRM Call Log status. */
   callStatus: Record<string, string>;
+  /** Emails tab: the New Email button, list caption, and empty state. */
+  emailTable: {
+    /** Caption above the thread: how many emails, with a live count slot. */
+    count: string;
+    /** The primary button that opens the New Email composer. */
+    newEmail: string;
+    /** Empty-state title + hint (the image's "No Emails Found"). */
+    emptyTitle: string;
+    emptyHint: string;
+    /** Direction badges on a thread row. */
+    sent: string;
+    received: string;
+    attachment: string;
+  };
+  /** Emails tab: the New Email composer form. */
+  emailForm: {
+    heading: string;
+    to: string;
+    toPlaceholder: string;
+    cc: string;
+    bcc: string;
+    subject: string;
+    subjectPlaceholder: string;
+    body: string;
+    bodyPlaceholder: string;
+    send: string;
+    sending: string;
+    discard: string;
+    sent: string;
+    failed: string;
+    toRequired: string;
+    bodyRequired: string;
+    addAddress: string;
+  };
   empty: {
     activity: string;
     emails: string;
@@ -475,6 +509,34 @@ const bn: LeadsCopy = {
       "In Progress": "চলছে",
       Missed: "মিসড কল",
     },
+    emailTable: {
+      count: "মোট ইমেইল",
+      newEmail: "নতুন ইমেইল",
+      emptyTitle: "কোনো ইমেইল পাওয়া যায়নি",
+      emptyHint: "আপনার ইনবক্সে কোনো ইমেইল নেই। নতুন বার্তা এখানে দেখা যাবে।",
+      sent: "পাঠানো হয়েছে",
+      received: "গৃহীত",
+      attachment: "সংযুক্তি আছে",
+    },
+    emailForm: {
+      heading: "নতুন ইমেইল",
+      to: "প্রাপক",
+      toPlaceholder: "ইমেইল ঠিকানা লিখুন",
+      cc: "CC",
+      bcc: "BCC",
+      subject: "বিষয়",
+      subjectPlaceholder: "বিষয় লিখুন",
+      body: "বার্তা",
+      bodyPlaceholder: "আপনার বার্তা লিখুন…",
+      send: "পাঠান (Ctrl+Enter)",
+      sending: "পাঠানো হচ্ছে…",
+      discard: "বাতিল করুন",
+      sent: "ইমেইল পাঠানো হয়েছে",
+      failed: "ইমেইল পাঠানো যায়নি। আবার চেষ্টা করুন।",
+      toRequired: "অন্তত একটি প্রাপকের ইমেইল দিন।",
+      bodyRequired: "ইমেইলের বার্তা লিখুন।",
+      addAddress: "যোগ করুন",
+    },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
       emails: "কোনো ইমেইল নেই।",
@@ -727,6 +789,34 @@ const en: LeadsCopy = {
       "No Answer": "No Answer",
       "In Progress": "In Progress",
       Missed: "Missed Call",
+    },
+    emailTable: {
+      count: "Total emails",
+      newEmail: "New Email",
+      emptyTitle: "No Emails Found",
+      emptyHint: "No emails found in your inbox. New messages will appear here soon.",
+      sent: "Sent",
+      received: "Received",
+      attachment: "Has attachment",
+    },
+    emailForm: {
+      heading: "New Email",
+      to: "To",
+      toPlaceholder: "Enter an email address",
+      cc: "Cc",
+      bcc: "Bcc",
+      subject: "Subject",
+      subjectPlaceholder: "Enter a subject",
+      body: "Message",
+      bodyPlaceholder: "Write your message…",
+      send: "Send (Ctrl+Enter)",
+      sending: "Sending…",
+      discard: "Discard",
+      sent: "The email was sent",
+      failed: "The email could not be sent. Please try again.",
+      toRequired: "Add at least one recipient.",
+      bodyRequired: "Write the email body.",
+      addAddress: "Add",
     },
     empty: {
       activity: "No activity yet.",

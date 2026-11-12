@@ -6,6 +6,8 @@ import type {
   LeadCallCreated,
   LeadCallDraft,
   LeadDetailPayload,
+  LeadEmailCreated,
+  LeadEmailDraft,
   LeadNoteCreated,
   LeadNoteDetail,
   LeadNoteDraft,
@@ -149,6 +151,21 @@ export function addLeadCall(
   return postJson<{ call: LeadCallCreated; lead: string }>(
     `/api/leads/${encodeURIComponent(name)}/call`,
     { call, language }
+  );
+}
+
+/**
+ * `POST /api/leads/<name>/email` — send an email to the lead's customer and
+ * write the linked Communication the Emails tab reads back (Desk parity).
+ */
+export function sendLeadEmail(
+  name: string,
+  email: LeadEmailDraft,
+  language: string
+): Promise<{ email: LeadEmailCreated; lead: string }> {
+  return postJson<{ email: LeadEmailCreated; lead: string }>(
+    `/api/leads/${encodeURIComponent(name)}/email`,
+    { email, language }
   );
 }
 
