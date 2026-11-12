@@ -1353,9 +1353,20 @@ function EmailComposerModal({
         </div>
 
         {formError ? (
-          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-email-error="">
-            {formError}
-          </p>
+          <div className="mt-3" data-email-error="">
+            <p className="text-[12px] font-medium text-[var(--color-danger)]">{formError}</p>
+            {/email-account/i.test(formError) ? (
+              <a
+                href="https://dash.shikkhachat.com/desk/system/email-account"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-email-setup-account=""
+                className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-action)] underline decoration-[color-mix(in_srgb,var(--color-action)_45%,transparent)] underline-offset-2 hover:text-[var(--color-action-hover)]"
+              >
+                {ef.setupAccount} →
+              </a>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="mt-5 flex items-center justify-end gap-2">

@@ -232,6 +232,8 @@ export interface LeadsDetailCopy {
     toRequired: string;
     bodyRequired: string;
     addAddress: string;
+    /** Link shown when the site has no outgoing Email Account. */
+    setupAccount: string;
   };
   empty: {
     activity: string;
@@ -536,6 +538,7 @@ const bn: LeadsCopy = {
       toRequired: "অন্তত একটি প্রাপকের ইমেইল দিন।",
       bodyRequired: "ইমেইলের বার্তা লিখুন।",
       addAddress: "যোগ করুন",
+      setupAccount: "Email Account সেটআপ করুন",
     },
     empty: {
       activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
@@ -817,6 +820,7 @@ const en: LeadsCopy = {
       toRequired: "Add at least one recipient.",
       bodyRequired: "Write the email body.",
       addAddress: "Add",
+      setupAccount: "Set up Email Account",
     },
     empty: {
       activity: "No activity yet.",
