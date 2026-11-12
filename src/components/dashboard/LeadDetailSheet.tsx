@@ -40,7 +40,6 @@ import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
 import {
   addLeadCall,
-  addLeadComment,
   addLeadNote,
   addLeadTask,
   fetchLeadDetail,
@@ -2317,6 +2316,8 @@ function NotesPanel({
   language,
   onNew,
   onOpenNote,
+  onUpload,
+  uploading,
 }: {
   items: LeadActivity[];
   copy: LeadsCopy;
@@ -2325,6 +2326,8 @@ function NotesPanel({
   language: string;
   onNew: () => void;
   onOpenNote: (item: LeadActivity) => void;
+  onUpload: () => void;
+  uploading: boolean;
 }) {
   return (
     <div data-lead-notes-panel="">
@@ -2333,15 +2336,29 @@ function NotesPanel({
           {detail.noteTable.count}
           {items.length ? ` · ${formatCount(items.length, language)}` : ""}
         </p>
-        <button
-          type="button"
-          onClick={onNew}
-          data-lead-new-note=""
-          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
-        >
-          <FiPlus size={13} className="pointer-events-none" />
-          <span className="pointer-events-none">{detail.newNote}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onUpload}
+            disabled={uploading}
+            data-lead-upload-attachment=""
+            className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_28%,transparent)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPaperclip size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">
+              {uploading ? detail.uploading : detail.uploadAttachment}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={onNew}
+            data-lead-new-note=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+          >
+            <FiPlus size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{detail.newNote}</span>
+          </button>
+        </div>
       </div>
       <NotesTable
         items={items}
@@ -3500,14 +3517,6 @@ function LeadDetailPanel({
   });
   const activeTab: TabKey = tabState.name === name ? tabState.tab : "activity";
 
-  const [composerState, setComposerState] = useState<{
-    name: string;
-    mode: "reply" | "comment" | null;
-  }>({ name: "", mode: null });
-  const composerMode = composerState.name === name ? composerState.mode : null;
-
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [callFormOpen, setCallFormOpen] = useState(false);
@@ -3572,51 +3581,23 @@ function LeadDetailPanel({
 
   const lead = payload?.lead;
 
-  const sendComment = async () => {
-    const content = draft.trim();
-    if (!content || sending) return;
-
-    setSending(true);
-    setNotice(null);
-    try {
-      await addLeadComment(name, content, language);
-      setDraft("");
-      setNotice({ tone: "ok", text: detail.commentAdded });
-      setComposerState({ name, mode: null });
-      await load();
-    } catch (cause) {
-      setNotice({
-        tone: "error",
-        text: cause instanceof ApiError ? cause.message : detail.commentFailed,
-      });
-      reportClientError({
-        scope: "leads:comment",
-        message: "The lead comment could not be added",
-        detail: cause instanceof Error ? cause.message : cause,
-      });
-    } finally {
-      setSending(false);
-    }
-  };
-
-
+  /**
+   * The Notes tab "Upload Attachment" button: the file becomes a PUBLIC `File`
+   * row on the lead (is_private=0 — visible in /desk/data/file) and is listed
+   * in the lead's Attachments tab. The reply/comment composer was removed from
+   * the sheet footer, so no text caption is collected here.
+   */
   const pickAttachment = () => {
     if (uploading) return;
     setNotice(null);
     fileInputRef.current?.click();
   };
 
-  /**
-   * The comment box's paperclip: the file becomes a PUBLIC `File` row on the
-   * lead (is_private=0 — unchecked in /desk/data/file) and its comment shows
-   * the picture right in the thread. Any text already typed rides along as the
-   * caption, exactly like Desk's comment editor.
-   */
   const uploadCommentFile = async (file: File) => {
     if (uploading) return;
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      setNotice({ tone: "error", text: detail.commentFileTooLarge });
+      setNotice({ tone: "error", text: detail.uploadTooLarge });
       return;
     }
 
@@ -3627,23 +3608,21 @@ function LeadDetailPanel({
       const content_base64 = await readFileAsBase64(file);
       await addLeadCommentFile(
         name,
-        { file_name: file.name, content_base64, content: draft.trim() },
+        { file_name: file.name, content_base64, content: "" },
         language
       );
-      setDraft("");
-      setNotice({ tone: "ok", text: detail.commentFileAdded });
-      // Show the result where the user expects it: the comment stream.
-      setComposerState({ name, mode: null });
-      setTabState({ name, tab: "comments" });
+      setNotice({ tone: "ok", text: detail.uploaded });
+      // Show the result where the user expects it: the attachments list.
+      setTabState({ name, tab: "attachments" });
       await load();
     } catch (cause) {
       setNotice({
         tone: "error",
-        text: cause instanceof ApiError ? cause.message : detail.commentFileFailed,
+        text: cause instanceof ApiError ? cause.message : detail.uploadFailed,
       });
       reportClientError({
-        scope: "leads:comment-file",
-        message: "The comment attachment could not be uploaded",
+        scope: "leads:attachment-upload",
+        message: "The lead attachment could not be uploaded",
         detail: cause instanceof Error ? cause.message : cause,
       });
     } finally {
@@ -3887,6 +3866,8 @@ function LeadDetailPanel({
               setNotice(null);
               setDetailNote(item);
             }}
+            onUpload={pickAttachment}
+            uploading={uploading}
           />
         ) : (
           <AttachmentList
@@ -3899,7 +3880,8 @@ function LeadDetailPanel({
         )}
       </div>
 
-      {/* ------------------------------------------------------ composer + bar */}
+      {/* Inline status notice. The reply/comment/attach composer bar was removed;
+          file upload now lives in the Notes tab ("Upload Attachment"). */}
       {notice ? (
         <p
           className={`border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-5 py-2 text-[12px] font-medium ${
@@ -3910,95 +3892,6 @@ function LeadDetailPanel({
           {notice.text}
         </p>
       ) : null}
-
-      {composerMode ? (
-        <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3">
-          <textarea
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={detail.composerPlaceholder}
-            rows={3}
-            data-lead-composer=""
-            className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
-          />
-          <div className="mt-2 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={pickAttachment}
-              disabled={uploading}
-              data-lead-attach=""
-              aria-label={detail.commentAttach}
-              title={detail.commentAttach}
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <FiPaperclip size={13} className="pointer-events-none" />
-              <span className="pointer-events-none">{uploading ? detail.attaching : detail.attach}</span>
-            </button>
-            <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setComposerState({ name, mode: null })}
-              className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
-            >
-              {detail.close}
-            </button>
-            <button
-              type="button"
-              onClick={() => void sendComment()}
-              disabled={sending || draft.trim().length === 0}
-              data-lead-send=""
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <FiSend size={12} className="pointer-events-none" />
-              <span className="pointer-events-none">{sending ? detail.sending : detail.send}</span>
-            </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex shrink-0 items-center gap-4 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3">
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: null });
-              setEmailFormOpen(true);
-            }}
-            data-lead-reply=""
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-          >
-            <FiMail size={14} className="pointer-events-none" />
-            <span className="pointer-events-none">{detail.reply}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: "comment" });
-            }}
-            data-lead-comment=""
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-          >
-            <FiMessageSquare size={14} className="pointer-events-none" />
-            <span className="pointer-events-none">{detail.comment}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: "comment" });
-              // Open the picker on the next tick so the bar stays in place.
-              window.setTimeout(() => fileInputRef.current?.click(), 0);
-            }}
-            data-lead-attach-bar=""
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-            aria-label={detail.attach}
-            title={detail.attach}
-          >
-            <FiPaperclip size={14} className="pointer-events-none" />
-          </button>
-        </div>
-      )}
 
       {/* The New-task form floats over the whole sheet. */}
       {taskFormOpen ? (
