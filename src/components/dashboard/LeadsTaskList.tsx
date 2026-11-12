@@ -146,7 +146,8 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
     const allTasks = data?.tasks ?? [];
     return allTasks.filter((task) => {
       const due = task.due_date ? task.due_date.slice(0, 10) : "";
-      const diff = dayDiff(due, today);
+      // days from today to due: +1..+7 = tomorrow..next 7 days, <0 = overdue.
+      const diff = dayDiff(today, due);
       const done = ["Done", "Closed", "Cancelled"].includes(task.status);
       const windowOk =
         window === "today"
@@ -155,7 +156,7 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
             ? diff >= 1 && diff <= 7
             : window === "all"
               ? true
-              : due !== "" && diff > 0 && !done;
+              : due !== "" && diff < 0 && !done;
       const assigneeOk = !assignee || task.assigned_to === assignee;
       const typeOk = !taskType || task.type === taskType;
       return windowOk && assigneeOk && typeOk;
