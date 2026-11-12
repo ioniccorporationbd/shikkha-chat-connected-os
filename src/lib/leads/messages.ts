@@ -263,6 +263,45 @@ export interface LeadsDetailCopy {
   yearAgo: (n: string) => string;
 }
 
+export type NewLeadFieldKey =
+  | "salutation"
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "mobileNo"
+  | "gender"
+  | "organization"
+  | "website"
+  | "noOfEmployees"
+  | "territory"
+  | "annualRevenue"
+  | "industry"
+  | "companyDescription"
+  | "status"
+  | "leadOwner";
+
+/** Copy for the New-Lead navbar button + create form. */
+export interface NewLeadCopy {
+  button: string;
+  opening: string;
+  title: string;
+  loadingOptions: string;
+  loadOptionsFailed: string;
+  retry: string;
+  requiredMark: string;
+  descriptionHint: string;
+  cancel: string;
+  create: string;
+  creating: string;
+  close: string;
+  firstNameRequired: string;
+  statusRequired: string;
+  createFailed: string;
+  created: string;
+  fields: Record<NewLeadFieldKey, string>;
+  placeholders: Record<NewLeadFieldKey, string>;
+}
+
 export interface LeadsCopy {
   title: string;
   subtitle: string;
@@ -294,6 +333,8 @@ export interface LeadsCopy {
   };
   /** "View details" action button in the Action column. */
   viewDetails: string;
+  /** New-Lead navbar button + create form copy. */
+  newLead: NewLeadCopy;
   /** The desk-style lead detail panel behind "View details". */
   detail: LeadsDetailCopy;
   /** CRM status → display label; unknown statuses fall through verbatim. */
@@ -331,6 +372,58 @@ const bn: LeadsCopy = {
     action: "অ্যাকশন",
   },
   viewDetails: "বিস্তারিত দেখুন",
+  newLead: {
+    button: "নতুন লিড",
+    opening: "লোড হচ্ছে…",
+    title: "নতুন লিড তৈরি করুন",
+    loadingOptions: "ড্রপডাউন লোড হচ্ছে…",
+    loadOptionsFailed: "ড্রপডাউন লোড করা যায়নি।",
+    retry: "আবার চেষ্টা করুন",
+    requiredMark: "*",
+    descriptionHint: "ডোমেইন এনরিচমেন্ট থেকে কোম্পানির বর্ণনা পাওয়া যায়।",
+    cancel: "বাতিল",
+    create: "তৈরি করুন",
+    creating: "তৈরি হচ্ছে…",
+    close: "বন্ধ করুন",
+    firstNameRequired: "প্রথম নাম দিতে হবে।",
+    statusRequired: "স্ট্যাটাস নির্বাচন করুন।",
+    createFailed: "লিড তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+    created: "লিড তৈরি হয়েছে।",
+    fields: {
+      salutation: "সালুটেশন",
+      firstName: "প্রথম নাম",
+      lastName: "শেষ নাম",
+      email: "ইমেইল",
+      mobileNo: "মোবাইল নম্বর",
+      gender: "লিঙ্গ",
+      organization: "প্রতিষ্ঠান",
+      website: "ওয়েবসাইট",
+      noOfEmployees: "কর্মচারীর সংখ্যা",
+      territory: "টেরিটরি",
+      annualRevenue: "বার্ষিক আয়",
+      industry: "শিল্প",
+      companyDescription: "কোম্পানির বিবরণ",
+      status: "স্ট্যাটাস",
+      leadOwner: "লিড ওনার",
+    },
+    placeholders: {
+      salutation: "সালুটেশন",
+      firstName: "প্রথম নাম",
+      lastName: "শেষ নাম",
+      email: "ইমেইল",
+      mobileNo: "মোবাইল নম্বর",
+      gender: "লিঙ্গ",
+      organization: "প্রতিষ্ঠান",
+      website: "ওয়েবসাইট",
+      noOfEmployees: "কর্মচারীর সংখ্যা",
+      territory: "টেরিটরি",
+      annualRevenue: "বার্ষিক আয়",
+      industry: "শিল্প",
+      companyDescription: "কোম্পানির বিবরণ",
+      status: "স্ট্যাটাস",
+      leadOwner: "লিড ওনার",
+    },
+  },
   detail: {
     tabs: {
       activity: "অ্যাক্টিভিটি",
@@ -613,6 +706,58 @@ const en: LeadsCopy = {
     action: "Action",
   },
   viewDetails: "View details",
+  newLead: {
+    button: "New Lead",
+    opening: "Loading…",
+    title: "Create Lead",
+    loadingOptions: "Loading dropdowns…",
+    loadOptionsFailed: "Could not load the dropdowns.",
+    retry: "Try again",
+    requiredMark: "*",
+    descriptionHint: "Company description discovered by Domain Enrichment.",
+    cancel: "Cancel",
+    create: "Create",
+    creating: "Creating…",
+    close: "Close",
+    firstNameRequired: "First name is required.",
+    statusRequired: "Choose a status.",
+    createFailed: "Could not create the lead. Please try again.",
+    created: "Lead created.",
+    fields: {
+      salutation: "Salutation",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email",
+      mobileNo: "Mobile No.",
+      gender: "Gender",
+      organization: "Organization",
+      website: "Website",
+      noOfEmployees: "No. of Employees",
+      territory: "Territory",
+      annualRevenue: "Annual Revenue",
+      industry: "Industry",
+      companyDescription: "Company Description",
+      status: "Status",
+      leadOwner: "Lead Owner",
+    },
+    placeholders: {
+      salutation: "Salutation",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email",
+      mobileNo: "Mobile No.",
+      gender: "Gender",
+      organization: "Organization",
+      website: "Website",
+      noOfEmployees: "No. of Employees",
+      territory: "Territory",
+      annualRevenue: "Annual Revenue",
+      industry: "Industry",
+      companyDescription: "Company Description",
+      status: "Status",
+      leadOwner: "Lead Owner",
+    },
+  },
   detail: {
     tabs: {
       activity: "Activity",

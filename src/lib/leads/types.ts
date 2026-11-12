@@ -253,3 +253,46 @@ export interface LeadDetailPayload {
   notes: LeadActivity[];
   attachments: LeadAttachment[];
 }
+
+/** A Lead Owner option — an Active employee mapped to a Desk User. */
+export interface LeadOwnerOption {
+  value: string;
+  label: string;
+}
+
+/** Choices for the New-Lead form (`lead_form_options`). */
+export interface LeadFormOptions {
+  salutations: string[];
+  genders: string[];
+  statuses: string[];
+  employeeRanges: string[];
+  defaultEmployees: string;
+  defaultStatus: string;
+  leadOwners: LeadOwnerOption[];
+  defaultOwner: string;
+}
+
+/** The New-Lead form's values, ready to POST to `/api/leads/create`. */
+export interface NewLeadDraft {
+  salutation: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobileNo: string;
+  gender: string;
+  organization: string;
+  website: string;
+  noOfEmployees: string;
+  territory: string;
+  annualRevenue: string;
+  industry: string;
+  companyDescription: string;
+  status: string;
+  leadOwner: string;
+}
+
+/** What `/api/leads/create` returns for a freshly created lead. */
+export interface NewLeadCreated {
+  name: string;
+  lead_name: string;
+}

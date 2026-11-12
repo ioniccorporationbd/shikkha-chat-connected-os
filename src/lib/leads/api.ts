@@ -8,6 +8,7 @@ import type {
   LeadDetailPayload,
   LeadEmailCreated,
   LeadEmailDraft,
+  LeadFormOptions,
   LeadNoteCreated,
   LeadNoteDetail,
   LeadNoteDraft,
@@ -17,6 +18,8 @@ import type {
   LeadTaskDraft,
   LeadTaskEdit,
   LeadTaskOptions,
+  NewLeadCreated,
+  NewLeadDraft,
 } from "./types";
 
 export interface LeadsQuery {
@@ -220,6 +223,72 @@ export function addLeadComment(
 ): Promise<{ comment: unknown }> {
   return postJson<{ comment: unknown }>(`/api/leads/${encodeURIComponent(name)}`, {
     content,
+    language,
+  });
+}
+
+/** Raw `lead_form_options` payload (snake_case, straight from the backend). */
+interface LeadFormOptionsRaw {
+  salutations?: string[];
+  genders?: string[];
+  statuses?: string[];
+  employee_ranges?: string[];
+  default_employees?: string;
+  default_status?: string;
+  lead_owners?: { value?: string; label?: string }[];
+  default_owner?: string;
+}
+
+/**
+ * `GET /api/leads/lead-form-options` — the New-Lead form's dropdowns:
+ * salutations, genders, statuses, employee bands and Lead Owners (Active
+ * employees mapped to a Desk User).
+ */
+export async function fetchLeadFormOptions(language: string): Promise<LeadFormOptions> {
+  const params = new URLSearchParams({ language });
+  const raw = await getJson<LeadFormOptionsRaw>(
+    `/api/leads/lead-form-options?${params.toString()}`
+  );
+  return {
+    salutations: raw.salutations ?? [],
+    genders: raw.genders ?? [],
+    statuses: raw.statuses ?? [],
+    employeeRanges: raw.employee_ranges ?? [],
+    defaultEmployees: raw.default_employees ?? "1-10",
+    defaultStatus: raw.default_status ?? "New",
+    leadOwners: (raw.lead_owners ?? [])
+      .filter((o) => Boolean(o && o.value))
+      .map((o) => ({ value: String(o.value), label: String(o.label ?? o.value) })),
+    defaultOwner: raw.default_owner ?? "",
+  };
+}
+
+/**
+ * `POST /api/leads/create` — create a CRM Lead from the New-Lead form; the row
+ * lands in dash.shikkhachat.com/crm/leads/view/list.
+ */
+export function createLead(
+  draft: NewLeadDraft,
+  language: string
+): Promise<{ lead: NewLeadCreated }> {
+  return postJson<{ lead: NewLeadCreated }>("/api/leads/create", {
+    lead: {
+      salutation: draft.salutation,
+      first_name: draft.firstName,
+      last_name: draft.lastName,
+      email: draft.email,
+      mobile_no: draft.mobileNo,
+      gender: draft.gender,
+      organization: draft.organization,
+      website: draft.website,
+      no_of_employees: draft.noOfEmployees,
+      territory: draft.territory,
+      annual_revenue: draft.annualRevenue,
+      industry: draft.industry,
+      company_description: draft.companyDescription,
+      status: draft.status,
+      lead_owner: draft.leadOwner,
+    },
     language,
   });
 }

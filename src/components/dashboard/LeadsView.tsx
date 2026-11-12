@@ -6,6 +6,7 @@ import {
   FiInbox,
   FiMail,
   FiEye,
+  FiPlus,
   FiRefreshCw,
   FiSearch,
   FiPhone,
@@ -14,6 +15,7 @@ import {
 } from "react-icons/fi";
 
 import LeadDetailSheet from "./LeadDetailSheet";
+import NewLeadModal from "./NewLeadModal";
 import ListPagination from "./ListPagination";
 import ShikkhaLoader from "./ShikkhaLoader";
 import { ApiError } from "@/lib/api/http";
@@ -98,6 +100,9 @@ export default function LeadsView() {
 
   // Lead opened from the table's Action column (`View details`).
   const [detailName, setDetailName] = useState<string | null>(null);
+
+  // The toolbar's "New Lead" form.
+  const [newLeadOpen, setNewLeadOpen] = useState(false);
 
   // Only the newest request may write state (type-ahead search + load-more +
   // the navbar refresh can overlap).
@@ -236,6 +241,15 @@ export default function LeadsView() {
           >
             <FiRefreshCw size={14} className={refreshing ? "animate-spin" : undefined} />
             <span className="hidden sm:inline">{refreshing ? copy.refreshing : copy.refresh}</span>
+          </button>
+          <button
+            type="button"
+            data-leads-new=""
+            onClick={() => setNewLeadOpen(true)}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-white)] shadow-[0_12px_26px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPlus size={15} />
+            <span className="hidden sm:inline">{copy.newLead.button}</span>
           </button>
         </div>
 
@@ -481,6 +495,16 @@ export default function LeadsView() {
         open={detailName !== null}
         name={detailName}
         onClose={() => setDetailName(null)}
+      />
+
+      <NewLeadModal
+        open={newLeadOpen}
+        language={language}
+        onClose={() => setNewLeadOpen(false)}
+        onCreated={() => {
+          setNewLeadOpen(false);
+          void load({ silent: true });
+        }}
       />
     </section>
   );
