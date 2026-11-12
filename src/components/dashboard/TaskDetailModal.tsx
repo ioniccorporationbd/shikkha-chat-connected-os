@@ -177,7 +177,9 @@ export default function TaskDetailModal({
     if (cleanTitle !== (base.title ?? "")) edits.title = cleanTitle;
     if (description.trim() !== (base.description ?? "")) edits.description = description.trim();
     if (priority !== (base.priority ?? "")) edits.priority = priority;
-    if (statusValue !== (base.status ?? "")) edits.status = statusValue;
+    // Compare the raw state, not the defaulted display value: an untouched task
+    // whose status is empty must not be silently flipped to the default status.
+    if (status !== (base.status ?? "")) edits.status = status || statusValue;
     if (assignedTo !== (base.assigned_to ?? "")) edits.assigned_to = assignedTo;
     if (dueDate !== (base.due_date ?? "")) edits.due_date = dueDate;
 
