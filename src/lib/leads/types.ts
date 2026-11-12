@@ -355,3 +355,28 @@ export interface LeadTasksPayload {
   task_types: LeadTaskTypeOption[];
   has_type: boolean;
 }
+
+/** A Deal-status choice (CRM Deal Status master) with its indicator colour. */
+export interface DealStatusOption {
+  value: string;
+  label: string;
+  color?: string;
+}
+
+/** Choices for the Convert-to-Deal popup (`get_deal_options`). */
+export interface DealOptions {
+  statuses: DealStatusOption[];
+}
+
+/** The Convert-to-Deal request — only the chosen status leaves the browser. */
+export interface DealConvertDraft {
+  status: string;
+}
+
+/** Result of `convert_lead_to_deal`. `already` is true when one existed. */
+export interface DealConvertResult {
+  deal: string;
+  contact: string | null;
+  organization: string | null;
+  already?: boolean;
+}

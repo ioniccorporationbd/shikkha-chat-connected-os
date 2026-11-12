@@ -31,6 +31,7 @@ import {
   FiMoreHorizontal,
   FiPlus,
   FiSend,
+  FiTrendingUp,
   FiType,
   FiUserPlus,
   FiX,
@@ -52,6 +53,8 @@ import {
   updateLeadNote,
   updateLeadTask,
   addLeadCommentFile,
+  fetchDealOptions,
+  convertLeadToDeal,
 } from "@/lib/leads/api";
 import {
   formatCount,
@@ -65,9 +68,12 @@ import {
   type LeadsDetailCopy,
 } from "@/lib/leads/messages";
 import type {
+  DealConvertResult,
+  DealStatusOption,
   LeadActivity,
   LeadAttachment,
   LeadCallCreated,
+  LeadDetail,
   LeadDetailPayload,
   LeadEmailDraft,
   LeadNoteCreated,
@@ -3439,6 +3445,261 @@ interface LeadDetailSheetProps {
  * Reply / Comment composer. Data comes from `leads.lead_detail`, so the ERP
  * permission on the doc decides whether it opens at all.
  */
+/** Frappe colour names → hex, for the Deal-status indicator dots. */
+const DEAL_COLOR_HEX: Record<string, string> = {
+  gray: "#6b7280",
+  grey: "#6b7280",
+  blue: "#3b82f6",
+  green: "#22c55e",
+  orange: "#f97316",
+  yellow: "#eab308",
+  amber: "#f59e0b",
+  red: "#ef4444",
+  purple: "#a855f7",
+  violet: "#8b5cf6",
+  pink: "#ec4899",
+  cyan: "#06b6d4",
+  teal: "#14b8a6",
+};
+
+function dealColorHex(color?: string): string {
+  const key = String(color ?? "").trim().toLowerCase();
+  return DEAL_COLOR_HEX[key] || "#94a3b8";
+}
+
+/**
+ * Convert-to-Deal popup. Shows the lead's own details read-only plus a Status
+ * dropdown (the CRM Deal Status master), then posts exactly one status to
+ * `/api/leads/<name>/convert`, which creates the Deal, Contact and Organization
+ * server-side. Nothing but the chosen status leaves the browser.
+ */
+function ConvertDealModal({
+  name,
+  lead,
+  detail,
+  language,
+  onClose,
+  onConverted,
+}: {
+  name: string;
+  lead: LeadDetail | null | undefined;
+  detail: LeadsDetailCopy;
+  language: string;
+  onClose: () => void;
+  onConverted: (result: DealConvertResult) => void;
+}) {
+  const overlay = useOverlayPresence(true, 180);
+  const [statuses, setStatuses] = useState<DealStatusOption[]>([]);
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDealOptions(name, language)
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data.statuses) ? data.statuses : [];
+        setStatuses(list);
+        setStatus((current) => current || list[0]?.value || "");
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setLoadError(
+          cause instanceof ApiError && cause.message
+            ? cause.message
+            : detail.convert.loadFailed
+        );
+        reportClientError({
+          scope: "leads:convert-options",
+          message: "Deal status options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [name, language, detail.convert.loadFailed]);
+
+  if (!overlay.mounted) return null;
+
+  const selectedColor = dealColorHex(statuses.find((option) => option.value === status)?.color);
+  const busy = submitting || loading || Boolean(loadError) || statuses.length === 0;
+
+  const submit = async () => {
+    if (!status) {
+      setSubmitError(detail.convert.statusRequired);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await convertLeadToDeal(name, { status }, language);
+      onConverted(result);
+    } catch (cause) {
+      setSubmitError(
+        cause instanceof ApiError && cause.message ? cause.message : detail.convert.failed
+      );
+      reportClientError({
+        scope: "leads:convert-deal",
+        message: "Lead could not be converted to a deal",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const summaryRows: Array<{ label: string; value: string }> = [
+    { label: detail.convert.orgLabel, value: (lead?.organization || "").trim() },
+    { label: detail.convert.emailLabel, value: (lead?.email || "").trim() },
+    { label: detail.convert.phoneLabel, value: (lead?.mobile || "").trim() },
+  ];
+
+  const modal = (
+    <div
+      className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center sm:p-4"
+      data-no-translate="true"
+    >
+      <div
+        aria-hidden="true"
+        onClick={() => {
+          if (!submitting) onClose();
+        }}
+        className={`absolute inset-0 bg-[rgba(9,26,23,0.5)] ${
+          overlay.exiting
+            ? "animate-[u-shk-fade-out_160ms_ease-in_forwards]"
+            : "animate-[u-shk-fade-in_160ms_ease-out]"
+        }`}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={detail.convert.heading}
+        data-lead-convert-modal=""
+        className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[22px] border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[var(--color-white)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)] sm:max-h-[85vh] sm:max-w-[460px] sm:rounded-[22px]"
+      >
+        <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,transparent)] text-[var(--color-action)]">
+            <FiTrendingUp size={16} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14.5px] font-bold text-[var(--color-primary)]">
+              {detail.convert.heading}
+            </p>
+            <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+              {lead?.lead_name || name}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!submitting) onClose();
+            }}
+            disabled={submitting}
+            aria-label={detail.convert.cancel}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] disabled:opacity-50"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <p className="text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+            {detail.convert.description}
+          </p>
+
+          <div className="space-y-2 rounded-[14px] border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,transparent)] p-3.5">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {detail.convert.detailsHeading}
+            </p>
+            {summaryRows.map((row) => (
+              <div key={row.label} className="flex items-start justify-between gap-3">
+                <span className="shrink-0 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                  {row.label}
+                </span>
+                <span className="min-w-0 break-words text-right text-[12px] font-medium text-[var(--color-primary)]">
+                  {row.value || "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1 text-[12px] font-semibold text-[var(--color-primary)]">
+              {detail.convert.statusLabel}
+              <span className="text-[var(--color-danger)]">*</span>
+            </label>
+            {loading ? (
+              <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {detail.convert.loadingOptions}
+              </p>
+            ) : loadError ? (
+              <p className="text-[12px] text-[var(--color-danger)]">{loadError}</p>
+            ) : statuses.length === 0 ? (
+              <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">—</p>
+            ) : (
+              <div className="relative">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+                  style={{ backgroundColor: selectedColor }}
+                />
+                <select
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value)}
+                  data-lead-convert-status=""
+                  className="w-full appearance-none rounded-[12px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] py-2.5 pl-7 pr-9 text-[13px] font-medium text-[var(--color-primary)] outline-none transition focus:border-[var(--color-action)]"
+                >
+                  {statuses.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <FiChevronDown
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
+                />
+              </div>
+            )}
+          </div>
+
+          {submitError ? <p className="text-[12px] text-[var(--color-danger)]">{submitError}</p> : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] disabled:opacity-50"
+          >
+            {detail.convert.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={busy}
+            data-lead-convert-submit=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiTrendingUp size={13} />
+            {submitting ? detail.convert.submitting : detail.convert.submit}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modal, document.body);
+}
+
 export default function LeadDetailSheet({ open, name, onClose }: LeadDetailSheetProps) {
   const { mounted, exiting } = useOverlayPresence(open, 220);
 
@@ -3518,6 +3779,7 @@ function LeadDetailPanel({
   const [noteFormOpen, setNoteFormOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<LeadAttachment | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [convertOpen, setConvertOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -3690,6 +3952,23 @@ function LeadDetailPanel({
         }}
       />
 
+      {convertOpen ? (
+        <ConvertDealModal
+          name={name}
+          lead={lead}
+          detail={detail}
+          language={language}
+          onClose={() => setConvertOpen(false)}
+          onConverted={(result) => {
+            setConvertOpen(false);
+            setNotice({
+              tone: "ok",
+              text: result.already ? detail.convert.successAlready : detail.convert.success,
+            });
+          }}
+        />
+      ) : null}
+
       {/* ------------------------------------------------------------- header */}
       <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
         <span
@@ -3706,6 +3985,18 @@ function LeadDetailPanel({
             {[lead?.organization, name].filter(Boolean).join(" · ")}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setNotice(null);
+            setConvertOpen(true);
+          }}
+          data-lead-convert-deal=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_88%,black)]"
+        >
+          <FiTrendingUp size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.convertToDeal}</span>
+        </button>
         {lead?.status && statusTone ? (
           <span
             className="hidden shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold sm:inline-flex"

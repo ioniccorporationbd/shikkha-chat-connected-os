@@ -3,6 +3,9 @@
 import { getJson, postJson } from "@/lib/api/http";
 
 import type {
+  DealConvertDraft,
+  DealConvertResult,
+  DealOptions,
   LeadCallCreated,
   LeadCallDraft,
   LeadDetailPayload,
@@ -350,6 +353,28 @@ export function createLead(
       status: draft.status,
       lead_owner: draft.leadOwner,
     },
+    language,
+  });
+}
+
+/** `GET /api/leads/<name>/convert` — Deal-status choices for the popup. */
+export function fetchDealOptions(name: string, language: string): Promise<DealOptions> {
+  const params = new URLSearchParams({ language });
+  return getJson<DealOptions>(`/api/leads/${encodeURIComponent(name)}/convert?${params.toString()}`);
+}
+
+/**
+ * `POST /api/leads/<name>/convert` — turn this lead into a CRM Deal (plus its
+ * Contact and Organization). Only the chosen status is sent; the ERP reads the
+ * rest of the record itself.
+ */
+export function convertLeadToDeal(
+  name: string,
+  draft: DealConvertDraft,
+  language: string
+): Promise<DealConvertResult> {
+  return postJson<DealConvertResult>(`/api/leads/${encodeURIComponent(name)}/convert`, {
+    deal: { status: draft.status },
     language,
   });
 }

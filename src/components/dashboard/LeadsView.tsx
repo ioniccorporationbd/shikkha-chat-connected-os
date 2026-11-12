@@ -391,7 +391,6 @@ export default function LeadsView() {
                     copy.columns.mobile,
                     copy.columns.email,
                     copy.columns.status,
-                    copy.columns.source,
                     copy.columns.action,
                   ].map((heading) => (
                     <th
@@ -437,9 +436,6 @@ export default function LeadsView() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <StatusChip status={row.status} copy={copy} />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-                      {row.source || "—"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <button

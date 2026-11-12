@@ -45,6 +45,27 @@ export interface LeadsDetailCopy {
   /** Tasks tab: the top-right New-task button and its form. */
   newTask: string;
   newNote: string;
+  /** Convert-to-Deal: the sheet's top-right button and its popup. */
+  convertToDeal: string;
+  convert: {
+    heading: string;
+    description: string;
+    statusLabel: string;
+    submit: string;
+    submitting: string;
+    cancel: string;
+    success: string;
+    successAlready: string;
+    failed: string;
+    statusRequired: string;
+    loadingOptions: string;
+    loadFailed: string;
+    /** Read-only summary labels in the popup. */
+    detailsHeading: string;
+    orgLabel: string;
+    emailLabel: string;
+    phoneLabel: string;
+  };
   noteForm: {
     title: string;
     titlePlaceholder: string;
@@ -556,6 +577,25 @@ const bn: LeadsCopy = {
     saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
     newTask: "নতুন টাস্ক",
     newNote: "নতুন নোট",
+    convertToDeal: "ডিলে রূপান্তর",
+    convert: {
+      heading: "ডিলে রূপান্তর করুন",
+      description: "নিচের তথ্য যাচাই করে একটি স্ট্যাটাস বেছে নিন, তারপর ডিল তৈরি করুন।",
+      statusLabel: "স্ট্যাটাস",
+      submit: "রূপান্তর করুন",
+      submitting: "রূপান্তর হচ্ছে…",
+      cancel: "বাতিল",
+      success: "ডিলটি তৈরি হয়েছে।",
+      successAlready: "এই লিড ইতিমধ্যে একটি ডিলে রূপান্তরিত হয়েছে।",
+      failed: "ডিলটি তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+      statusRequired: "ডিলের স্ট্যাটাস নির্বাচন করুন।",
+      loadingOptions: "স্ট্যাটাস লোড হচ্ছে…",
+      loadFailed: "স্ট্যাটাস তালিকা লোড করা যায়নি।",
+      detailsHeading: "লিডের তথ্য",
+      orgLabel: "প্রতিষ্ঠান",
+      emailLabel: "ইমেইল",
+      phoneLabel: "মোবাইল",
+    },
     noteForm: {
       title: "শিরোনাম",
       titlePlaceholder: "শিরোনাম",
@@ -931,6 +971,25 @@ const en: LeadsCopy = {
     saveFailed: "The lead could not be saved",
     newTask: "New task",
     newNote: "New note",
+    convertToDeal: "Convert to Deal",
+    convert: {
+      heading: "Convert to Deal",
+      description: "Review the details, pick a status below, then create the deal.",
+      statusLabel: "Status",
+      submit: "Convert",
+      submitting: "Converting…",
+      cancel: "Cancel",
+      success: "The deal has been created.",
+      successAlready: "This lead has already been converted to a deal.",
+      failed: "The deal could not be created. Try again.",
+      statusRequired: "Choose a deal status.",
+      loadingOptions: "Loading statuses…",
+      loadFailed: "The status list could not be loaded.",
+      detailsHeading: "Lead details",
+      orgLabel: "Organization",
+      emailLabel: "Email",
+      phoneLabel: "Mobile",
+    },
     noteForm: {
       title: "Title",
       titlePlaceholder: "Title",
