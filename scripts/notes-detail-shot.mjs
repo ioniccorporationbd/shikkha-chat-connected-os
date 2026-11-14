@@ -1,8 +1,11 @@
-// Visual + behavior proof for the CRM note-details popup.
+// Visual + behavior proof for the CRM note-details popup (READ-ONLY view).
 //   MOCK_FRAPPE_PORT=8787 node scripts/mock-frappe.mjs
 //   FRAPPE_BASE_URL=http://127.0.0.1:8787 npx next start -p 3011
 //   E2E_BASE=http://localhost:3011 MOCK_BASE=http://127.0.0.1:8787 \
 //     node scripts/notes-detail-shot.mjs
+//
+// The popup opened from a Notes-table row is a read-only view: stored title +
+// stored HTML body, no editable field, no toolbar, no save button.
 import { chromium } from "/root/arogga-UI/node_modules/playwright/index.mjs";
 import { execFile } from "node:child_process";
 import { existsSync, readFileSync, mkdirSync } from "node:fs";
@@ -85,43 +88,53 @@ async function login() {
   // Wait until the note record finished loading (title populated).
   await page.waitForFunction(() => {
     const el = document.querySelector("[data-note-detail-title]");
-    return el && el.value && el.value.trim().length > 0;
+    return el && (el.textContent || "").trim().length > 0;
   }, { timeout: 20000 });
 
   const heading = ((await page.locator("[data-note-detail-heading]").innerText()) || "").trim();
-  check(heading.includes("Edit Note"), `popup heading is "Edit Note" (got "${heading}")`);
-  check((await page.locator("[data-note-detail-openlead]").count()) === 1, `popup has an "Open Lead" button`);
-  const tools = await page.locator('[data-note-detail-modal] [role="toolbar"] button').count();
-  check(tools >= 12, `content box has a full editing toolbar (${tools} buttons)`);
+  check(heading.includes("Note details"), `popup heading is "Note details" (got "${heading}")`);
+  check((await page.locator("[data-note-detail-openlead]").count()) === 1, "popup has an \"Open Lead\" button");
 
-  // The whole point: opening the popup must show the note's data, editable.
-  const titleVal = (await page.locator("[data-note-detail-title]").inputValue()).trim();
-  const contentText = (await page.locator("[data-note-detail-content]").innerText()).trim();
+  // --- Read-only guarantees ---
+  check(
+    (await page.locator('[data-note-detail-modal] [role="toolbar"]').count()) === 0,
+    "no rich-text editing toolbar in the popup"
+  );
+  check(
+    (await page.locator("[data-note-detail-save]").count()) === 0,
+    "no Update/Save button in the popup"
+  );
+  check(
+    (await page.locator('[data-note-detail-modal] textarea').count()) === 0,
+    "no editable textarea in the popup"
+  );
+  check(
+    (await page.locator("input[data-note-detail-title]").count()) === 0,
+    "title is rendered as text, not an input"
+  );
+  const contentEditable = await page
+    .locator("[data-note-detail-content]")
+    .evaluate((el) => el.isContentEditable === true);
+  check(!contentEditable, "content surface is not contentEditable");
+
+  const titleVal = ((await page.locator("[data-note-detail-title]").innerText()) || "").trim();
+  const contentText = ((await page.locator("[data-note-detail-content]").innerText()) || "").trim();
   check(titleVal.length > 0, `popup shows the note's Title on open ("${titleVal}")`);
   check(contentText.length > 0, `popup shows the note's Content on open ("${contentText.slice(0, 44)}")`);
 
-  const before = await page.locator("[data-note-detail-title]").inputValue();
   await page.screenshot({ path: `${OUT}/note-popup-before.png` });
   await modal.screenshot({ path: `${OUT}/note-popup-modal.png` });
 
-  // Edit + save (title + rich content), then confirm it round-trips.
-  const newTitle = `Solved note ${Date.now() % 100000}`;
-  await page.locator("[data-note-detail-title]").fill(newTitle);
-  await page.locator("[data-note-detail-content]").click();
-  await page.locator("[data-note-detail-content]").fill("problem45455656uuuu — edited in popup");
-  await page.locator("[data-note-detail-save]").click();
-  await modal.waitFor({ state: "detached", timeout: 30000 });
-  await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 20000 });
-  check(true, "Update saves and closes the popup with a success toast");
-
-  // Reopen the same row and confirm the new title persisted.
+  // Close + reopen: the view is stable, still read-only.
+  await page.locator("[data-note-detail-close]").click();
+  await modal.waitFor({ state: "detached", timeout: 20000 });
   await page.locator("[data-lead-note-details]").first().click();
   await modal.waitFor({ state: "visible", timeout: 30000 });
-  await page.waitForFunction((t) => {
+  await page.waitForFunction(() => {
     const el = document.querySelector("[data-note-detail-title]");
-    return el && el.value === t;
-  }, newTitle, { timeout: 20000 });
-  check(true, `edited title persisted and reopens correctly (was "${before}")`);
+    return el && (el.textContent || "").trim().length > 0;
+  }, { timeout: 20000 });
+  check(true, "reopening the row shows the same read-only view");
   await modal.screenshot({ path: `${OUT}/note-popup-after.png` });
 
   // Console must be clean across the happy path (before we deliberately force
@@ -130,7 +143,7 @@ async function login() {
   if (errors.length) console.log(errors.slice(0, 5).join("\n"));
 
   // --- Failure mode: if the note fetch errors, the popup must STILL show the
-  // row's data (editable), not a blank/dead dialog. Force the GET to 500.
+  // row's data (read-only), not a blank/dead dialog. Force the GET to 500.
   await page.locator("[data-note-detail-close]").click();
   await modal.waitFor({ state: "detached", timeout: 20000 });
   await page.route("**/api/leads/*/note/*", (route) =>
@@ -145,11 +158,11 @@ async function login() {
   await page.locator("[data-lead-note-details]").first().click();
   await modal.waitFor({ state: "visible", timeout: 20000 });
   await page.locator("[data-note-detail-warn]").waitFor({ state: "visible", timeout: 20000 });
-  const fTitle = (await page.locator("[data-note-detail-title]").inputValue()).trim();
-  const fContent = (await page.locator("[data-note-detail-content]").innerText()).trim();
+  const fTitle = ((await page.locator("[data-note-detail-title]").innerText()) || "").trim();
+  const fContent = ((await page.locator("[data-note-detail-content]").innerText()) || "").trim();
   check(fTitle.length > 0, `failed load still shows seeded Title ("${fTitle}")`);
   check(fContent.length > 0, `failed load still shows seeded Content ("${fContent.slice(0, 40)}")`);
-  check(!(await page.locator("[data-note-detail-save]").isDisabled()), "Update stays enabled on a failed load");
+  check((await page.locator("[data-note-detail-save]").count()) === 0, "failed load still shows no save button");
   await modal.screenshot({ path: `${OUT}/note-popup-fallback.png` });
   await page.unroute("**/api/leads/*/note/*");
 

@@ -50,7 +50,6 @@ import {
   leadFileSrc,
   sendLeadEmail,
   updateLeadDetail,
-  updateLeadNote,
   updateLeadTask,
   addLeadCommentFile,
   fetchDealOptions,
@@ -77,7 +76,6 @@ import type {
   LeadDetailPayload,
   LeadEmailDraft,
   LeadNoteCreated,
-  LeadNoteEdit,
   LeadTaskCreated,
   LeadTaskEdit,
   LeadTaskOptions,
@@ -2627,12 +2625,13 @@ function NoteFormModal({
 }
 
 /**
- * One note's own editable popup, opened from a row of the Notes table.
+ * One note's own popup, opened from a row of the Notes table.
  *
  * The table rows only carry plain text, so opening the popup fetches the note's
- * full HTML record (`get_lead_note`). Editing the title or the rich-text body
- * and pressing Save sends only the changed fields (`update_lead_note`), which
- * writes them back onto the `FCRM Note` linked to this lead.
+ * full HTML record (`get_lead_note`) and renders it as a READ-ONLY view: the
+ * title and the rich-text body are shown as stored, with no editable field, no
+ * formatting toolbar and no save button. Creating a note stays in the
+ * Create Note form (`NoteFormModal`); this popup only reads.
  */
 function NoteDetailModal({
   name,
@@ -2640,7 +2639,6 @@ function NoteDetailModal({
   language,
   detail,
   onClose,
-  onSaved,
   onOpenLead,
 }: {
   name: string;
@@ -2648,15 +2646,13 @@ function NoteDetailModal({
   language: string;
   detail: LeadsDetailCopy;
   onClose: () => void;
-  onSaved: () => void | Promise<void>;
   /** "Open Lead" — close the popup and jump back to the lead's overview. */
   onOpenLead?: () => void;
 }) {
-  const cf = detail.noteForm;
   const nd = detail.noteDetail;
   // The row may arrive with a CRM-note docname (`note`) or, for older Desk
   // notes, only a `note:<comment>` key / `source`; any of these identifies the
-  // record the popup loads and saves.
+  // record the popup loads.
   const noteName = (
     note.note ||
     (typeof note.key === "string" && note.key.startsWith("note:") ? note.key.slice(5) : "") ||
@@ -2664,8 +2660,8 @@ function NoteDetailModal({
     ""
   ).trim();
 
-  // Seed the form from the row itself so the popup is never blank — the list
-  // carries the note's plain text, and the full HTML replaces it once loaded.
+  // Seed from the row itself so the popup is never blank — the list carries the
+  // note's plain text, and the full HTML replaces it once loaded.
   const seedContent = note.body
     ? `<p>${String(note.body)
         .replace(/&/g, "&amp;")
@@ -2677,27 +2673,11 @@ function NoteDetailModal({
     noteName ? "loading" : "failed"
   );
   const [title, setTitle] = useState(note.title || note.text || "");
-  const [empty, setEmpty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [content, setContent] = useState(seedContent);
   const [loadError, setLoadError] = useState<string | null>(noteName ? null : nd.notFound);
-  const titleRef = useRef<HTMLInputElement | null>(null);
-  const editorRef = useRef<HTMLDivElement | null>(null);
-  // What the note looked like when the popup opened — used to send only diffs.
-  const baselineRef = useRef<{ title: string; content: string }>({
-    title: note.title || note.text || "",
-    content: seedContent,
-  });
-
-  const syncEmpty = useCallback(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const hasMedia = editor.querySelector("img,hr,table,li") !== null;
-    setEmpty(!(editor.innerText || "").trim() && !hasMedia);
-  }, []);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Load the note's full record; the row we were handed only has plain text.
-  // (Initial state already reflects a row with no docname — see useState above.)
   useEffect(() => {
     if (!noteName) return;
     let cancelled = false;
@@ -2707,10 +2687,7 @@ function NoteDetailModal({
         if (cancelled) return;
         const loaded = payload.note;
         setTitle(loaded.title || "");
-        baselineRef.current = {
-          title: loaded.title || "",
-          content: loaded.content || "",
-        };
+        setContent(loaded.content || "");
         setState("ready");
       } catch (cause) {
         if (cancelled) return;
@@ -2733,132 +2710,19 @@ function NoteDetailModal({
     };
   }, [name, noteName, language, nd.notFound]);
 
-  // Paint the contentEditable box (React must never own its children): the
-  // loaded HTML once ready, or the row's own text while loading / on failure
-  // so the popup is never empty.
+  // Paint the stored HTML into the read-only surface (React never owns its
+  // children); a failed fetch keeps whatever the row seeded so it is not blank.
   useEffect(() => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    if (state === "ready") {
-      if (editor.innerHTML !== baselineRef.current.content) {
-        editor.innerHTML = baselineRef.current.content;
-      }
-      titleRef.current?.focus();
-    } else if (!editor.innerHTML.trim()) {
-      editor.innerHTML = seedContent;
-    }
-    syncEmpty();
-  }, [state, seedContent, syncEmpty]);
+    const el = contentRef.current;
+    if (!el) return;
+    if (el.innerHTML !== content) el.innerHTML = content;
+  }, [content, state]);
 
-  const exec = (command: string, value?: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    editor.focus();
-    try {
-      document.execCommand(command, false, value);
-    } catch {
-      /* older engines simply ignore unsupported commands */
-    }
-    syncEmpty();
-  };
-
-  const escapeHtml = (value: string) =>
-    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  const onlyHttpUrl = (value: string | null) => {
-    const url = (value || "").trim();
-    if (!url) return "";
-    return /^https?:\/\//i.test(url) ? url : "";
-  };
-
-  const addLink = () => {
-    const url = onlyHttpUrl(window.prompt(cf.linkPrompt));
-    if (url) exec("createLink", url);
-  };
-
-  const addImage = () => {
-    const url = onlyHttpUrl(window.prompt(cf.imagePrompt));
-    if (url) exec("insertImage", url);
-  };
-
-  const addCode = () => {
-    const editor = editorRef.current;
-    const selected = window.getSelection()?.toString() ?? "";
-    if (!editor || !selected.trim()) {
-      exec("insertHTML", `<code>${escapeHtml(selected || "code")}</code>`);
-      return;
-    }
-    exec("insertHTML", `<code>${escapeHtml(selected)}</code>`);
-  };
-
-  const submit = async () => {
-    if (saving || state === "loading" || !noteName) return;
-
-    const cleanTitle = title.trim();
-    if (!cleanTitle) {
-      setFormError(cf.titleRequired);
-      titleRef.current?.focus();
-      return;
-    }
-
-    const content = editorRef.current?.innerHTML ?? "";
-    const base = baselineRef.current;
-    const edits: LeadNoteEdit = {};
-    if (cleanTitle !== base.title) edits.title = cleanTitle;
-    if (content !== base.content) edits.content = content;
-
-    // Nothing changed — just close, no pointless write.
-    if (Object.keys(edits).length === 0) {
-      onClose();
-      return;
-    }
-
-    const describe = (cause: unknown): string => {
-      const api = cause instanceof ApiError ? cause : null;
-      const base = cause instanceof Error ? cause.message : String(cause);
-      return api ? `${base} (code=${api.code}, status=${api.status})` : base;
-    };
-
-    setSaving(true);
-    setFormError(null);
-    try {
-      await updateLeadNote(name, noteName, edits, language);
-    } catch (cause) {
-      // The write itself failed — keep the popup open so the user can retry.
-      setFormError(cause instanceof ApiError ? cause.message : nd.updateFailed);
-      reportClientError({
-        scope: "leads:note-detail",
-        message: "The lead note could not be saved",
-        detail: describe(cause),
-      });
-      setSaving(false);
-      return;
-    }
-
-    // Save succeeded. The refresh below is best-effort: onSaved closes the popup
-    // and reloads the lead, so a failed rebuild must NOT be reported as a failed
-    // save (that mislabels the Error Log and hides the real cause).
-    try {
-      await onSaved();
-    } catch (cause) {
-      reportClientError({
-        scope: "leads:note-refresh",
-        message: "The lead could not be refreshed after saving the note",
-        detail: describe(cause),
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const hasContent =
+    content.replace(/<[^>]*>/g, "").trim().length > 0 || /<(img|hr|table|li|ul|ol)\b/i.test(content);
 
   const labelClass =
-    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
-  const fieldClass =
-    "w-full rounded-xl border border-transparent bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
-  const toolClass =
-    "inline-flex h-7 min-w-[26px] items-center justify-center rounded-md px-1.5 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]";
-
-  const busy = saving || state === "loading";
+    "mb-1 block text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]";
 
   const modal = (
     <div
@@ -2868,40 +2732,37 @@ function NoteDetailModal({
       data-note-detail-modal=""
       className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget && !busy) onClose();
+        if (event.target === event.currentTarget) onClose();
       }}
     >
       <div className="max-h-[94vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[680px] sm:rounded-[20px] sm:p-7">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-[19px] font-bold text-[var(--color-primary)]" data-note-detail-heading="">
-            {nd.editTitle}
+            {nd.title}
           </h2>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onOpenLead}
-              disabled={saving}
               data-note-detail-openlead=""
-              className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] disabled:opacity-50"
+              className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
             >
               {nd.openLead}
             </button>
             <button
               type="button"
               onClick={onOpenLead}
-              disabled={saving}
               aria-label={nd.openLead}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
             >
               <FiExternalLink size={15} />
             </button>
             <button
               type="button"
               onClick={onClose}
-              disabled={saving}
               aria-label={detail.close}
               data-note-detail-close=""
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
             >
               <FiX size={16} />
             </button>
@@ -2913,7 +2774,7 @@ function NoteDetailModal({
             {loadError || nd.notFound}
           </p>
         ) : (
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {state === "loading" ? (
               <p data-note-detail-loading="" className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 {nd.loading}
@@ -2924,113 +2785,45 @@ function NoteDetailModal({
                 {loadError || nd.notFound}
               </p>
             ) : null}
+
             <div>
-              <label className={labelClass} htmlFor="lead-note-detail-title">
-                {nd.titleLabel} <span className="text-[#e0483f]">*</span>
-              </label>
-              <input
-                id="lead-note-detail-title"
-                ref={titleRef}
-                type="text"
-                value={title}
-                maxLength={140}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder={cf.titlePlaceholder}
+              <span className={labelClass}>{nd.titleLabel}</span>
+              <p
                 data-note-detail-title=""
-                className={fieldClass}
-              />
+                className="rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-2.5 text-[14px] font-semibold break-words text-[var(--color-primary)]"
+              >
+                {title.trim() || detail.noteTable.untitled}
+              </p>
             </div>
 
             <div>
               <span className={labelClass}>{nd.contentLabel}</span>
-              <div className="overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] focus-within:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]">
+              {hasContent ? (
                 <div
-                  role="toolbar"
-                  aria-label={nd.contentLabel}
-                  className="flex flex-wrap items-center gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-1.5 py-1"
+                  ref={contentRef}
+                  data-note-detail-content=""
+                  className="max-h-[52vh] min-h-[120px] w-full overflow-y-auto rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)] [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
+                />
+              ) : (
+                <p
+                  data-note-detail-content=""
+                  className="rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-3 text-[12.5px] italic text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
                 >
-                  <button type="button" title={cf.heading} className="inline-flex h-7 items-center rounded-md px-2 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]" onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<p>"); }}>
-                    {cf.heading}
-                  </button>
-                  <button type="button" title="H2" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h2>"); }}>
-                    H2
-                  </button>
-                  <button type="button" title="H3" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h3>"); }}>
-                    H3
-                  </button>
-                  <button type="button" title="H4" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h4>"); }}>
-                    H4
-                  </button>
-                  <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
-                  <button type="button" title={cf.bold} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}>
-                    <FiBold size={13} className="pointer-events-none" />
-                  </button>
-                  <button type="button" title={cf.italic} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}>
-                    <FiItalic size={13} className="pointer-events-none" />
-                  </button>
-                  <button type="button" title={cf.strike} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }}>
-                    <span className="line-through">S</span>
-                  </button>
-                  <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
-                  <button type="button" title={cf.bulletList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}>
-                    <FiList size={13} className="pointer-events-none" />
-                  </button>
-                  <button type="button" title={cf.numberedList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertOrderedList"); }}>
-                    <span className="text-[11px]">1.</span>
-                  </button>
-                  <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
-                  <button type="button" title={cf.insertLink} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addLink(); }}>
-                    <FiLink size={13} className="pointer-events-none" />
-                  </button>
-                  <button type="button" title={cf.inlineCode} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addCode(); }}>
-                    <FiCode size={13} className="pointer-events-none" />
-                  </button>
-                  <button type="button" title={cf.insertImage} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addImage(); }}>
-                    <FiImage size={13} className="pointer-events-none" />
-                  </button>
-                  <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
-                  <button type="button" title={cf.clearFormatting} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("removeFormat"); }}>
-                    <FiMoreHorizontal size={14} className="pointer-events-none" />
-                  </button>
-                </div>
-                <div className="relative">
-                  {empty ? (
-                    <span className="pointer-events-none absolute inset-x-3 top-2.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]">
-                      {cf.contentPlaceholder}
-                    </span>
-                  ) : null}
-                  <div
-                    ref={editorRef}
-                    role="textbox"
-                    aria-multiline="true"
-                    aria-label={nd.contentLabel}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onInput={syncEmpty}
-                    data-note-detail-content=""
-                    className="min-h-[360px] max-h-[46vh] w-full overflow-y-auto px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)] outline-none [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
-                  />
-                </div>
-              </div>
+                  {nd.emptyContent}
+                </p>
+              )}
             </div>
-
-            {formError ? (
-              <p role="alert" data-note-detail-form-error="" className="text-[11.5px] font-medium text-[#d0453c]">
-                {formError}
-              </p>
-            ) : null}
           </div>
         )}
 
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
-            onClick={() => void submit()}
-            disabled={busy || !noteName}
-            data-note-detail-save=""
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-[13px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onClose}
+            data-note-detail-done=""
+            className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-4 py-2 text-[13px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
           >
-            <span className="pointer-events-none">{saving ? nd.saving : nd.update}</span>
+            {detail.close}
           </button>
         </div>
       </div>
@@ -4333,7 +4126,7 @@ function LeadDetailPanel({
         />
       ) : null}
 
-      {/* One note's own editable popup, opened from its table row. */}
+      {/* One note's own read-only popup, opened from its table row. */}
       {detailNote ? (
         <NoteDetailModal
           key={detailNote.key}
@@ -4345,12 +4138,6 @@ function LeadDetailPanel({
           onOpenLead={() => {
             setDetailNote(null);
             setTabState({ name, tab: "activity" });
-          }}
-          onSaved={async () => {
-            setDetailNote(null);
-            setNotice({ tone: "ok", text: detail.noteDetail.updated });
-            setTabState({ name, tab: "notes" });
-            await load();
           }}
         />
       ) : null}

@@ -173,10 +173,12 @@ async function login() {
     const title = ((await page.locator("[data-leads-title]").first().innerText()) || "").trim();
     check(title === "লিডস", `[${viewport.tag}] page heading is ${title || "(empty)"}`);
 
-    const sourceNote = ((await page.locator("[data-leads-source]").first().innerText()) || "").trim();
+    const boundDoctype = (
+      (await page.locator("[data-leads-doctype]").first().getAttribute("data-leads-doctype")) || ""
+    ).trim();
     check(
-      sourceNote.includes("dash.shikkhachat.com/crm/leads/view/list"),
-      `[${viewport.tag}] source note names the desk lead list`
+      boundDoctype === "CRM Lead",
+      `[${viewport.tag}] lead list is bound to the CRM Lead doctype (${boundDoctype || "none"})`
     );
 
     // ------------------------------------------------------- 3) the rows
