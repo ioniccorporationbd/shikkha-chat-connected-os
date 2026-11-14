@@ -90,6 +90,13 @@ export interface DashboardCopy {
   leadSummaryOverdueDesc: (n: string) => string;
   leadSummaryDone: string;
   leadSummaryDoneDesc: (n: string) => string;
+  /** Staff rail: expense-claim summary rows inside the সিস্টেম panel. */
+  expenseSummaryCount: string;
+  expenseSummaryClaimed: string;
+  expenseSummaryDraft: string;
+  expenseSummaryApproved: string;
+  expenseSummaryPaid: string;
+  expenseSummaryEmpty: string;
   /** Client rail: service-bill (Sales Invoice) summary rows in the system panel. */
   billSummaryHeading: string;
   billSummaryTotal: string;
@@ -231,6 +238,12 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     leadSummaryWeekDesc: (n) => `${n}টি টাস্ক এই সপ্তাহে`,
     leadSummaryOverdue: "ওভারডিউ টাস্ক",
     leadSummaryOverdueDesc: (n) => `${n}টি টাস্ক সময় পার`,
+    expenseSummaryCount: "মোট ক্লেম",
+    expenseSummaryClaimed: "মোট দাবি",
+    expenseSummaryDraft: "ড্রাফট",
+    expenseSummaryApproved: "অনুমোদিত",
+    expenseSummaryPaid: "পরিশোধিত",
+    expenseSummaryEmpty: "কোনো এক্সপেন্স ক্লেম নেই",
     leadSummaryDone: "সম্পন্ন (এই সপ্তাহ)",
     leadSummaryDoneDesc: (n) => `${n}টি টাস্ক সম্পন্ন`,
     billSummaryHeading: "সার্ভিস বিল",
@@ -393,6 +406,12 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     leadSummaryWeekDesc: (n) => `${n} this week`,
     leadSummaryOverdue: "Overdue tasks",
     leadSummaryOverdueDesc: (n) => `${n} past due`,
+    expenseSummaryCount: "Total claims",
+    expenseSummaryClaimed: "Claimed",
+    expenseSummaryDraft: "Draft",
+    expenseSummaryApproved: "Approved",
+    expenseSummaryPaid: "Paid",
+    expenseSummaryEmpty: "No expense claims yet",
     leadSummaryDone: "Completed (this week)",
     leadSummaryDoneDesc: (n) => `${n} completed`,
     billSummaryHeading: "Service Bill",

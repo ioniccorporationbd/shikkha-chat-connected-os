@@ -54,6 +54,8 @@ import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCES
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardLink, DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { fetchExpenseClaims } from "@/lib/expense-claim/api";
+import type { ExpenseClaimSummary } from "@/lib/expense-claim/types";
 import { fetchLeads, fetchLeadTasks } from "@/lib/leads/api";
 import type { LeadTasksSummary } from "@/lib/leads/types";
 import { fetchPayments } from "@/lib/payment-entry/api";
@@ -165,6 +167,9 @@ export default function DashboardShell({
   // counters its Tasks board shows (today / next 7 days / overdue / done this
   // week). Same endpoints the Leads page itself calls, so the numbers agree.
   const [leadBoard, setLeadBoard] = useState<{ leads: number; more: boolean; tasks: LeadTasksSummary } | null>(null);
+  // Staff rail সিস্টেম panel mirrors the Expense Claim page's সারসংক্ষেপ: the
+  // same list_mine endpoint the page calls, so the numbers always agree.
+  const [expSummary, setExpSummary] = useState<ExpenseClaimSummary | null>(null);
   const [billSummary, setBillSummary] = useState<SalesInvoiceSummary | null>(null);
 
   // Help Desk navigation watchdog state: the link's live transition status and
@@ -235,6 +240,30 @@ export default function DashboardShell({
         reportClientError({
           scope: "staff-dashboard:lead-summary",
           message: "The leads and tasks summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  useEffect(() => {
+    if (isClient) return;
+
+    let cancelled = false;
+
+    fetchExpenseClaims(language)
+      .then((payload) => {
+        if (cancelled) return;
+        setExpSummary(payload.summary);
+      })
+      .catch((error) => {
+        // Keep the system rows; never block the rail.
+        reportClientError({
+          scope: "staff-dashboard:expense-summary",
+          message: "The expense-claim summary could not be loaded",
           detail: error instanceof Error ? error.message : error,
         });
       });
@@ -1373,15 +1402,60 @@ export default function DashboardShell({
                                 formatBillDate(billSummary.latest_invoice_date, language) || "—",
                               ],
                             ]
-                          : [
-                              [copy.systemApi, data.system.api],
-                              [copy.systemVersion, data.system.version],
-                              [copy.systemServer, data.system.base_url],
-                              [
-                                copy.systemSession,
-                                `${data.system.session_expiry_hours} ${copy.hoursSuffix}`,
-                              ],
-                            ]
+                          : expSummary
+                            ? [
+                                [
+                                  copy.expenseSummaryCount,
+                                  new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.total),
+                                ],
+                                [
+                                  copy.expenseSummaryClaimed,
+                                  expSummary.total > 0
+                                    ? formatBillAmount(
+                                        expSummary.total_claimed_amount,
+                                        expSummary.currency,
+                                        language
+                                      )
+                                    : copy.expenseSummaryEmpty,
+                                ],
+                                [
+                                  copy.expenseSummaryDraft,
+                                  new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.draft),
+                                ],
+                                [
+                                  copy.expenseSummaryApproved,
+                                  `${new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.approved)} · ${formatBillAmount(
+                                    expSummary.total_sanctioned_amount,
+                                    expSummary.currency,
+                                    language
+                                  )}`,
+                                ],
+                                [
+                                  copy.expenseSummaryPaid,
+                                  `${new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.paid)} · ${formatBillAmount(
+                                    expSummary.total_amount_reimbursed,
+                                    expSummary.currency,
+                                    language
+                                  )}`,
+                                ],
+                              ]
+                            : [
+                                [copy.systemApi, data.system.api],
+                                [copy.systemVersion, data.system.version],
+                                [copy.systemServer, data.system.base_url],
+                                [
+                                  copy.systemSession,
+                                  `${data.system.session_expiry_hours} ${copy.hoursSuffix}`,
+                                ],
+                              ]
                         ).map(([label, value]) => (
                           <div key={label} className="flex items-start justify-between gap-4">
                             <dt className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
