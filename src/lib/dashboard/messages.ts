@@ -78,6 +78,18 @@ export interface DashboardCopy {
   paySummaryLatest: string;
   paySummaryEmpty: string;
   paySummaryHint: string;
+  /** Staff rail: my-leads + assigned-tasks summary tiles inside the quick-links panel. */
+  leadSummaryHint: string;
+  leadSummaryLeads: string;
+  leadSummaryLeadsDesc: (n: string, more: boolean) => string;
+  leadSummaryToday: string;
+  leadSummaryTodayDesc: (n: string) => string;
+  leadSummaryWeek: string;
+  leadSummaryWeekDesc: (n: string) => string;
+  leadSummaryOverdue: string;
+  leadSummaryOverdueDesc: (n: string) => string;
+  leadSummaryDone: string;
+  leadSummaryDoneDesc: (n: string) => string;
   /** Client rail: service-bill (Sales Invoice) summary rows in the system panel. */
   billSummaryHeading: string;
   billSummaryTotal: string;
@@ -210,6 +222,17 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     paySummaryLatest: "সর্বশেষ পেমেন্ট",
     paySummaryEmpty: "এখনো কোনো পেমেন্ট এন্ট্রি নেই।",
     paySummaryHint: "আপনার পেমেন্ট এন্ট্রির সারসংক্ষেপ",
+    leadSummaryHint: "আপনার লিড ও টাস্কের সারসংক্ষেপ",
+    leadSummaryLeads: "আমার লিড",
+    leadSummaryLeadsDesc: (n, more) => `${n}${more ? "+" : ""}টি লিড · সব দেখুন`,
+    leadSummaryToday: "আজকের টাস্ক",
+    leadSummaryTodayDesc: (n) => `${n}টি টাস্ক আজ`,
+    leadSummaryWeek: "পরবর্তী ৭ দিনের টাস্ক",
+    leadSummaryWeekDesc: (n) => `${n}টি টাস্ক এই সপ্তাহে`,
+    leadSummaryOverdue: "ওভারডিউ টাস্ক",
+    leadSummaryOverdueDesc: (n) => `${n}টি টাস্ক সময় পার`,
+    leadSummaryDone: "সম্পন্ন (এই সপ্তাহ)",
+    leadSummaryDoneDesc: (n) => `${n}টি টাস্ক সম্পন্ন`,
     billSummaryHeading: "সার্ভিস বিল",
     billSummaryTotal: "মোট বিল",
     billSummaryAmount: "মোট বিলের পরিমাণ",
@@ -361,6 +384,17 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     paySummaryLatest: "Latest payment",
     paySummaryEmpty: "No payment entries yet.",
     paySummaryHint: "A summary of your payment entries",
+    leadSummaryHint: "A summary of your leads and tasks",
+    leadSummaryLeads: "My leads",
+    leadSummaryLeadsDesc: (n, more) => `${n}${more ? "+" : ""} leads · see all`,
+    leadSummaryToday: "Today's tasks",
+    leadSummaryTodayDesc: (n) => `${n} due today`,
+    leadSummaryWeek: "Next 7 days' tasks",
+    leadSummaryWeekDesc: (n) => `${n} this week`,
+    leadSummaryOverdue: "Overdue tasks",
+    leadSummaryOverdueDesc: (n) => `${n} past due`,
+    leadSummaryDone: "Completed (this week)",
+    leadSummaryDoneDesc: (n) => `${n} completed`,
     billSummaryHeading: "Service Bill",
     billSummaryTotal: "Service bills",
     billSummaryAmount: "Billed amount",

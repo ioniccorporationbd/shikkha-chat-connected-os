@@ -54,6 +54,8 @@ import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCES
 import { useAuthStore } from "@/lib/auth/store";
 import type { DashboardLink, DashboardPayload } from "@/lib/auth/types";
 import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { fetchLeads, fetchLeadTasks } from "@/lib/leads/api";
+import type { LeadTasksSummary } from "@/lib/leads/types";
 import { fetchPayments } from "@/lib/payment-entry/api";
 import type { PaymentEntrySummary } from "@/lib/payment-entry/types";
 import {
@@ -159,6 +161,10 @@ export default function DashboardShell({
   // and the label/value rows keep their existing markup, and a failed fetch
   // falls back to the payload the overview already shipped with.
   const [paySummary, setPaySummary] = useState<PaymentEntrySummary | null>(null);
+  // Staff rail summary mirroring the Leads page: my leads and the four task
+  // counters its Tasks board shows (today / next 7 days / overdue / done this
+  // week). Same endpoints the Leads page itself calls, so the numbers agree.
+  const [leadBoard, setLeadBoard] = useState<{ leads: number; more: boolean; tasks: LeadTasksSummary } | null>(null);
   const [billSummary, setBillSummary] = useState<SalesInvoiceSummary | null>(null);
 
   // Help Desk navigation watchdog state: the link's live transition status and
@@ -197,6 +203,38 @@ export default function DashboardShell({
         reportClientError({
           scope: "client-dashboard:service-summary",
           message: "The service bill summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  useEffect(() => {
+    if (isClient) return;
+
+    let cancelled = false;
+
+    Promise.all([
+      fetchLeads({ language, mine: true, limit: 200 }),
+      fetchLeadTasks({ language, mine: true, window: "today" }),
+    ])
+      .then(([leadsPayload, tasksPayload]) => {
+        if (cancelled) return;
+        if (!leadsPayload.available || !tasksPayload.available) return;
+        setLeadBoard({
+          leads: leadsPayload.leads.length,
+          more: Boolean(leadsPayload.has_more),
+          tasks: tasksPayload.summary,
+        });
+      })
+      .catch((error) => {
+        // Fall back to the shipped quick links; never block the rail.
+        reportClientError({
+          scope: "staff-dashboard:lead-summary",
+          message: "The leads and tasks summary could not be loaded",
           detail: error instanceof Error ? error.message : error,
         });
       });
@@ -250,6 +288,59 @@ export default function DashboardShell({
       },
     ];
   }, [isClient, paySummary, copy, language]);
+
+  // Staff quick-links panel: instead of desk shortcuts it now summarises what the
+  // Leads page shows — my leads plus the Tasks board counters — with the exact
+  // same tile markup (label + description), each opening the Leads page.
+  const leadTiles = useMemo<DashboardLink[]>(() => {
+    if (isClient || !leadBoard) return [];
+
+    const count = (value: number) =>
+      new Intl.NumberFormat(language === "en" ? "en-BD" : "bn-BD").format(value);
+
+    return [
+      {
+        key: "lead_mine",
+        label: copy.leadSummaryLeads,
+        description: copy.leadSummaryLeadsDesc(count(leadBoard.leads), leadBoard.more),
+        icon: "target",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_today",
+        label: copy.leadSummaryToday,
+        description: copy.leadSummaryTodayDesc(count(leadBoard.tasks.today)),
+        icon: "clock",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_week",
+        label: copy.leadSummaryWeek,
+        description: copy.leadSummaryWeekDesc(count(leadBoard.tasks.week)),
+        icon: "chart",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_overdue",
+        label: copy.leadSummaryOverdue,
+        description: copy.leadSummaryOverdueDesc(count(leadBoard.tasks.overdue)),
+        icon: "shield",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_done",
+        label: copy.leadSummaryDone,
+        description: copy.leadSummaryDoneDesc(count(leadBoard.tasks.completed_week)),
+        icon: "badge",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+    ];
+  }, [isClient, leadBoard, copy, language]);
 
   // The active panel is driven by the URL, not local state: "Create Customer"
   // has its own route inside this shell, so the address bar reflects it and the
@@ -1232,11 +1323,17 @@ export default function DashboardShell({
                   <div className="flex flex-col gap-4">
                     <PanelCard
                       title={isClient ? copy.paySummaryHeading : copy.quickLinksHeading}
-                      hint={isClient ? copy.paySummaryHint : copy.quickLinksHint}
+                      hint={isClient ? copy.paySummaryHint : copy.leadSummaryHint}
                       testId="quick-links"
                     >
                       <QuickLinks
-                        links={isClient ? paymentTiles : data.quick_links}
+                        links={
+                          isClient
+                            ? paymentTiles
+                            : leadTiles.length > 0
+                              ? leadTiles
+                              : data.quick_links
+                        }
                         labels={isClient ? {} : copy.links}
                         emptyLabel={isClient ? copy.paySummaryEmpty : copy.quickLinksEmpty}
                       />

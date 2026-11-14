@@ -31,6 +31,9 @@ const STAT_ICONS: Record<string, IconType> = {
   shield: FiShield,
   device: FiMonitor,
   grid: FiGrid,
+  target: FiTarget,
+  clock: FiClock,
+  chart: FiBarChart2,
 };
 
 export function statIcon(key: string): IconType {
