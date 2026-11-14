@@ -18,7 +18,7 @@ import { HelpDeskErrorState, TicketListSkeleton } from "@/components/help-desk/H
 import { reportClientError } from "@/lib/log/report-error";
 import NotificationBadge from "@/components/dashboard/help-desk/NotificationBadge";
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
-import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
+import { PRIORITY_TONE } from "@/lib/help-desk/config";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import { useHelpDeskBadges } from "@/lib/help-desk/use-badges";
@@ -130,11 +130,15 @@ export default function HelpDeskOverview({
   // the New Ticket / file-ticket action never carries one.
   const badges = useHelpDeskBadges();
 
+  // Summary tiles mirror the /userDashboard/expense-claim সারসংক্ষেপ cards (same
+  // tones as the leads task board): violet total, blue open, amber waiting,
+  // green resolved — tinted background + white icon square instead of the old
+  // bordered white card.
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
-    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "var(--color-primary)", icon: FiInbox },
-    { key: "open", label: copy.statuses.open, value: summary.open, tone: STATUS_TONE.open, icon: FiAlertCircle },
-    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: "#c98a1f", icon: FiClock },
-    { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: STATUS_TONE.resolved, icon: FiCheckCircle },
+    { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#7c3aed", icon: FiInbox },
+    { key: "open", label: copy.statuses.open, value: summary.open, tone: "#2f9bff", icon: FiAlertCircle },
+    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: "#b9770b", icon: FiClock },
+    { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: "#16a34a", icon: FiCheckCircle },
   ];
 
   // The employee overview mirrors the customer one but its section buttons are
@@ -225,7 +229,7 @@ export default function HelpDeskOverview({
             <h2 className="px-1 text-[15px] font-semibold">{copy.summaryHeading}</h2>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {summaryCards.map((card) => (
-                <SummaryCard key={card.key} label={card.label} value={card.value} tone={card.tone} icon={card.icon} />
+                <SummaryCard key={card.key} dataKey={card.key} label={card.label} value={card.value} tone={card.tone} icon={card.icon} />
               ))}
             </div>
           </section>
@@ -334,31 +338,42 @@ export default function HelpDeskOverview({
   );
 }
 
+/**
+ * Tone tile shared with the expense-claim সারসংক্ষেপ (and through it the leads
+ * task board): 10% tint of the tone on white, a white 9×9 icon square, a
+ * 10.5px muted label over a 17px bold value.
+ */
 function SummaryCard({
+  dataKey,
   label,
   value,
   tone,
   icon: Icon,
 }: {
+  dataKey: string;
   label: string;
   value: number;
   tone: string;
   icon: typeof FiInbox;
 }) {
   return (
-    <div className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW}`}>
-      <div className="flex items-center justify-between gap-2">
-        <span
-          className="grid h-9 w-9 place-items-center rounded-xl"
-          style={{ backgroundColor: `color-mix(in srgb, ${tone} 16%, white)`, color: tone }}
-        >
-          <Icon size={17} aria-hidden />
-        </span>
-        <span className="text-[26px] font-bold leading-none text-[var(--color-primary)]">{value}</span>
+    <div
+      data-helpdesk-summary-card={dataKey}
+      className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
+      style={{ backgroundColor: `color-mix(in srgb, ${tone} 10%, white)` }}
+    >
+      <span
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-white)] shadow-sm"
+        style={{ color: tone }}
+      >
+        <Icon size={16} aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+          {label}
+        </p>
+        <p className="text-[17px] font-bold leading-tight text-[var(--color-primary)]">{value}</p>
       </div>
-      <p className="mt-3 text-[12.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-        {label}
-      </p>
     </div>
   );
 }
