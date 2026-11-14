@@ -131,13 +131,13 @@ export default function HelpDeskOverview({
   const badges = useHelpDeskBadges();
 
   // Summary tiles mirror the /userDashboard/expense-claim সারসংক্ষেপ cards (same
-  // tones as the leads task board): violet total, blue open, amber waiting,
+  // tones as the leads task board): violet total, amber open, blue waiting,
   // green resolved — tinted background + white icon square instead of the old
   // bordered white card.
   const summaryCards: { key: string; label: string; value: number; tone: string; icon: typeof FiInbox }[] = [
     { key: "total", label: copy.summaryTotal, value: summary.total, tone: "#7c3aed", icon: FiInbox },
-    { key: "open", label: copy.statuses.open, value: summary.open, tone: "#2f9bff", icon: FiAlertCircle },
-    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: "#b9770b", icon: FiClock },
+    { key: "open", label: copy.statuses.open, value: summary.open, tone: "#b9770b", icon: FiAlertCircle },
+    { key: "waiting", label: copy.statuses.waiting_for_user, value: summary.waiting, tone: "#2f9bff", icon: FiClock },
     { key: "resolved", label: copy.statuses.resolved, value: summary.resolved, tone: "#16a34a", icon: FiCheckCircle },
   ];
 

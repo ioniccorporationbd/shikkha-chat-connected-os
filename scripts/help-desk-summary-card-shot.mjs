@@ -46,8 +46,8 @@ async function login() {
 
 const EXPECTED_TONES = {
   total: "rgb(124, 58, 237)", // #7c3aed violet
-  open: "rgb(47, 155, 255)", // #2f9bff blue
-  waiting: "rgb(185, 119, 11)", // #b9770b amber ink
+  open: "rgb(185, 119, 11)", // #b9770b amber ink (swapped with waiting)
+  waiting: "rgb(47, 155, 255)", // #2f9bff blue (swapped with open)
   resolved: "rgb(22, 163, 74)", // #16a34a green
 };
 
