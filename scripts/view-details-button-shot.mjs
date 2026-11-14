@@ -76,8 +76,32 @@ const js_norm = (btn) => {
   return out;
 };
 
+// The create-customer table only lists customers YOU created, and the mock keeps
+// them in memory — so seed one row through the same API the UI uses.
+async function seedCustomer(sid) {
+  const { stdout } = await run_("curl", [
+    "-s", "-m", "10", "-X", "POST",
+    "-H", "content-type: application/json",
+    "-H", `cookie: sid=${sid}`,
+    "-d", JSON.stringify({
+      data: {
+        customer_name: `View Details Check ${Date.now().toString().slice(-6)}`,
+        customer_type: "Company",
+        customer_group: "Commercial",
+        territory: "Bangladesh",
+        mobile_no: "01812345678",
+        email_id: `view-details-${Date.now().toString().slice(-6)}@example.com`,
+      },
+    }),
+    `${MOCK}/api/method/shikkha_os.api.v1.customer.create`,
+  ]);
+  return stdout.includes('"exc"') ? stdout.slice(0, 200) : null;
+}
+
 (async () => {
   const sid = await login();
+  const seedError = await seedCustomer(sid);
+  if (seedError) throw new Error(`could not seed a customer row: ${seedError}`);
   const chromePath =
     process.env.PW_CHROME ?? "/root/.cache/ms-playwright/chromium-1254/chrome-linux64/chrome";
   const browser = await chromium.launch({
@@ -109,6 +133,7 @@ const js_norm = (btn) => {
     console.log(`\n== ${language} ==`);
     const leads = await collect("/userDashboard/leads", "data-lead-details", language);
     const claim = await collect("/userDashboard/expense-claim", "data-claim-details", language);
+    const customer = await collect("/userDashboard/create-customer", "data-customer-details", language);
 
     check(claim.style.hasIcon, `[${language}] expense button carries an icon`);
     check(claim.style.iconFirst, `[${language}] expense icon sits before the label (eye first)`);
@@ -126,6 +151,31 @@ const js_norm = (btn) => {
       claim.box && leads.box && Math.abs(claim.box.height - leads.box.height) <= 3,
       `[${language}] button height close to leads (${leads.box?.height} vs ${claim.box?.height})`,
     );
+
+    // ---- create-customer table action (label is `বিস্তারিত`, so style-only parity)
+    check(customer.style.hasIcon && customer.style.iconFirst, `[${language}] customer button has the icon first`);
+    check(customer.style.svgSize === 12, `[${language}] customer icon is 12px (got ${customer.style.svgSize})`);
+    for (const key of STYLE_KEYS) {
+      check(
+        customer.style[key] === leads.style[key],
+        `[${language}] customer ${key} matches leads (${leads.style[key]} vs ${customer.style[key]})`,
+      );
+    }
+    check(
+      customer.box && leads.box && Math.abs(customer.box.height - leads.box.height) <= 3,
+      `[${language}] customer button height close to leads (${leads.box?.height} vs ${customer.box?.height})`,
+    );
+    const boxCu = customer.box;
+    if (boxCu) {
+      await customer.page.locator(`[data-customer-details]`).first().scrollIntoViewIfNeeded();
+      const b3 = await customer.page.locator(`[data-customer-details]`).first().boundingBox();
+      if (b3) {
+        await customer.page.screenshot({
+          path: `${OUT}/view-details-customer-${language}.png`,
+          clip: { x: Math.max(b3.x - 300, 0), y: Math.max(b3.y - 90, 0), width: 700, height: 200 },
+        });
+      }
+    }
 
     await claim.page.locator(`[data-claim-details]`).first().scrollIntoViewIfNeeded();
     const row = claim.page.locator(`[data-claim-details]`).first();
@@ -150,8 +200,10 @@ const js_norm = (btn) => {
 
     check(claim.errors.length === 0, `[${language}] expense page console clean (${claim.errors.slice(0, 2).join(" | ")})`);
     check(leads.errors.length === 0, `[${language}] leads page console clean (${leads.errors.slice(0, 2).join(" | ")})`);
+    check(customer.errors.length === 0, `[${language}] customer page console clean (${customer.errors.slice(0, 2).join(" | ")})`);
     await claim.context.close();
     await leads.context.close();
+    await customer.context.close();
   }
 
   await browser.close();

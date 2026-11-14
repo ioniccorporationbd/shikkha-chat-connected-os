@@ -488,10 +488,10 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                         onClick={() => openDetails(row)}
                         aria-label={copy.detailsFor(row.customer_name || row.name)}
                         data-customer-details={row.name}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                       >
-                        <FiEye aria-hidden className="text-[13px] text-[var(--color-primary)]" />
-                        <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.details}</span>
+                        <FiEye aria-hidden size={12} className="pointer-events-none shrink-0" />
+                        <span className="pointer-events-none whitespace-nowrap">{copy.details}</span>
                       </button>
                     </td>
                   </tr>
@@ -544,10 +544,10 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                   onClick={() => openDetails(row)}
                   aria-label={copy.detailsFor(row.customer_name || row.name)}
                   data-customer-details={row.name}
-                  className={`${BTN_SECONDARY} mt-3 w-full px-3 py-2`}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                 >
-                  <FiEye aria-hidden className="text-[var(--color-primary)]" />
-                  <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.details}</span>
+                  <FiEye aria-hidden size={12} className="pointer-events-none shrink-0" />
+                  <span className="pointer-events-none whitespace-nowrap">{copy.details}</span>
                 </button>
               </section>
             ))}
