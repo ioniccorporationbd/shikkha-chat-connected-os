@@ -555,29 +555,20 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                 </div>
 
                 {summary ? (
-                  // The four amount cells wear the পরিশোধিত status chip's colour
-                  // (solid success green, white text) from the আপনার এক্সপেন্স ক্লেম
-                  // list below, instead of the old neutral inset strip.
-                  <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                    <div
-                      data-summary-amount="claimed"
-                      className="flex flex-col gap-0.5 rounded-2xl bg-[var(--color-success)] px-3.5 py-3"
-                    >
-                      <span className="truncate text-[10.5px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+                  <div className="grid gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.colClaimed}
                       </span>
-                      <span className="text-[15px] font-bold leading-tight text-[var(--color-white)]">
+                      <span className="text-[15px] font-semibold">
                         {formatAmount(summary.total_claimed_amount, currency, language)}
                       </span>
                     </div>
-                    <div
-                      data-summary-amount="sanctioned"
-                      className="flex flex-col gap-0.5 rounded-2xl bg-[var(--color-success)] px-3.5 py-3"
-                    >
-                      <span className="truncate text-[10.5px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.colSanctioned}
                       </span>
-                      <span className="text-[15px] font-bold leading-tight text-[var(--color-white)]">
+                      <span className="text-[15px] font-semibold">
                         {formatAmount(
                           summary.total_base_sanctioned_amount ?? summary.total_sanctioned_amount,
                           currency,
@@ -585,29 +576,19 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                         )}
                       </span>
                     </div>
-                    <div
-                      data-summary-amount="paid"
-                      className="flex flex-col gap-0.5 rounded-2xl bg-[var(--color-success)] px-3.5 py-3"
-                    >
-                      <span className="truncate text-[10.5px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.summaryPaid}
                       </span>
-                      <span className="text-[15px] font-bold leading-tight text-[var(--color-white)]">
+                      <span className="text-[15px] font-semibold">
                         {formatAmount(summary.total_amount_reimbursed, currency, language)}
                       </span>
                     </div>
-                    <div
-                      data-summary-amount="due"
-                      data-summary-due="true"
-                      className="flex flex-col gap-0.5 rounded-2xl bg-[var(--color-success)] px-3.5 py-3"
-                    >
-                      <span className="truncate text-[10.5px] font-medium uppercase tracking-wide text-[color-mix(in_srgb,var(--color-white)_82%,transparent)]">
+                    <div className="flex flex-col gap-0.5" data-summary-due="true">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                         {copy.summaryDue}
                       </span>
-                      <span
-                        className="text-[15px] font-bold leading-tight text-[var(--color-white)]"
-                        data-summary-due-value={dueSummaryAmount}
-                      >
+                      <span className="text-[15px] font-semibold" data-summary-due-value={dueSummaryAmount}>
                         {formatAmount(dueSummaryAmount, currency, language)}
                       </span>
                     </div>

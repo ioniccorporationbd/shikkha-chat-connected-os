@@ -90,23 +90,6 @@ const EXPECTED_TONES = {
       check(bg !== "rgb(255, 255, 255)" && bg !== "rgba(0, 0, 0, 0)", `[${language}] ${key} tile has a tinted background (${bg})`);
     }
 
-    // ---- amount strip (দাবি করা পরিমাণ / অনুমোদিত পরিমাণ / পরিশোধিত / বকেয়া)
-    //      wears the পরিশোধিত status chip colour: solid success green, white text.
-    const amounts = page.locator("[data-summary-amount]");
-    check((await amounts.count()) === 4, `[${language}] amount strip shows 4 cells`);
-    const bgs = [];
-    for (const key of ["claimed", "sanctioned", "paid", "due"]) {
-      const cell = page.locator(`[data-summary-amount="${key}"]`).first();
-      const bg = await cell.evaluate((el) => getComputedStyle(el).backgroundColor);
-      const fg = await cell.locator("span").last().evaluate((el) => getComputedStyle(el).color);
-      const txt = (await cell.innerText()).trim();
-      bgs.push(bg);
-      check(fg === "rgb(255, 255, 255)", `[${language}] ${key} amount value is white (got ${fg})`);
-      check(bg !== "rgb(255, 255, 255)" && bg !== "rgba(0, 0, 0, 0)", `[${language}] ${key} amount card is filled (${bg})`);
-      check(txt.length > 0, `[${language}] ${key} amount card still shows its label and value`);
-    }
-    check(new Set(bgs).size === 1, `[${language}] all 4 amount cards share the same fill (${bgs[0]})`);
-
     await tiles.first().scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${OUT}/expense-summary-${language}.png` });
 
