@@ -1451,23 +1451,19 @@ export default function DashboardShell({
                                 ],
                                 [
                                   copy.expenseSummaryApproved,
-                                  `${new Intl.NumberFormat(
-                                    language === "en" ? "en-BD" : "bn-BD"
-                                  ).format(expSummary.approved)} · ${formatBillAmount(
+                                  formatBillAmount(
                                     expSummary.total_sanctioned_amount,
                                     expSummary.currency,
                                     language
-                                  )}`,
+                                  ),
                                 ],
                                 [
                                   copy.expenseSummaryPaid,
-                                  `${new Intl.NumberFormat(
-                                    language === "en" ? "en-BD" : "bn-BD"
-                                  ).format(expSummary.paid)} · ${formatBillAmount(
+                                  formatBillAmount(
                                     expSummary.total_amount_reimbursed,
                                     expSummary.currency,
                                     language
-                                  )}`,
+                                  ),
                                 ],
                               ]
                             : [

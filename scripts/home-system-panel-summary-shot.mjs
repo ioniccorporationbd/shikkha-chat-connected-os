@@ -106,8 +106,8 @@ const fmt = (n, lang) => new Intl.NumberFormat(lang === "en" ? "en-BD" : "bn-BD"
       { label: language === "en" ? "Total claims" : "মোট ক্লেম", needle: fmt(summary.total, language) },
       { label: language === "en" ? "Claimed" : "মোট দাবি", needle: fmt(summary.total_claimed_amount, language) },
       { label: language === "en" ? "Draft" : "ড্রাফট", needle: fmt(summary.draft, language) },
-      { label: language === "en" ? "Approved" : "অনুমোদিত", needle: fmt(summary.approved, language) },
-      { label: language === "en" ? "Paid" : "পরিশোধিত", needle: fmt(summary.paid, language) },
+      { label: language === "en" ? "Approved" : "অনুমোদিত", needle: fmt(summary.total_sanctioned_amount, language) },
+      { label: language === "en" ? "Paid" : "পরিশোধিত", needle: fmt(summary.total_amount_reimbursed, language) },
     ];
 
     check(rows.length === expect.length, `[${language}] panel has ${expect.length} summary rows (got ${rows.length})`);
@@ -120,6 +120,15 @@ const fmt = (n, lang) => new Intl.NumberFormat(lang === "en" ? "en-BD" : "bn-BD"
           `[${language}] "${want.label}" shows the expense-page number ${want.needle} (got "${row.value}")`,
         );
       }
+    }
+
+    // অনুমোদিত / পরিশোধিত show the amount only — no "count · amount" union.
+    for (const label of language === "en" ? ["Approved", "Paid"] : ["অনুমোদিত", "পরিশোধিত"]) {
+      const row = rows.find((r) => r.label === label);
+      check(
+        Boolean(row) && !row.value.includes("·"),
+        `[${language}] "${label}" shows only the total amount (got "${row?.value}")`,
+      );
     }
 
     // The old system rows must be gone from the staff panel.
