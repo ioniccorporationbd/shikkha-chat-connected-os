@@ -284,7 +284,7 @@ export const expenseClaimCopy: Record<"bn" | "en", ExpenseClaimCopy> = {
     colSanctioned: "Sanctioned Amount",
     colStatus: "Status",
     colAction: "Action",
-    viewDetails: "View Details",
+    viewDetails: "View details",
     emptyTitle: "No expense claims yet.",
     emptyHint: "Create your first expense claim to get started.",
     emptyCta: "Create a new Expense Claim",

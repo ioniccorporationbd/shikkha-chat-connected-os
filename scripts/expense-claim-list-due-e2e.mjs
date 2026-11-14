@@ -29,7 +29,7 @@ const CHROME =
 
 const COPY = {
   bn: { due: "বকেয়া", print: "প্রিন্ট", download: "ডাউনলোড", view: "বিস্তারিত দেখুন", paidColumn: "পেমেন্ট" },
-  en: { due: "Due", print: "Print", download: "Download", view: "View Details", paidColumn: "Paid" },
+  en: { due: "Due", print: "Print", download: "Download", view: "View details", paidColumn: "Paid" },
 };
 
 /** Bengali digits -> ASCII so "৳৬০০.০০" can be compared as 600. */

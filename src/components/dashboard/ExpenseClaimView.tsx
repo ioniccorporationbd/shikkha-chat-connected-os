@@ -5,10 +5,10 @@ import {
   FiActivity,
   FiArrowLeft,
   FiCheckCircle,
-  FiChevronRight,
   FiCheckSquare,
   FiDownload,
   FiEdit3,
+  FiEye,
   FiFileText,
   FiPlus,
   FiPrinter,
@@ -692,12 +692,10 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                                 type="button"
                                 onClick={() => void openDetails(claim.name)}
                                 data-claim-details={claim.name}
-                                className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                               >
-                                <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                  {copy.viewDetails}
-                                </span>
-                                <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+                                <FiEye size={12} className="pointer-events-none" />
+                                <span className="pointer-events-none">{copy.viewDetails}</span>
                               </button>
                             </td>
                           </tr>
@@ -822,12 +820,10 @@ function ClaimCard({
           type="button"
           onClick={onOpen}
           data-claim-details={claim.name}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
         >
-          <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-            {copy.viewDetails}
-          </span>
-          <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+          <FiEye size={12} className="pointer-events-none" />
+          <span className="pointer-events-none">{copy.viewDetails}</span>
         </button>
       </div>
     </div>
