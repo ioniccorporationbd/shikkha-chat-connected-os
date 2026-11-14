@@ -91,6 +91,7 @@ export interface DashboardCopy {
   leadSummaryDone: string;
   leadSummaryDoneDesc: (n: string) => string;
   /** Staff rail: expense-claim summary rows inside the সিস্টেম panel. */
+  expenseSummaryHeading: string;
   expenseSummaryCount: string;
   expenseSummaryClaimed: string;
   expenseSummaryDraft: string;
@@ -238,6 +239,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     leadSummaryWeekDesc: (n) => `${n}টি টাস্ক এই সপ্তাহে`,
     leadSummaryOverdue: "ওভারডিউ টাস্ক",
     leadSummaryOverdueDesc: (n) => `${n}টি টাস্ক সময় পার`,
+    expenseSummaryHeading: "এক্সপেন্স ক্লেম",
     expenseSummaryCount: "মোট ক্লেম",
     expenseSummaryClaimed: "মোট দাবি",
     expenseSummaryDraft: "ড্রাফট",
@@ -406,6 +408,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
     leadSummaryWeekDesc: (n) => `${n} this week`,
     leadSummaryOverdue: "Overdue tasks",
     leadSummaryOverdueDesc: (n) => `${n} past due`,
+    expenseSummaryHeading: "Expense claims",
     expenseSummaryCount: "Total claims",
     expenseSummaryClaimed: "Claimed",
     expenseSummaryDraft: "Draft",

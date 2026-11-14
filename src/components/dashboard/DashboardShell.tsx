@@ -59,6 +59,21 @@ import type { ExpenseClaimSummary } from "@/lib/expense-claim/types";
 import { fetchLeads, fetchLeadTasks } from "@/lib/leads/api";
 import type { LeadTasksSummary } from "@/lib/leads/types";
 import { fetchPayments } from "@/lib/payment-entry/api";
+
+/** One quick retry so a cold Next route (first hit compiles) can't leave a rail
+ *  stuck on its fallback rows for the rest of the visit. */
+async function withRetry<T>(fn: () => Promise<T>, tries = 2, delayMs = 900): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      last = error;
+      if (i < tries - 1) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw last;
+}
 import type { PaymentEntrySummary } from "@/lib/payment-entry/types";
 import {
   formatAmount as formatPayAmount,
@@ -222,10 +237,12 @@ export default function DashboardShell({
 
     let cancelled = false;
 
-    Promise.all([
-      fetchLeads({ language, mine: true, limit: 200 }),
-      fetchLeadTasks({ language, mine: true, window: "today" }),
-    ])
+    withRetry(() =>
+      Promise.all([
+        fetchLeads({ language, mine: true, limit: 200 }),
+        fetchLeadTasks({ language, mine: true, window: "today" }),
+      ])
+    )
       .then(([leadsPayload, tasksPayload]) => {
         if (cancelled) return;
         if (!leadsPayload.available || !tasksPayload.available) return;
@@ -254,7 +271,7 @@ export default function DashboardShell({
 
     let cancelled = false;
 
-    fetchExpenseClaims(language)
+    withRetry(() => fetchExpenseClaims(language))
       .then((payload) => {
         if (cancelled) return;
         setExpSummary(payload.summary);
@@ -1369,7 +1386,13 @@ export default function DashboardShell({
                     </PanelCard>
 
                     <PanelCard
-                      title={isClient ? copy.billSummaryHeading : copy.systemHeading}
+                      title={
+                        isClient
+                          ? copy.billSummaryHeading
+                          : expSummary
+                            ? copy.expenseSummaryHeading
+                            : copy.systemHeading
+                      }
                       testId="system"
                     >
                       <dl className="flex flex-col gap-2.5">

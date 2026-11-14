@@ -287,10 +287,27 @@ const LOCALES = {
     localStorage.setItem("shikkha-chat-site-language", "bn");
   });
   await staffPage.goto(`${NEXT}/userDashboard`, { waitUntil: "domcontentloaded", timeout: 120000 });
+
+  // The staff rail is its own summary now (leads/tasks tiles + expense-claim
+  // rows), so wait for those rows instead of the retired সার্ভার line.
+  const staffQuick = staffPage.locator('[data-panel="quick-links"]');
+  const staffSystem = staffPage.locator('[data-panel="system"]');
+  await staffQuick.locator("li", { hasText: "আমার লিড" }).first().waitFor({ state: "visible", timeout: 60000 });
+  await staffSystem.locator("dt", { hasText: "মোট ক্লেম" }).first().waitFor({ state: "visible", timeout: 60000 });
+
+  const staffQuickText = (await staffQuick.innerText().catch(() => "")) || "";
+  const staffSystemText = (await staffSystem.innerText().catch(() => "")) || "";
   const staffBody = (await staffPage.locator("body").innerText().catch(() => "")) || "";
-  check(staffBody.includes("সার্ভার"), "staff dashboard keeps its System (সার্ভার) row");
+  check(staffQuickText.includes("আমার লিড"), "staff কুইক লিংক panel shows the my-leads summary tile");
+  check(staffQuickText.includes("আজকের টাস্ক"), "staff কুইক লিংক panel shows the today's-tasks tile");
+  check(staffSystemText.includes("মোট ক্লেম"), "staff সিস্টেম panel shows the expense-claim summary");
+  check(!staffSystemText.includes("সার্ভার"), "staff সিস্টেম panel no longer shows the সার্ভার row");
   check(staffBody.includes(LOCALES.bn.staffHeadings.quick), "staff dashboard keeps the কুইক লিংক heading");
-  check(staffBody.includes(LOCALES.bn.staffHeadings.system), "staff dashboard keeps the সিস্টেম heading");
+  const staffSystemHeading = ((staffSystemText.split("\n")[0] ?? "") || "").trim();
+  check(
+    staffSystemHeading === "এক্সপেন্স ক্লেম",
+    `staff সিস্টেম panel title is now "এক্সপেন্স ক্লেম" (saw "${staffSystemHeading}")`
+  );
   check(
     !staffBody.includes(LOCALES.bn.headings.bill),
     "staff dashboard did not inherit the সার্ভিস বিল heading"

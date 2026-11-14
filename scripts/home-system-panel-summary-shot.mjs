@@ -126,6 +126,11 @@ const fmt = (n, lang) => new Intl.NumberFormat(lang === "en" ? "en-BD" : "bn-BD"
     const text = await panel.innerText();
     check(!text.includes("v16") && !text.toLowerCase().includes("api"), `[${language}] ERP system rows replaced`);
 
+    // The panel title now names the summary itself.
+    const heading = ((text.split("\n")[0] ?? "") || "").trim();
+    const wantHeading = language === "en" ? "Expense claims" : "এক্সপেন্স ক্লেম";
+    check(heading === wantHeading, `[${language}] panel title is "${wantHeading}" (saw "${heading}")`);
+
     await panel.scrollIntoViewIfNeeded();
     await panel.screenshot({ path: `${OUT}/home-system-panel-${language}.png` }).catch(async () => {
       await page.screenshot({ path: `${OUT}/home-system-panel-${language}.png`, fullPage: true });
