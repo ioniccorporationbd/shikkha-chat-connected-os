@@ -6,7 +6,9 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiChevronRight,
+  FiCheckSquare,
   FiDownload,
+  FiEdit3,
   FiFileText,
   FiPlus,
   FiPrinter,
@@ -339,12 +341,49 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
   const pageRows = claims.slice(pageStart, pageStart + rowsPerPage);
   const pageCopy = genericPaginationCopy(language);
 
-  const summaryCards: { key: string; label: string; value: string }[] = summary
+  // Summary tiles mirror the /userDashboard/leads task-board cards: each tile
+  // carries its own tone (icon + 10% tint) instead of the old uniform neutral box.
+  const summaryCards: {
+    key: string;
+    label: string;
+    value: string;
+    icon: typeof FiFileText;
+    tone: string;
+    bg: string;
+  }[] = summary
     ? [
-        { key: "total", label: copy.summaryTotal, value: String(summary.total) },
-        { key: "draft", label: copy.summaryDraft, value: String(summary.draft) },
-        { key: "approved", label: copy.summaryApproved, value: String(summary.approved) },
-        { key: "paid", label: copy.summaryPaid, value: String(summary.paid) },
+        {
+          key: "total",
+          label: copy.summaryTotal,
+          value: String(summary.total),
+          icon: FiFileText,
+          tone: "text-[#7c3aed]",
+          bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]",
+        },
+        {
+          key: "draft",
+          label: copy.summaryDraft,
+          value: String(summary.draft),
+          icon: FiEdit3,
+          tone: "text-[#b9770b]",
+          bg: "bg-[color-mix(in_srgb,#f59e0b_12%,var(--color-white))]",
+        },
+        {
+          key: "approved",
+          label: copy.summaryApproved,
+          value: String(summary.approved),
+          icon: FiCheckCircle,
+          tone: "text-[#2f9bff]",
+          bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]",
+        },
+        {
+          key: "paid",
+          label: copy.summaryPaid,
+          value: String(summary.paid),
+          icon: FiCheckSquare,
+          tone: "text-[#16a34a]",
+          bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]",
+        },
       ]
     : [];
 
@@ -488,18 +527,31 @@ export default function ExpenseClaimView({ onBack, onNew }: ExpenseClaimViewProp
                     {copy.summarySiteScope}
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  {summaryCards.map((card) => (
-                    <div
-                      key={card.key}
-                      className="flex flex-col gap-1 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_8%,var(--color-white))] p-4"
-                    >
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-                        {card.label}
-                      </span>
-                      <span className="text-[22px] font-semibold leading-tight">{card.value}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {summaryCards.map((card) => {
+                    const Icon = card.icon;
+                    return (
+                      <div
+                        key={card.key}
+                        data-expense-summary-card={card.key}
+                        className={`flex items-center gap-3 rounded-2xl ${card.bg} px-3.5 py-3`}
+                      >
+                        <span
+                          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--color-white)] ${card.tone} shadow-sm`}
+                        >
+                          <Icon size={16} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                            {card.label}
+                          </p>
+                          <p className="text-[17px] font-bold leading-tight text-[var(--color-primary)]">
+                            {card.value}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {summary ? (

@@ -6969,6 +6969,56 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (method === "shikkha_os.api.v1.leads.list_tasks") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const bn = String(url.searchParams.get("language") || "bn").toLowerCase().startsWith("bn");
+    const t = (en, bnText) => (bn ? bnText : en);
+    const isoDay = (offsetDays) => {
+      const day = new Date();
+      day.setDate(day.getDate() + offsetDays);
+      return day.toISOString().slice(0, 10);
+    };
+    const stamp = new Date().toISOString();
+    const mkTask = (name, title, dueOffset, status, priority) => ({
+      name,
+      title,
+      status,
+      priority,
+      type: t("Call", "কল"),
+      due_date: isoDay(dueOffset),
+      assigned_to: email,
+      assigned_label: account.full_name ?? "Tamim Hasan",
+      assigned_image: "",
+      lead: crmLeads[0]?.name ?? "",
+      created: stamp,
+      modified: stamp,
+    });
+    const tasks = [
+      mkTask("CRM-TASK-0001", t("Follow up on today's enquiry", "আজকের ইনকোয়ারি ফলো-আপ"), 0, "Todo", "High"),
+      mkTask("CRM-TASK-0002", t("Send fee structure", "ফি স্ট্রাকচার পাঠাও"), 2, "Todo", "Medium"),
+      mkTask("CRM-TASK-0003", t("Confirm campus visit", "ক্যাম্পাস ভিজিট নিশ্চিত করো"), 6, "In Progress", "Medium"),
+      mkTask("CRM-TASK-0004", t("Close pending quotation", "পেন্ডিং কোটেশন ক্লোজ করো"), -3, "Todo", "High"),
+      mkTask("CRM-TASK-0005", t("Log yesterday's call notes", "গতকালের কল নোট লিখে ফেলো"), -1, "Done", "Low"),
+    ];
+
+    ok(response, {
+      available: true,
+      window: "today",
+      tasks,
+      summary: { today: 1, week: 2, completed_week: 1, overdue: 1, all: tasks.length },
+      assignees: [{ value: email, label: account.full_name ?? "Tamim Hasan", image: "" }],
+      task_types: [{ value: t("Call", "কল"), label: t("Call", "কল") }],
+      has_type: true,
+    });
+    return;
+  }
+
   if (method === "shikkha_os.api.v1.leads.get_task_options") {
     const email = userFor(request);
     const account = email ? DEMO_USERS[email] : null;
