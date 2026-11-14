@@ -157,7 +157,18 @@ async function login() {
   );
   await page.locator("[data-lead-note-details]").first().click();
   await modal.waitFor({ state: "visible", timeout: 20000 });
-  await page.locator("[data-note-detail-warn]").waitFor({ state: "visible", timeout: 20000 });
+  // Let the failed fetch settle (it flips state out of "loading").
+  await page
+    .locator("[data-note-detail-loading]")
+    .waitFor({ state: "detached", timeout: 20000 })
+    .catch(() => {});
+  await page.waitForTimeout(600);
+  const modalText = ((await modal.innerText()) || "").toLowerCase();
+  check(
+    !modalText.includes("rejected the request") && !modalText.includes("try again"),
+    "failed load shows NO raw error sentence in the popup"
+  );
+  check((await page.locator("[data-note-detail-warn]").count()) === 0, "failed load shows no warning line");
   const fTitle = ((await page.locator("[data-note-detail-title]").innerText()) || "").trim();
   const fContent = ((await page.locator("[data-note-detail-content]").innerText()) || "").trim();
   check(fTitle.length > 0, `failed load still shows seeded Title ("${fTitle}")`);

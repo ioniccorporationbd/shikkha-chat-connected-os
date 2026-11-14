@@ -2674,7 +2674,6 @@ function NoteDetailModal({
   );
   const [title, setTitle] = useState(note.title || note.text || "");
   const [content, setContent] = useState(seedContent);
-  const [loadError, setLoadError] = useState<string | null>(noteName ? null : nd.notFound);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Load the note's full record; the row we were handed only has plain text.
@@ -2691,9 +2690,11 @@ function NoteDetailModal({
         setState("ready");
       } catch (cause) {
         if (cancelled) return;
+        // Read-only view: the row's seeded title/body stay on screen and the
+        // failure is only logged (console + ERP Error Log) — no error sentence
+        // is ever shown in the popup.
         setState("failed");
         const apiCause = cause instanceof ApiError ? cause : null;
-        setLoadError(apiCause ? apiCause.message : nd.notFound);
         reportClientError({
           scope: "leads:note-detail",
           message: "The lead note could not be opened",
@@ -2771,18 +2772,13 @@ function NoteDetailModal({
 
         {!noteName ? (
           <p role="alert" data-note-detail-error="" className="py-8 text-center text-[12.5px] font-medium text-[#d0453c]">
-            {loadError || nd.notFound}
+            {nd.notFound}
           </p>
         ) : (
           <div className="space-y-4">
             {state === "loading" ? (
               <p data-note-detail-loading="" className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 {nd.loading}
-              </p>
-            ) : null}
-            {state === "failed" ? (
-              <p role="status" data-note-detail-warn="" className="text-[11.5px] font-medium text-[#b26b00]">
-                {loadError || nd.notFound}
               </p>
             ) : null}
 
