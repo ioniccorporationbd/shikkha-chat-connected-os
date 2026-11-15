@@ -445,7 +445,7 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     [copy.colTerritory, "w-[116px]"],
                     [copy.colMobile, "w-[124px]"],
                     [copy.colEmail, ""],
-                    [copy.colAction, "w-[112px]"],
+                    [copy.colAction, "w-[140px]"],
                   ] as [string, string][]).map(([label, width]) => (
                     <th
                       key={label}
@@ -507,8 +507,8 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                         data-customer-details={row.name}
                         className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                       >
-                        <FiEye aria-hidden size={12} className="pointer-events-none shrink-0" />
-                        <span className="pointer-events-none whitespace-nowrap">{copy.details}</span>
+                        <FiEye size={12} className="pointer-events-none" />
+                        <span className="pointer-events-none">{copy.details}</span>
                       </button>
                     </td>
                   </tr>
