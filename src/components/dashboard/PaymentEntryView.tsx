@@ -619,7 +619,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                                 {payment.mode_of_payment || "—"}
                               </td>
                               <td className="px-4 py-3">
-                                <StatusBadge status={payment.display_status} copy={copy} />
+                                <StatusBadge status={payment.display_status} copy={copy} emphasis />
                               </td>
                               <td className="whitespace-nowrap px-4 py-3">
                                 <button
@@ -1092,13 +1092,48 @@ function paymentTypeLabel(payment: PaymentEntryRow, copy: PaymentEntryCopy): str
   return copy.paymentTypes[raw] || raw || "—";
 }
 
-function StatusBadge({ status, copy }: { status?: string; copy: PaymentEntryCopy }) {
+function StatusBadge({
+  status,
+  copy,
+  emphasis = false,
+}: {
+  status?: string;
+  copy: PaymentEntryCopy;
+  emphasis?: boolean;
+}) {
   const key = String(status || "").trim().toLowerCase();
   const label = copy.statuses[key as keyof typeof copy.statuses] || status || "—";
+  // In the payment table the two headline states get a filled tint: the
+  // পরিশোধিত (Paid) pill reads green and বকেয়া (Unpaid) reads red. Matched by
+  // label so both the submitted + paid keys (both "পরিশোধিত") light up and the
+  // Bangla/English copy stay in sync. Other states keep the neutral pill.
+  const isPaid = emphasis && label === copy.statuses.submitted;
+  const isUnpaid = emphasis && label === copy.statuses.draft;
+  const tint = isPaid
+    ? {
+        background: "color-mix(in srgb, var(--color-success) 14%, var(--color-white))",
+        borderColor: "color-mix(in srgb, var(--color-success) 40%, transparent)",
+        color: "var(--color-success)",
+      }
+    : isUnpaid
+      ? {
+          background: "color-mix(in srgb, var(--color-danger-strong) 12%, var(--color-white))",
+          borderColor: "color-mix(in srgb, var(--color-danger-strong) 38%, transparent)",
+          color: "var(--color-danger-strong)",
+        }
+      : undefined;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: statusTone(key) }} />
-      <span className="text-[11.5px] font-semibold">{label}</span>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1"
+      style={tint ? { background: tint.background, borderColor: tint.borderColor } : undefined}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: tint ? tint.color : statusTone(key) }}
+      />
+      <span className="text-[11.5px] font-semibold" style={tint ? { color: tint.color } : undefined}>
+        {label}
+      </span>
     </span>
   );
 }
