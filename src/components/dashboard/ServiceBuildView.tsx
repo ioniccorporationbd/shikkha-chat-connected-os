@@ -8,6 +8,7 @@ import {
   FiCheckCircle,
   FiChevronRight,
   FiDollarSign,
+  FiEye,
   FiFileText,
   FiHash,
   FiLayers,
@@ -545,8 +546,8 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                   </div>
                 ) : (
                   <>
-                    {/* desktop table */}
-                    <div className="hidden overflow-x-auto rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] md:block">
+                    {/* desktop table — mirrors পেমেন্ট তালিকা on the payment-entry page */}
+                    <div className="hidden overflow-x-auto rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] md:block">
                       <table className="w-full border-collapse text-left">
                         <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
                           <tr>
@@ -562,7 +563,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                             ].map((heading) => (
                               <th
                                 key={heading}
-                                className="whitespace-nowrap px-4 py-3.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                                className="whitespace-nowrap px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
                               >
                                 {heading}
                               </th>
@@ -573,35 +574,37 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                           {pageRows.map((invoice, index) => (
                             <tr
                               key={invoice.name}
-                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-colors hover:bg-[var(--color-action-tint)] [&>td]:py-3.5"
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
                             >
-                              <td className="px-4 py-3 text-[13px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                              <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                                 {pageStart + index + 1}
                               </td>
-                              <td className="px-4 py-3 text-[13px] font-semibold">{invoice.name}</td>
-                              <td className="px-4 py-3 text-[13px]">{formatDate(invoice.posting_date, language)}</td>
-                              <td className="px-4 py-3 text-[13px]">
+                              <td className="px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                                {invoice.name}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {formatDate(invoice.posting_date, language)}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
                                 {invoice.due_date ? formatDate(invoice.due_date, language) : "—"}
                               </td>
-                              <td className="px-4 py-3 text-[13px] font-medium">
+                              <td className="px-4 py-3 text-[12.5px] font-medium text-[var(--color-primary)]">
                                 {formatAmount(invoice.amount, invoice.currency || currency, language)}
                               </td>
-                              <td className="px-4 py-3 text-[13px]">
+                              <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
                                 {formatAmount(invoice.outstanding_amount, invoice.currency || currency, language)}
                               </td>
                               <td className="px-4 py-3">
-                                <StatusBadge status={invoice.display_status} copy={copy} />
+                                <StatusBadge status={invoice.display_status} copy={copy} emphasis />
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="whitespace-nowrap px-4 py-3">
                                 <button
                                   type="button"
                                   onClick={() => void openDetails(invoice.name)}
-                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                                 >
-                                  <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                    {copy.viewDetails}
-                                  </span>
-                                  <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+                                  <FiEye size={12} className="pointer-events-none" />
+                                  <span className="pointer-events-none">{copy.viewDetails}</span>
                                 </button>
                               </td>
                             </tr>
@@ -994,9 +997,11 @@ function CalmState({
 function StatusBadge({
   status,
   copy,
+  emphasis = false,
 }: {
   status: SalesInvoiceStatusKey | string;
   copy: ServiceBuildCopy;
+  emphasis?: boolean;
 }) {
   const map: Record<SalesInvoiceStatusKey, string> = {
     draft:
@@ -1021,6 +1026,43 @@ function StatusBadge({
   const known = (Object.keys(map) as SalesInvoiceStatusKey[]).includes(lower as SalesInvoiceStatusKey);
   const key: SalesInvoiceStatusKey = known ? (lower as SalesInvoiceStatusKey) : "unpaid";
   const label = known ? copy.statuses[key] ?? raw : raw || "—";
+
+  // Table view mirrors the payment-entry স্ট্যাটাস pills: a neutral dot + label,
+  // with the two headline states tinted — পরিশোধিত (paid) green, and anything
+  // still owed (বকেয়া draft / অপরিশোধিত unpaid / মেয়াদোত্তীর্ণ overdue) red.
+  if (emphasis) {
+    const isPaid = key === "paid";
+    const isDue = key === "draft" || key === "unpaid" || key === "overdue";
+    const tint = isPaid
+      ? {
+          background: "color-mix(in srgb, var(--color-success) 14%, var(--color-white))",
+          borderColor: "color-mix(in srgb, var(--color-success) 40%, transparent)",
+          color: "var(--color-success)",
+          dot: "var(--color-success)",
+        }
+      : isDue
+        ? {
+            background: "color-mix(in srgb, var(--color-danger-strong) 12%, var(--color-white))",
+            borderColor: "color-mix(in srgb, var(--color-danger-strong) 38%, transparent)",
+            color: "var(--color-danger-strong)",
+            dot: "var(--color-danger-strong)",
+          }
+        : undefined;
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1"
+        style={tint ? { background: tint.background, borderColor: tint.borderColor } : undefined}
+      >
+        <span
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: tint ? tint.dot : statusTone(key) }}
+        />
+        <span className="text-[11.5px] font-semibold" style={tint ? { color: tint.color } : undefined}>
+          {label}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 ${map[key]}`}>
