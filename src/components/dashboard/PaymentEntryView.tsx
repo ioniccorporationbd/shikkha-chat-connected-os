@@ -8,6 +8,7 @@ import {
   FiChevronRight,
   FiCreditCard,
   FiDollarSign,
+  FiEye,
   FiFileText,
   FiHash,
   FiLayers,
@@ -570,7 +571,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                 ) : (
                   <>
                     {/* desktop table */}
-                    <div className="hidden overflow-x-auto rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] md:block">
+                    <div className="hidden overflow-x-auto rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] md:block">
                       <table className="w-full border-collapse text-left">
                         <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
                           <tr>
@@ -586,7 +587,7 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                             ].map((heading) => (
                               <th
                                 key={heading}
-                                className="whitespace-nowrap px-4 py-3.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                                className="whitespace-nowrap px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
                               >
                                 {heading}
                               </th>
@@ -597,31 +598,37 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
                           {pageRows.map((payment, index) => (
                             <tr
                               key={payment.name}
-                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] transition-colors hover:bg-[var(--color-action-tint)] [&>td]:py-3.5"
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
                             >
-                              <td className="px-4 py-3 text-[13px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                              <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                                 {pageStart + index + 1}
                               </td>
-                              <td className="px-4 py-3 text-[13px] font-semibold">{payment.name}</td>
-                              <td className="px-4 py-3 text-[13px]">{formatDate(payment.posting_date, language)}</td>
-                              <td className="px-4 py-3 text-[13px]">{paymentTypeLabel(payment, copy)}</td>
-                              <td className="px-4 py-3 text-[13px] font-medium">
+                              <td className="px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                                {payment.name}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {formatDate(payment.posting_date, language)}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {paymentTypeLabel(payment, copy)}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] font-medium text-[var(--color-primary)]">
                                 {formatAmount(payment.amount, payment.currency || currency, language)}
                               </td>
-                              <td className="px-4 py-3 text-[13px]">{payment.mode_of_payment || "—"}</td>
+                              <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {payment.mode_of_payment || "—"}
+                              </td>
                               <td className="px-4 py-3">
                                 <StatusBadge status={payment.display_status} copy={copy} />
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="whitespace-nowrap px-4 py-3">
                                 <button
                                   type="button"
                                   onClick={() => void openDetails(payment.name)}
-                                  className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                                 >
-                                  <span className="text-[12px] font-semibold text-[var(--color-primary)]">
-                                    {copy.viewDetails}
-                                  </span>
-                                  <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+                                  <FiEye size={12} className="pointer-events-none" />
+                                  <span className="pointer-events-none">{copy.viewDetails}</span>
                                 </button>
                               </td>
                             </tr>
