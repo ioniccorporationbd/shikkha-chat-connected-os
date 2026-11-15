@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b2545" />
+    <title>অফলাইন — শিখা চ্যাট</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid;
+        place-items: center;
+        font-family: "Segoe UI", system-ui, -apple-system, "Noto Sans Bengali", sans-serif;
+        background: #f6f8fb;
+        color: #0b2545;
+        padding: 24px;
+        text-align: center;
+      }
+      .card {
+        max-width: 380px;
+        background: #fff;
+        border: 1px solid #e6ebf2;
+        border-radius: 24px;
+        padding: 32px 26px;
+        box-shadow: 0 18px 40px -24px rgba(11, 37, 69, 0.35);
+      }
+      .icon { width: 72px; height: 72px; margin: 0 auto 18px; display: block; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      p { font-size: 14px; line-height: 1.6; color: #54637a; margin: 0 0 22px; }
+      button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 600;
+        color: #fff;
+        background: #0b2545;
+        padding: 12px 22px;
+        border-radius: 999px;
+        transition: opacity 0.15s ease;
+      }
+      button:active { opacity: 0.8; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <img class="icon" src="/icons/icon-192.png" alt="Shikkha Chat" />
+      <h1>আপনি অফলাইন আছেন</h1>
+      <p>ইন্টারনেট সংযোগ ফিরে এলে আবার চেষ্টা করুন। আপনার আগের দেখা কিছু তথ্য এখনও দেখতে পাবেন।</p>
+      <button onclick="location.reload()">আবার চেষ্টা করুন</button>
+    </main>
+  </body>
+</html>

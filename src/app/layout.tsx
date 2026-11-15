@@ -1,10 +1,12 @@
 import { cookies } from "next/headers";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import AuthBootstrap from "@/components/auth/AuthBootstrap";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Toaster from "@/components/ui/Toaster";
+import InstallButton from "@/components/pwa/InstallButton";
+import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 import {
   LANGUAGE_COOKIE,
   normalizeLanguage,
@@ -14,6 +16,27 @@ import { LanguageProvider } from "@/lib/i18n/LanguageProvider";
 export const metadata: Metadata = {
   title: "Shikkha Chat",
   description: "Shikkha Chat Connected OS",
+  applicationName: "Shikkha Chat",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Shikkha Chat",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b2545",
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -96,6 +119,9 @@ export default async function RootLayout({
             {children}
             {/* Error / success / warning / info feedback for every surface. */}
             <Toaster />
+            {/* PWA: register the service worker + offer the install prompt. */}
+            <ServiceWorkerRegister />
+            <InstallButton />
           </LanguageProvider>
         </QueryProvider>
       </body>
