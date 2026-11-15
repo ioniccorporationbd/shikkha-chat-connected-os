@@ -430,8 +430,10 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
         </section>
       ) : (
         <>
-          {/* desktop table */}
-          <section className={`${CARD} hidden overflow-hidden p-0 lg:block`}>
+          {/* desktop table — overflow-x-auto so the wide 9-column grid (with the
+              অ্যাকশন / বিস্তারিত button) scrolls into view on narrow panes
+              instead of being clipped by overflow-hidden */}
+          <section className={`${CARD} hidden overflow-x-auto p-0 lg:block`}>
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
