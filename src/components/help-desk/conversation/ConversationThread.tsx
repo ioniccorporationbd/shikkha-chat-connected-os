@@ -461,16 +461,21 @@ export default function ConversationThread({
     const ordered = (row: ThreadRow) =>
       typeof row.sequence === "number" && Number.isFinite(row.sequence) ? row.sequence : null;
     entries.sort((a, b) => {
-      const firstOrder = ordered(a);
-      const secondOrder = ordered(b);
-      if (firstOrder !== null && secondOrder !== null && firstOrder !== secondOrder) {
-        return firstOrder - secondOrder;
-      }
+      // Chronological first: the thread must always read oldest -> newest by the
+      // message's own send time (date, then hour:minute:second). The ERP timeline
+      // position (`sequence`) only settles rows that share a second or carry no
+      // readable stamp — it must never reorder differently-timed rows, or a
+      // newest-first timeline would flip the whole conversation upside down.
       const first = stamp(a);
       const second = stamp(b);
       if (first !== null && second === null) return -1;
       if (first === null && second !== null) return 1;
       if (first !== null && second !== null && first !== second) return first - second;
+      const firstOrder = ordered(a);
+      const secondOrder = ordered(b);
+      if (firstOrder !== null && secondOrder !== null && firstOrder !== secondOrder) {
+        return firstOrder - secondOrder;
+      }
       return (position.get(a.key) ?? 0) - (position.get(b.key) ?? 0);
     });
 
