@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage } from "react-icons/fi";
 
 import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
-import { displayBody, erpStampOf, formatBubbleTime, formatFileSize } from "@/lib/help-desk/format";
+import { displayBody, erpStampOf, formatBubbleStamp, formatFileSize } from "@/lib/help-desk/format";
 import { isAudioAttachment, isImageAttachment } from "@/lib/help-desk/attachments";
 import { attachmentUrl } from "@/lib/help-desk/service";
 import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
@@ -132,7 +132,7 @@ export default function MessageBubble({
   const copiedTimer = useRef<number | null>(null);
 
   const stamp = erpStampOf(message);
-  const timeLabel = formatBubbleTime(stamp, language);
+  const timeLabel = formatBubbleStamp(stamp, language);
   const reactions = message.reactions ?? [];
   const canAct = Boolean(onQuote || onReact || onCopied);
 

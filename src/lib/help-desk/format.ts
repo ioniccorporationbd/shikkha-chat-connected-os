@@ -172,16 +172,21 @@ export function fillBlankStamps<T>(rows: readonly T[], fallback?: string): T[] {
     return text && !Number.isNaN(parseErpTimestamp(text).getTime()) ? text : "";
   };
   const out = rows.map((row) => ({ ...(row as object) }) as Record<string, unknown>);
+  // A row's moment may live under `createdAt` (the API's field) rather than
+  // `at`, so read it the way the bubble does (erpStampOf) — otherwise a
+  // trail of `createdAt`-only rows all look undated and every bubble is
+  // stamped with the ticket's own moment.
+  const ownStamp = (row: Record<string, unknown>) => usable(erpStampOf(row));
   let last = "";
   for (const row of out) {
-    const own = usable(row.at);
+    const own = ownStamp(row);
     if (own) last = own;
     else row.at = last;
   }
   let next = "";
   for (let index = out.length - 1; index >= 0; index -= 1) {
     const row = out[index];
-    const own = usable(row.at);
+    const own = ownStamp(row);
     if (own) next = own;
     else row.at = next || (fallback ?? "");
   }
@@ -312,6 +317,37 @@ export function formatBubbleTime(iso: string, language: string): string {
   } catch {
     // Fallback: the ERP stamp is ISO, so 11..19 is the Dhaka wall clock.
     return date.toISOString().slice(11, 19);
+  }
+}
+
+/**
+ * Date **and** time shown inside a chat bubble footer, e.g.
+ * `15 Nov 2026, 05:12:00 PM`.
+ *
+ * The chat needs to say which day a message belongs to together with the exact
+ * send time down to the second — a customer reading their own text/file bubble
+ * wants the date plus the hour, minute and second it was posted. Still
+ * Asia/Dhaka, still the ERP timestamp; only the date was added to the stamp.
+ */
+export function formatBubbleStamp(iso: string, language: string): string {
+  if (!iso) return "";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    // Fallback: ISO is `YYYY-MM-DDTHH:mm:ss…` — keep the date and the clock.
+    return date.toISOString().slice(0, 19).replace("T", " ");
   }
 }
 
