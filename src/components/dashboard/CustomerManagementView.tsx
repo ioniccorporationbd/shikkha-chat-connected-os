@@ -439,8 +439,8 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
                   {([
                     [copy.colSl, "w-[48px]"],
-                    [copy.colId, "w-[116px]"],
                     [copy.colName, ""],
+                    [copy.colType, "w-[104px]"],
                     [copy.colGroup, "w-[116px]"],
                     [copy.colTerritory, "w-[116px]"],
                     [copy.colMobile, "w-[124px]"],
@@ -466,16 +466,17 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                     <td className="px-4 py-3 text-[12.5px] font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
                       {pageStart + index + 1}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1 text-[12px] font-bold tabular-nums text-[var(--color-primary)]">
-                        {row.name}
-                      </span>
-                    </td>
                     <td
                       className="truncate px-4 py-3 text-[13px] font-medium text-[var(--color-primary)]"
                       title={cell(row.customer_name)}
                     >
                       {cell(row.customer_name)}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.customer_type)}
+                    >
+                      {cell(row.customer_type)}
                     </td>
                     <td
                       className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
