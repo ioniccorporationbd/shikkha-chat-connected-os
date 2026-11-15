@@ -430,26 +430,31 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
         </section>
       ) : (
         <>
-          {/* desktop table — overflow-x-auto so the wide 9-column grid (with the
-              অ্যাকশন / বিস্তারিত button) scrolls into view on narrow panes
-              instead of being clipped by overflow-hidden */}
-          <section className={`${CARD} hidden overflow-x-auto p-0 lg:block`}>
-            <table className="w-full border-collapse text-left">
+          {/* desktop table — ধরন column removed; table-fixed pins the grid to
+              the card width so there is no horizontal scrollbar, and the
+              অ্যাকশন / বিস্তারিত button stays fully visible at every width */}
+          <section className={`${CARD} hidden overflow-hidden p-0 lg:block`}>
+            <table className="w-full table-fixed border-collapse text-left">
               <thead>
                 <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
-                  {[copy.colSl, copy.colId, copy.colName, copy.colType, copy.colGroup, copy.colTerritory, copy.colMobile, copy.colEmail, copy.colAction].map(
-                    (label, index) => (
-                      <th
-                        key={label}
-                        scope="col"
-                        className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${
-                          index === 0 ? "w-[60px]" : ""
-                        }`}
-                      >
-                        {label}
-                      </th>
-                    )
-                  )}
+                  {([
+                    [copy.colSl, "w-[48px]"],
+                    [copy.colId, "w-[116px]"],
+                    [copy.colName, ""],
+                    [copy.colGroup, "w-[116px]"],
+                    [copy.colTerritory, "w-[116px]"],
+                    [copy.colMobile, "w-[124px]"],
+                    [copy.colEmail, ""],
+                    [copy.colAction, "w-[112px]"],
+                  ] as [string, string][]).map(([label, width]) => (
+                    <th
+                      key={label}
+                      scope="col"
+                      className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${width}`}
+                    >
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -466,22 +471,31 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                         {row.name}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[13px] font-medium text-[var(--color-primary)]">
+                    <td
+                      className="truncate px-4 py-3 text-[13px] font-medium text-[var(--color-primary)]"
+                      title={cell(row.customer_name)}
+                    >
                       {cell(row.customer_name)}
                     </td>
-                    <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
-                      {cell(row.customer_type)}
-                    </td>
-                    <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.customer_group)}
+                    >
                       {cell(row.customer_group)}
                     </td>
-                    <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.territory)}
+                    >
                       {cell(row.territory)}
                     </td>
                     <td className="px-4 py-3 text-[12.5px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
                       {cell(row.mobile_no)}
                     </td>
-                    <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.email_id)}
+                    >
                       {cell(row.email_id)}
                     </td>
                     <td className="px-4 py-3">
@@ -518,9 +532,6 @@ export default function CustomerManagementView({ onBack, onNew }: CustomerManage
                       <p className="text-[13px] font-bold tabular-nums text-[var(--color-primary)]">{row.name}</p>
                     </div>
                   </div>
-                  <span className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)]">
-                    {cell(row.customer_type)}
-                  </span>
                 </div>
 
                 <p className="mt-2 text-[14px] font-semibold text-[var(--color-primary)]">{cell(row.customer_name)}</p>
