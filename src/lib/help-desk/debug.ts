@@ -105,7 +105,13 @@ export function traceConversation(
   const timed = rows
     .map((row, index) => ({ index, ms: typeof row.epoch === "number" ? row.epoch : null }))
     .filter((entry) => entry.ms !== null) as { index: number; ms: number }[];
-  const brokenAt = timed.findIndex((entry, position) => position > 0 && entry.ms < timed[position - 1].ms);
+  // The renderer sorts by each message's own send time, and the ERP can hand the
+  // payload over newest-first or oldest-first. So a payload that is monotonic in
+  // EITHER direction is expected and fine — only a genuinely scrambled payload
+  // (neither ascending nor descending) is worth flagging.
+  const ascBreak = timed.findIndex((entry, position) => position > 0 && entry.ms < timed[position - 1].ms);
+  const descBreak = timed.findIndex((entry, position) => position > 0 && entry.ms > timed[position - 1].ms);
+  const brokenAt = ascBreak >= 0 && descBreak >= 0 ? ascBreak : -1;
 
   if (helpDeskDebugEnabled() && !options.quiet) {
     console.groupCollapsed(
@@ -127,10 +133,10 @@ export function traceConversation(
     console.table(rows);
     console.debug("raw payload as fetched (compare with message.activities[])", payload);
     console.info(
-      "order check (top row = first drawn)",
+      "order check (raw payload monotonicity; renderer sorts ascending by send time)",
       brokenAt < 0
-        ? `ascends in time ✓ (${timed.length}/${rows.length} dated)`
-        : `OUT OF ORDER at row ${timed[brokenAt].index + 1}`
+        ? `monotonic in time ✓ (${timed.length}/${rows.length} dated)`
+        : `SCRAMBLED at row ${timed[brokenAt].index + 1}`
     );
     if (undated.length) {
       console.warn(
@@ -160,7 +166,7 @@ export function traceConversation(
   if (brokenAt >= 0) {
     reportOnce(
       `${ticketId}:order`,
-      `Help Desk thread drew out of time order (ticket ${ticketId})`,
+      `Help Desk payload is scrambled in time (neither ascending nor descending, ticket ${ticketId})`,
       {
         ticket: ticketId,
         where,
