@@ -1259,6 +1259,7 @@ export default function HelpDeskTicketThread({
           language={language}
           isSupport={isSupport}
           stampOf={trailAt}
+          defaultOpen={false}
         />
       )}
 
