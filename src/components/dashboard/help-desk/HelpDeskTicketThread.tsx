@@ -1331,23 +1331,42 @@ export default function HelpDeskTicketThread({
           </div>
 
           <div className="mt-3 grid gap-3 lg:grid-cols-[15rem_1fr]">
-            <label className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
                 {copy.problemStatus}
               </span>
-              <select
-                value={statusValue}
-                onChange={(event) => setStatusValue(event.target.value)}
-                className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
-              >
-                <option value="">{copy.statusSelect}</option>
-                {(payload!.statuses ?? []).map((status) => (
-                  <option key={status.name} value={status.name}>
-                    {status.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={copy.problemStatus}>
+                {(payload!.statuses ?? [])
+                  .slice()
+                  .sort((a, b) => {
+                    const order = ["Open", "Replied", "Resolved", "Closed"];
+                    const rank = (name: string) => {
+                      const i = order.findIndex((o) => o.toLowerCase() === name.toLowerCase());
+                      return i === -1 ? order.length : i;
+                    };
+                    return rank(a.name) - rank(b.name);
+                  })
+                  .map((status) => {
+                    const active = status.name === statusValue;
+                    return (
+                      <button
+                        key={status.name}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setStatusValue(status.name)}
+                        className={
+                          active
+                            ? "rounded-full border border-[var(--color-action)] bg-[var(--color-action)] px-3 py-1.5 text-[12px] font-bold text-[var(--color-white)] transition"
+                            : "rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+                        }
+                      >
+                        {status.name}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
 
             <label className="flex flex-col gap-1">
               <span className="text-[11px] font-bold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
