@@ -21,6 +21,7 @@ export default function ConversationHeader({
   isSupport,
   statusLabel,
   unread = 0,
+  statusControl,
   actions,
 }: {
   copy: ConversationCopy;
@@ -30,6 +31,8 @@ export default function ConversationHeader({
   /** Localised label of `ticket.status`. */
   statusLabel: string;
   unread?: number;
+  /** Optional right-side control (e.g. a status dropdown) shown before actions. */
+  statusControl?: ReactNode;
   /** Right-hand controls (unread badge, See-all link, …). */
   actions?: ReactNode;
 }) {
@@ -89,6 +92,7 @@ export default function ConversationHeader({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {statusControl}
         {unread > 0 ? (
           <span className="rounded-full bg-[var(--color-action)] px-2 py-0.5 text-[10.5px] font-bold text-[var(--color-white)]">
             {copy.unreadBadge(unread)}

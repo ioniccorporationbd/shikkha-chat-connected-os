@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiChevronDown } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationActionLink from "@/components/dashboard/help-desk/ConversationActionLink";
@@ -315,6 +315,24 @@ export default function HelpDeskTicketThread({
   const [statusValue, setStatusValue] = useState("");
   const [resolution, setResolution] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  // Header status dropdown has its own busy flag so it never collides with the
+  // resolution panel's update button.
+  const [quickStatusBusy, setQuickStatusBusy] = useState(false);
+
+  // Header status dropdown: driven by the ticket's real HD Ticket Status list so
+  // every option is a valid ERP status the backend will accept. Ordered as the
+  // support lifecycle (Open → Replied → Resolved → Closed) when those names
+  // exist, otherwise in the ERP's own order.
+  const headerStatusOptions = useMemo(() => {
+    const list = payload?.statuses ?? [];
+    const preferred = ["Open", "Replied", "Resolved", "Closed"];
+    const rank = (name: string) => {
+      const index = preferred.findIndex((label) => label.toLowerCase() === name.toLowerCase());
+      return index === -1 ? preferred.length : index;
+    };
+    return [...list].sort((a, b) => rank(a.name) - rank(b.name));
+  }, [payload?.statuses]);
+  const headerStatusValue = payload?.currentStatus ?? "";
 
   // Paging: the immersive conversation route opens on the newest page instead
   // of the whole history and fetches one older page as the reader scrolls up.
@@ -740,6 +758,36 @@ export default function HelpDeskTicketThread({
       setStatusBusy(false);
     }
   }, [copy.statusFailed, copy.statusUpdated, mergeThread, resolution, statusBusy, statusValue, ticketId]);
+
+  // Header dropdown: a one-tap status change straight from the ticket header.
+  // It posts to the same ERP writer the panel below uses, so permissions and the
+  // backend's solution-required guard still apply. No solution is passed here, so
+  // choosing Resolved/Closed without a written solution is refused by the backend
+  // and surfaced as a toast — the status is never changed silently.
+  const changeStatus = useCallback(
+    async (next: string) => {
+      const target = String(next || "").trim();
+      if (!target || target === payload?.currentStatus || quickStatusBusy) return;
+      setQuickStatusBusy(true);
+      try {
+        const data = await setTicketStatus(ticketId, { status: target });
+        mergeThread(data);
+        toast.success(copy.statusUpdated);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        toast.error(message || copy.statusFailed);
+        console.error("[help-desk] header status change failed", ticketId, err);
+        reportClientError({
+          scope: "help-desk:status",
+          message: "Changing the ticket status from the header failed.",
+          detail: { ticket: ticketId, status: target, error: message || String(err) },
+        });
+      } finally {
+        setQuickStatusBusy(false);
+      }
+    },
+    [copy.statusFailed, copy.statusUpdated, mergeThread, payload?.currentStatus, quickStatusBusy, ticketId],
+  );
 
   // Closed tickets reject replies in this ERP. The only permitted way back is an
   // explicit reopen — never a silent status change.
@@ -1321,6 +1369,30 @@ export default function HelpDeskTicketThread({
           isSupport={isSupport}
           statusLabel={hdCopy.statuses[ticket.status] ?? ticket.status}
           unread={payload!.unread}
+          statusControl={
+            payload!.canChangeStatus && headerStatusOptions.length ? (
+              <label className="relative inline-flex items-center" title={copy.statusTitle}>
+                <span className="sr-only">{copy.statusTitle}</span>
+                <select
+                  value={headerStatusValue}
+                  disabled={quickStatusBusy}
+                  onChange={(event) => void changeStatus(event.target.value)}
+                  aria-label={copy.statusTitle}
+                  className="cursor-pointer appearance-none rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] py-1 pl-2.5 pr-6 text-[11px] font-bold text-[var(--color-primary)] outline-none transition hover:border-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] disabled:cursor-wait disabled:opacity-70"
+                >
+                  {headerStatusOptions.map((status) => (
+                    <option key={status.name} value={status.name}>
+                      {status.name}
+                    </option>
+                  ))}
+                </select>
+                <FiChevronDown
+                  aria-hidden
+                  className="pointer-events-none absolute right-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+                />
+              </label>
+            ) : undefined
+          }
           actions={
             allConversationsHref ? (
               <ConversationActionLink href={allConversationsHref} label={copy.allConversations} />

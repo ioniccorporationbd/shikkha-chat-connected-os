@@ -2675,6 +2675,7 @@ function hdConversation(name, support, { limit = 0, cursor = "", since = "" } = 
     statuses: support
       ? [
           { name: "Open", category: "Open" },
+          { name: "Replied", category: "Paused" },
           { name: "Resolved", category: "Resolved" },
           { name: "Closed", category: "Closed" },
         ]
@@ -6695,6 +6696,48 @@ const server = createServer(async (request, response) => {
         return;
       }
       ok(response, payload);
+      return;
+    }
+
+    if (action === "set_ticket_status") {
+      const body = await readBody(request);
+      const data = body && typeof body.data === "object" && body.data ? body.data : body ?? {};
+      const name = String(data.name ?? url.searchParams.get("name") ?? "").trim();
+      const target = String(data.status ?? "").trim();
+      const solution = String(data.resolution ?? "").trim();
+      const thread = hdThreads.get(name);
+      const catalogue = [
+        { name: "Open", category: "Open" },
+        { name: "Replied", category: "Paused" },
+        { name: "Resolved", category: "Resolved" },
+        { name: "Closed", category: "Closed" },
+      ];
+      const chosen = catalogue.find((entry) => entry.name.toLowerCase() === target.toLowerCase());
+      if (!thread || !chosen) {
+        failure(response, 417, "ValidationError", "That status could not be applied.", "Help Desk");
+        return;
+      }
+      // Mirrors the backend's solution-required guard: Resolved/Closed need a
+      // written solution, otherwise the ticket would close without its answer.
+      if ((chosen.category === "Resolved" || chosen.category === "Closed") && !solution) {
+        failure(response, 417, "ValidationError", "A solution is required before this status.", "Help Desk");
+        return;
+      }
+      thread.currentStatus = chosen.name;
+      thread.statusCategory = chosen.category;
+      thread.status =
+        chosen.category === "Resolved"
+          ? "resolved"
+          : chosen.category === "Closed"
+            ? "closed"
+            : chosen.category === "Paused"
+              ? "waiting_for_user"
+              : "open";
+      if (chosen.category === "Resolved" || chosen.category === "Closed") {
+        thread.resolvedAt = new Date().toISOString();
+      }
+      console.log(`[mock-frappe] HD STATUS ${name} -> ${chosen.name} (${thread.status})`);
+      ok(response, hdConversation(name, support, {}));
       return;
     }
 
