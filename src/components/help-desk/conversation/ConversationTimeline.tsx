@@ -90,6 +90,7 @@ export interface ConversationTimelineProps {
 export default function ConversationTimeline({
   events,
   language,
+  isSupport,
   stampOf,
   defaultOpen = true,
 }: ConversationTimelineProps) {
@@ -107,13 +108,49 @@ export default function ConversationTimeline({
   };
 
   if (!events.length) {
+    // Staff keeps the original flat note. On the client dashboard the section
+    // must read exactly like the staff one, so a ticket with nothing filed yet
+    // still shows the same collapsible card — clock + chevron, closed by
+    // default, opening on click — never a bare stub with no toggle to press.
+    if (isSupport !== false) {
+      return (
+        <section className="rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5 shadow-[0_16px_40px_-32px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.timelineTitle}</h2>
+          <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+            {copy.timelineEmpty}
+          </p>
+        </section>
+      );
+    }
     return (
-      <section className="rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5 shadow-[0_16px_40px_-32px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-        <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.timelineTitle}</h2>
+      <details
+        open={open}
+        onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}
+        data-hd="activity"
+        className="group rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5 shadow-[0_16px_40px_-32px_color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <div>
+            <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.timelineTitle}</h2>
+            <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {copy.timelineHint}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-2.5 py-1 text-[11px] font-bold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+              <FiClock aria-hidden />
+              {copy.timelineCount(0)}
+            </span>
+            <FiChevronDown
+              aria-hidden
+              className="text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition-transform group-open:rotate-180"
+            />
+          </span>
+        </summary>
         <p className="mt-1 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
           {copy.timelineEmpty}
         </p>
-      </section>
+      </details>
     );
   }
 
