@@ -78,6 +78,20 @@ const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-pri
 const POLL_INTERVAL_MS = 4_000;
 
 /**
+ * Default HD Ticket Status rows (name + category) from the ERP's
+ * `HD Ticket Status` doctype. Used as a fallback so the status dropdown still
+ * renders Open / Replied / Resolved / Closed on deployments whose conversation
+ * payload does not yet ship the live `statuses` array. The backend's real list
+ * wins whenever it is present.
+ */
+const STATUS_FALLBACK: { name: string; category: string }[] = [
+  { name: "Open", category: "Open" },
+  { name: "Replied", category: "Paused" },
+  { name: "Resolved", category: "Resolved" },
+  { name: "Closed", category: "Closed" },
+];
+
+/**
  * Did the call fail because the portal session ended?
  *
  * The API routes answer a dead/expired `sid` with 401 + `not_authenticated`
@@ -324,7 +338,8 @@ export default function HelpDeskTicketThread({
   // support lifecycle (Open → Replied → Resolved → Closed) when those names
   // exist, otherwise in the ERP's own order.
   const headerStatusOptions = useMemo(() => {
-    const list = payload?.statuses ?? [];
+    const list =
+      payload?.statuses && payload.statuses.length ? payload.statuses : STATUS_FALLBACK;
     const preferred = ["Open", "Replied", "Resolved", "Closed"];
     const rank = (name: string) => {
       const index = preferred.findIndex((label) => label.toLowerCase() === name.toLowerCase());
@@ -1341,7 +1356,10 @@ export default function HelpDeskTicketThread({
                 className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
               >
                 <option value="">{copy.statusSelect}</option>
-                {(payload!.statuses ?? []).map((status) => (
+                {(payload!.statuses && payload!.statuses.length
+                  ? payload!.statuses
+                  : STATUS_FALLBACK
+                ).map((status) => (
                   <option key={status.name} value={status.name}>
                     {status.name}
                   </option>
