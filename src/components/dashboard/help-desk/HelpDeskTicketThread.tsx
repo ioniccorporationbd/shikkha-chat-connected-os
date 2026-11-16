@@ -92,6 +92,25 @@ const STATUS_FALLBACK: { name: string; category: string }[] = [
 ];
 
 /**
+ * Bangla / English display labels for the standard HD Ticket Status names.
+ * The dropdown POSTs the raw ERP name — only the visible option text is
+ * translated, so a Bengali site shows খোলা / উত্তর দেওয়া হয়েছে / সমাধান হয়েছে /
+ * বন্ধ while the English site shows Open / Replied / Resolved / Closed. Custom
+ * status names are shown as-is. Keyed case-insensitively by the ERP name.
+ */
+const STATUS_OPTION_LABELS: Record<string, { bn: string; en: string }> = {
+  open: { bn: "খোলা", en: "Open" },
+  replied: { bn: "উত্তর দেওয়া হয়েছে", en: "Replied" },
+  resolved: { bn: "সমাধান হয়েছে", en: "Resolved" },
+  closed: { bn: "বন্ধ", en: "Closed" },
+};
+
+function statusOptionLabel(name: string, language: string): string {
+  const entry = STATUS_OPTION_LABELS[name.trim().toLowerCase()];
+  return entry ? entry[language === "en" ? "en" : "bn"] : name;
+}
+
+/**
  * Did the call fail because the portal session ended?
  *
  * The API routes answer a dead/expired `sid` with 401 + `not_authenticated`
@@ -333,20 +352,25 @@ export default function HelpDeskTicketThread({
   // resolution panel's update button.
   const [quickStatusBusy, setQuickStatusBusy] = useState(false);
 
+  // The option list shared by the panel select, the header quick-dropdown and
+  // the submit guard. Falls back to STATUS_FALLBACK so a deployment that does
+  // not ship `statuses` still gets a usable, correctly-categorised list.
+  const statusOptions = useMemo(
+    () => (payload?.statuses && payload.statuses.length ? payload.statuses : STATUS_FALLBACK),
+    [payload?.statuses],
+  );
   // Header status dropdown: driven by the ticket's real HD Ticket Status list so
   // every option is a valid ERP status the backend will accept. Ordered as the
   // support lifecycle (Open → Replied → Resolved → Closed) when those names
   // exist, otherwise in the ERP's own order.
   const headerStatusOptions = useMemo(() => {
-    const list =
-      payload?.statuses && payload.statuses.length ? payload.statuses : STATUS_FALLBACK;
     const preferred = ["Open", "Replied", "Resolved", "Closed"];
     const rank = (name: string) => {
       const index = preferred.findIndex((label) => label.toLowerCase() === name.toLowerCase());
       return index === -1 ? preferred.length : index;
     };
-    return [...list].sort((a, b) => rank(a.name) - rank(b.name));
-  }, [payload?.statuses]);
+    return [...statusOptions].sort((a, b) => rank(a.name) - rank(b.name));
+  }, [statusOptions]);
   const headerStatusValue = payload?.currentStatus ?? "";
 
   // Paging: the immersive conversation route opens on the newest page instead
@@ -752,6 +776,19 @@ export default function HelpDeskTicketThread({
 
   const submitStatus = useCallback(async () => {
     if (statusBusy) return;
+    // Guard before the call: the backend requires a written resolution before
+    // Resolved/Closed. Prompt for it here with a localised message instead of
+    // firing a request the backend will reject (which used to surface as a raw
+    // "Updating the ticket status failed." error card).
+    const selectedCategory =
+      statusOptions.find((status) => status.name === statusValue)?.category ?? "";
+    if (
+      (selectedCategory === "Resolved" || selectedCategory === "Closed") &&
+      !resolution.trim()
+    ) {
+      toast.error(copy.statusSolutionRequired);
+      return;
+    }
     setStatusBusy(true);
     try {
       // The backend writes the solution Communication before the status change,
@@ -772,7 +809,7 @@ export default function HelpDeskTicketThread({
     } finally {
       setStatusBusy(false);
     }
-  }, [copy.statusFailed, copy.statusUpdated, mergeThread, resolution, statusBusy, statusValue, ticketId]);
+  }, [copy.statusFailed, copy.statusSolutionRequired, copy.statusUpdated, mergeThread, resolution, statusBusy, statusOptions, statusValue, ticketId]);
 
   // Header dropdown: a one-tap status change straight from the ticket header.
   // It posts to the same ERP writer the panel below uses, so permissions and the
@@ -1356,12 +1393,9 @@ export default function HelpDeskTicketThread({
                 className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
               >
                 <option value="">{copy.statusSelect}</option>
-                {(payload!.statuses && payload!.statuses.length
-                  ? payload!.statuses
-                  : STATUS_FALLBACK
-                ).map((status) => (
+                {statusOptions.map((status) => (
                   <option key={status.name} value={status.name}>
-                    {status.name}
+                    {statusOptionLabel(status.name, language)}
                   </option>
                 ))}
               </select>
@@ -1403,7 +1437,7 @@ export default function HelpDeskTicketThread({
                 >
                   {headerStatusOptions.map((status) => (
                     <option key={status.name} value={status.name}>
-                      {status.name}
+                      {statusOptionLabel(status.name, language)}
                     </option>
                   ))}
                 </select>
