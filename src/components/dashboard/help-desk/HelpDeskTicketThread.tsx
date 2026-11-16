@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiChevronDown } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationActionLink from "@/components/dashboard/help-desk/ConversationActionLink";
@@ -76,6 +76,39 @@ const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-pri
  * one tiny indexed query.
  */
 const POLL_INTERVAL_MS = 4_000;
+
+/**
+ * Default HD Ticket Status rows (name + category) from the ERP's
+ * `HD Ticket Status` doctype. Used as a fallback so the status dropdown still
+ * renders Open / Replied / Resolved / Closed on deployments whose conversation
+ * payload does not yet ship the live `statuses` array. The backend's real list
+ * wins whenever it is present.
+ */
+const STATUS_FALLBACK: { name: string; category: string }[] = [
+  { name: "Open", category: "Open" },
+  { name: "Replied", category: "Paused" },
+  { name: "Resolved", category: "Resolved" },
+  { name: "Closed", category: "Closed" },
+];
+
+/**
+ * Bangla / English display labels for the standard HD Ticket Status names.
+ * The dropdown POSTs the raw ERP name — only the visible option text is
+ * translated, so a Bengali site shows খোলা / উত্তর দেওয়া হয়েছে / সমাধান হয়েছে /
+ * বন্ধ while the English site shows Open / Replied / Resolved / Closed. Custom
+ * status names are shown as-is. Keyed case-insensitively by the ERP name.
+ */
+const STATUS_OPTION_LABELS: Record<string, { bn: string; en: string }> = {
+  open: { bn: "খোলা", en: "Open" },
+  replied: { bn: "উত্তর দেওয়া হয়েছে", en: "Replied" },
+  resolved: { bn: "সমাধান হয়েছে", en: "Resolved" },
+  closed: { bn: "বন্ধ", en: "Closed" },
+};
+
+function statusOptionLabel(name: string, language: string): string {
+  const entry = STATUS_OPTION_LABELS[name.trim().toLowerCase()];
+  return entry ? entry[language === "en" ? "en" : "bn"] : name;
+}
 
 /**
  * Did the call fail because the portal session ended?
@@ -315,6 +348,30 @@ export default function HelpDeskTicketThread({
   const [statusValue, setStatusValue] = useState("");
   const [resolution, setResolution] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  // Header status dropdown has its own busy flag so it never collides with the
+  // resolution panel's update button.
+  const [quickStatusBusy, setQuickStatusBusy] = useState(false);
+
+  // The option list shared by the panel select, the header quick-dropdown and
+  // the submit guard. Falls back to STATUS_FALLBACK so a deployment that does
+  // not ship `statuses` still gets a usable, correctly-categorised list.
+  const statusOptions = useMemo(
+    () => (payload?.statuses && payload.statuses.length ? payload.statuses : STATUS_FALLBACK),
+    [payload?.statuses],
+  );
+  // Header status dropdown: driven by the ticket's real HD Ticket Status list so
+  // every option is a valid ERP status the backend will accept. Ordered as the
+  // support lifecycle (Open → Replied → Resolved → Closed) when those names
+  // exist, otherwise in the ERP's own order.
+  const headerStatusOptions = useMemo(() => {
+    const preferred = ["Open", "Replied", "Resolved", "Closed"];
+    const rank = (name: string) => {
+      const index = preferred.findIndex((label) => label.toLowerCase() === name.toLowerCase());
+      return index === -1 ? preferred.length : index;
+    };
+    return [...statusOptions].sort((a, b) => rank(a.name) - rank(b.name));
+  }, [statusOptions]);
+  const headerStatusValue = payload?.currentStatus ?? "";
 
   // Paging: the immersive conversation route opens on the newest page instead
   // of the whole history and fetches one older page as the reader scrolls up.
@@ -719,6 +776,19 @@ export default function HelpDeskTicketThread({
 
   const submitStatus = useCallback(async () => {
     if (statusBusy) return;
+    // Guard before the call: the backend requires a written resolution before
+    // Resolved/Closed. Prompt for it here with a localised message instead of
+    // firing a request the backend will reject (which used to surface as a raw
+    // "Updating the ticket status failed." error card).
+    const selectedCategory =
+      statusOptions.find((status) => status.name === statusValue)?.category ?? "";
+    if (
+      (selectedCategory === "Resolved" || selectedCategory === "Closed") &&
+      !resolution.trim()
+    ) {
+      toast.error(copy.statusSolutionRequired);
+      return;
+    }
     setStatusBusy(true);
     try {
       // The backend writes the solution Communication before the status change,
@@ -739,7 +809,37 @@ export default function HelpDeskTicketThread({
     } finally {
       setStatusBusy(false);
     }
-  }, [copy.statusFailed, copy.statusUpdated, mergeThread, resolution, statusBusy, statusValue, ticketId]);
+  }, [copy.statusFailed, copy.statusSolutionRequired, copy.statusUpdated, mergeThread, resolution, statusBusy, statusOptions, statusValue, ticketId]);
+
+  // Header dropdown: a one-tap status change straight from the ticket header.
+  // It posts to the same ERP writer the panel below uses, so permissions and the
+  // backend's solution-required guard still apply. No solution is passed here, so
+  // choosing Resolved/Closed without a written solution is refused by the backend
+  // and surfaced as a toast — the status is never changed silently.
+  const changeStatus = useCallback(
+    async (next: string) => {
+      const target = String(next || "").trim();
+      if (!target || target === payload?.currentStatus || quickStatusBusy) return;
+      setQuickStatusBusy(true);
+      try {
+        const data = await setTicketStatus(ticketId, { status: target });
+        mergeThread(data);
+        toast.success(copy.statusUpdated);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        toast.error(message || copy.statusFailed);
+        console.error("[help-desk] header status change failed", ticketId, err);
+        reportClientError({
+          scope: "help-desk:status",
+          message: "Changing the ticket status from the header failed.",
+          detail: { ticket: ticketId, status: target, error: message || String(err) },
+        });
+      } finally {
+        setQuickStatusBusy(false);
+      }
+    },
+    [copy.statusFailed, copy.statusUpdated, mergeThread, payload?.currentStatus, quickStatusBusy, ticketId],
+  );
 
   // Closed tickets reject replies in this ERP. The only permitted way back is an
   // explicit reopen — never a silent status change.
@@ -1259,15 +1359,28 @@ export default function HelpDeskTicketThread({
           language={language}
           isSupport={isSupport}
           stampOf={trailAt}
+          defaultOpen={false}
         />
       )}
 
       {!chatOnly && payload!.canChangeStatus ? (
         <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
-          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
-          <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-            {copy.statusHint}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
+              <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {copy.statusHint}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void submitStatus()}
+              disabled={statusBusy || !statusValue}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            >
+              {statusBusy ? copy.statusUpdating : copy.statusUpdate}
+            </button>
+          </div>
 
           <div className="mt-3 grid gap-3 lg:grid-cols-[15rem_1fr]">
             <label className="flex flex-col gap-1">
@@ -1280,9 +1393,9 @@ export default function HelpDeskTicketThread({
                 className="rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-2.5 py-2 text-[12.5px] font-semibold text-[var(--color-primary)] outline-none focus:border-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
               >
                 <option value="">{copy.statusSelect}</option>
-                {(payload!.statuses ?? []).map((status) => (
+                {statusOptions.map((status) => (
                   <option key={status.name} value={status.name}>
-                    {status.name}
+                    {statusOptionLabel(status.name, language)}
                   </option>
                 ))}
               </select>
@@ -1301,15 +1414,6 @@ export default function HelpDeskTicketThread({
               />
             </label>
           </div>
-
-          <button
-            type="button"
-            onClick={() => void submitStatus()}
-            disabled={statusBusy || !statusValue}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-          >
-            {statusBusy ? copy.statusUpdating : copy.statusUpdate}
-          </button>
         </section>
       ) : null}
 
@@ -1320,6 +1424,30 @@ export default function HelpDeskTicketThread({
           isSupport={isSupport}
           statusLabel={hdCopy.statuses[ticket.status] ?? ticket.status}
           unread={payload!.unread}
+          statusControl={
+            payload!.canChangeStatus && headerStatusOptions.length ? (
+              <label className="relative inline-flex items-center" title={copy.statusTitle}>
+                <span className="sr-only">{copy.statusTitle}</span>
+                <select
+                  value={headerStatusValue}
+                  disabled={quickStatusBusy}
+                  onChange={(event) => void changeStatus(event.target.value)}
+                  aria-label={copy.statusTitle}
+                  className="cursor-pointer appearance-none rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] py-1 pl-2.5 pr-6 text-[11px] font-bold text-[var(--color-primary)] outline-none transition hover:border-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] disabled:cursor-wait disabled:opacity-70"
+                >
+                  {headerStatusOptions.map((status) => (
+                    <option key={status.name} value={status.name}>
+                      {statusOptionLabel(status.name, language)}
+                    </option>
+                  ))}
+                </select>
+                <FiChevronDown
+                  aria-hidden
+                  className="pointer-events-none absolute right-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+                />
+              </label>
+            ) : undefined
+          }
           actions={
             allConversationsHref ? (
               <ConversationActionLink href={allConversationsHref} label={copy.allConversations} />

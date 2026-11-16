@@ -216,6 +216,7 @@ export interface ConversationCopy {
   statusUpdating: string;
   statusUpdated: string;
   statusFailed: string;
+  statusSolutionRequired: string;
   resolutionMark: string;
   resolutionBadge: string;
 
@@ -439,6 +440,7 @@ const bn: ConversationCopy = {
   statusUpdating: "হালনাগাদ হচ্ছে…",
   statusUpdated: "স্ট্যাটাস হালনাগাদ হয়েছে।",
   statusFailed: "স্ট্যাটাস হালনাগাদ করা যায়নি।",
+  statusSolutionRequired: "ক্লোজ বা সমাধান চিহ্নিত করার আগে সমাধানের বিবরণ লিখুন।",
   resolutionMark: "সমাধান হিসেবে চিহ্নিত করুন",
   resolutionBadge: "সমাধান",
 
@@ -659,6 +661,7 @@ const en: ConversationCopy = {
   statusUpdating: "Updating…",
   statusUpdated: "Status updated.",
   statusFailed: "The status could not be updated.",
+  statusSolutionRequired: "Write the solution details before closing or marking this resolved.",
   resolutionMark: "Mark as the solution",
   resolutionBadge: "Solution",
 
