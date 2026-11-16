@@ -1313,10 +1313,22 @@ export default function HelpDeskTicketThread({
 
       {!chatOnly && payload!.canChangeStatus ? (
         <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 sm:p-5 ${CARD_SHADOW}`}>
-          <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
-          <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-            {copy.statusHint}
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-[13.5px] font-bold text-[var(--color-primary)]">{copy.statusTitle}</h2>
+              <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {copy.statusHint}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void submitStatus()}
+              disabled={statusBusy || !statusValue}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            >
+              {statusBusy ? copy.statusUpdating : copy.statusUpdate}
+            </button>
+          </div>
 
           <div className="mt-3 grid gap-3 lg:grid-cols-[15rem_1fr]">
             <label className="flex flex-col gap-1">
@@ -1350,15 +1362,6 @@ export default function HelpDeskTicketThread({
               />
             </label>
           </div>
-
-          <button
-            type="button"
-            onClick={() => void submitStatus()}
-            disabled={statusBusy || !statusValue}
-            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[var(--color-action)] px-3.5 py-2 text-[12.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-          >
-            {statusBusy ? copy.statusUpdating : copy.statusUpdate}
-          </button>
         </section>
       ) : null}
 
