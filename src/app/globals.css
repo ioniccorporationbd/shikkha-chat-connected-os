@@ -2629,3 +2629,18 @@ html[data-lang="en"] .language-toggle-knob {
   white-space: nowrap;
 }
 
+
+/* HelpDeskOverview root table: keep the six columns at a comfortable width
+   inside the dashboard panel. The panel is ~200px narrower than the viewport
+   (sidebar), so a `lg` (1024px) viewport can still be a sub-900px panel; below
+   the width the columns need, the table scrolls horizontally inside the panel
+   instead of crushing the বিষয় column and clipping the date. Unlayered so it
+   wins over @layer utilities. Mobile (<1024px) keeps the compact card. */
+@media (min-width: 1024px) {
+  .hd-hdtable-scroll {
+    overflow-x: auto;
+  }
+  .hd-hdtable-scroll > .hd-hdtable-inner {
+    min-width: 56rem !important;
+  }
+}

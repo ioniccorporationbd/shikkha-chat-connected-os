@@ -304,31 +304,41 @@ export default function HelpDeskOverview({
                   {tab === "recent" ? copy.recentEmpty : copy.unresolvedEmpty}
                 </p>
               ) : (
-                <>
-                  <div
-                    className={`hidden ${TABLE_COLS} items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-4 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.06em] ${MUTED} lg:grid`}
-                  >
-                    <span>{copy.colTicketId}</span>
-                    <span>{copy.colSubject}</span>
-                    <span>{copy.colCustomer}</span>
-                    <span>{copy.colStatus}</span>
-                    <span>{copy.colPriority}</span>
-                    <span>{copy.colCreatedAt}</span>
-                    <span aria-hidden />
+                /* On wide dashboards the six columns fit and this reads as a
+                    plain aligned table (no scroll). When the panel is narrower
+                    than the columns need (the sidebar eats ~200px of viewport
+                    width, so a `lg` viewport can still be a sub-900px panel),
+                    the table keeps every column at a comfortable width and
+                    scrolls horizontally inside the panel instead of crushing
+                    the বিষয় column to zero and clipping the date. Below `lg`
+                    the existing compact card layout is untouched. */
+                <div className="hd-hdtable-scroll">
+                  <div className="hd-hdtable-inner">
+                    <div
+                      className={`hidden ${TABLE_COLS} items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-4 pb-2 text-[10.5px] font-semibold uppercase tracking-[0.06em] ${MUTED} lg:grid`}
+                    >
+                      <span>{copy.colTicketId}</span>
+                      <span>{copy.colSubject}</span>
+                      <span>{copy.colCustomer}</span>
+                      <span>{copy.colStatus}</span>
+                      <span>{copy.colPriority}</span>
+                      <span>{copy.colCreatedAt}</span>
+                      <span aria-hidden />
+                    </div>
+                    <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
+                      {active.slice(0, MAX_ROWS).map((ticket) => (
+                        <TicketTableRow
+                          key={ticket.id}
+                          ticket={ticket}
+                          copy={copy}
+                          language={language}
+                          href={links.ticket(ticket.id)}
+                          unseen={unseen}
+                        />
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
-                    {active.slice(0, MAX_ROWS).map((ticket) => (
-                      <TicketTableRow
-                        key={ticket.id}
-                        ticket={ticket}
-                        copy={copy}
-                        language={language}
-                        href={links.ticket(ticket.id)}
-                        unseen={unseen}
-                      />
-                    ))}
-                  </ul>
-                </>
+                </div>
               )}
             </div>
           </section>
