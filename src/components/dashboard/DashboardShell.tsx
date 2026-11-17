@@ -420,7 +420,6 @@ export default function DashboardShell({
   const onHelpDeskNew = helpDeskSuffix === "/new";
   const onHelpDeskTickets = helpDeskSuffix === "/tickets";
   const onHelpDeskSolved = helpDeskSuffix === "/solved";
-  const onHelpDeskCompleted = helpDeskSuffix === "/completed";
   const onHelpDeskConversation = /^\/tickets\/[^/]+\/conversation$/.test(helpDeskSuffix);
   const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/") && !onHelpDeskConversation;
   const onHelpDeskProblems = helpDeskSuffix === "/problems";
@@ -442,9 +441,7 @@ export default function DashboardShell({
         ? "tickets"
         : onHelpDeskSolved
           ? "solved"
-          : onHelpDeskCompleted
-            ? "completed"
-            : onHelpDeskProblems
+          : onHelpDeskProblems
                 ? "problems"
                 : onHelpDeskProblem
                   ? "problem"

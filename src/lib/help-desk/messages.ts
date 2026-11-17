@@ -350,7 +350,6 @@ export interface HelpDeskCopy {
   quickActions: string;
   quickOpenTickets: string;
   quickResolvedTickets: string;
-  quickCompletedTickets: string;
   quickSearchTickets: string;
   recentActivity: string;
   recentEmpty: string;
@@ -511,10 +510,10 @@ const bn: HelpDeskCopy = {
   listTitle: "আমার টিকিট",
   listSubtitle: "আপনার তৈরি করা টিকিটের অবস্থা ও অগ্রগতি।",
   solvedTitle: "সমাধান হওয়া টিকিট",
-  solvedSubtitle: "যেসব টিকিট সমাধান হয়ে বন্ধ হয়েছে সেগুলোর তালিকা।",
-  solvedOnlyNote: "শুধু ক্লোজড স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
-  solvedEmptyTitle: "এখনও কোনো বন্ধ হওয়া টিকিট নেই।",
-  solvedEmptyHint: "টিকিট সমাধান হয়ে বন্ধ হলে সেটি এখানে দেখা যাবে।",
+  solvedSubtitle: "যেসব টিকিট সমাধান হয়ে সম্পন্ন হয়েছে সেগুলোর তালিকা।",
+  solvedOnlyNote: "শুধু রিজলভড স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
+  solvedEmptyTitle: "এখনও কোনো সমাধান হওয়া টিকিট নেই।",
+  solvedEmptyHint: "টিকিট সমাধান হয়ে সম্পন্ন হলে সেটি এখানে দেখা যাবে।",
   searchPlaceholder: "টিকিট আইডি বা বিষয় দিয়ে খুঁজুন",
   filterAll: "সব",
   colSl: "ক্রম",
@@ -694,7 +693,6 @@ const bn: HelpDeskCopy = {
   quickActions: "দ্রুত অ্যাকশন",
   quickOpenTickets: "খোলা টিকিট",
   quickResolvedTickets: "সমাধান হওয়া টিকিট",
-  quickCompletedTickets: "সম্পন্ন টিকিট",
   quickSearchTickets: "টিকিট খুঁজুন",
   recentActivity: "সাম্প্রতিক কার্যক্রম",
   recentEmpty: "এখনো কোনো সাম্প্রতিক কার্যক্রম নেই।",
@@ -850,10 +848,10 @@ const en: HelpDeskCopy = {
   listTitle: "My tickets",
   listSubtitle: "Status and progress of the tickets you filed.",
   solvedTitle: "Solved tickets",
-  solvedSubtitle: "Every ticket that has been resolved and closed.",
-  solvedOnlyNote: "Showing closed tickets only",
-  solvedEmptyTitle: "No closed tickets yet.",
-  solvedEmptyHint: "A ticket shows up here once it is resolved and closed.",
+  solvedSubtitle: "Every ticket that has been resolved.",
+  solvedOnlyNote: "Showing resolved tickets only",
+  solvedEmptyTitle: "No resolved tickets yet.",
+  solvedEmptyHint: "A ticket shows up here once it is resolved.",
   searchPlaceholder: "Search by ticket ID or subject",
   filterAll: "All",
   colSl: "SL",
@@ -1033,7 +1031,6 @@ const en: HelpDeskCopy = {
   quickActions: "Quick actions",
   quickOpenTickets: "Open tickets",
   quickResolvedTickets: "Resolved tickets",
-  quickCompletedTickets: "Completed tickets",
   quickSearchTickets: "Search tickets",
   recentActivity: "Recent activity",
   recentEmpty: "No recent activity yet.",

@@ -156,7 +156,6 @@ export default function HelpDeskOverview({
         { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
         { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
         { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
-        { key: "completed", label: copy.quickCompletedTickets, href: links.completed, icon: FiCheckCircle },
       ];
 
   // Hero buttons: the employee jumps straight into the New Problem queue; the
@@ -238,7 +237,7 @@ export default function HelpDeskOverview({
           {/* Quick actions */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
-            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (

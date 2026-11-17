@@ -7,7 +7,6 @@ import type { HelpDeskCopy } from "@/lib/help-desk/messages";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
-import HelpDeskCompletedTickets from "./HelpDeskCompletedTickets";
 import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
@@ -19,7 +18,6 @@ export type HelpDeskView =
   | "new"
   | "tickets"
   | "solved"
-  | "completed"
   | "detail"
   | "conversation"
   | "problems"
@@ -123,12 +121,6 @@ export default function HelpDeskDashboard({
     ) : (
       <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />
     );
-  }
-
-  if (view === "completed") {
-    // Completed (resolved) tickets: the client's finished ticket list, whose
-    // data source marks a completed ticket as `status = resolved`.
-    return <HelpDeskCompletedTickets copy={copy} language={language} basePath={basePath} />;
   }
 
   if (view === "problems") {
