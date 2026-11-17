@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronRight, FiEye } from "react-icons/fi";
 
 import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
@@ -32,6 +32,7 @@ export default function TicketList({
   slStart = 1,
   detailHref,
   stamp = "created",
+  actionVariant = "default",
 }: {
   tickets: Ticket[];
   copy: HelpDeskCopy;
@@ -50,6 +51,13 @@ export default function TicketList({
    * together, stacked, so a row reads like a chat entry.
    */
   stamp?: "created" | "resolved";
+  /**
+   * Row action button style. `default` = outline + chevron (Open / staff
+   * tables). `pill` = the Service-Build / Payment list's rounded view-details
+   * pill (red border + eye icon) so the Solved table matches the
+   * `/clientDashboard/service-build` table's অ্যাকশন button.
+   */
+  actionVariant?: "default" | "pill";
 }) {
   const links = helpDeskLinks(basePath);
 
@@ -141,13 +149,23 @@ export default function TicketList({
                   })()}
                 </td>
                 <td className="px-4 py-3.5">
-                  <Link
-                    href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
-                    className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-                  >
-                    <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
-                    <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
-                  </Link>
+                  {actionVariant === "pill" ? (
+                    <Link
+                      href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                    >
+                      <FiEye size={12} className="pointer-events-none text-[var(--color-action)]" aria-hidden />
+                      <span className="pointer-events-none text-[11.5px] font-semibold text-[var(--color-action)]">{copy.viewDetails}</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                    >
+                      <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+                      <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+                    </Link>
+                  )}
                 </td>
               </tr>
             ))}

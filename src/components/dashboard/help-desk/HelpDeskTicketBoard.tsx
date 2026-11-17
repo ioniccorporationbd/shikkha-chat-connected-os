@@ -299,6 +299,7 @@ export default function HelpDeskTicketBoard({
             unseenIds={unseen}
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
+            actionVariant={isSolved ? "pill" : "default"}
           />
           <ListPagination
             copy={paginationCopy}
