@@ -247,6 +247,48 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
     );
   }
 
+  // Assignee + task-type selectors. Rendered on the right of the filter row for
+  // both the date-tab views and the Completed Tasks view.
+  const filterSelects = (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <label className="sm:w-[180px]">
+        <span className="sr-only">{board.allAssignees}</span>
+        <select
+          value={assignee}
+          onChange={(event) => changeAssignee(event.target.value)}
+          data-leads-task-assignee=""
+          className="w-full rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+        >
+          <option value="">{board.allAssignees}</option>
+          {(data?.assignees ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {data?.has_type ? (
+        <label className="sm:w-[180px]">
+          <span className="sr-only">{board.allTaskTypes}</span>
+          <select
+            value={taskType}
+            onChange={(event) => changeType(event.target.value)}
+            data-leads-task-type=""
+            className="w-full rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+          >
+            <option value="">{board.allTaskTypes}</option>
+            {(data?.task_types ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-5" data-leads-tasks-board="">
       {/* summary cards (hidden on Completed Tasks, which lists every done task) */}
@@ -287,9 +329,42 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
         </div>
       ) : null}
 
-      {/* window toggle + filters */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        {!completedOnly ? (
+      {/* filters: completed view = date-range (left) + all-assignee (right) */}
+      {completedOnly ? (
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-wrap items-end gap-2.5" data-leads-date-filter="">
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {board.dateRange.from}
+              </span>
+              <input
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(event) => setFromDate(event.target.value)}
+                data-leads-date-from=""
+                className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+              />
+            </label>
+            <span className="pb-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">→</span>
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {board.dateRange.to}
+              </span>
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(event) => setToDate(event.target.value)}
+                data-leads-date-to=""
+                className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+              />
+            </label>
+          </div>
+          {filterSelects}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex flex-wrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] p-0.5">
             {(
               [
@@ -314,79 +389,9 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
               </button>
             ))}
           </div>
-        ) : null}
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className="sm:w-[180px]">
-            <span className="sr-only">{board.allAssignees}</span>
-            <select
-              value={assignee}
-              onChange={(event) => changeAssignee(event.target.value)}
-              data-leads-task-assignee=""
-              className="w-full rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
-            >
-              <option value="">{board.allAssignees}</option>
-              {(data?.assignees ?? []).map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {data?.has_type ? (
-            <label className="sm:w-[180px]">
-              <span className="sr-only">{board.allTaskTypes}</span>
-              <select
-                value={taskType}
-                onChange={(event) => changeType(event.target.value)}
-                data-leads-task-type=""
-                className="w-full rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
-              >
-                <option value="">{board.allTaskTypes}</option>
-                {(data?.task_types ?? []).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
+          {filterSelects}
         </div>
-      </div>
-
-      {/* completed tasks: due-date range filter (from → to) */}
-      {completedOnly ? (
-        <div className="flex flex-wrap items-end gap-2.5" data-leads-date-filter="">
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-              {board.dateRange.from}
-            </span>
-            <input
-              type="date"
-              value={fromDate}
-              max={toDate || undefined}
-              onChange={(event) => setFromDate(event.target.value)}
-              data-leads-date-from=""
-              className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
-            />
-          </label>
-          <span className="pb-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">→</span>
-          <label className="flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-              {board.dateRange.to}
-            </span>
-            <input
-              type="date"
-              value={toDate}
-              min={fromDate || undefined}
-              onChange={(event) => setToDate(event.target.value)}
-              data-leads-date-to=""
-              className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
-            />
-          </label>
-        </div>
-      ) : null}
+      )}
 
       {/* table */}
       {rows.length === 0 ? (
