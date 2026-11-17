@@ -55,17 +55,35 @@ const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transpar
  */
 const sentAtById = new Map<string, string>();
 
+/**
+ * Stable key for a row the ERP sent with no message id, so two distinct
+ * id-less rows never share one memory slot (a bare `<ticket>:` key used to
+ * collapse every such row onto the same remembered clock).
+ */
+function blankStampKey(message: ConversationMessage): string {
+  const files = (message.attachments ?? []).map((f) => f.url || f.fileName || "").join(",");
+  return `~${message.author || ""}:${(message.body || "").slice(0, 48)}:${files}`;
+}
+
 /** Give a just-arrived reply the moment it reached this tab when the ERP left the clock blank. */
 function stampWhenBlank(ticket: string, message: ConversationMessage): ConversationMessage {
   // Message ids are only unique inside their ticket, so the key carries both.
-  const key = `${ticket}:${message.id}`;
+  const key = `${ticket}:${message.id || blankStampKey(message)}`;
   if (message.createdAt && !Number.isNaN(parseErpTimestamp(message.createdAt).getTime())) {
     sentAtById.set(key, message.createdAt);
     return message;
   }
-  const stamp = sentAtById.get(key) ?? new Date().toISOString();
-  sentAtById.set(key, stamp);
-  return { ...message, createdAt: stamp };
+  // A row we already showed with a real clock, but that came back blank on a
+  // later refresh (a re-send / write-return payload): keep the true moment we
+  // first saw instead of losing it.
+  const remembered = sentAtById.get(key);
+  if (remembered) return { ...message, createdAt: remembered };
+  // Nothing to remember and no clock from the ERP: leave `createdAt` blank. The
+  // timeline then fills it from a real neighbouring row, or from the ticket's
+  // own (stable) creation time — never from `Date.now()`. Inventing "now" here
+  // was what made every blank row show the page-load clock and appear to slide
+  // forward to the current time whenever a new message (text or file) was sent.
+  return message;
 }
 const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
 
