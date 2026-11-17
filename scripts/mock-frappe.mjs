@@ -5388,6 +5388,57 @@ const HD_RESOLVED_TICKET_2 = "HD-2026-00043";
   });
 }
 
+// Third seed: a ticket the ERP *auto-closed* after its SLA. It is a finished
+// ("সামাধান হয়ে সম্পন্ন") ticket but its status category is "Closed", not
+// "Resolved" — proving the client "সমাধান হওয়া টিকিট" board surfaces closed
+// tickets too, not only resolved ones.
+const HD_CLOSED_TICKET = "HD-2026-00044";
+{
+  const resolvedAt = new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString();
+  const closedAt = new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString();
+  const createdAt = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString();
+  const closedTicket = {
+    id: HD_CLOSED_TICKET,
+    subject: "লগআউট হয়ে যাচ্ছে বারবার",
+    category: "technical",
+    priority: "medium",
+    description: "কয়েক মিনিট পরপর সেশন শেষ হয়ে লগআউট হয়ে যাচ্ছে।",
+    status: "closed",
+    contact: {
+      name: "Nusrat Jahan",
+      email: "client@example.com",
+      mobile: undefined,
+      preferredContact: "email",
+    },
+    attachments: [],
+    messages: [],
+    pinnedMessageId: null,
+    createdAt,
+    updatedAt: closedAt,
+    resolvedAt,
+    resolutionSummary: "সেশন টাইমআউট ঠিক করা হয়েছে — এখন লগইন সক্রিয় থাকে।",
+    assignedAgent: "MD Shahzalal Amin Surker",
+    ownerKey: "client@example.com",
+  };
+  hdTicketList.push({ ownerKey: "client@example.com", support: false, ticket: closedTicket });
+  hdThreads.set(HD_CLOSED_TICKET, {
+    name: HD_CLOSED_TICKET,
+    subject: closedTicket.subject,
+    category: closedTicket.category,
+    priority: closedTicket.priority,
+    status: "Closed",
+    currentStatus: "Closed",
+    statusCategory: "Closed",
+    customer: "Nusrat Jahan",
+    customerEmail: "client@example.com",
+    agent: "MD Shahzalal Amin Surker",
+    submittedAt: createdAt,
+    resolvedAt,
+    messages: [],
+    timeline: [],
+  });
+}
+
 // Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
 // this between runs so repeated pushes cannot pile up duplicate rows in one
 // long-lived mock process.
