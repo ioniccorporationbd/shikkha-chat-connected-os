@@ -708,6 +708,45 @@ function crmTaskStatusOptions(t) {
   ];
 }
 
+/**
+ * The fixed rows the global Tasks board (`leads.list_tasks`) renders, shared
+ * with `leads.get_task` / `leads.update_task` so the detail popup reads and
+ * writes the same task records the board shows. Includes `description`, which
+ * the list rows omit.
+ */
+function globalBoardTasks(email, account, language) {
+  const bn = String(language || "bn").toLowerCase().startsWith("bn");
+  const t = (en, bnText) => (bn ? bnText : en);
+  const isoDay = (offsetDays) => {
+    const day = new Date();
+    day.setDate(day.getDate() + offsetDays);
+    return day.toISOString().slice(0, 10);
+  };
+  const stamp = new Date().toISOString();
+  const mk = (name, title, description, dueOffset, status, priority) => ({
+    name,
+    title,
+    description,
+    status,
+    priority,
+    type: t("Call", "কল"),
+    due_date: isoDay(dueOffset),
+    assigned_to: email,
+    assigned_label: account?.full_name ?? "Tamim Hasan",
+    assigned_image: "",
+    lead: crmLeads[0]?.name ?? "",
+    created: stamp,
+    modified: stamp,
+  });
+  return [
+    mk("CRM-TASK-0001", t("Follow up on today's enquiry", "আজকের ইনকোয়ারি ফলো-আপ"), t("Call back and confirm requirements.", "কল করে চাহিদা নিশ্চিত করুন।"), 0, "Todo", "High"),
+    mk("CRM-TASK-0002", t("Send fee structure", "ফি স্ট্রাকচার পাঠাও"), t("Email the current fee structure.", "বর্তমান ফি স্ট্রাকচার ইমেইল করুন।"), 2, "Todo", "Medium"),
+    mk("CRM-TASK-0003", t("Confirm campus visit", "ক্যাম্পাস ভিজিট নিশ্চিত করো"), t("Confirm the visit date with the parent.", "অভিভাবকের সাথে ভিজিটের তারিখ নিশ্চিত করুন।"), 6, "In Progress", "Medium"),
+    mk("CRM-TASK-0004", t("Close pending quotation", "পেন্ডিং কোটেশন ক্লোজ করো"), t("Follow up on the open quotation.", "খোলা কোটেশনের ফলো-আপ করুন।"), -3, "Todo", "High"),
+    mk("CRM-TASK-0005", t("Log yesterday's call notes", "গতকালের কল নোট লিখে ফেলো"), t("Enter the notes from yesterday's call.", "গতকালের কলের নোট এন্ট্রি করুন।"), -1, "Done", "Low"),
+  ];
+}
+
 function crmLeadTaskRows(name, t) {
   const rows = crmLeadTasks.get(name) || [];
   return rows.map((row) => ({
@@ -7059,6 +7098,68 @@ const server = createServer(async (request, response) => {
       task_types: [{ value: t("Call", "কল"), label: t("Call", "কল") }],
       has_type: true,
     });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.get_task") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const language = url.searchParams.get("language");
+    const taskName = String(url.searchParams.get("task_name") || "").trim();
+    const found = globalBoardTasks(email, account, language).find((row) => row.name === taskName);
+    if (!found) {
+      failure(response, 404, "DoesNotExistError", "The task was not found.", "CRM Task");
+      return;
+    }
+    ok(response, { task: found });
+    return;
+  }
+
+  if (method === "shikkha_os.api.v1.leads.update_task") {
+    const email = userFor(request);
+    const account = email ? DEMO_USERS[email] : null;
+    if (!account) {
+      failure(response, 401, "AuthenticationError", "Please sign in to continue.", "Not Signed In");
+      return;
+    }
+
+    const body = await readBody(request);
+    const language = url.searchParams.get("language");
+    const taskName = String(body.task_name ?? url.searchParams.get("task_name") ?? "").trim();
+    let task = body.task;
+    if (typeof task === "string") {
+      try {
+        task = JSON.parse(task);
+      } catch {
+        task = null;
+      }
+    }
+    if (!task || typeof task !== "object" || Array.isArray(task)) {
+      failure(response, 417, "ValidationError", "The task could not be saved.", "CRM Task");
+      return;
+    }
+
+    const base = globalBoardTasks(email, account, language).find((row) => row.name === taskName);
+    if (!base) {
+      failure(response, 404, "DoesNotExistError", "The task was not found.", "CRM Task");
+      return;
+    }
+
+    // Mock persists nothing, so echo the accepted changes back to the caller.
+    const updated = { ...base };
+    if (typeof task.status === "string" && task.status) updated.status = task.status;
+    if (typeof task.title === "string" && task.title.trim()) updated.title = task.title.trim();
+    if ("priority" in task) updated.priority = task.priority;
+    if ("description" in task) updated.description = task.description;
+    if ("due_date" in task) updated.due_date = task.due_date;
+    if ("assigned_to" in task) updated.assigned_to = task.assigned_to;
+    updated.modified = new Date().toISOString();
+    ok(response, { task: updated });
     return;
   }
 
