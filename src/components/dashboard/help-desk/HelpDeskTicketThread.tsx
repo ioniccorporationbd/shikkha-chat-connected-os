@@ -419,7 +419,17 @@ export default function HelpDeskTicketThread({
           return;
         }
         setMissing(false);
-        setPayload(data);
+        // Freeze each message's clock the first time this tab sees it, on the
+        // details route as well as the paged one. The desk's own rows can reach
+        // the payload with an empty ``createdAt``; without this the renderer
+        // borrows the ticket's own (ever-newer) ``modified`` for them, so a fresh
+        // send appears to rewrite an earlier message's time. ``stampWhenBlank``
+        // remembers each id's moment in ``sentAtById`` and re-applies it on every
+        // later refresh, so a message already on screen can never jump to "now".
+        setPayload({
+          ...data,
+          messages: data.messages.map((message) => stampWhenBlank(ticketId, message)),
+        });
         setHasOlder(Boolean(data.has_more));
         setOlderCursor(data.next_cursor ?? null);
         setPinnedId(data.ticket.pinnedMessageId ?? null);
@@ -515,7 +525,16 @@ export default function HelpDeskTicketThread({
    */
   const mergeThread = useCallback((incoming: ConversationPayload) => {
     setPayload((current) => {
-      if (!current || !current.paged) return incoming;
+      if (!current || !current.paged) {
+        // The details route keeps a full read: every send answers with the whole
+        // thread. Freeze each row's clock by id — not just ones we already held —
+        // so a refreshed payload can never move a message that was already on
+        // screen to the ticket's new ``modified`` (= "now").
+        return {
+          ...incoming,
+          messages: incoming.messages.map((message) => stampWhenBlank(ticketId, message)),
+        };
+      }
       const seen = new Set(current.messages.map((message) => message.id));
       // Only rows that actually arrived now are stamped; history keeps whatever
       // the ERP recorded, never a clock this browser made up.
@@ -558,7 +577,9 @@ export default function HelpDeskTicketThread({
       setPayload((current) => {
         if (!current) return data;
         const seen = new Set(current.messages.map((message) => message.id));
-        const older = data.messages.filter((message) => !seen.has(message.id));
+        const older = data.messages
+          .filter((message) => !seen.has(message.id))
+          .map((message) => stampWhenBlank(ticketId, message));
         // A threaded comment reply can be newer than the root comment its page
         // was cut on, so the page is merged by time, never by position.
         return { ...current, messages: orderConversation([...older, ...current.messages]) };
