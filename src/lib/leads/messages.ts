@@ -367,6 +367,7 @@ export interface LeadsCopy {
     myLeads: string;
     assignedTasks: string;
     allTasks: string;
+    completedTasks: string;
   };
   /** The Leads ▸ Tasks board (summary + window toggle + filters + table). */
   tasksBoard: LeadsTasksBoardCopy;
@@ -420,6 +421,7 @@ const bn: LeadsCopy = {
     myLeads: "আমার লিড",
     assignedTasks: "অ্যাসাইনড টাস্ক",
     allTasks: "সব টাস্ক",
+    completedTasks: "সম্পন্ন টাস্ক",
   },
   tasksBoard: {
     summary: {
@@ -814,6 +816,7 @@ const en: LeadsCopy = {
     myLeads: "My Leads",
     assignedTasks: "Assigned Tasks",
     allTasks: "All Tasks",
+    completedTasks: "Completed Tasks",
   },
   tasksBoard: {
     summary: {

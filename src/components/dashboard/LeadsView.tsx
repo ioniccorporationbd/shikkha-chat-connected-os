@@ -107,9 +107,9 @@ export default function LeadsView() {
 
   // Which Leads view is showing: All Leads / My Leads (filtered) / Assigned Tasks
   // / All Tasks (the last two render the shared task board instead of the table).
-  type LeadTab = "all" | "mine" | "assigned" | "tasks";
+  type LeadTab = "all" | "mine" | "assigned" | "tasks" | "completed";
   const [tab, setTab] = useState<LeadTab>("all");
-  const isTasksTab = tab === "assigned" || tab === "tasks";
+  const isTasksTab = tab === "assigned" || tab === "tasks" || tab === "completed";
   const mine = tab === "mine";
 
   // Only the newest request may write state (type-ahead search + load-more +
@@ -260,6 +260,7 @@ export default function LeadsView() {
               { key: "all", label: copy.tabs.allLeads },
               { key: "mine", label: copy.tabs.myLeads },
               { key: "assigned", label: copy.tabs.assignedTasks },
+              { key: "completed", label: copy.tabs.completedTasks },
               { key: "tasks", label: copy.tabs.allTasks },
             ] as const
           ).map((t) => {
@@ -339,7 +340,11 @@ export default function LeadsView() {
 
       {/* -------------------------------------------------------------- body */}
       {isTasksTab ? (
-        <LeadsTaskList mine={tab === "assigned"} language={language} />
+        <LeadsTaskList
+          mine={tab === "assigned"}
+          completedOnly={tab === "completed"}
+          language={language}
+        />
       ) : loading ? (
         <div className="grid place-items-center py-16" data-leads-loading="true">
           <ShikkhaLoader label={copy.loading} />

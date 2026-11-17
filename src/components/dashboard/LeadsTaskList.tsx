@@ -22,10 +22,15 @@ import TaskDetailModal from "./TaskDetailModal";
 interface LeadsTaskListProps {
   /** Assigned Tasks tab: only tasks whose "Assigned To" is the caller. */
   mine: boolean;
+  /** Completed Tasks tab: only tasks whose status is done/closed (ignores the date window). */
+  completedOnly?: boolean;
   language: string;
 }
 
 type Window = "today" | "next" | "all" | "overdue";
+
+/** Task statuses that count as "completed" for the Completed Tasks tab. */
+const COMPLETED_STATUSES = ["Done", "Closed"];
 
 /** Status pill colours (CRM Task status → tone). Unknown statuses fall back to slate. */
 const STATUS_TONES: Record<string, string> = {
@@ -77,7 +82,7 @@ function avatarTint(seed: string): string {
   return AVATAR_TINTS[Math.abs(hash) % AVATAR_TINTS.length]!;
 }
 
-export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
+export default function LeadsTaskList({ mine, completedOnly = false, language }: LeadsTaskListProps) {
   const copy = useMemo(() => leadsCopyFor(language), [language]);
   const board = copy.tasksBoard;
 
@@ -144,6 +149,15 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
 
   const rows = useMemo(() => {
     const allTasks = data?.tasks ?? [];
+    const assigneeOk = (task: LeadTaskRow) => !assignee || task.assigned_to === assignee;
+    const typeOk = (task: LeadTaskRow) => !taskType || task.type === taskType;
+    if (completedOnly) {
+      // Completed Tasks tab: every task already marked done/closed, regardless of
+      // due-date window. Cancelled is excluded (not a completion).
+      return allTasks.filter(
+        (task) => COMPLETED_STATUSES.includes(task.status) && assigneeOk(task) && typeOk(task),
+      );
+    }
     return allTasks.filter((task) => {
       const due = task.due_date ? task.due_date.slice(0, 10) : "";
       // days from today to due: +1..+7 = tomorrow..next 7 days, <0 = overdue.
@@ -157,11 +171,9 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
             : window === "all"
               ? true
               : due !== "" && diff < 0 && !done;
-      const assigneeOk = !assignee || task.assigned_to === assignee;
-      const typeOk = !taskType || task.type === taskType;
-      return windowOk && assigneeOk && typeOk;
+      return windowOk && assigneeOk(task) && typeOk(task);
     });
-  }, [data, window, assignee, taskType, today]);
+  }, [data, window, assignee, taskType, today, completedOnly]);
 
   const summary = data?.summary ?? { today: 0, week: 0, completed_week: 0, overdue: 0, all: 0 };
   const cards = [
@@ -222,9 +234,10 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
 
   return (
     <div className="flex flex-col gap-4 p-4 sm:p-5" data-leads-tasks-board="">
-      {/* summary cards */}
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        {cards.map((card) => {
+      {/* summary cards (hidden on Completed Tasks, which lists every done task) */}
+      {!completedOnly ? (
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          {cards.map((card) => {
           const Icon = card.icon;
           const active = card.target !== null && window === card.target;
           return (
@@ -255,35 +268,38 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
               </div>
             </button>
           );
-        })}
-      </div>
+          })}
+        </div>
+      ) : null}
 
       {/* window toggle + filters */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex flex-wrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] p-0.5">
-          {(
-            [
-              { key: "today", label: board.window.today, count: summary.today },
-              { key: "next", label: board.window.next, count: summary.week },
-              { key: "all", label: board.window.all, count: summary.all },
-              { key: "overdue", label: board.window.overdue, count: summary.overdue },
-            ] as const
-          ).map((seg) => (
-            <button
-              key={seg.key}
-              type="button"
-              onClick={() => changeWindow(seg.key)}
-              data-leads-window={seg.key}
-              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-                window === seg.key
-                  ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-sm"
-                  : "text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
-              }`}
-            >
-              {seg.label} ({seg.count})
-            </button>
-          ))}
-        </div>
+        {!completedOnly ? (
+          <div className="inline-flex flex-wrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] p-0.5">
+            {(
+              [
+                { key: "today", label: board.window.today, count: summary.today },
+                { key: "next", label: board.window.next, count: summary.week },
+                { key: "all", label: board.window.all, count: summary.all },
+                { key: "overdue", label: board.window.overdue, count: summary.overdue },
+              ] as const
+            ).map((seg) => (
+              <button
+                key={seg.key}
+                type="button"
+                onClick={() => changeWindow(seg.key)}
+                data-leads-window={seg.key}
+                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+                  window === seg.key
+                    ? "bg-[var(--color-action)] text-[var(--color-white)] shadow-sm"
+                    : "text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+                }`}
+              >
+                {seg.label} ({seg.count})
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="sm:w-[180px]">
@@ -345,7 +361,7 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                 <th className="px-3 py-2.5">{board.columns.dueDate}</th>
                 <th className="px-3 py-2.5">{board.columns.assignedTo}</th>
                 <th className="px-3 py-2.5">{board.columns.status}</th>
-                {mine ? (
+                {(mine || completedOnly) ? (
                   <th className="px-3 py-2.5 text-right">{board.columns.action}</th>
                 ) : null}
               </tr>
@@ -405,7 +421,7 @@ export default function LeadsTaskList({ mine, language }: LeadsTaskListProps) {
                         {statusLabel || "—"}
                       </span>
                     </td>
-                    {mine ? (
+                    {(mine || completedOnly) ? (
                       <td className="px-3 py-2.5 text-right">
                         <button
                           type="button"
