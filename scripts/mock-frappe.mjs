@@ -5291,6 +5291,55 @@ hdAppend(HD_0668, "support", "সমাধানটির স্ক্রিন�
   ],
 });
 
+// Seed: a resolved (completed) ticket owned by the demo customer, so the client
+// "Completed tickets" board — which filters `status = resolved` — has a row to
+// render. Mirrors the shape `create_ticket` pushes into `hdTicketList`.
+const HD_RESOLVED_TICKET = "HD-2026-00042";
+{
+  const resolvedAt = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
+  const createdAt = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
+  const resolvedTicket = {
+    id: HD_RESOLVED_TICKET,
+    subject: "প্রোফাইল ছবি আপলোড হচ্ছে না",
+    category: "technical",
+    priority: "medium",
+    description: "যখনই প্রোফাইল ছবি আপলোড করতে চাই, এরর মেসেজ আসে এবং ছবি সেভ হয় না।",
+    status: "resolved",
+    contact: {
+      name: "Nusrat Jahan",
+      email: "client@example.com",
+      mobile: undefined,
+      preferredContact: "email",
+    },
+    attachments: [],
+    messages: [],
+    pinnedMessageId: null,
+    createdAt,
+    updatedAt: resolvedAt,
+    resolvedAt,
+    resolutionSummary: "ছবির সাইজ সীমা ঠিক করে দেওয়া হয়েছে — এখন আপলোড কাজ করছে।",
+    assignedAgent: "MD Shahzalal Amin Surker",
+    ownerKey: "client@example.com",
+  };
+  hdTicketList.push({ ownerKey: "client@example.com", support: false, ticket: resolvedTicket });
+  hdThreads.set(HD_RESOLVED_TICKET, {
+    name: HD_RESOLVED_TICKET,
+    subject: resolvedTicket.subject,
+    category: resolvedTicket.category,
+    priority: resolvedTicket.priority,
+    status: "Resolved",
+    currentStatus: "Resolved",
+    statusCategory: "Resolved",
+    customer: "Nusrat Jahan",
+    customerEmail: "client@example.com",
+    agent: "MD Shahzalal Amin Surker",
+    submittedAt: createdAt,
+    resolvedAt,
+    messages: [],
+    timeline: [],
+  });
+}
+
 // Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
 // this between runs so repeated pushes cannot pile up duplicate rows in one
 // long-lived mock process.

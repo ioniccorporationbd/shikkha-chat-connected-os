@@ -25,12 +25,13 @@ import { HELP_DESK_FIELD as FIELD_CLASS } from "./fields";
 const ROWS_OPTIONS = [10, 20, 50, 100, 500] as const;
 const DEFAULT_ROWS = 10;
 
-export type TicketBoardVariant = "open" | "closed";
+export type TicketBoardVariant = "open" | "closed" | "resolved";
 
 /** Which statuses belong to each board. */
 const STATUS_BY_VARIANT: Record<TicketBoardVariant, string> = {
   open: "open",
   closed: "closed",
+  resolved: "resolved",
 };
 
 /**
@@ -60,7 +61,7 @@ export default function HelpDeskTicketBoard({
   const [toDate, setToDate] = useState("");
   const [titleFilter, setTitleFilter] = useState("");
 
-  const isSolved = variant === "closed";
+  const isSolved = variant === "closed" || variant === "resolved";
   const links = helpDeskLinks(basePath);
   // Solved rows open the ticket conversation: solution, requirements, full history.
 

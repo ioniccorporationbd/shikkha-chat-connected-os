@@ -350,6 +350,7 @@ export interface HelpDeskCopy {
   quickActions: string;
   quickOpenTickets: string;
   quickResolvedTickets: string;
+  quickCompletedTickets: string;
   quickSearchTickets: string;
   recentActivity: string;
   recentEmpty: string;
@@ -693,6 +694,7 @@ const bn: HelpDeskCopy = {
   quickActions: "দ্রুত অ্যাকশন",
   quickOpenTickets: "খোলা টিকিট",
   quickResolvedTickets: "সমাধান হওয়া টিকিট",
+  quickCompletedTickets: "সম্পন্ন টিকিট",
   quickSearchTickets: "টিকিট খুঁজুন",
   recentActivity: "সাম্প্রতিক কার্যক্রম",
   recentEmpty: "এখনো কোনো সাম্প্রতিক কার্যক্রম নেই।",
@@ -1031,6 +1033,7 @@ const en: HelpDeskCopy = {
   quickActions: "Quick actions",
   quickOpenTickets: "Open tickets",
   quickResolvedTickets: "Resolved tickets",
+  quickCompletedTickets: "Completed tickets",
   quickSearchTickets: "Search tickets",
   recentActivity: "Recent activity",
   recentEmpty: "No recent activity yet.",
