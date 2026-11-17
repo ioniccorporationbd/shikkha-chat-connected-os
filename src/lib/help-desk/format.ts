@@ -257,6 +257,28 @@ export function formatDateTimeNumeric(iso: string | undefined, language: string)
   }
 }
 
+/**
+ * Date only, numeric — the date half of {@link formatDateTimeNumeric} without
+ * the clock (e.g. `16/11/2026`). Used by the overview table's তৈরি হয়েছে
+ * column, which shows the filing date only.
+ */
+export function formatDateNumeric(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
 /** Render an ISO timestamp as a readable date only. */
 export function formatDate(iso: string | undefined, language: string): string {
   if (!iso) return "—";

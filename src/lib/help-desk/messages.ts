@@ -197,6 +197,8 @@ export interface HelpDeskCopy {
   colUpdated: string;
   /** Header of the Open-tickets date/time column: when the ticket was filed. */
   colCreatedAt: string;
+  /** Header of the Open-tickets date-only column variant (date, no time). */
+  colCreatedAtDate: string;
   /** Header of the Closed-tickets date/time column: when it left Open. */
   colClosedAt: string;
   /** Short label above a mobile card's created stamp. */
@@ -533,6 +535,7 @@ const bn: HelpDeskCopy = {
   colStatus: "স্ট্যাটাস",
   colUpdated: "সর্বশেষ হালনাগাদ",
   colCreatedAt: "তৈরি হয়েছে (তারিখ ও সময়)",
+  colCreatedAtDate: "তৈরি হয়েছে",
   colClosedAt: "ক্লোজ হয়েছে (তারিখ ও সময়)",
   stampCreated: "তৈরি",
   stampClosed: "ক্লোজ",
@@ -870,6 +873,7 @@ const en: HelpDeskCopy = {
   colStatus: "Status",
   colUpdated: "Last updated",
   colCreatedAt: "Created (date & time)",
+  colCreatedAtDate: "Created",
   colClosedAt: "Closed (date & time)",
   stampCreated: "Created",
   stampClosed: "Closed",

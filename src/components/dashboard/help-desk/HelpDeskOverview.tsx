@@ -20,7 +20,7 @@ import NotificationBadge from "@/components/dashboard/help-desk/NotificationBadg
 import TicketStatusBadge from "@/components/help-desk/TicketStatusBadge";
 import { PRIORITY_TONE } from "@/lib/help-desk/config";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
-import { formatDateTimeNumeric } from "@/lib/help-desk/format";
+import { formatDateNumeric } from "@/lib/help-desk/format";
 import { useHelpDeskBadges } from "@/lib/help-desk/use-badges";
 import type { HelpDeskBadgeCounts } from "@/lib/help-desk/types";
 import {
@@ -322,7 +322,7 @@ export default function HelpDeskOverview({
                       <span>{copy.colCustomer}</span>
                       <span>{copy.colStatus}</span>
                       <span>{copy.colPriority}</span>
-                      <span>{copy.colCreatedAt}</span>
+                      <span>{copy.colCreatedAtDate}</span>
                       <span aria-hidden />
                     </div>
                     <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_8%,transparent)]">
@@ -494,7 +494,7 @@ function TicketTableRow({
         </span>
 
         <span className="order-6 text-[11.5px] tabular-nums text-[var(--color-primary)] lg:order-none">
-          {formatDateTimeNumeric(ticket.createdAt, language)}
+          {formatDateNumeric(ticket.createdAt, language)}
         </span>
 
         {/* A global `svg { display: block }` rule beats Tailwind's `hidden`
