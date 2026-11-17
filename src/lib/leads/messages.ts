@@ -389,6 +389,8 @@ export interface LeadsTasksBoardCopy {
   };
   allAssignees: string;
   allTaskTypes: string;
+  /** Completed Tasks view: "from date" → "to date" filter labels. */
+  dateRange: { from: string; to: string };
   columns: {
     task: string;
     lead: string;
@@ -433,6 +435,7 @@ const bn: LeadsCopy = {
     window: { today: "আজ", next: "পরবর্তী ৭ দিন", all: "সব টাস্ক", overdue: "ওভারডিউ" },
     allAssignees: "সব অ্যাসাইনি",
     allTaskTypes: "সব টাস্ক টাইপ",
+    dateRange: { from: "শুরুর তারিখ", to: "শেষ তারিখ" },
     columns: {
       task: "টাস্ক",
       lead: "লিড",
@@ -828,6 +831,7 @@ const en: LeadsCopy = {
     window: { today: "Today", next: "Next 7 Days", all: "All Tasks", overdue: "Overdue" },
     allAssignees: "All Assignees",
     allTaskTypes: "All Task Types",
+    dateRange: { from: "From", to: "To" },
     columns: {
       task: "Task",
       lead: "Lead",

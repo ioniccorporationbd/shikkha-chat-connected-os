@@ -89,6 +89,9 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
   const [window, setWindow] = useState<Window>("today");
   const [assignee, setAssignee] = useState("");
   const [taskType, setTaskType] = useState("");
+  // Completed Tasks view: inclusive due-date range filter (yyyy-mm-dd).
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const [data, setData] = useState<LeadTasksPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -152,10 +155,22 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
     const assigneeOk = (task: LeadTaskRow) => !assignee || task.assigned_to === assignee;
     const typeOk = (task: LeadTaskRow) => !taskType || task.type === taskType;
     if (completedOnly) {
-      // Completed Tasks tab: every task already marked done/closed, regardless of
-      // due-date window. Cancelled is excluded (not a completion).
+      // Completed Tasks tab: only done/closed tasks (cancelled excluded), further
+      // filtered by an inclusive due-date range when the from/to inputs are set.
+      const dateOk = (task: LeadTaskRow) => {
+        if (!fromDate && !toDate) return true;
+        const due = task.due_date ? task.due_date.slice(0, 10) : "";
+        if (!due) return false;
+        if (fromDate && due < fromDate) return false;
+        if (toDate && due > toDate) return false;
+        return true;
+      };
       return allTasks.filter(
-        (task) => COMPLETED_STATUSES.includes(task.status) && assigneeOk(task) && typeOk(task),
+        (task) =>
+          COMPLETED_STATUSES.includes(task.status) &&
+          assigneeOk(task) &&
+          typeOk(task) &&
+          dateOk(task),
       );
     }
     return allTasks.filter((task) => {
@@ -173,7 +188,7 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
               : due !== "" && diff < 0 && !done;
       return windowOk && assigneeOk(task) && typeOk(task);
     });
-  }, [data, window, assignee, taskType, today, completedOnly]);
+  }, [data, window, assignee, taskType, today, completedOnly, fromDate, toDate]);
 
   const summary = data?.summary ?? { today: 0, week: 0, completed_week: 0, overdue: 0, all: 0 };
   const cards = [
@@ -340,6 +355,39 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
         </div>
       </div>
 
+      {/* completed tasks: due-date range filter (from → to) */}
+      {completedOnly ? (
+        <div className="flex flex-wrap items-end gap-2.5" data-leads-date-filter="">
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {board.dateRange.from}
+            </span>
+            <input
+              type="date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(event) => setFromDate(event.target.value)}
+              data-leads-date-from=""
+              className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+            />
+          </label>
+          <span className="pb-2 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">→</span>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {board.dateRange.to}
+            </span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(event) => setToDate(event.target.value)}
+              data-leads-date-to=""
+              className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-3 py-2 text-[12px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+            />
+          </label>
+        </div>
+      ) : null}
+
       {/* table */}
       {rows.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-6 py-12 text-center" data-leads-tasks-empty="true">
@@ -446,6 +494,7 @@ export default function LeadsTaskList({ mine, completedOnly = false, language }:
         <TaskDetailModal
           taskName={detailTask.name}
           language={language}
+          readOnly={completedOnly}
           initial={{
             title: detailTask.title,
             priority: detailTask.priority,

@@ -47,6 +47,8 @@ interface TaskDetailModalProps {
   taskName: string;
   initial: TaskDetailInitial;
   language: string;
+  /** When true, every field (including status) is display-only and Save is hidden. */
+  readOnly?: boolean;
   onClose: () => void;
   onSaved: (updated: LeadTaskCreated) => void | Promise<void>;
 }
@@ -63,6 +65,7 @@ export default function TaskDetailModal({
   taskName,
   initial,
   language,
+  readOnly = false,
   onClose,
   onSaved,
 }: TaskDetailModalProps) {
@@ -93,8 +96,8 @@ export default function TaskDetailModal({
   });
 
   useEffect(() => {
-    statusRef.current?.focus();
-  }, []);
+    if (!readOnly) statusRef.current?.focus();
+  }, [readOnly]);
 
   // Row rows omit the description; fetch the full record once to load it.
   useEffect(() => {
@@ -317,11 +320,14 @@ export default function TaskDetailModal({
               </label>
               <select
                 id="board-task-detail-status"
-                ref={statusRef}
+                ref={readOnly ? undefined : statusRef}
                 value={statusValue}
-                onChange={(event) => setStatus(event.target.value)}
+                onChange={readOnly ? undefined : (event) => setStatus(event.target.value)}
+                disabled={readOnly || undefined}
+                aria-disabled={readOnly ? "true" : undefined}
+                tabIndex={readOnly ? -1 : undefined}
                 data-task-detail-status=""
-                className={fieldClass}
+                className={readOnly ? lockedFieldClass : fieldClass}
               >
                 {statuses.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -388,25 +394,38 @@ export default function TaskDetailModal({
         ) : null}
 
         <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            data-task-detail-cancel=""
-            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
-          >
-            {detail.cancel}
-          </button>
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={saving}
-            data-task-detail-save=""
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <FiEdit2 size={13} className="pointer-events-none" />
-            <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
-          </button>
+          {readOnly ? (
+            <button
+              type="button"
+              onClick={onClose}
+              data-task-detail-cancel=""
+              className="rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+            >
+              {detail.close}
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                data-task-detail-cancel=""
+                className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+              >
+                {detail.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={() => void submit()}
+                disabled={saving}
+                data-task-detail-save=""
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FiEdit2 size={13} className="pointer-events-none" />
+                <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
