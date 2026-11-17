@@ -6,8 +6,8 @@ import HelpDeskTicketBoard from "./HelpDeskTicketBoard";
 
 /**
  * Solved tickets section: the same board as Open tickets, restricted to
- * `status = closed`. Identical table, back button, header card and 10/20/50
- * paging — only the predicate and the copy differ.
+ * `status = resolved` — the data source's completion status. Identical table,
+ * back button, header card and 10/20/50 paging — only the predicate differs.
  */
 export default function HelpDeskSolvedTickets({
   copy,
@@ -18,5 +18,5 @@ export default function HelpDeskSolvedTickets({
   language: string;
   basePath: string;
 }) {
-  return <HelpDeskTicketBoard copy={copy} language={language} basePath={basePath} variant="closed" />;
+  return <HelpDeskTicketBoard copy={copy} language={language} basePath={basePath} variant="resolved" />;
 }

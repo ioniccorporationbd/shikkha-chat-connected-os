@@ -625,12 +625,20 @@ export function alignConversation(
   const forced = viewAs === "support" ? true : viewAs === "customer" ? false : null;
   const viewerIsSupport =
     forced ?? (typeof payload.isSupport === "boolean" ? payload.isSupport : null);
+  // A row the ERP handed back with no usable clock (its `createdAt` came through
+  // empty) has no real time of its own to show. Anchor it to the ticket's own
+  // stable creation moment *before* ordering: without this every such row sorts
+  // to the end of the thread and, once any newer dated reply exists, borrows that
+  // reply's time — so a customer's earlier messages appeared to jump to the
+  // newest send's clock. Anchoring to the fixed ticket moment keeps the order
+  // oldest-first and the stamp identical across re-sends and reloads.
+  const ticketAnchor = erpStampOf(payload.ticket);
   if (viewerIsSupport === null) {
     // An older backend keeps its own `isMine`; the reading order still holds.
     const folded = foldChannelDuplicates(
       (Array.isArray(payload.messages) ? payload.messages : []).map(normalizeMessage)
     );
-    const settled = settleAttachments(orderConversation(folded.kept));
+    const settled = settleAttachments(orderConversation(anchorUndated(folded.kept, ticketAnchor)));
     return {
       ...payload,
       messages: settled.kept,
@@ -646,7 +654,7 @@ export function alignConversation(
       })
     )
   );
-  const settled = settleAttachments(orderConversation(folded.kept));
+  const settled = settleAttachments(orderConversation(anchorUndated(folded.kept, ticketAnchor)));
   const messages = settled.kept;
 
   // The chat is ordered by these events: an unsorted timeline would draw the
@@ -659,7 +667,7 @@ export function alignConversation(
   );
   const timeline = Array.isArray(payload.timeline)
     ? orderByStamp(
-        payload.timeline
+        anchorUndated(payload.timeline, ticketAnchor)
           .filter((event) => !(event.id && gone.has(event.id)))
           // The event row prints "N attachments" from the row it came with, and
           // that row still counts the copies the chat just folded away.
@@ -681,6 +689,14 @@ function union(a: Set<string>, b: Set<string>): Set<string> {
   const merged = new Set(a);
   for (const id of b) merged.add(id);
   return merged;
+}
+
+/** Give every row the ERP left undated the ticket's fixed creation moment. */
+function anchorUndated<T>(rows: T[], anchor: string): T[] {
+  if (!anchor) return rows;
+  return rows.map((row) =>
+    erpStampOf(row) ? row : ({ ...(row as object), createdAt: anchor } as T)
+  );
 }
 
 function withoutDropped<T extends { id?: string }>(timeline: T[] | undefined, dropped: Set<string>): T[] | undefined {

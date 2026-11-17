@@ -177,18 +177,19 @@ export function fillBlankStamps<T>(rows: readonly T[], fallback?: string): T[] {
   // trail of `createdAt`-only rows all look undated and every bubble is
   // stamped with the ticket's own moment.
   const ownStamp = (row: Record<string, unknown>) => usable(erpStampOf(row));
-  let last = "";
+  // Fill each undated row from the nearest PRECEDING dated row; rows that lead
+  // the thread (nothing dated above them) take `fallback` — the ticket's own
+  // stable creation moment. Deliberately NO backward pass: borrowing the NEXT
+  // dated row's clock made every earlier undated row jump forward to the newest
+  // send's time the moment a fresh message (text or file) was posted — the exact
+  // "a previous send's time changes to the current time" drift. A row's stamp now
+  // only ever comes from itself, an earlier row, or the fixed ticket moment, so
+  // it can never slide forward when new messages arrive.
+  let last = usable(fallback);
   for (const row of out) {
     const own = ownStamp(row);
     if (own) last = own;
     else row.at = last;
-  }
-  let next = "";
-  for (let index = out.length - 1; index >= 0; index -= 1) {
-    const row = out[index];
-    const own = ownStamp(row);
-    if (own) next = own;
-    else row.at = next || (fallback ?? "");
   }
   return out as unknown as T[];
 }
@@ -254,6 +255,28 @@ export function formatDateTimeNumeric(iso: string | undefined, language: string)
     );
   } catch {
     return date.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
+/**
+ * Date only, numeric — the date half of {@link formatDateTimeNumeric} without
+ * the clock (e.g. `16/11/2026`). Used by the overview table's তৈরি হয়েছে
+ * column, which shows the filing date only.
+ */
+export function formatDateNumeric(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
   }
 }
 

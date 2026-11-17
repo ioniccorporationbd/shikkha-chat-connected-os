@@ -25,12 +25,21 @@ import { HELP_DESK_FIELD as FIELD_CLASS } from "./fields";
 const ROWS_OPTIONS = [10, 20, 50, 100, 500] as const;
 const DEFAULT_ROWS = 10;
 
-export type TicketBoardVariant = "open" | "closed";
+export type TicketBoardVariant = "open" | "closed" | "resolved";
 
-/** Which statuses belong to each board. */
-const STATUS_BY_VARIANT: Record<TicketBoardVariant, string> = {
-  open: "open",
-  closed: "closed",
+/** Which statuses belong to each board.
+ *
+ * A "resolved" board also surfaces ERP-auto-closed tickets: Helpdesk moves a
+ * solved ticket to the "Closed" status category after its SLA elapses, so
+ * without this a customer's older solved tickets silently vanish from the
+ * "সমাধান হয়ে সম্পন্ন" list even though they are finished. Both terminal
+ * states are treated as solved here — it is a superset, so nothing that shows
+ * today (resolved) can be hidden by the change.
+ */
+const STATUSES_BY_VARIANT: Record<TicketBoardVariant, string[]> = {
+  open: ["open"],
+  closed: ["closed"],
+  resolved: ["resolved", "closed"],
 };
 
 /**
@@ -60,7 +69,7 @@ export default function HelpDeskTicketBoard({
   const [toDate, setToDate] = useState("");
   const [titleFilter, setTitleFilter] = useState("");
 
-  const isSolved = variant === "closed";
+  const isSolved = variant === "closed" || variant === "resolved";
   const links = helpDeskLinks(basePath);
   // Solved rows open the ticket conversation: solution, requirements, full history.
 
@@ -94,7 +103,7 @@ export default function HelpDeskTicketBoard({
 
   const unseen = useMemo(() => unseenSupportIds(tickets ?? []), [tickets]);
 
-  const wanted = STATUS_BY_VARIANT[variant];
+  const wantedStatuses = STATUSES_BY_VARIANT[variant];
 
   // This board already holds every authorised ticket in memory, so the date and
   // title filters run here and the visible total stays exact (no partial page
@@ -106,7 +115,7 @@ export default function HelpDeskTicketBoard({
     const end = toDate ? `${toDate}T23:59:59.999` : "";
     return sortTicketsSmart(
       (tickets ?? []).filter((ticket) => {
-        if (ticket.status !== wanted) return false;
+        if (!wantedStatuses.includes(ticket.status)) return false;
         if (needle && !ticket.subject.toLowerCase().includes(needle)) return false;
         if (!start && !end) return true;
         const raw = isSolved ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt;
@@ -116,7 +125,7 @@ export default function HelpDeskTicketBoard({
         return true;
       }),
     );
-  }, [fromDate, isSolved, tickets, titleFilter, toDate, wanted]);
+  }, [fromDate, isSolved, tickets, titleFilter, toDate, wantedStatuses]);
 
   const filtersActive = Boolean(fromDate || toDate || titleFilter.trim());
 
@@ -298,6 +307,7 @@ export default function HelpDeskTicketBoard({
             unseenIds={unseen}
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
+            actionVariant={isSolved ? "pill" : "default"}
           />
           <ListPagination
             copy={paginationCopy}

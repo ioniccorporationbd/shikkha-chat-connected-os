@@ -367,6 +367,7 @@ export interface LeadsCopy {
     myLeads: string;
     assignedTasks: string;
     allTasks: string;
+    completedTasks: string;
   };
   /** The Leads ▸ Tasks board (summary + window toggle + filters + table). */
   tasksBoard: LeadsTasksBoardCopy;
@@ -388,6 +389,8 @@ export interface LeadsTasksBoardCopy {
   };
   allAssignees: string;
   allTaskTypes: string;
+  /** Completed Tasks view: "from date" → "to date" filter labels. */
+  dateRange: { from: string; to: string };
   columns: {
     task: string;
     lead: string;
@@ -420,6 +423,7 @@ const bn: LeadsCopy = {
     myLeads: "আমার লিড",
     assignedTasks: "অ্যাসাইনড টাস্ক",
     allTasks: "সব টাস্ক",
+    completedTasks: "সম্পন্ন টাস্ক",
   },
   tasksBoard: {
     summary: {
@@ -431,6 +435,7 @@ const bn: LeadsCopy = {
     window: { today: "আজ", next: "পরবর্তী ৭ দিন", all: "সব টাস্ক", overdue: "ওভারডিউ" },
     allAssignees: "সব অ্যাসাইনি",
     allTaskTypes: "সব টাস্ক টাইপ",
+    dateRange: { from: "শুরুর তারিখ", to: "শেষ তারিখ" },
     columns: {
       task: "টাস্ক",
       lead: "লিড",
@@ -814,6 +819,7 @@ const en: LeadsCopy = {
     myLeads: "My Leads",
     assignedTasks: "Assigned Tasks",
     allTasks: "All Tasks",
+    completedTasks: "Completed Tasks",
   },
   tasksBoard: {
     summary: {
@@ -825,6 +831,7 @@ const en: LeadsCopy = {
     window: { today: "Today", next: "Next 7 Days", all: "All Tasks", overdue: "Overdue" },
     allAssignees: "All Assignees",
     allTaskTypes: "All Task Types",
+    dateRange: { from: "From", to: "To" },
     columns: {
       task: "Task",
       lead: "Lead",

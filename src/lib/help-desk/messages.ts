@@ -197,6 +197,8 @@ export interface HelpDeskCopy {
   colUpdated: string;
   /** Header of the Open-tickets date/time column: when the ticket was filed. */
   colCreatedAt: string;
+  /** Header of the Open-tickets date-only column variant (date, no time). */
+  colCreatedAtDate: string;
   /** Header of the Closed-tickets date/time column: when it left Open. */
   colClosedAt: string;
   /** Short label above a mobile card's created stamp. */
@@ -508,10 +510,10 @@ const bn: HelpDeskCopy = {
   listTitle: "আমার টিকিট",
   listSubtitle: "আপনার তৈরি করা টিকিটের অবস্থা ও অগ্রগতি।",
   solvedTitle: "সমাধান হওয়া টিকিট",
-  solvedSubtitle: "যেসব টিকিট সমাধান হয়ে বন্ধ হয়েছে সেগুলোর তালিকা।",
-  solvedOnlyNote: "শুধু ক্লোজড স্ট্যাটাসের টিকিট দেখানো হচ্ছে",
-  solvedEmptyTitle: "এখনও কোনো বন্ধ হওয়া টিকিট নেই।",
-  solvedEmptyHint: "টিকিট সমাধান হয়ে বন্ধ হলে সেটি এখানে দেখা যাবে।",
+  solvedSubtitle: "যেসব টিকিট সমাধান হয়ে সম্পন্ন হয়েছে সেগুলোর তালিকা।",
+  solvedOnlyNote: "সমাধান হওয়া ও সম্পন্ন (বন্ধ) টিকিট দেখানো হচ্ছে",
+  solvedEmptyTitle: "এখনও কোনো সমাধান হওয়া টিকিট নেই।",
+  solvedEmptyHint: "টিকিট সমাধান হয়ে সম্পন্ন হলে সেটি এখানে দেখা যাবে।",
   searchPlaceholder: "টিকিট আইডি বা বিষয় দিয়ে খুঁজুন",
   filterAll: "সব",
   colSl: "ক্রম",
@@ -533,6 +535,7 @@ const bn: HelpDeskCopy = {
   colStatus: "স্ট্যাটাস",
   colUpdated: "সর্বশেষ হালনাগাদ",
   colCreatedAt: "তৈরি হয়েছে (তারিখ ও সময়)",
+  colCreatedAtDate: "তৈরি হয়েছে",
   colClosedAt: "ক্লোজ হয়েছে (তারিখ ও সময়)",
   stampCreated: "তৈরি",
   stampClosed: "ক্লোজ",
@@ -845,10 +848,10 @@ const en: HelpDeskCopy = {
   listTitle: "My tickets",
   listSubtitle: "Status and progress of the tickets you filed.",
   solvedTitle: "Solved tickets",
-  solvedSubtitle: "Every ticket that has been resolved and closed.",
-  solvedOnlyNote: "Showing closed tickets only",
-  solvedEmptyTitle: "No closed tickets yet.",
-  solvedEmptyHint: "A ticket shows up here once it is resolved and closed.",
+  solvedSubtitle: "Every ticket that has been resolved.",
+  solvedOnlyNote: "Showing resolved and closed tickets",
+  solvedEmptyTitle: "No resolved tickets yet.",
+  solvedEmptyHint: "A ticket shows up here once it is resolved.",
   searchPlaceholder: "Search by ticket ID or subject",
   filterAll: "All",
   colSl: "SL",
@@ -870,6 +873,7 @@ const en: HelpDeskCopy = {
   colStatus: "Status",
   colUpdated: "Last updated",
   colCreatedAt: "Created (date & time)",
+  colCreatedAtDate: "Created",
   colClosedAt: "Closed (date & time)",
   stampCreated: "Created",
   stampClosed: "Closed",
