@@ -5340,6 +5340,54 @@ const HD_RESOLVED_TICKET = "HD-2026-00042";
   });
 }
 
+// Second resolved ticket so the Resolved board demonstrably shows *all* resolved
+// tickets (not just one). Different subject/priority/date to prove ordering.
+const HD_RESOLVED_TICKET_2 = "HD-2026-00043";
+{
+  const resolvedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const createdAt = new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString();
+  const resolvedTicket = {
+    id: HD_RESOLVED_TICKET_2,
+    subject: "পেমেন্ট সম্পন্ন হয়নি কিন্তু টাকা কেটে নেওয়া হয়েছে",
+    category: "payment",
+    priority: "high",
+    description: "পেমেন্ট গেটওয়ে থেকে টাকা কেটে নেওয়া হয়েছে কিন্তু ইনভয়েস পরিশোধ দেখাচ্ছে না।",
+    status: "resolved",
+    contact: {
+      name: "Nusrat Jahan",
+      email: "client@example.com",
+      mobile: undefined,
+      preferredContact: "email",
+    },
+    attachments: [],
+    messages: [],
+    pinnedMessageId: null,
+    createdAt,
+    updatedAt: resolvedAt,
+    resolvedAt,
+    resolutionSummary: "পেমেন্ট রিফান্ড/রিকনসিল করে ইনভয়েস আপডেট করা হয়েছে।",
+    assignedAgent: "MD Shahzalal Amin Surker",
+    ownerKey: "client@example.com",
+  };
+  hdTicketList.push({ ownerKey: "client@example.com", support: false, ticket: resolvedTicket });
+  hdThreads.set(HD_RESOLVED_TICKET_2, {
+    name: HD_RESOLVED_TICKET_2,
+    subject: resolvedTicket.subject,
+    category: resolvedTicket.category,
+    priority: resolvedTicket.priority,
+    status: "Resolved",
+    currentStatus: "Resolved",
+    statusCategory: "Resolved",
+    customer: "Nusrat Jahan",
+    customerEmail: "client@example.com",
+    agent: "MD Shahzalal Amin Surker",
+    submittedAt: createdAt,
+    resolvedAt,
+    messages: [],
+    timeline: [],
+  });
+}
+
 // Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
 // this between runs so repeated pushes cannot pile up duplicate rows in one
 // long-lived mock process.
