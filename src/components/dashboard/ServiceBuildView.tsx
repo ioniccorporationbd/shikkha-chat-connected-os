@@ -96,8 +96,43 @@ function isSettled(invoice: SalesInvoiceRow): boolean {
   return invoice.payment_state === "pending_full";
 }
 
+/**
+ * বকেয়া rows are Draft invoices: the office has not confirmed them yet, so the
+ * পেমেন্ট করুন CTA stays visible but disabled until they are submitted.
+ */
+function isPayDisabled(invoice: SalesInvoiceRow): boolean {
+  if (invoice.payment_state === "draft") return true;
+  return String(invoice.display_status || "").trim().toLowerCase() === "draft";
+}
+
 /** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
-function PayNowButton({ label, onClick }: { label: string; onClick: () => void }) {
+function PayNowButton({
+  label,
+  onClick,
+  disabled = false,
+  title,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  if (disabled) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-disabled="true"
+        title={title}
+        className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] px-3 py-1.5 opacity-70"
+      >
+        <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
+          <FiPlusCircle size={12} />
+          {label}
+        </span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -684,7 +719,12 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                     <span className="pointer-events-none">{copy.viewDetails}</span>
                                   </button>
                                 ) : (
-                                  <PayNowButton label={copy.payNow} onClick={() => openPayNow(invoice)} />
+                                  <PayNowButton
+                                    label={copy.payNow}
+                                    onClick={() => openPayNow(invoice)}
+                                    disabled={isPayDisabled(invoice)}
+                                    title={copy.payDisabledHint}
+                                  />
                                 )}
                               </td>
                             </tr>
@@ -1053,7 +1093,14 @@ function InvoiceCard({
       </div>
 
       <div className="flex items-center justify-end gap-2">
-        {isSettled(invoice) ? null : <PayNowButton label={copy.payNow} onClick={onPay} />}
+        {isSettled(invoice) ? null : (
+          <PayNowButton
+            label={copy.payNow}
+            onClick={onPay}
+            disabled={isPayDisabled(invoice)}
+            title={copy.payDisabledHint}
+          />
+        )}
         <button
           type="button"
           onClick={onOpen}
