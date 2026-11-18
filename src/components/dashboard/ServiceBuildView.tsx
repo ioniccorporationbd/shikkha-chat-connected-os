@@ -91,9 +91,9 @@ function remainingOf(invoice: SalesInvoiceRow): number {
 function isSettled(invoice: SalesInvoiceRow): boolean {
   const status = String(invoice.display_status || "").trim().toLowerCase();
   if (status === "paid") return true;
-  // A Draft payment that already covers the whole invoice closes the CTA too:
-  // paying again would buy nothing - the entry only waits for verification.
-  return invoice.payment_state === "pending_full";
+  // "পরিশোধিত" can arrive translated; the backend overlay's paid state is the
+  // language-independent marker for a settled invoice.
+  return invoice.payment_state === "paid";
 }
 
 /**
@@ -105,7 +105,15 @@ function isPayDisabled(invoice: SalesInvoiceRow): boolean {
   // docstatus 0 is the ground truth for a Draft (বকেয়া) invoice - the status
   // label can arrive translated or vary by site, docstatus cannot.
   if (Number(invoice.docstatus) === 0) return true;
+  // A recorded (Draft) payment already covering the whole invoice: paying
+  // again would buy nothing, the entry only waits for staff verification.
+  if (invoice.payment_state === "pending_full") return true;
   return String(invoice.display_status || "").trim().toLowerCase() === "draft";
+}
+
+/** Hint under/over the disabled CTA: why it cannot be paid right now. */
+function payDisabledTitle(invoice: SalesInvoiceRow, copy: { payDisabledHint: string; payPendingHint: string }): string {
+  return invoice.payment_state === "pending_full" ? copy.payPendingHint : copy.payDisabledHint;
 }
 
 /** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
@@ -726,7 +734,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                     label={copy.payNow}
                                     onClick={() => openPayNow(invoice)}
                                     disabled={isPayDisabled(invoice)}
-                                    title={copy.payDisabledHint}
+                                    title={payDisabledTitle(invoice, copy)}
                                   />
                                 )}
                               </td>
@@ -1101,7 +1109,7 @@ function InvoiceCard({
             label={copy.payNow}
             onClick={onPay}
             disabled={isPayDisabled(invoice)}
-            title={copy.payDisabledHint}
+            title={payDisabledTitle(invoice, copy)}
           />
         )}
         <button
