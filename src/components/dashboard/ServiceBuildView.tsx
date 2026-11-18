@@ -102,6 +102,9 @@ function isSettled(invoice: SalesInvoiceRow): boolean {
  */
 function isPayDisabled(invoice: SalesInvoiceRow): boolean {
   if (invoice.payment_state === "draft") return true;
+  // docstatus 0 is the ground truth for a Draft (বকেয়া) invoice - the status
+  // label can arrive translated or vary by site, docstatus cannot.
+  if (Number(invoice.docstatus) === 0) return true;
   return String(invoice.display_status || "").trim().toLowerCase() === "draft";
 }
 
