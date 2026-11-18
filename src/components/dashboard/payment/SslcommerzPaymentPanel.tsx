@@ -16,6 +16,8 @@ interface SslcommerzPaymentPanelProps {
   currency: string;
   /** True while the initiate request is in flight (disables the button). */
   submitting: boolean;
+  /** Pre-filled পরিমাণ — the row's বাকি (outstanding) from the invoice table. */
+  initialAmount?: number;
   /** Starts the gateway session for the entered amount. */
   onSubmit: (amount: number) => void;
 }
@@ -32,9 +34,12 @@ export default function SslcommerzPaymentPanel({
   language,
   currency,
   submitting,
+  initialAmount,
   onSubmit,
 }: SslcommerzPaymentPanelProps) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(
+    initialAmount && Number.isFinite(initialAmount) && initialAmount > 0 ? String(initialAmount) : "",
+  );
   const [touched, setTouched] = useState(false);
 
   const value = Number(amount);

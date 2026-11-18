@@ -20,6 +20,8 @@ export interface MobileWalletFormProps {
   copy: ManualPaymentCopy;
   language: string;
   submitting: boolean;
+  /** Pre-filled পরিমাণ — the row's বাকি (outstanding) from the invoice table. */
+  initialAmount?: number;
   onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
@@ -38,10 +40,13 @@ export default function MobileWalletForm({
   copy,
   language,
   submitting,
+  initialAmount,
   onSubmit,
 }: MobileWalletFormProps) {
   const today = todayISO();
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(
+    initialAmount && Number.isFinite(initialAmount) && initialAmount > 0 ? String(initialAmount) : "",
+  );
   const [mobile, setMobile] = useState("");
   const [trx, setTrx] = useState("");
   const [date, setDate] = useState(today);

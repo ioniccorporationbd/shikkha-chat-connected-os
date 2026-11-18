@@ -123,7 +123,9 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   const [detailError, setDetailError] = useState("");
 
   // ---- Make Payment (same pop-up the payment-entry page opens) ----
-  const [payOpen, setPayOpen] = useState(false);
+  // Holds the row whose পেমেন্ট করুন was clicked; its বাকি (outstanding_amount)
+  // is what seeds the pop-up's পরিমাণ field.
+  const [payInvoice, setPayInvoice] = useState<SalesInvoiceRow | null>(null);
 
   // ---- Filters ----
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -212,9 +214,17 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
 
   // Row CTA: unpaid rows open the very same Make Payment pop-up the
   // payment-entry page uses (method → SSLCommerz / manual slip), on top of the
-  // invoice list — no navigation away from the page.
-  const openPayNow = useCallback(() => setPayOpen(true), []);
-  const closePayNow = useCallback(() => setPayOpen(false), []);
+  // invoice list — no navigation away from the page. The pop-up's পরিমাণ is
+  // pre-filled from the row's বাকি (outstanding) column so the customer starts
+  // from the exact due and can still edit it for a partial payment.
+  const openPayNow = useCallback((invoice: SalesInvoiceRow) => setPayInvoice(invoice), []);
+  const closePayNow = useCallback(() => setPayInvoice(null), []);
+  const payInitialAmount = useMemo(() => {
+    const outstanding = Number(payInvoice?.outstanding_amount ?? 0);
+    return Number.isFinite(outstanding) && outstanding > 0
+      ? Math.round(outstanding * 100) / 100
+      : undefined;
+  }, [payInvoice]);
 
   const invoices = useMemo(
     () => (data?.invoices ?? []).filter((invoice) => Boolean(invoice?.name)),
@@ -643,7 +653,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                     <span className="pointer-events-none">{copy.viewDetails}</span>
                                   </button>
                                 ) : (
-                                  <PayNowButton label={copy.payNow} onClick={openPayNow} />
+                                  <PayNowButton label={copy.payNow} onClick={() => openPayNow(invoice)} />
                                 )}
                               </td>
                             </tr>
@@ -663,7 +673,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                           language={language}
                           currency={currency}
                           onOpen={() => void openDetails(invoice.name)}
-                          onPay={openPayNow}
+                          onPay={() => openPayNow(invoice)}
                         />
                       ))}
                     </div>
@@ -759,14 +769,15 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
         {detail ? serviceBillItems(detail, copy, language, currency) : null}
       </DetailSheet>
 
-      {payOpen ? (
+      {payInvoice ? (
         <MakePaymentModal
           language={language}
-          currency={currency}
+          currency={payInvoice.currency || currency}
+          initialAmount={payInitialAmount}
           onCreated={(paymentEntryId) => {
             // Same contract as the payment-entry page: the backend already
             // confirmed the create and returned the REAL Payment Entry name.
-            setPayOpen(false);
+            setPayInvoice(null);
             router.push(`${PAYMENT_SUCCESS_PATH}?payment=${encodeURIComponent(paymentEntryId)}`);
           }}
           onClose={closePayNow}

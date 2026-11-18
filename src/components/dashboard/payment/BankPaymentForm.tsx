@@ -21,6 +21,8 @@ interface BankPaymentFormProps {
   copy: ManualPaymentCopy;
   language: string;
   submitting: boolean;
+  /** Pre-filled পরিমাণ — the row's বাকি (outstanding) from the invoice table. */
+  initialAmount?: number;
   onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
@@ -102,6 +104,7 @@ export default function BankPaymentForm({
   copy,
   language,
   submitting,
+  initialAmount,
   onSubmit,
 }: BankPaymentFormProps) {
   const today = todayISO();
@@ -110,7 +113,9 @@ export default function BankPaymentForm({
   const [banksFailed, setBanksFailed] = useState(false);
 
   const [bankName, setBankName] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(
+    initialAmount && Number.isFinite(initialAmount) && initialAmount > 0 ? String(initialAmount) : "",
+  );
   const [senderName, setSenderName] = useState("");
   const [senderAccount, setSenderAccount] = useState("");
   const [reference, setReference] = useState("");

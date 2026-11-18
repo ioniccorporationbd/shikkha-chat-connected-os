@@ -29,6 +29,12 @@ interface MakePaymentModalProps {
   language: string;
   currency: string;
   /**
+   * Pre-filled পরিমাণ for every branch (SSLCommerz panel and the bKash / Rocket
+   * / Nagad / Bank forms). The service-build page seeds it with the row's বাকি
+   * (outstanding amount); omit to start empty like payment-entry does.
+   */
+  initialAmount?: number;
+  /**
    * Called after the backend confirms the request, with the REAL created
    * Payment Entry name (e.g. "ACC-PAY-2026-00001"). The page redirects to the
    * dashboard-themed Payment Success page; there is no in-modal success screen.
@@ -50,6 +56,7 @@ interface MakePaymentModalProps {
 export default function MakePaymentModal({
   language,
   currency,
+  initialAmount,
   onCreated,
   onClose,
 }: MakePaymentModalProps) {
@@ -163,6 +170,7 @@ export default function MakePaymentModal({
               language={language}
               currency={currency}
               submitting={sslSubmitting}
+              initialAmount={initialAmount}
               onSubmit={handleSslSubmit}
             />
           </>
@@ -182,6 +190,7 @@ export default function MakePaymentModal({
               copy={copy}
               language={language}
               submitting={submitting}
+              initialAmount={initialAmount}
               onSubmit={handleSubmit}
             />
           </>
@@ -194,6 +203,7 @@ export default function MakePaymentModal({
               copy={copy}
               language={language}
               submitting={submitting}
+              initialAmount={initialAmount}
               onSubmit={handleSubmit}
             />
           </>
@@ -206,6 +216,7 @@ export default function MakePaymentModal({
               copy={copy}
               language={language}
               submitting={submitting}
+              initialAmount={initialAmount}
               onSubmit={handleSubmit}
             />
           </>
@@ -218,6 +229,7 @@ export default function MakePaymentModal({
               copy={copy}
               language={language}
               submitting={submitting}
+              initialAmount={initialAmount}
               onSubmit={handleSubmit}
             />
           </>
