@@ -13,6 +13,7 @@ import {
   FiHash,
   FiLayers,
   FiLink,
+  FiPlusCircle,
   FiRotateCcw,
   FiUserCheck,
 } from "react-icons/fi";
@@ -35,7 +36,7 @@ import DetailSheet, {
   type DetailSection,
 } from "@/components/dashboard/DetailSheet";
 import { ApiError } from "@/lib/api/http";
-import { CLIENT_DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/session";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH } from "@/lib/auth/session";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { fetchInvoiceDetails, fetchInvoices } from "@/lib/service-build/api";
 import { formatAmount, formatDate } from "@/lib/service-build/format";
@@ -70,6 +71,30 @@ function statusTone(key: string): string {
     default:
       return "color-mix(in srgb, var(--color-primary) 55%, var(--color-white))";
   }
+}
+
+/**
+ * True when the invoice is fully settled (স্ট্যাটাস = পরিশোধিত) — those rows
+ * keep the "বিস্তারিত দেখুন" action; every other row offers "পেমেন্ট করুন".
+ */
+function isSettled(invoice: SalesInvoiceRow): boolean {
+  return String(invoice.display_status || "").trim().toLowerCase() === "paid";
+}
+
+/** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
+function PayNowButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3 py-1.5 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
+    >
+      <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-[var(--color-white)]">
+        <FiPlusCircle size={12} />
+        {label}
+      </span>
+    </button>
+  );
 }
 
 /**
@@ -180,6 +205,12 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
     setDetail(null);
     setDetailError("");
   }, []);
+
+  // Row CTA: rows that still owe money go to the payment-entry page, where the
+  // real payment flow (manual slip / SSLCommerz) already lives.
+  const goPayNow = useCallback(() => {
+    router.push(PAYMENT_HISTORY_PATH);
+  }, [router]);
 
   const invoices = useMemo(
     () => (data?.invoices ?? []).filter((invoice) => Boolean(invoice?.name)),
@@ -598,14 +629,18 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                 <StatusBadge status={invoice.display_status} copy={copy} emphasis />
                               </td>
                               <td className="whitespace-nowrap px-4 py-3">
-                                <button
-                                  type="button"
-                                  onClick={() => void openDetails(invoice.name)}
-                                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
-                                >
-                                  <FiEye size={12} className="pointer-events-none" />
-                                  <span className="pointer-events-none">{copy.viewDetails}</span>
-                                </button>
+                                {isSettled(invoice) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => void openDetails(invoice.name)}
+                                    className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                                  >
+                                    <FiEye size={12} className="pointer-events-none" />
+                                    <span className="pointer-events-none">{copy.viewDetails}</span>
+                                  </button>
+                                ) : (
+                                  <PayNowButton label={copy.payNow} onClick={goPayNow} />
+                                )}
                               </td>
                             </tr>
                           ))}
@@ -624,6 +659,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                           language={language}
                           currency={currency}
                           onOpen={() => void openDetails(invoice.name)}
+                          onPay={goPayNow}
                         />
                       ))}
                     </div>
@@ -909,6 +945,7 @@ function InvoiceCard({
   language,
   currency,
   onOpen,
+  onPay,
 }: {
   sl: number;
   invoice: SalesInvoiceRow;
@@ -916,6 +953,7 @@ function InvoiceCard({
   language: string;
   currency: string;
   onOpen: () => void;
+  onPay: () => void;
 }) {
   const code = invoice.currency || currency;
   return (
@@ -953,7 +991,8 @@ function InvoiceCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-2">
+        {isSettled(invoice) ? null : <PayNowButton label={copy.payNow} onClick={onPay} />}
         <button
           type="button"
           onClick={onOpen}

@@ -51,6 +51,8 @@ export interface ServiceBuildCopy {
   colStatus: string;
   colAction: string;
   viewDetails: string;
+  /** CTA on rows that still owe money — the payment-entry পেমেন্ট করুন button. */
+  payNow: string;
 
   // ---- Filters ----
   filterHeading: string;
@@ -178,6 +180,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     colStatus: "স্ট্যাটাস",
     colAction: "অ্যাকশন",
     viewDetails: "বিস্তারিত দেখুন",
+    payNow: "পেমেন্ট করুন",
 
     filterHeading: "ফিল্টার",
     filterHint: "আপনার ইনভয়েস সহজে খুঁজে বের করুন।",
@@ -306,6 +309,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     colStatus: "Status",
     colAction: "Action",
     viewDetails: "View details",
+    payNow: "Pay now",
 
     filterHeading: "Filters",
     filterHint: "Narrow down your invoices.",
