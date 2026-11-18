@@ -13,6 +13,7 @@ import type {
   PaymentChannel,
 } from "@/lib/payment-entry/manual-payment/types";
 import { initiateSslcommerz } from "@/lib/payment-entry/sslcommerz/service";
+import { reportClientError } from "@/lib/log/report-error";
 import { toast } from "@/lib/ui/toast";
 
 import BankPaymentForm from "./BankPaymentForm";
@@ -34,6 +35,13 @@ interface MakePaymentModalProps {
    * (outstanding amount); omit to start empty like payment-entry does.
    */
   initialAmount?: number;
+  /**
+   * Sales Invoice this payment is for. When set, the ERP links the Payment
+   * Entry it writes to that invoice (references → allocated_amount), so the
+   * invoice's own status / outstanding update automatically once the Payment
+   * Entry is submitted. Omitted on payment-entry (ledger-wide payment).
+   */
+  salesInvoice?: string;
   /**
    * Called after the backend confirms the request, with the REAL created
    * Payment Entry name (e.g. "ACC-PAY-2026-00001"). The page redirects to the
@@ -57,6 +65,7 @@ export default function MakePaymentModal({
   language,
   currency,
   initialAmount,
+  salesInvoice,
   onCreated,
   onClose,
 }: MakePaymentModalProps) {
@@ -82,8 +91,15 @@ export default function MakePaymentModal({
       onCreated?.(acknowledgement.name);
     } catch (error) {
       // The ERP's own message (duplicate transaction, invalid bank, file too
-      // large, …) is surfaced as-is; fall back to a generic line.
+      // large, …) is surfaced as-is; fall back to a generic line. The same
+      // incident is mirrored to the console AND the ERP Error Log so it is
+      // traceable without asking the customer to reproduce it.
       const message = error instanceof Error && error.message ? error.message : copy.submitFailed;
+      reportClientError({
+        scope: "service-build:payment-manual",
+        message,
+        detail: { salesInvoice: salesInvoice ?? null, amount: input.amount, method: input.payment_method },
+      });
       toast.error(message, copy.makePayment);
     } finally {
       setSubmitting(false);
@@ -93,12 +109,17 @@ export default function MakePaymentModal({
   const handleSslSubmit = async (amount: number) => {
     setSslSubmitting(true);
     try {
-      const session = await initiateSslcommerz({ amount, language });
+      const session = await initiateSslcommerz({ amount, language, sales_invoice: salesInvoice });
       // Hand the browser over to the SSLCommerz hosted page. The ERP opened the
       // session server-side; nothing sensitive is in this URL but the gateway.
       window.location.assign(session.gateway_page_url);
     } catch (error) {
       const message = error instanceof Error && error.message ? error.message : copy.submitFailed;
+      reportClientError({
+        scope: "service-build:payment-sslcommerz",
+        message,
+        detail: { salesInvoice: salesInvoice ?? null, amount },
+      });
       toast.error(message, copy.makePayment);
       setSslSubmitting(false);
     }
@@ -191,6 +212,7 @@ export default function MakePaymentModal({
               language={language}
               submitting={submitting}
               initialAmount={initialAmount}
+              salesInvoice={salesInvoice}
               onSubmit={handleSubmit}
             />
           </>
@@ -204,6 +226,7 @@ export default function MakePaymentModal({
               language={language}
               submitting={submitting}
               initialAmount={initialAmount}
+              salesInvoice={salesInvoice}
               onSubmit={handleSubmit}
             />
           </>
@@ -217,6 +240,7 @@ export default function MakePaymentModal({
               language={language}
               submitting={submitting}
               initialAmount={initialAmount}
+              salesInvoice={salesInvoice}
               onSubmit={handleSubmit}
             />
           </>
@@ -230,6 +254,7 @@ export default function MakePaymentModal({
               language={language}
               submitting={submitting}
               initialAmount={initialAmount}
+              salesInvoice={salesInvoice}
               onSubmit={handleSubmit}
             />
           </>

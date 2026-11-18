@@ -59,6 +59,13 @@ export interface ManualPaymentSubmitInput {
   payment_method: ManualPaymentMethod;
   amount: number;
   payment_date: string;
+  /**
+   * Sales Invoice the customer clicked পেমেন্ট করুন on. The ERP writes the
+   * Payment Entry's `references` rows against it (allocated_amount), so on
+   * submit ERPNext reconciles the invoice and its status / outstanding update
+   * automatically. Omitted on payment-entry (ledger-wide payment).
+   */
+  sales_invoice?: string;
   note?: string;
   // bKash / Rocket / Nagad
   sender_mobile?: string;

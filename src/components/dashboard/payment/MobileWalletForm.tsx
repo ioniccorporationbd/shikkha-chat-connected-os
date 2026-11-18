@@ -22,6 +22,8 @@ export interface MobileWalletFormProps {
   submitting: boolean;
   /** Pre-filled পরিমাণ — the row's বাকি (outstanding) from the invoice table. */
   initialAmount?: number;
+  /** Sales Invoice this payment is for — becomes the Payment Entry's reference row. */
+  salesInvoice?: string;
   onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
@@ -41,6 +43,7 @@ export default function MobileWalletForm({
   language,
   submitting,
   initialAmount,
+  salesInvoice,
   onSubmit,
 }: MobileWalletFormProps) {
   const today = todayISO();
@@ -82,6 +85,7 @@ export default function MobileWalletForm({
       sender_mobile: normalizeMobile(mobile),
       transaction_id: trx.trim(),
       note: note.trim() || undefined,
+      sales_invoice: salesInvoice || undefined,
       language,
     });
   };

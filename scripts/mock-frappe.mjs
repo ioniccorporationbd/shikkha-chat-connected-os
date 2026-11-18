@@ -8468,6 +8468,57 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    // Link the receipt to the invoice the dashboard's পেমেন্ট করুন came from
+    // (mirrors the real endpoint: Payment Entry `references` rows). The clicked
+    // invoice goes first; leftovers spill FIFO into the customer's other open
+    // invoices so the Payment Entry is fully allocated like ERPNext expects.
+    const preferredInvoice = String(body.sales_invoice || "").trim();
+    const openInvoices = salesInvoices
+      .filter(
+        (row) =>
+          row.customer === customer.name &&
+          Number(row.docstatus) === 1 &&
+          Number(row.outstanding_amount) > 0
+      )
+      .sort((a, b) => String(a.posting_date).localeCompare(String(b.posting_date)) || String(a.name).localeCompare(String(b.name)));
+    let allocatable = openInvoices;
+    if (preferredInvoice) {
+      const match = openInvoices.find((row) => row.name === preferredInvoice);
+      if (!match) {
+        failure(
+          response,
+          417,
+          "ValidationError",
+          t(
+            "নির্বাচিত ইনভয়েসে আর কোনো বকেয়া নেই বা সেটি আপনার নয়। ইনভয়েস তালিকা রিফ্রেশ করে আবার চেষ্টা করুন।",
+            "The selected invoice has no outstanding amount left or is not yours. Refresh the invoice list and try again."
+          ),
+          "Payment"
+        );
+        return;
+      }
+      allocatable = [match, ...openInvoices.filter((row) => row.name !== preferredInvoice)];
+    }
+    let remaining = Math.round(amount * 100) / 100;
+    const references = [];
+    for (const inv of allocatable) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, Number(inv.outstanding_amount) || 0);
+      if (take <= 0) continue;
+      references.push({
+        reference_doctype: "Sales Invoice",
+        reference_name: inv.name,
+        total_amount: Number(inv.grand_total) || 0,
+        outstanding_amount: Number(inv.outstanding_amount) || 0,
+        allocated_amount: Math.round(take * 100) / 100,
+        due_date: inv.due_date || "",
+      });
+      remaining = Math.round((remaining - take) * 100) / 100;
+    }
+    if (references.length) {
+      remarksBits.push(`Invoices: ${references.map((r) => r.reference_name).join(", ")}`);
+    }
+
     manualPaymentSeq += 1;
     const name = `ACC-PAY-2026-${String(manualPaymentSeq).padStart(5, "0")}`;
     const creation = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -8478,8 +8529,8 @@ const server = createServer(async (request, response) => {
       paid_to: canon === "Bank" ? "Bank - MSL" : "Cash - MSL",
       contact_person: customer.customer_name,
       contact_email: email,
-      total_allocated_amount: 0,
-      unallocated_amount: amount,
+      total_allocated_amount: references.reduce((sum, r) => sum + r.allocated_amount, 0),
+      unallocated_amount: Math.max(0, Math.round((amount - references.reduce((sum, r) => sum + r.allocated_amount, 0)) * 100) / 100),
       posting_date: String(body.payment_date || ""),
       payment_type: "Receive",
       party_type: "Customer",
@@ -8496,7 +8547,7 @@ const server = createServer(async (request, response) => {
       docstatus: 0,
       company: "Magnetic Solution Limited",
       remarks: [remarksBits.join(" · "), note].filter(Boolean).join(" · "),
-      references: [],
+      references,
       creation,
     };
     paymentEntries.unshift(row);
@@ -8512,6 +8563,10 @@ const server = createServer(async (request, response) => {
       currency: "BDT",
       payment_date: row.posting_date,
       submitted_at: creation,
+      invoices: references.map((r) => ({
+        sales_invoice: r.reference_name,
+        allocated_amount: r.allocated_amount,
+      })),
     });
     return;
   }

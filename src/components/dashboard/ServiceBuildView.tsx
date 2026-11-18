@@ -37,6 +37,7 @@ import DetailSheet, {
 } from "@/components/dashboard/DetailSheet";
 import { ApiError } from "@/lib/api/http";
 import MakePaymentModal from "@/components/dashboard/payment/MakePaymentModal";
+import { reportClientError } from "@/lib/log/report-error";
 import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_SUCCESS_PATH } from "@/lib/auth/session";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { fetchInvoiceDetails, fetchInvoices } from "@/lib/service-build/api";
@@ -153,6 +154,12 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
         code: err?.code ?? "unknown",
         message: err?.message ?? String(error),
       });
+      // Mirror to the ERP Error Log too (console alone dies with the tab).
+      reportClientError({
+        scope: "service-build:list",
+        message: err?.message || String(error),
+        detail: { code: err?.code ?? "unknown" },
+      });
       if (err?.code === "not_authenticated") {
         setExpired(true);
       } else if (err?.code === "not_permitted") {
@@ -197,6 +204,11 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
           name,
           code: err?.code ?? "unknown",
           message: err?.message ?? String(error),
+        });
+        reportClientError({
+          scope: "service-build:details",
+          message: err?.message || String(error),
+          detail: { name, code: err?.code ?? "unknown" },
         });
         setDetailError(err?.message || copy.loadFailed);
       } finally {
@@ -774,6 +786,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
           language={language}
           currency={payInvoice.currency || currency}
           initialAmount={payInitialAmount}
+          salesInvoice={payInvoice.name}
           onCreated={(paymentEntryId) => {
             // Same contract as the payment-entry page: the backend already
             // confirmed the create and returned the REAL Payment Entry name.

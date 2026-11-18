@@ -11,6 +11,13 @@
 export interface SslcommerzInitiateInput {
   amount: number;
   language: string;
+  /**
+   * Sales Invoice the customer clicked পেমেন্ট করুন on. The ERP links the
+   * Payment Entry it later writes to this invoice, so ERPNext reconciles and
+   * updates the invoice's own status / outstanding. Omitted on payment-entry,
+   * where the customer pays against their whole ledger.
+   */
+  sales_invoice?: string;
 }
 
 /** The backend acknowledgement after a session is opened. */

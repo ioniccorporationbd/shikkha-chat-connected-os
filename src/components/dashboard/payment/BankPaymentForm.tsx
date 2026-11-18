@@ -23,6 +23,8 @@ interface BankPaymentFormProps {
   submitting: boolean;
   /** Pre-filled পরিমাণ — the row's বাকি (outstanding) from the invoice table. */
   initialAmount?: number;
+  /** Sales Invoice this payment is for — becomes the Payment Entry's reference row. */
+  salesInvoice?: string;
   onSubmit: (input: ManualPaymentSubmitInput) => void;
 }
 
@@ -105,6 +107,7 @@ export default function BankPaymentForm({
   language,
   submitting,
   initialAmount,
+  salesInvoice,
   onSubmit,
 }: BankPaymentFormProps) {
   const today = todayISO();
@@ -184,6 +187,7 @@ export default function BankPaymentForm({
       sender_account_number: senderAccount.trim() || undefined,
       transfer_reference: reference.trim(),
       note: note.trim() || undefined,
+      sales_invoice: salesInvoice || undefined,
       proof_file_data: proof.preview,
       proof_file_name: proof.file.name,
       language,
