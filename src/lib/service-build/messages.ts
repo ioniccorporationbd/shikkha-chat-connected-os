@@ -388,7 +388,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     iAmount: "Amount",
 
     statuses: {
-      draft: "Due",
+      draft: "Draft",
       submitted: "Submitted",
       unpaid: "Unpaid",
       paid: "Paid",

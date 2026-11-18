@@ -1,7 +1,7 @@
 // Service Build → "ইনভয়েস সারসংক্ষেপ": the tiles must speak money, not a count —
 // মোট বিল = what was billed, পরিশোধিত = what was settled, বকেয়া = what a
 // draft/unpaid invoice still owes — and the invoice table's status cell must
-// label a Draft row "বকেয়া" (en: "Due") instead of "ড্রাফট".
+// label a Draft row "বকেয়া" (en: "Draft").
 //
 // Expected figures are computed from the same API the page reads, so the probe
 // compares the rendered tiles against real data, not against hardcoded numbers.
@@ -123,8 +123,8 @@ function parseAmount(text) {
     {
       lang: "en",
       labels: ["Total service bills", "Total billed", "Paid", "Due", "This month", "Latest invoice"],
-      draftStatus: "Due",
-      forbidden: ["Showing", "Total amount", "Total outstanding", "Draft"],
+      draftStatus: "Draft",
+      forbidden: ["Showing", "Total amount", "Total outstanding"],
     },
   ];
 
