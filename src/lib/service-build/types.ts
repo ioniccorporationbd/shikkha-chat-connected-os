@@ -6,6 +6,10 @@ export type SalesInvoiceStatusKey =
   | "unpaid"
   | "paid"
   | "partly paid"
+  /** An invoice whose payment is already recorded but still awaiting staff
+      verification (the Payment Entry is a Draft, so ERPNext keeps the original
+      "Unpaid" status until it is submitted). */
+  | "payment pending"
   | "overdue"
   | "return"
   | "cancelled";
@@ -34,6 +38,15 @@ export interface SalesInvoiceRow {
   amount: number;
   /** Derived from the document's own docstatus / status field. */
   display_status: SalesInvoiceStatusKey | string;
+  /** Money already recorded against this invoice by Draft Payment Entries. */
+  pending_amount?: number;
+  /** Outstanding after subtracting ``pending_amount`` — what is really left. */
+  effective_outstanding?: number;
+  /**
+   * Payment lifecycle helper from the backend overlay:
+   * ``draft`` | ``unpaid`` | ``paid`` | ``pending_partial`` | ``pending_full``.
+   */
+  payment_state?: string;
 }
 
 /** One billed line from the Sales Invoice's ``items`` child table. */

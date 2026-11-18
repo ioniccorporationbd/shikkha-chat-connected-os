@@ -1954,8 +1954,43 @@ function invoiceDisplayStatus(row) {
   return "Draft";
 }
 
+/** Money already recorded against an invoice by Draft Payment Entries. */
+function invoicePendingClaim(invoiceName) {
+  let total = 0;
+  for (const pe of paymentEntries) {
+    if (Number(pe.docstatus) !== 0) continue;
+    for (const ref of pe.references || []) {
+      if (ref.reference_doctype === "Sales Invoice" && ref.reference_name === invoiceName) {
+        total += Number(ref.allocated_amount) || 0;
+      }
+    }
+  }
+  return Math.round(total * 100) / 100;
+}
+
+/** Mirrors shikkha_os.api.v1.sales_invoice._payment_overlay. */
+function withPaymentOverlay(payload, pending) {
+  const pendingAmount = Math.max(Number(pending) || 0, 0);
+  const outstanding = Number(payload.outstanding_amount) || 0;
+  const effective = Math.max(Math.round((outstanding - pendingAmount) * 100) / 100, 0);
+  const docstatus = Number(payload.docstatus || 0);
+  let state;
+  if (docstatus !== 1) state = docstatus === 0 ? "draft" : "cancelled";
+  else if (outstanding <= 0.005) state = "paid";
+  else if (pendingAmount > 0.005 && effective <= 0.005) state = "pending_full";
+  else if (pendingAmount > 0.005) state = "pending_partial";
+  else state = "unpaid";
+  payload.pending_amount = pendingAmount;
+  payload.effective_outstanding = effective;
+  payload.payment_state = state;
+  if (state === "pending_full" || state === "pending_partial") {
+    payload.display_status = "Payment Pending";
+  }
+  return payload;
+}
+
 function invoiceRowPayload(row) {
-  return {
+  const payload = {
     name: row.name,
     posting_date: row.posting_date || "",
     due_date: row.due_date || "",
@@ -1977,6 +2012,7 @@ function invoiceRowPayload(row) {
     amount: invoiceDisplayAmount(row),
     display_status: invoiceDisplayStatus(row),
   };
+  return withPaymentOverlay(payload, invoicePendingClaim(row.name));
 }
 
 function invoiceSummary(rows, currency) {
@@ -1990,7 +2026,7 @@ function invoiceSummary(rows, currency) {
   for (const row of rows) {
     const amount = Number(row.amount || 0);
     totalAmount += amount;
-    totalOutstanding += Number(row.outstanding_amount || 0);
+    totalOutstanding += Number(row.effective_outstanding ?? row.outstanding_amount ?? 0);
     const posting = String(row.posting_date || "");
     if (posting) {
       if (posting > latest) latest = posting;
@@ -8497,13 +8533,35 @@ const server = createServer(async (request, response) => {
         );
         return;
       }
+      if (
+        Math.round((Number(match.outstanding_amount) - invoicePendingClaim(match.name)) * 100) / 100 <=
+        0
+      ) {
+        failure(
+          response,
+          417,
+          "ValidationError",
+          t(
+            "এই ইনভয়েসের পেমেন্ট ইতিমধ্যে জমা হয়েছে এবং যাচাইয়ের অপেক্ষায় আছে। অনুমোদনের পর বকেয়া স্বয়ংক্রিয়ভাবে হালনাগাদ হবে।",
+            "A payment for this invoice has already been recorded and is awaiting verification. The outstanding amount updates once it is approved."
+          ),
+          "Payment"
+        );
+        return;
+      }
       allocatable = [match, ...openInvoices.filter((row) => row.name !== preferredInvoice)];
     }
     let remaining = Math.round(amount * 100) / 100;
     const references = [];
     for (const inv of allocatable) {
       if (remaining <= 0) break;
-      const take = Math.min(remaining, Number(inv.outstanding_amount) || 0);
+      // A Draft Payment Entry already keeps its share of the invoice; never
+      // allocate the same money twice (mirrors the real endpoint).
+      const available = Math.max(
+        Math.round(((Number(inv.outstanding_amount) || 0) - invoicePendingClaim(inv.name)) * 100) / 100,
+        0
+      );
+      const take = Math.min(remaining, available);
       if (take <= 0) continue;
       references.push({
         reference_doctype: "Sales Invoice",

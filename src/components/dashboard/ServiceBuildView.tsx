@@ -60,6 +60,8 @@ function statusTone(key: string): string {
       return "var(--color-primary)";
     case "partly paid":
       return "color-mix(in srgb, var(--color-success) 62%, var(--color-white))";
+    case "payment pending":
+      return "var(--color-warning)";
     case "unpaid":
       return "color-mix(in srgb, var(--color-primary) 58%, var(--color-white))";
     case "draft":
@@ -79,8 +81,19 @@ function statusTone(key: string): string {
  * True when the invoice is fully settled (স্ট্যাটাস = পরিশোধিত) — those rows
  * keep the "বিস্তারিত দেখুন" action; every other row offers "পেমেন্ট করুন".
  */
+/** বাকি: what is still owed once recorded (even Draft) payments are counted. */
+function remainingOf(invoice: SalesInvoiceRow): number {
+  const raw = invoice.effective_outstanding ?? invoice.outstanding_amount;
+  const value = Number(raw ?? 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 function isSettled(invoice: SalesInvoiceRow): boolean {
-  return String(invoice.display_status || "").trim().toLowerCase() === "paid";
+  const status = String(invoice.display_status || "").trim().toLowerCase();
+  if (status === "paid") return true;
+  // A Draft payment that already covers the whole invoice closes the CTA too:
+  // paying again would buy nothing - the entry only waits for verification.
+  return invoice.payment_state === "pending_full";
 }
 
 /** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
@@ -232,7 +245,10 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   const openPayNow = useCallback((invoice: SalesInvoiceRow) => setPayInvoice(invoice), []);
   const closePayNow = useCallback(() => setPayInvoice(null), []);
   const payInitialAmount = useMemo(() => {
-    const outstanding = Number(payInvoice?.outstanding_amount ?? 0);
+    // Count Draft payments already recorded against the invoice, so the pop-up
+    // opens on the real remainder instead of the ERPNext figure that only moves
+    // after staff submit the Payment Entry.
+    const outstanding = payInvoice ? remainingOf(payInvoice) : 0;
     return Number.isFinite(outstanding) && outstanding > 0
       ? Math.round(outstanding * 100) / 100
       : undefined;
@@ -250,6 +266,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
       "submitted",
       "unpaid",
       "partly paid",
+      "payment pending",
       "paid",
       "overdue",
       "return",
@@ -319,15 +336,17 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
     // minus what is still owed (clamped, so odd data can never show a credit).
     const filteredPaid = filtered.reduce((sum, row) => {
       const amount = Number(row.amount) || 0;
-      const owed = Number(row.outstanding_amount) || 0;
+      const owed = remainingOf(row);
       return sum + Math.max(0, amount - owed);
     }, 0);
     // বকেয়া: what is still owed on an invoice the customer has not settled —
     // the draft (docstatus 0) and submitted-unpaid rows only.
     const filteredDue = filtered.reduce((sum, row) => {
       const key = String(row.display_status || "").trim().toLowerCase();
-      if (key !== "draft" && key !== "unpaid") return sum;
-      return sum + (Number(row.outstanding_amount) || 0);
+      // "payment pending" rows still owe their (reduced) remaining balance -
+      // the earlier payment is only a Draft until staff verify it.
+      if (key !== "draft" && key !== "unpaid" && key !== "payment pending") return sum;
+      return sum + remainingOf(row);
     }, 0);
     return { totalRecords, filteredAmount, filteredPaid, filteredDue };
   }, [data, invoices, filtered]);
@@ -649,7 +668,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                 {formatAmount(invoice.amount, invoice.currency || currency, language)}
                               </td>
                               <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                                {formatAmount(invoice.outstanding_amount, invoice.currency || currency, language)}
+                                {formatAmount(remainingOf(invoice), invoice.currency || currency, language)}
                               </td>
                               <td className="px-4 py-3">
                                 <StatusBadge status={invoice.display_status} copy={copy} emphasis />
@@ -811,7 +830,7 @@ function serviceBillSections(
   const fmt = (value: unknown) => formatAmount(num(value), code, language);
 
   const amount = num(detail.amount);
-  const outstanding = num(detail.outstanding_amount);
+  const outstanding = num(detail.effective_outstanding ?? detail.outstanding_amount);
   const hasPaid = Number.isFinite(amount) && Number.isFinite(outstanding);
   const paid = hasPaid ? amount - outstanding : null;
 
@@ -837,7 +856,7 @@ function serviceBillSections(
       { label: copy.dTaxes, value: num(detail.total_taxes_and_charges) ? fmt(detail.total_taxes_and_charges) : "" },
       { label: copy.dDiscount, value: num(detail.discount_amount) ? fmt(detail.discount_amount) : "" },
       { label: copy.dPaid, value: paid !== null ? fmt(paid) : "" },
-      { label: copy.dOutstanding, value: fmt(detail.outstanding_amount) },
+      { label: copy.dOutstanding, value: fmt(detail.effective_outstanding ?? detail.outstanding_amount) },
     ] as DetailRow[]
   ).filter((row) => Boolean(row.value));
 
@@ -1028,7 +1047,7 @@ function InvoiceCard({
             {copy.colOutstanding}
           </span>
           <span className="text-[13px] font-semibold">
-            {formatAmount(invoice.outstanding_amount, code, language)}
+            {formatAmount(remainingOf(invoice), code, language)}
           </span>
         </div>
       </div>
@@ -1093,6 +1112,8 @@ function StatusBadge({
       "border border-[color-mix(in_srgb,var(--color-primary)_26%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_20%,var(--color-white))] text-[var(--color-primary)]",
     "partly paid":
       "border border-[color-mix(in_srgb,var(--color-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_12%,var(--color-white))] text-[var(--color-success)]",
+    "payment pending":
+      "border border-[color-mix(in_srgb,var(--color-warning)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-warning)_14%,var(--color-white))] text-[var(--color-warning)]",
     paid: "border border-[color-mix(in_srgb,var(--color-success)_40%,transparent)] bg-[var(--color-success)] text-[var(--color-white)]",
     overdue:
       "border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--color-white))] text-[var(--color-danger-strong)]",
@@ -1114,6 +1135,7 @@ function StatusBadge({
   if (emphasis) {
     const isPaid = key === "paid";
     const isDue = key === "draft" || key === "unpaid" || key === "overdue";
+    const isPending = key === "payment pending";
     const tint = isPaid
       ? {
           background: "color-mix(in srgb, var(--color-success) 14%, var(--color-white))",
@@ -1128,7 +1150,14 @@ function StatusBadge({
             color: "var(--color-danger-strong)",
             dot: "var(--color-danger-strong)",
           }
-        : undefined;
+        : isPending
+          ? {
+              background: "color-mix(in srgb, var(--color-warning) 14%, var(--color-white))",
+              borderColor: "color-mix(in srgb, var(--color-warning) 40%, transparent)",
+              color: "var(--color-warning)",
+              dot: "var(--color-warning)",
+            }
+          : undefined;
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1"
