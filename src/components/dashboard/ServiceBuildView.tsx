@@ -101,7 +101,9 @@ function isSettled(invoice: SalesInvoiceRow): boolean {
  * পেমেন্ট করুন CTA stays visible but disabled until they are submitted.
  */
 function isPayDisabled(invoice: SalesInvoiceRow): boolean {
-  if (invoice.payment_state === "draft") return true;
+  // Nothing here trusts payment_state === "draft": older backends used that key
+  // for merely-unpaid invoices, which must stay pay-able. The invoice's own
+  // docstatus and status label are the only Draft markers.
   // docstatus 0 is the ground truth for a Draft (বকেয়া) invoice - the status
   // label can arrive translated or vary by site, docstatus cannot.
   if (Number(invoice.docstatus) === 0) return true;
