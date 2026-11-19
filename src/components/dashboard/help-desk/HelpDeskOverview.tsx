@@ -44,7 +44,11 @@ const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-pri
 /** Rows revealed per "load more" click in the dashboard tables. */
 const MAX_ROWS = 5;
 /** Shared column template so the head and every row line up on desktop. */
-const TABLE_COLS = "lg:grid-cols-[8.5rem_minmax(0,1.6fr)_12rem_auto_auto_10rem_1.25rem]";
+/* Fixed status/priority tracks: `auto` tracks resolve against their own grid's
+   content, so the header (short labels) and each row (wide status badges) used
+   to disagree — every row shifted the কাস্টমার column to a different x. Fixed
+   widths make the header and all rows share one column grid. */
+const TABLE_COLS = "lg:grid-cols-[8.5rem_minmax(0,1.6fr)_12rem_9rem_6rem_10rem_1.25rem]";
 const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 
 type OverviewTab = "recent" | "unresolved";
