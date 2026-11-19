@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { FiAlertCircle, FiHeadphones, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiAlertCircle, FiDownload, FiHeadphones, FiPrinter, FiRefreshCw, FiX } from "react-icons/fi";
 
 import ConversationComposer, { type ComposerInput } from "@/components/help-desk/conversation/ConversationComposer";
 import ConversationThread from "@/components/help-desk/conversation/ConversationThread";
 import ConversationTimeline from "@/components/help-desk/conversation/ConversationTimeline";
 import ProblemInfoCard from "@/components/help-desk/conversation/ProblemInfoCard";
-import { makeStampBorrower } from "@/lib/help-desk/format";
+import {
+  buildDetailDocumentHtml,
+  downloadDetailDocument,
+  printDetailDocument,
+} from "@/lib/dashboard/detail-document";
+import { formatDateTimeNumeric, makeStampBorrower } from "@/lib/help-desk/format";
 import { resolveTicketHeader } from "@/lib/help-desk/ticket-view";
 import { helpDeskHomeFor } from "@/components/dashboard/help-desk/HelpDeskBackButton";
 import {
@@ -17,7 +22,11 @@ import {
   sendMessage,
   setTicketStatus,
 } from "@/lib/help-desk/conversations";
-import { conversationCopyFor, conversationStatusLabel } from "@/lib/help-desk/conversation-copy";
+import {
+  conversationCopyFor,
+  conversationPriorityLabel,
+  conversationStatusLabel,
+} from "@/lib/help-desk/conversation-copy";
 import { useTicketRealtime } from "@/lib/help-desk/use-ticket-realtime";
 import type { ConversationMessage, ConversationPayload } from "@/lib/help-desk/types";
 import { reportClientError } from "@/lib/log/report-error";
@@ -231,6 +240,71 @@ export default function ProblemDetailCard({
   const ticket = payload?.ticket;
   const canReply = payload?.canReply ?? false;
 
+  // Print / Download — the same document family as the invoice and solved-ticket
+  // sheets (Bengali webfont, printable iframe, `.html` download).
+  const buildDocument = useCallback(() => {
+    if (!payload) return "";
+    const t = payload.ticket;
+    const lang = language === "en" ? "en" : "bn";
+    const statusText = conversationStatusLabel[t?.status ?? "open"]?.[lang] ?? t?.status ?? "";
+    const authorOf = (message: ConversationMessage) =>
+      message.authorName ||
+      (message.author === "support"
+        ? copy.exportAuthorSupport
+        : message.author === "system"
+          ? copy.exportAuthorSystem
+          : t?.contact?.name || copy.colCustomer);
+    return buildDetailDocumentHtml({
+      brand: "Shikkha Chat",
+      eyebrow: copy.detailCardTitle,
+      title: t?.subject || ticketId,
+      subtitle: ticketId,
+      badges: [statusText].filter(Boolean),
+      sections: [
+        {
+          title: copy.detailCardTitle,
+          rows: [
+            { label: copy.colTicket, value: ticketId, emphasis: true },
+            { label: copy.colSubject, value: t?.subject || "—" },
+            { label: copy.colStatus, value: statusText || "—" },
+            { label: copy.colPriority, value: conversationPriorityLabel[t?.priority ?? "medium"]?.[lang] ?? t?.priority ?? "—" },
+            { label: copy.colCustomer, value: t?.contact?.name || "—" },
+            {
+              label: copy.colSubmitted,
+              value: t?.createdAt ? formatDateTimeNumeric(t.createdAt, language) : "—",
+            },
+          ],
+        },
+        ...(t?.description
+          ? [{ title: copy.detailCardTitle, rows: [{ label: copy.colLastMessage, value: t.description }] }]
+          : []),
+      ],
+      tables: [
+        {
+          title: copy.conversationTitle,
+          columns: [copy.colSender, copy.colClosedAt, copy.colLastMessage],
+          rows: (payload.messages ?? []).map((message) => [
+            authorOf(message),
+            formatDateTimeNumeric(message.createdAt, language),
+            message.body,
+          ]),
+        },
+      ],
+      footerNote: copy.detailExportFooter,
+      locale: language === "en" ? "en-GB" : "bn-BD",
+    });
+  }, [copy, language, payload, ticketId]);
+
+  const printProblem = useCallback(() => {
+    const html = buildDocument();
+    if (html) printDetailDocument(html);
+  }, [buildDocument]);
+
+  const downloadProblem = useCallback(() => {
+    const html = buildDocument();
+    if (html) downloadDetailDocument(html, `problem-${ticketId}`);
+  }, [buildDocument, ticketId]);
+
   return (
     <div
       className="fixed inset-0 z-[80] flex items-stretch justify-center bg-[color-mix(in_srgb,var(--color-primary)_42%,transparent)] p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
@@ -286,6 +360,24 @@ export default function ProblemDetailCard({
               <FiHeadphones size={12} aria-hidden style={{ color: "var(--color-white)" }} />
               <span style={{ color: "var(--color-white)" }}>{copy.helpDeskHome}</span>
             </Link>
+            <button
+              type="button"
+              onClick={printProblem}
+              disabled={!payload}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+            >
+              <FiPrinter size={12} aria-hidden />
+              {copy.detailPrint}
+            </button>
+            <button
+              type="button"
+              onClick={downloadProblem}
+              disabled={!payload}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-primary)] transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+            >
+              <FiDownload size={12} aria-hidden />
+              {copy.detailDownload}
+            </button>
             <button
               type="button"
               onClick={() => void load()}

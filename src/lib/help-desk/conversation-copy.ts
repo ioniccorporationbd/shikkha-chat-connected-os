@@ -236,6 +236,12 @@ export interface ConversationCopy {
   detailCardTitle: string;
   detailCardClose: string;
   detailCardLoading: string;
+  /** Print/Download of the problem card (same document family as the ledger). */
+  detailPrint: string;
+  detailDownload: string;
+  detailExportFooter: string;
+  exportAuthorSupport: string;
+  exportAuthorSystem: string;
 
   /* ---- ticket detail (customer) ---- */
   detailConversationLink: string;
@@ -459,6 +465,11 @@ const bn: ConversationCopy = {
   detailCardTitle: "সমস্যার বিস্তারিত",
   detailCardClose: "বন্ধ করুন",
   detailCardLoading: "বিস্তারিত লোড হচ্ছে…",
+  detailPrint: "প্রিন্ট",
+  detailDownload: "ডাউনলোড",
+  detailExportFooter: "Shikkha Chat হেল্প ডেস্ক থেকে তৈরি",
+  exportAuthorSupport: "সাপোর্ট টিম",
+  exportAuthorSystem: "সিস্টেম",
 
   detailConversationLink: "সম্পূর্ণ কথোপকথন দেখুন",
   detailRequirementButton: "রিকোয়ারমেন্ট যোগ করুন",
@@ -680,6 +691,11 @@ const en: ConversationCopy = {
   detailCardTitle: "Problem details",
   detailCardClose: "Close",
   detailCardLoading: "Loading the details…",
+  detailPrint: "Print",
+  detailDownload: "Download",
+  detailExportFooter: "Generated from the Shikkha Chat Help Desk",
+  exportAuthorSupport: "Support team",
+  exportAuthorSystem: "System",
 
   detailConversationLink: "Open the full conversation",
   detailRequirementButton: "Add requirement",
