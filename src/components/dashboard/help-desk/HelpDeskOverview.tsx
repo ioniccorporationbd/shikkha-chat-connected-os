@@ -258,7 +258,7 @@ export default function HelpDeskOverview({
                            or vanish when zero). */
                         <span
                           data-quick-solved-count
-                          className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] px-2 py-0.5 text-[11px] font-bold leading-none tabular-nums text-[var(--color-primary)]"
+                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
                         >
                           {summary.resolved}
                         </span>
