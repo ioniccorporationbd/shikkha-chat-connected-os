@@ -81,6 +81,28 @@ function statusTone(key: string): string {
  * True when the invoice is fully settled (স্ট্যাটাস = পরিশোধিত) — those rows
  * keep the "বিস্তারিত দেখুন" action; every other row offers "পেমেন্ট করুন".
  */
+/**
+ * বকেয়া (draft) and মেয়াদোত্তীর্ণ (overdue) invoices cannot be paid from the
+ * portal: a Draft has not reached the ledger, and an Overdue one is settled at
+ * the office. Their পেমেন্ট করুন CTA stays visible but disabled.
+ * Gate on docstatus/label, never payment_state - older payloads send
+ * payment_state === "draft" for merely-unpaid invoices.
+ */
+function isPayDisabled(invoice: SalesInvoiceRow): boolean {
+  if (Number(invoice.docstatus) === 0) return true;
+  const key = String(invoice.display_status || "").trim().toLowerCase();
+  return key === "draft" || key === "overdue";
+}
+
+/** Why the CTA is disabled: draft vs overdue read differently to the customer. */
+function payDisabledTitle(
+  invoice: SalesInvoiceRow,
+  copy: Pick<ServiceBuildCopy, "payDisabledHint" | "payOverdueHint">
+): string {
+  const key = String(invoice.display_status || "").trim().toLowerCase();
+  return key === "overdue" ? copy.payOverdueHint : copy.payDisabledHint;
+}
+
 /** বাকি: what is still owed once recorded (even Draft) payments are counted. */
 function remainingOf(invoice: SalesInvoiceRow): number {
   const raw = invoice.effective_outstanding ?? invoice.outstanding_amount;
@@ -717,6 +739,8 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                   <PayNowButton
                                     label={copy.payNow}
                                     onClick={() => openPayNow(invoice)}
+                                    disabled={isPayDisabled(invoice)}
+                                    title={payDisabledTitle(invoice, copy)}
                                   />
                                 )}
                               </td>
@@ -1090,6 +1114,8 @@ function InvoiceCard({
           <PayNowButton
             label={copy.payNow}
             onClick={onPay}
+            disabled={isPayDisabled(invoice)}
+            title={payDisabledTitle(invoice, copy)}
           />
         )}
         <button

@@ -54,6 +54,7 @@ export interface ServiceBuildCopy {
   /** CTA on rows that still owe money — the payment-entry পেমেন্ট করুন button. */
   payNow: string;
   payDisabledHint: string;
+  payOverdueHint: string;
   payPendingHint: string;
 
   // ---- Filters ----
@@ -184,6 +185,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     viewDetails: "বিস্তারিত দেখুন",
     payNow: "পেমেন্ট করুন",
     payDisabledHint: "বকেয়া ইনভয়েস এখনো নিশ্চিত হয়নি — কনফার্ম হওয়ার পরই পেমেন্ট করা যাবে",
+    payOverdueHint: "মেয়াদোত্তীর্ণ ইনভয়েস পোর্টাল থেকে পরিশোধ করা যায় না — অফিসের সাথে যোগাযোগ করুন",
     payPendingHint: "এই ইনভয়েসের পেমেন্ট ইতিমধ্যে জমা হয়েছে — যাচাইয়ের অপেক্ষায় আছে",
 
     filterHeading: "ফিল্টার",
@@ -316,6 +318,7 @@ export const serviceBuildCopy: Record<"bn" | "en", ServiceBuildCopy> = {
     viewDetails: "View details",
     payNow: "Pay now",
     payDisabledHint: "This invoice is still a draft — it can be paid once it is confirmed",
+    payOverdueHint: "Overdue invoices cannot be paid from the portal — please contact the office",
     payPendingHint: "A payment for this invoice is already recorded and awaiting verification",
 
     filterHeading: "Filters",
