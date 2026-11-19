@@ -232,6 +232,8 @@ export interface ConversationCopy {
   queueSolveEmptyTitle: string;
   queueSolveEmptyHint: string;
   queueViewDetails: string;
+  /** Solved queue (mode "solve") action label — mirrors the client table's বিস্তারিত দেখুন. */
+  queueViewDetailsSolved: string;
   queueCount: (count: number) => string;
   detailCardTitle: string;
   detailCardClose: string;
@@ -461,6 +463,7 @@ const bn: ConversationCopy = {
   queueSolveEmptyTitle: "সমাধানের তালিকা এখন খালি",
   queueSolveEmptyHint: "কোনো সমস্যায় কাজ শুরু করলে সেটি নিউ প্রবলেম থেকে এখানে চলে আসবে।",
   queueViewDetails: "ভিউ ডিটেইলস",
+  queueViewDetailsSolved: "বিস্তারিত দেখুন",
   queueCount: (count) => `${count}টি সমস্যা`,
   detailCardTitle: "সমস্যার বিস্তারিত",
   detailCardClose: "বন্ধ করুন",
@@ -687,6 +690,7 @@ const en: ConversationCopy = {
   queueSolveEmptyTitle: "Nothing to solve yet",
   queueSolveEmptyHint: "Start working on a problem and it moves here from New problems.",
   queueViewDetails: "View details",
+  queueViewDetailsSolved: "View details",
   queueCount: (count) => `${count} problem${count === 1 ? "" : "s"}`,
   detailCardTitle: "Problem details",
   detailCardClose: "Close",
