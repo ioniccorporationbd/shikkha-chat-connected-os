@@ -230,6 +230,9 @@ export interface HelpDeskCopy {
   solvedDetailsPrint: string;
   solvedDetailsDownload: string;
   solvedDetailsFooter: string;
+  /** Sheet loading line + inline failure note while refreshing a ticket. */
+  detailsLoading: string;
+  detailsLoadFailed: string;
   detailsProblem: string;
   detailsAttachments: string;
   detailsNoAttachments: string;
@@ -564,6 +567,8 @@ const bn: HelpDeskCopy = {
   detailsTitle: "টিকিট বিস্তারিত",
   solvedDetailsPrint: "প্রিন্ট",
   solvedDetailsDownload: "ডাউনলোড",
+  detailsLoading: "টিকিট লোড হচ্ছে…",
+  detailsLoadFailed: "টিকিটের সর্বশেষ তথ্য আনা যায়নি — সংরক্ষিত তথ্য দেখানো হচ্ছে।",
   solvedDetailsFooter: "শিক্ষা চ্যাট হেল্প ডেস্ক থেকে জারি করা হয়েছে — গ্রাহক কপি।",
   detailsProblem: "সমস্যার বিবরণ",
   detailsAttachments: "সংযুক্তি",
@@ -905,6 +910,8 @@ const en: HelpDeskCopy = {
   detailsTitle: "Ticket details",
   solvedDetailsPrint: "Print",
   solvedDetailsDownload: "Download",
+  detailsLoading: "Loading ticket…",
+  detailsLoadFailed: "The latest ticket data could not be fetched — showing the saved copy.",
   solvedDetailsFooter: "Issued from the Shikkha Chat help desk — customer copy.",
   detailsProblem: "Problem description",
   detailsAttachments: "Attachments",

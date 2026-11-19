@@ -332,6 +332,7 @@ export default function HelpDeskTicketBoard({
       )}
 
       <SolvedTicketDetailsDialog
+        key={detailTicket?.id ?? "closed"}
         ticket={detailTicket}
         copy={copy}
         language={language}
