@@ -408,10 +408,12 @@ export default function ProblemQueue({
                         <button
                           type="button"
                           onClick={() => setSelected(row.ticketId)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--color-action)] px-2.5 py-1.5 text-[11.5px] font-bold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                         >
-                          <FiEye size={12} aria-hidden />
-                          {copy.queueViewDetails}
+                          <FiEye size={12} className="pointer-events-none text-[var(--color-action)]" aria-hidden />
+                          <span className="pointer-events-none text-[11.5px] font-semibold text-[var(--color-action)]">
+                            {copy.queueViewDetails}
+                          </span>
                         </button>
                       </td>
                     </tr>
