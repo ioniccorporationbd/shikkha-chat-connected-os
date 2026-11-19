@@ -79,7 +79,8 @@ function statusTone(key: string): string {
 
 /**
  * True when the invoice is fully settled (স্ট্যাটাস = পরিশোধিত) — those rows
- * keep the "বিস্তারিত দেখুন" action; every other row offers "পেমেন্ট করুন".
+ * keep the "বিস্তারিত দেখুন" action; the পেমেন্ট করুন button moved into that popup
+ * and is offered only while the status is অপরিশোধিত (Unpaid).
  */
 /** বাকি: what is still owed once recorded (even Draft) payments are counted. */
 function remainingOf(invoice: SalesInvoiceRow): number {
@@ -88,18 +89,6 @@ function remainingOf(invoice: SalesInvoiceRow): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-function isSettled(invoice: SalesInvoiceRow): boolean {
-  const status = String(invoice.display_status || "").trim().toLowerCase();
-  if (status === "paid") return true;
-  // "পরিশোধিত" can arrive translated; the backend overlay's paid state is the
-  // language-independent marker for a settled invoice.
-  return invoice.payment_state === "paid";
-}
-
-/**
- * বকেয়া rows are Draft invoices: the office has not confirmed them yet, so the
- * পেমেন্ট করুন CTA stays visible but disabled until they are submitted.
- */
 /** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
 function PayNowButton({
   label,
@@ -273,6 +262,11 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   // pre-filled from the row's বাকি (outstanding) column so the customer starts
   // from the exact due and can still edit it for a partial payment.
   const openPayNow = useCallback((invoice: SalesInvoiceRow) => setPayInvoice(invoice), []);
+
+  // পেমেন্ট করুন is offered only for অপরিশোধিত (Unpaid) invoices; Draft, Overdue,
+  // Payment-Pending and Paid rows open the details popup without the pay button.
+  const isPayable = (invoice: SalesInvoiceRow) =>
+    String(invoice.display_status || "").trim().toLowerCase() === "unpaid";
 
   // The পেমেন্ট করুন button now lives inside the details popup, at the right of
   // the "ইনভয়েস বিস্তারিত" heading. Opening the payment flow closes the sheet
@@ -775,7 +769,7 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
         closeLabel={copy.close}
         eyebrow={copy.detailsHeading}
         headerAction={
-          detail && !isSettled(detail) ? (
+          detail && isPayable(detail) ? (
             <PayNowButton label={copy.payNow} onClick={openPayFromDetail} />
           ) : null
         }
