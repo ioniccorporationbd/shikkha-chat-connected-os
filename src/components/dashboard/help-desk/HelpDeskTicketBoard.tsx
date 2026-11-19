@@ -19,6 +19,7 @@ import { listTickets } from "@/lib/help-desk/service";
 import type { Ticket } from "@/lib/help-desk/types";
 
 import HelpDeskBackButton from "./HelpDeskBackButton";
+import SolvedTicketDetailsDialog from "./SolvedTicketDetailsDialog";
 import { HELP_DESK_FIELD as FIELD_CLASS } from "./fields";
 
 /** Page sizes offered under the table: 10 (default), 20, 50, 100 and 500. */
@@ -68,6 +69,8 @@ export default function HelpDeskTicketBoard({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [titleFilter, setTitleFilter] = useState("");
+  // Solved rows open a details popup (print / download) instead of navigating.
+  const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
 
   const isSolved = variant === "closed" || variant === "resolved";
   const links = helpDeskLinks(basePath);
@@ -308,6 +311,7 @@ export default function HelpDeskTicketBoard({
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
             actionVariant={isSolved ? "pill" : "default"}
+            onViewDetails={isSolved ? setDetailTicket : undefined}
           />
           <ListPagination
             copy={paginationCopy}
@@ -326,6 +330,13 @@ export default function HelpDeskTicketBoard({
           />
         </>
       )}
+
+      <SolvedTicketDetailsDialog
+        ticket={detailTicket}
+        copy={copy}
+        language={language}
+        onClose={() => setDetailTicket(null)}
+      />
     </div>
   );
 }

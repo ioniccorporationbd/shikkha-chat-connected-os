@@ -226,6 +226,10 @@ export interface HelpDeskCopy {
 
   // Details
   detailsTitle: string;
+  /** Solved-ticket popup action bar + document footer. */
+  solvedDetailsPrint: string;
+  solvedDetailsDownload: string;
+  solvedDetailsFooter: string;
   detailsProblem: string;
   detailsAttachments: string;
   detailsNoAttachments: string;
@@ -558,6 +562,9 @@ const bn: HelpDeskCopy = {
   backToList: "তালিকায় ফিরুন",
 
   detailsTitle: "টিকিট বিস্তারিত",
+  solvedDetailsPrint: "প্রিন্ট",
+  solvedDetailsDownload: "ডাউনলোড",
+  solvedDetailsFooter: "শিক্ষা চ্যাট হেল্প ডেস্ক থেকে জারি করা হয়েছে — গ্রাহক কপি।",
   detailsProblem: "সমস্যার বিবরণ",
   detailsAttachments: "সংযুক্তি",
   detailsNoAttachments: "এই টিকিটে কোনো ফাইল সংযুক্ত নেই।",
@@ -896,6 +903,9 @@ const en: HelpDeskCopy = {
   backToList: "Back to list",
 
   detailsTitle: "Ticket details",
+  solvedDetailsPrint: "Print",
+  solvedDetailsDownload: "Download",
+  solvedDetailsFooter: "Issued from the Shikkha Chat help desk — customer copy.",
   detailsProblem: "Problem description",
   detailsAttachments: "Attachments",
   detailsNoAttachments: "No attachments.",

@@ -26,6 +26,7 @@ export default function TicketCard({
   newReply,
   sl,
   stamp = "created",
+  onViewDetails,
 }: {
   ticket: Ticket;
   copy: HelpDeskCopy;
@@ -38,6 +39,8 @@ export default function TicketCard({
   sl?: number;
   /** Same meaning as on the table: created stamp for Open, resolved for Closed. */
   stamp?: "created" | "resolved";
+  /** When supplied, the action opens the details popup instead of navigating. */
+  onViewDetails?: (ticket: Ticket) => void;
 }) {
   const links = helpDeskLinks(basePath);
   return (
@@ -77,13 +80,24 @@ export default function TicketCard({
             {formatDateTimeNumeric(stamp === "resolved" ? ticket.resolvedAt || ticket.updatedAt : ticket.createdAt, language)}
           </span>
         </span>
-        <Link
-          href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
-          className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
-        >
-          <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
-          <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
-        </Link>
+        {onViewDetails ? (
+          <button
+            type="button"
+            onClick={() => onViewDetails(ticket)}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+          >
+            <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+            <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+          </button>
+        ) : (
+          <Link
+            href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+          >
+            <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+            <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+          </Link>
+        )}
       </div>
     </article>
   );
