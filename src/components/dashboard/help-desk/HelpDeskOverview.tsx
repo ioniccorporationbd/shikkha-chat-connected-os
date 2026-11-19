@@ -251,7 +251,20 @@ export default function HelpDeskOverview({
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]">{action.label}</span>
-                      <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
+                      {action.key === "solved" ? (
+                        /* Same figure as টিকিট সারসংক্ষেপ › সমাধান হয়েছে — one
+                           resolved count, read off the tickets already loaded,
+                           never the separate badge counter (which could drift
+                           or vanish when zero). */
+                        <span
+                          data-quick-solved-count
+                          className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_9%,var(--color-white))] px-2 py-0.5 text-[11px] font-bold leading-none tabular-nums text-[var(--color-primary)]"
+                        >
+                          {summary.resolved}
+                        </span>
+                      ) : (
+                        <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
+                      )}
                     </span>
                     <FiArrowRight
                       size={15}
