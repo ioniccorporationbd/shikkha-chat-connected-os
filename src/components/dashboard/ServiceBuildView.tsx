@@ -100,24 +100,6 @@ function isSettled(invoice: SalesInvoiceRow): boolean {
  * বকেয়া rows are Draft invoices: the office has not confirmed them yet, so the
  * পেমেন্ট করুন CTA stays visible but disabled until they are submitted.
  */
-function isPayDisabled(invoice: SalesInvoiceRow): boolean {
-  // Nothing here trusts payment_state === "draft": older backends used that key
-  // for merely-unpaid invoices, which must stay pay-able. The invoice's own
-  // docstatus and status label are the only Draft markers.
-  // docstatus 0 is the ground truth for a Draft (বকেয়া) invoice - the status
-  // label can arrive translated or vary by site, docstatus cannot.
-  if (Number(invoice.docstatus) === 0) return true;
-  // A recorded (Draft) payment already covering the whole invoice: paying
-  // again would buy nothing, the entry only waits for staff verification.
-  if (invoice.payment_state === "pending_full") return true;
-  return String(invoice.display_status || "").trim().toLowerCase() === "draft";
-}
-
-/** Hint under/over the disabled CTA: why it cannot be paid right now. */
-function payDisabledTitle(invoice: SalesInvoiceRow, copy: { payDisabledHint: string; payPendingHint: string }): string {
-  return invoice.payment_state === "pending_full" ? copy.payPendingHint : copy.payDisabledHint;
-}
-
 /** The পেমেন্ট করুন CTA — the payment-entry header button, at row scale. */
 function PayNowButton({
   label,
@@ -735,8 +717,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                   <PayNowButton
                                     label={copy.payNow}
                                     onClick={() => openPayNow(invoice)}
-                                    disabled={isPayDisabled(invoice)}
-                                    title={payDisabledTitle(invoice, copy)}
                                   />
                                 )}
                               </td>
@@ -1110,8 +1090,6 @@ function InvoiceCard({
           <PayNowButton
             label={copy.payNow}
             onClick={onPay}
-            disabled={isPayDisabled(invoice)}
-            title={payDisabledTitle(invoice, copy)}
           />
         )}
         <button
