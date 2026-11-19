@@ -39,6 +39,8 @@ interface DetailSheetProps {
   icon?: ReactNode;
   /** Status chips / badges shown under the heading. */
   badges?: ReactNode;
+  /** Optional action rendered at the right of the heading (e.g. পেমেন্ট করুন). */
+  headerAction?: ReactNode;
   /** Logical content groups (Bill information, Amount, Reference, ...). */
   sections: DetailSection[];
   /** Optional block appended after the sections (item / reference tables). */
@@ -69,6 +71,7 @@ export default function DetailSheet({
   subtitle,
   icon,
   badges,
+  headerAction,
   sections,
   children,
   loading,
@@ -195,7 +198,7 @@ export default function DetailSheet({
                     {icon}
                   </span>
                 ) : null}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
                     {eyebrow}
                   </p>
@@ -206,6 +209,7 @@ export default function DetailSheet({
                     </p>
                   ) : null}
                 </div>
+                {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
               </div>
 
               {badges ? <div className="flex flex-wrap items-center gap-2">{badges}</div> : null}

@@ -273,6 +273,16 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
   // pre-filled from the row's বাকি (outstanding) column so the customer starts
   // from the exact due and can still edit it for a partial payment.
   const openPayNow = useCallback((invoice: SalesInvoiceRow) => setPayInvoice(invoice), []);
+
+  // The পেমেন্ট করুন button now lives inside the details popup, at the right of
+  // the "ইনভয়েস বিস্তারিত" heading. Opening the payment flow closes the sheet
+  // so only one overlay owns the scroll lock.
+  const openPayFromDetail = useCallback(() => {
+    if (!detail) return;
+    const invoice = detail;
+    closeDetails();
+    openPayNow(invoice);
+  }, [detail, closeDetails, openPayNow]);
   const closePayNow = useCallback(() => setPayInvoice(null), []);
   const payInitialAmount = useMemo(() => {
     // Count Draft payments already recorded against the invoice, so the pop-up
@@ -704,21 +714,14 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                                 <StatusBadge status={invoice.display_status} copy={copy} emphasis />
                               </td>
                               <td className="whitespace-nowrap px-4 py-3">
-                                {isSettled(invoice) ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => void openDetails(invoice.name)}
-                                    className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
-                                  >
-                                    <FiEye size={12} className="pointer-events-none" />
-                                    <span className="pointer-events-none">{copy.viewDetails}</span>
-                                  </button>
-                                ) : (
-                                  <PayNowButton
-                                    label={copy.payNow}
-                                    onClick={() => openPayNow(invoice)}
-                                  />
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => void openDetails(invoice.name)}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                                >
+                                  <FiEye size={12} className="pointer-events-none" />
+                                  <span className="pointer-events-none">{copy.viewDetails}</span>
+                                </button>
                               </td>
                             </tr>
                           ))}
@@ -737,7 +740,6 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
                           language={language}
                           currency={currency}
                           onOpen={() => void openDetails(invoice.name)}
-                          onPay={() => openPayNow(invoice)}
                         />
                       ))}
                     </div>
@@ -772,6 +774,11 @@ export default function ServiceBuildView({ onBack }: { onBack?: () => void }) {
         onClose={closeDetails}
         closeLabel={copy.close}
         eyebrow={copy.detailsHeading}
+        headerAction={
+          detail && !isSettled(detail) ? (
+            <PayNowButton label={copy.payNow} onClick={openPayFromDetail} />
+          ) : null
+        }
         title={detailName ?? ""}
         subtitle={detail ? detail.customer_name || detail.company || copy.dSubtitle : copy.dSubtitle}
         icon={<FiFileText size={20} />}
@@ -1039,7 +1046,6 @@ function InvoiceCard({
   language,
   currency,
   onOpen,
-  onPay,
 }: {
   sl: number;
   invoice: SalesInvoiceRow;
@@ -1047,7 +1053,6 @@ function InvoiceCard({
   language: string;
   currency: string;
   onOpen: () => void;
-  onPay: () => void;
 }) {
   const code = invoice.currency || currency;
   return (
@@ -1086,12 +1091,6 @@ function InvoiceCard({
       </div>
 
       <div className="flex items-center justify-end gap-2">
-        {isSettled(invoice) ? null : (
-          <PayNowButton
-            label={copy.payNow}
-            onClick={onPay}
-          />
-        )}
         <button
           type="button"
           onClick={onOpen}
