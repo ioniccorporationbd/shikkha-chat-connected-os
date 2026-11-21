@@ -266,6 +266,16 @@ export default function HelpDeskOverview({
                         >
                           {summary.resolved}
                         </span>
+                      ) : action.key === "open" ? (
+                        /* Same figure as টিকিট সারসংক্ষেপ › খোলা — the open count
+                           off the tickets already loaded, never the separate
+                           badge counter. */
+                        <span
+                          data-quick-open-count
+                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
+                        >
+                          {summary.open}
+                        </span>
                       ) : (
                         <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
                       )}
