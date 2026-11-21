@@ -258,38 +258,8 @@ export default function HelpDeskOverview({
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className="min-w-0 text-[13px] font-semibold leading-snug text-[var(--color-primary)] line-clamp-3 xl:line-clamp-1 xl:overflow-hidden xl:text-ellipsis xl:whitespace-nowrap">{action.label}</span>
-                      {action.key === "solved" ? (
-                        /* Same figure as টিকিট সারসংক্ষেপ › সমাধান হয়েছে — one
-                           resolved count, read off the tickets already loaded,
-                           never the separate badge counter (which could drift
-                           or vanish when zero). */
-                        <span
-                          data-quick-solved-count
-                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
-                        >
-                          {summary.resolved}
-                        </span>
-                      ) : action.key === "waiting" ? (
-                        /* Same figure as টিকিট সারসংক্ষেপ › আপনার উত্তরের অপেক্ষায়. */
-                        <span
-                          data-quick-waiting-count
-                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
-                        >
-                          {summary.waiting}
-                        </span>
-                      ) : action.key === "open" ? (
-                        /* Same figure as টিকিট সারসংক্ষেপ › খোলা — the open count
-                           off the tickets already loaded, never the separate
-                           badge counter. */
-                        <span
-                          data-quick-open-count
-                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
-                        >
-                          {summary.open}
-                        </span>
-                      ) : (
-                        <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
-                      )}
+                      {/* No count inside দ্রুত অ্যাকশন tiles — the figures live
+                          in the টিকিট সারসংক্ষেপ cards above. */}
                     </span>
                     {/* Wrapped: a bare `hidden` on the svg loses to the
                         unlayered `svg { display: block }` in globals.css. */}
