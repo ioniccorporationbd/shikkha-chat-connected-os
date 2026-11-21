@@ -242,20 +242,22 @@ export default function HelpDeskOverview({
           {/* Quick actions */}
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
-            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+            {/* Customer: all four tiles inline on one row from lg up — never a
+               3+1 wrap. Staff keeps its two-tile row. */}
+            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <Link
                     key={action.key}
                     href={action.href}
-                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
+                    className="group flex items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] px-4 py-3 transition lg:gap-2 lg:px-3 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)]"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)] ">
                       <Icon size={18} aria-hidden />
                     </span>
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className="truncate text-[13px] font-semibold text-[var(--color-primary)]">{action.label}</span>
+                      <span className="min-w-0 text-[13px] font-semibold leading-snug text-[var(--color-primary)] line-clamp-3 xl:line-clamp-1 xl:overflow-hidden xl:text-ellipsis xl:whitespace-nowrap">{action.label}</span>
                       {action.key === "solved" ? (
                         /* Same figure as টিকিট সারসংক্ষেপ › সমাধান হয়েছে — one
                            resolved count, read off the tickets already loaded,
@@ -289,11 +291,14 @@ export default function HelpDeskOverview({
                         <NotificationBadge count={badgeCountFor(action.key, badges)} label={action.label} />
                       )}
                     </span>
-                    <FiArrowRight
-                      size={15}
-                      className="ml-auto text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition group-hover:translate-x-0.5"
-                      aria-hidden
-                    />
+                    {/* Wrapped: a bare `hidden` on the svg loses to the
+                        unlayered `svg { display: block }` in globals.css. */}
+                    <span className="ml-auto hidden shrink-0 2xl:inline-flex" aria-hidden>
+                      <FiArrowRight
+                        size={15}
+                        className="text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)] transition group-hover:translate-x-0.5"
+                      />
+                    </span>
                   </Link>
                 );
               })}
