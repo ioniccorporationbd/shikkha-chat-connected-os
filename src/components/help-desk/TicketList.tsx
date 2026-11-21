@@ -57,8 +57,11 @@ export default function TicketList({
    * tables). `pill` = the Service-Build / Payment list's rounded view-details
    * pill (red border + eye icon) so the Solved table matches the
    * `/clientDashboard/service-build` table's অ্যাকশন button.
+   * `link-pill` = same pill on a plain Link (waiting board): byte-identical
+   * classes to the service-build অ্যাকশন button, but it navigates instead of
+   * opening a dialog.
    */
-  actionVariant?: "default" | "pill";
+  actionVariant?: "default" | "pill" | "link-pill";
   /**
    * When supplied, the অ্যাকশন cell opens a details popup (Solved table)
    * instead of navigating to the ticket page — no route change, the row's
@@ -162,7 +165,7 @@ export default function TicketList({
                       type="button"
                       onClick={() => onViewDetails(ticket)}
                       className={
-                        actionVariant === "pill"
+                        (actionVariant === "pill" || actionVariant === "link-pill")
                           ? "inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                           : "inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                       }
@@ -179,6 +182,17 @@ export default function TicketList({
                         </>
                       )}
                     </button>
+                  ) : actionVariant === "link-pill" ? (
+                    /* Byte-identical classes to the service-build
+                       /clientDashboard/service-build ইনভয়েস তালিকা অ্যাকশন
+                       button (also a Link, so it navigates). */
+                    <Link
+                      href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                    >
+                      <FiEye size={12} className="pointer-events-none" aria-hidden />
+                      <span className="pointer-events-none text-[var(--color-action)]">{copy.viewDetails}</span>
+                    </Link>
                   ) : actionVariant === "pill" ? (
                     <Link
                       href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}

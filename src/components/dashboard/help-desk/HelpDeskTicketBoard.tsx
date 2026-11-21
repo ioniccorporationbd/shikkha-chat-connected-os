@@ -314,7 +314,9 @@ export default function HelpDeskTicketBoard({
             unseenIds={unseen}
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
-            actionVariant={isSolved ? "pill" : "default"}
+            /* Waiting rows use the service-build ইনভয়েস তালিকা pill (eye +
+               label); they are links, so no onViewDetails dialog. */
+            actionVariant={isSolved ? "pill" : isWaiting ? "link-pill" : "default"}
             onViewDetails={isSolved ? setDetailTicket : undefined}
           />
           <ListPagination
