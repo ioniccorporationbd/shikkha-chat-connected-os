@@ -8668,6 +8668,13 @@ const server = createServer(async (request, response) => {
       currency: "BDT",
       payment_date: row.posting_date,
       submitted_at: creation,
+      // Companion Journal Entry the backend writes beside the Payment Entry
+      // (debit = credit = 20 % of the amount, cheque_no = PE name). A
+      // "JEERR" transaction reference simulates the backend's failure path.
+      journal_entry: reference.toUpperCase().startsWith("JEERR") ? null : `ACC-JV-2026-${String(manualPaymentSeq).padStart(5, "0")}`,
+      journal_entry_error: reference.toUpperCase().startsWith("JEERR")
+        ? "ValidationError: simulated journal entry failure"
+        : null,
       invoices: references.map((r) => ({
         sales_invoice: r.reference_name,
         allocated_amount: r.allocated_amount,

@@ -85,6 +85,24 @@ export default function MakePaymentModal({
     setSubmitting(true);
     try {
       const acknowledgement = await submitManualPayment(input);
+      if (acknowledgement.journal_entry_error) {
+        // The Payment Entry exists — only its companion Journal Entry failed.
+        // Mirror the cause to the console (and the ERP Error Log) without
+        // blocking the customer's success flow.
+        const jeMessage = acknowledgement.journal_entry_error;
+        console.error(
+          `[manual-payment] journal entry failed for ${acknowledgement.name}: ${jeMessage}`
+        );
+        reportClientError({
+          scope: "service-build:payment-journal-entry",
+          message: jeMessage,
+          detail: {
+            paymentEntry: acknowledgement.name,
+            salesInvoice: salesInvoice ?? null,
+            amount: acknowledgement.amount,
+          },
+        });
+      }
       // No in-modal success screen and no toast: hand the real Payment Entry
       // name to the page, which redirects to the success route — the single,
       // authoritative confirmation.

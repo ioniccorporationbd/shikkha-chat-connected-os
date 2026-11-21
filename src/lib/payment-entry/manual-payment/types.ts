@@ -95,4 +95,12 @@ export interface ManualPaymentResult {
   currency: string;
   payment_date: string;
   submitted_at: string;
+  /**
+   * Companion Journal Entry the ERP wrote beside this Payment Entry
+   * (debit = credit = 20 % of the paid amount, cheque_no = Payment Entry name).
+   * Null when the site resolved no accounts / the write failed.
+   */
+  journal_entry?: string | null;
+  /** Why the Journal Entry was not written — surfaced to the console + Error Log. */
+  journal_entry_error?: string | null;
 }
