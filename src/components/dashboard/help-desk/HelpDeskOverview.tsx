@@ -159,6 +159,7 @@ export default function HelpDeskOverview({
     : [
         { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },
         { key: "open", label: copy.quickOpenTickets, href: links.tickets, icon: FiInbox },
+        { key: "waiting", label: copy.statuses.waiting_for_user, href: links.waiting, icon: FiClock },
         { key: "solved", label: copy.quickResolvedTickets, href: links.solved, icon: FiCheckCircle },
       ];
 
@@ -265,6 +266,14 @@ export default function HelpDeskOverview({
                           className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
                         >
                           {summary.resolved}
+                        </span>
+                      ) : action.key === "waiting" ? (
+                        /* Same figure as টিকিট সারসংক্ষেপ › আপনার উত্তরের অপেক্ষায়. */
+                        <span
+                          data-quick-waiting-count
+                          className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 text-[10.5px] font-bold leading-none tabular-nums text-white shadow-[0_5px_12px_-6px_color-mix(in_srgb,var(--color-action)_85%,transparent)]"
+                        >
+                          {summary.waiting}
                         </span>
                       ) : action.key === "open" ? (
                         /* Same figure as টিকিট সারসংক্ষেপ › খোলা — the open count

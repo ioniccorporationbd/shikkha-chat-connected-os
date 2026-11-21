@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiCheckCircle, FiInbox, FiPlus, FiSearch, FiX } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiInbox, FiPlus, FiSearch, FiX } from "react-icons/fi";
 
 import DashboardDateField from "@/components/dashboard/DashboardDateField";
 import ListPagination from "@/components/dashboard/ListPagination";
@@ -26,7 +26,7 @@ import { HELP_DESK_FIELD as FIELD_CLASS } from "./fields";
 const ROWS_OPTIONS = [10, 20, 50, 100, 500] as const;
 const DEFAULT_ROWS = 10;
 
-export type TicketBoardVariant = "open" | "closed" | "resolved";
+export type TicketBoardVariant = "open" | "closed" | "resolved" | "waiting";
 
 /** Which statuses belong to each board.
  *
@@ -41,6 +41,9 @@ const STATUSES_BY_VARIANT: Record<TicketBoardVariant, string[]> = {
   open: ["open"],
   closed: ["closed"],
   resolved: ["resolved", "closed"],
+  // ERP HD "Replied" (Paused status category) — support answered, ball is in
+  // the customer's court. Same table, navigates to the ticket on অ্যাকশন.
+  waiting: ["waiting_for_user"],
 };
 
 /**
@@ -73,6 +76,7 @@ export default function HelpDeskTicketBoard({
   const [detailTicket, setDetailTicket] = useState<Ticket | null>(null);
 
   const isSolved = variant === "closed" || variant === "resolved";
+  const isWaiting = variant === "waiting";
   const links = helpDeskLinks(basePath);
   // Solved rows open the ticket conversation: solution, requirements, full history.
 
@@ -139,7 +143,7 @@ export default function HelpDeskTicketBoard({
 
   const paginationCopy = useMemo(() => genericPaginationCopy(language), [language]);
 
-  const Icon = isSolved ? FiCheckCircle : FiInbox;
+  const Icon = isSolved ? FiCheckCircle : isWaiting ? FiClock : FiInbox;
 
   return (
     <div className="flex flex-col gap-4">
@@ -147,7 +151,7 @@ export default function HelpDeskTicketBoard({
         <HelpDeskBackButton label={copy.back} homeLabel={copy.helpDeskHome} fallbackHref={basePath} />
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-3 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden />
-          {isSolved ? copy.solvedOnlyNote : copy.openOnlyNote}
+          {isSolved ? copy.solvedOnlyNote : isWaiting ? copy.waitingOnlyNote : copy.openOnlyNote}
         </span>
       </div>
 
@@ -158,20 +162,20 @@ export default function HelpDeskTicketBoard({
           </span>
           <div className="min-w-0">
             <h1 className="text-[18px] font-semibold leading-tight text-[var(--color-primary)] sm:text-[20px]">
-              {isSolved ? copy.solvedTitle : copy.listTitle}
+              {isSolved ? copy.solvedTitle : isWaiting ? copy.waitingTitle : copy.listTitle}
             </h1>
             <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
-              {isSolved ? copy.solvedSubtitle : copy.listSubtitle}
+              {isSolved ? copy.solvedSubtitle : isWaiting ? copy.waitingSubtitle : copy.listSubtitle}
             </p>
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <Link
-          href={isSolved ? links.tickets : links.solved}
+          href={isSolved ? links.tickets : isWaiting ? links.tickets : links.solved}
           className="inline-flex flex-none items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-4 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-primary)_38%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-primary)_28%,transparent)] focus-visible:ring-offset-2"
         >
-          {isSolved ? <FiInbox size={16} aria-hidden /> : <FiCheckCircle size={16} aria-hidden />}
-          {isSolved ? copy.quickOpenTickets : copy.quickResolvedTickets}
+          {isSolved || isWaiting ? <FiInbox size={16} aria-hidden /> : <FiCheckCircle size={16} aria-hidden />}
+          {isSolved || isWaiting ? copy.quickOpenTickets : copy.quickResolvedTickets}
         </Link>
         <Link
           href={links.newTicket}
@@ -297,8 +301,8 @@ export default function HelpDeskTicketBoard({
         <TicketEmptyState
           copy={copy}
           basePath={basePath}
-          title={isSolved ? copy.solvedEmptyTitle : copy.emptyTitle}
-          hint={isSolved ? copy.solvedEmptyHint : copy.emptyHint}
+          title={isSolved ? copy.solvedEmptyTitle : isWaiting ? copy.waitingEmptyTitle : copy.emptyTitle}
+          hint={isSolved ? copy.solvedEmptyHint : isWaiting ? copy.waitingEmptyHint : copy.emptyHint}
         />
       ) : (
         <>

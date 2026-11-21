@@ -21,6 +21,8 @@ export interface HelpDeskLinks {
   tickets: string;
   /** The solved/closed ticket list. */
   solved: string;
+  /** Tickets the support team has replied to and is waiting on the customer. */
+  waiting: string;
   /** A single ticket's details. */
   ticket: (id: string) => string;
   /** The full WhatsApp-style conversation of one ticket. */
@@ -39,6 +41,7 @@ export function helpDeskLinks(base = `/${HELP_DESK_SEGMENT}`): HelpDeskLinks {
     newTicket: `${root}/new`,
     tickets: `${root}/tickets`,
     solved: `${root}/solved`,
+    waiting: `${root}/waiting`,
     ticket: (id: string) => `${root}/tickets/${encodeURIComponent(id)}`,
     conversation: (id: string) => `${root}/tickets/${encodeURIComponent(id)}/conversation`,
     problems: `${root}/problems`,

@@ -171,6 +171,11 @@ export interface HelpDeskCopy {
   solvedOnlyNote: string;
   solvedEmptyTitle: string;
   solvedEmptyHint: string;
+  waitingTitle: string;
+  waitingSubtitle: string;
+  waitingOnlyNote: string;
+  waitingEmptyTitle: string;
+  waitingEmptyHint: string;
   searchPlaceholder: string;
   filterAll: string;
   colSl: string;
@@ -521,6 +526,11 @@ const bn: HelpDeskCopy = {
   solvedOnlyNote: "সমাধান হওয়া ও সম্পন্ন (বন্ধ) টিকিট দেখানো হচ্ছে",
   solvedEmptyTitle: "এখনও কোনো সমাধান হওয়া টিকিট নেই।",
   solvedEmptyHint: "টিকিট সমাধান হয়ে সম্পন্ন হলে সেটি এখানে দেখা যাবে।",
+  waitingTitle: "আপনার উত্তরের অপেক্ষায়",
+  waitingSubtitle: "সাপোর্ট টিম উত্তর দিয়েছে — এখন আপনার জবাবের অপেক্ষায়।",
+  waitingOnlyNote: "যেসব টিকিটে আপনার উত্তরের অপেক্ষায় আছে সেগুলো দেখানো হচ্ছে",
+  waitingEmptyTitle: "এই মুহূর্তে কোনো টিকিট আপনার উত্তরের অপেক্ষায় নেই।",
+  waitingEmptyHint: "সাপোর্ট টিম উত্তর দিলে টিকিটটি এখানে দেখা যাবে।",
   searchPlaceholder: "টিকিট আইডি বা বিষয় দিয়ে খুঁজুন",
   filterAll: "সব",
   colSl: "ক্রম",
@@ -864,6 +874,11 @@ const en: HelpDeskCopy = {
   solvedOnlyNote: "Showing resolved and closed tickets",
   solvedEmptyTitle: "No resolved tickets yet.",
   solvedEmptyHint: "A ticket shows up here once it is resolved.",
+  waitingTitle: "Waiting for your reply",
+  waitingSubtitle: "Support has replied — these tickets are waiting on you.",
+  waitingOnlyNote: "Showing tickets that are waiting for your reply",
+  waitingEmptyTitle: "No tickets are waiting for your reply right now.",
+  waitingEmptyHint: "A ticket appears here once support replies to it.",
   searchPlaceholder: "Search by ticket ID or subject",
   filterAll: "All",
   colSl: "SL",

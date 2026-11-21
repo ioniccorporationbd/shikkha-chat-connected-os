@@ -11,6 +11,7 @@ import HelpDeskOverview from "./HelpDeskOverview";
 import HelpDeskSolvedTickets from "./HelpDeskSolvedTickets";
 import HelpDeskTicketThread from "./HelpDeskTicketThread";
 import HelpDeskTickets from "./HelpDeskTickets";
+import HelpDeskWaitingTickets from "./HelpDeskWaitingTickets";
 import ProblemQueue from "./ProblemQueue";
 
 export type HelpDeskView =
@@ -18,6 +19,7 @@ export type HelpDeskView =
   | "new"
   | "tickets"
   | "solved"
+  | "waiting"
   | "detail"
   | "conversation"
   | "problems"
@@ -110,6 +112,10 @@ export default function HelpDeskDashboard({
 
   if (view === "tickets") {
     return <HelpDeskTickets copy={copy} language={language} basePath={basePath} />;
+  }
+
+  if (view === "waiting") {
+    return <HelpDeskWaitingTickets copy={copy} language={language} basePath={basePath} />;
   }
 
   if (view === "solved") {

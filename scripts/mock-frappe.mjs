@@ -5475,6 +5475,53 @@ const HD_CLOSED_TICKET = "HD-2026-00044";
   });
 }
 
+// Fourth seed: support has REPLIED — ERP HD status category "Paused" maps to
+// the portal's `waiting_for_user`, which feeds the "আপনার উত্তরের অপেক্ষায়"
+// board. Its অ্যাকশন button opens this specific ticket.
+const HD_WAITING_TICKET = "HD-2026-00045";
+{
+  const createdAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+  const updatedAt = new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString();
+  const waitingTicket = {
+    id: HD_WAITING_TICKET,
+    subject: "রিফান্ডের আবেদনের অবস্থা জানতে চাই",
+    category: "payment",
+    priority: "medium",
+    description: "রিফান্ডের আবেদন করেছি — বর্তমানে কোন ধাপে আছে জানতে চাই।",
+    status: "waiting_for_user",
+    contact: {
+      name: "Nusrat Jahan",
+      email: "client@example.com",
+      mobile: undefined,
+      preferredContact: "email",
+    },
+    attachments: [],
+    messages: [],
+    pinnedMessageId: null,
+    createdAt,
+    updatedAt,
+    resolvedAt: null,
+    assignedAgent: "MD Shahzalal Amin Surker",
+    ownerKey: "client@example.com",
+  };
+  hdTicketList.push({ ownerKey: "client@example.com", support: false, ticket: waitingTicket });
+  hdThreads.set(HD_WAITING_TICKET, {
+    name: HD_WAITING_TICKET,
+    subject: waitingTicket.subject,
+    category: waitingTicket.category,
+    priority: waitingTicket.priority,
+    status: "Replied",
+    currentStatus: "Replied",
+    statusCategory: "Paused",
+    customer: "Nusrat Jahan",
+    customerEmail: "client@example.com",
+    agent: "MD Shahzalal Amin Surker",
+    submittedAt: createdAt,
+    messages: [],
+    timeline: [],
+  });
+}
+
 // Every seeded thread's pristine rows, keyed by ticket name. A harness resets to
 // this between runs so repeated pushes cannot pile up duplicate rows in one
 // long-lived mock process.
