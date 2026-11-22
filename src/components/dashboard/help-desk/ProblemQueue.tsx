@@ -447,7 +447,7 @@ export default function ProblemQueue({
                         >
                           <FiEye size={12} className="pointer-events-none text-[var(--color-action)]" aria-hidden />
                           <span className="pointer-events-none text-[11.5px] font-semibold text-[var(--color-action)]">
-                            {mode === "solve" ? copy.queueViewDetailsSolved : copy.queueViewDetails}
+                            {mode === "open" ? copy.queueViewDetails : copy.queueViewDetailsSolved}
                           </span>
                         </button>
                       </td>
@@ -500,7 +500,7 @@ export default function ProblemQueue({
                     </span>
                   </div>
                   <span className="mt-2 inline-flex items-center gap-1 text-[11.5px] font-bold text-[var(--color-primary)]">
-                    {mode === "solve" ? copy.queueViewDetailsSolved : copy.queueViewDetails}
+                    {mode === "open" ? copy.queueViewDetails : copy.queueViewDetailsSolved}
                     <FiArrowRight size={12} aria-hidden />
                   </span>
                 </button>
