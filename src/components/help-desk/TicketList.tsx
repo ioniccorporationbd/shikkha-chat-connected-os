@@ -60,8 +60,11 @@ export default function TicketList({
    * `link-pill` = same pill on a plain Link (waiting board): byte-identical
    * classes to the service-build অ্যাকশন button, but it navigates instead of
    * opening a dialog.
+   * `expense-pill` = byte-identical to the `/userDashboard/expense-claim`
+   * আপনার এক্সপেন্স ক্লেম অ্যাকশন button (eye + label pill, red 30% border,
+   * red label, 7% hover tint) — used by the staff dashboard's আমার টিকিট table.
    */
-  actionVariant?: "default" | "pill" | "link-pill";
+  actionVariant?: "default" | "pill" | "link-pill" | "expense-pill";
   /**
    * When supplied, the অ্যাকশন cell opens a details popup (Solved table)
    * instead of navigating to the ticket page — no route change, the row's
@@ -95,6 +98,7 @@ export default function TicketList({
             newReply={Boolean(unseenIds?.has(ticket.id))}
             stamp={stamp}
             sl={slStart + index}
+            actionVariant={actionVariant}
             onViewDetails={onViewDetails}
           />
         ))}
@@ -161,6 +165,19 @@ export default function TicketList({
                 </td>
                 <td className="px-4 py-3.5">
                   {onViewDetails ? (
+                    actionVariant === "expense-pill" ? (
+                      /* Byte-identical to the /userDashboard/expense-claim
+                         আপনার এক্সপেন্স ক্লেম অ্যাকশন view-details button. */
+                      <button
+                        type="button"
+                        onClick={() => onViewDetails(ticket)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                        style={{ color: "var(--color-action)" }}
+                      >
+                        <FiEye size={12} className="pointer-events-none" />
+                        <span className="pointer-events-none">{copy.viewDetails}</span>
+                      </button>
+                    ) : (
                     <button
                       type="button"
                       onClick={() => onViewDetails(ticket)}
@@ -182,6 +199,18 @@ export default function TicketList({
                         </>
                       )}
                     </button>
+                    )
+                  ) : actionVariant === "expense-pill" ? (
+                    /* Byte-identical to the /userDashboard/expense-claim
+                       আপনার এক্সপেন্স ক্লেম অ্যাকশন view-details button. */
+                    <Link
+                      href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                      style={{ color: "var(--color-action)" }}
+                    >
+                      <FiEye size={12} className="pointer-events-none" aria-hidden />
+                      <span className="pointer-events-none text-[var(--color-action)]">{copy.viewDetails}</span>
+                    </Link>
                   ) : actionVariant === "link-pill" ? (
                     /* Byte-identical classes to the service-build
                        /clientDashboard/service-build ইনভয়েস তালিকা অ্যাকশন

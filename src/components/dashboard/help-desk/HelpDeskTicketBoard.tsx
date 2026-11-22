@@ -14,6 +14,7 @@ import { genericPaginationCopy } from "@/lib/dashboard/list-controls";
 import { useReloadHandler } from "@/lib/dashboard/reload-registry";
 import { sortTicketsSmart, unseenSupportIds } from "@/lib/help-desk/insights";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
+import { STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
 import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { listTickets } from "@/lib/help-desk/service";
 import type { Ticket } from "@/lib/help-desk/types";
@@ -315,8 +316,18 @@ export default function HelpDeskTicketBoard({
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
             /* Waiting rows use the service-build ইনভয়েস তালিকা pill (eye +
-               label); they are links, so no onViewDetails dialog. */
-            actionVariant={isSolved ? "pill" : isWaiting ? "link-pill" : "default"}
+               label); they are links, so no onViewDetails dialog.
+               Staff dashboard (userDashboard) open rows match the
+               আপনার এক্সপেন্স ক্লেম অ্যাকশন view-details pill exactly. */
+            actionVariant={
+              isSolved
+                ? "pill"
+                : isWaiting
+                  ? "link-pill"
+                  : basePath === STAFF_DASHBOARD_PATH || basePath.startsWith(`${STAFF_DASHBOARD_PATH}/`)
+                    ? "expense-pill"
+                    : "default"
+            }
             onViewDetails={isSolved ? setDetailTicket : undefined}
           />
           <ListPagination

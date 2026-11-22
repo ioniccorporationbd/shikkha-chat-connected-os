@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FiCalendar, FiChevronRight } from "react-icons/fi";
+import { FiCalendar, FiChevronRight, FiEye } from "react-icons/fi";
 
 import { formatDateTimeNumeric } from "@/lib/help-desk/format";
 import type { HelpDeskCopy } from "@/lib/help-desk/messages";
@@ -17,6 +17,11 @@ import TicketStatusBadge from "./TicketStatusBadge";
  * desktop row: serial number, id, status, subject, chips and the same outline
  * "view details" action button — red appears on that action only.
  */
+/** Byte-identical to the /userDashboard/expense-claim আপনার এক্সপেন্স ক্লেম
+ *  table's অ্যাকশন → view details button: red pill, eye icon, 11.5px label. */
+const EXPENSE_ACTION_CLASS =
+  "inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]";
+
 export default function TicketCard({
   ticket,
   copy,
@@ -26,6 +31,7 @@ export default function TicketCard({
   newReply,
   sl,
   stamp = "created",
+  actionVariant = "default",
   onViewDetails,
 }: {
   ticket: Ticket;
@@ -37,12 +43,16 @@ export default function TicketCard({
   newReply?: boolean;
   /** Row serial number shown on the desktop table. */
   sl?: number;
+  /** Mirrors the table's action variant; `expense-pill` matches the
+   *  /userDashboard/expense-claim আপনার এক্সপেন্স ক্লেম action button. */
+  actionVariant?: "default" | "pill" | "link-pill" | "expense-pill";
   /** Same meaning as on the table: created stamp for Open, resolved for Closed. */
   stamp?: "created" | "resolved";
   /** When supplied, the action opens the details popup instead of navigating. */
   onViewDetails?: (ticket: Ticket) => void;
 }) {
   const links = helpDeskLinks(basePath);
+  const isExpensePill = actionVariant === "expense-pill";
   return (
     <article className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_12px_28px_color-mix(in_srgb,var(--color-primary)_7%,transparent)]">
       <div className="flex items-start justify-between gap-3">
@@ -84,18 +94,46 @@ export default function TicketCard({
           <button
             type="button"
             onClick={() => onViewDetails(ticket)}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            style={isExpensePill ? { color: "var(--color-action)" } : undefined}
+            className={
+              isExpensePill
+                ? EXPENSE_ACTION_CLASS
+                : "inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            }
           >
-            <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
-            <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+            {isExpensePill ? (
+              <>
+                <FiEye size={12} className="pointer-events-none" aria-hidden />
+                <span className="pointer-events-none">{copy.viewDetails}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+                <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+              </>
+            )}
           </button>
         ) : (
           <Link
             href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            style={isExpensePill ? { color: "var(--color-action)" } : undefined}
+            className={
+              isExpensePill
+                ? EXPENSE_ACTION_CLASS
+                : "inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:-translate-y-[1px] hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
+            }
           >
-            <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
-            <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+            {isExpensePill ? (
+              <>
+                <FiEye size={12} className="pointer-events-none" aria-hidden />
+                <span className="pointer-events-none text-[var(--color-action)]">{copy.viewDetails}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+                <FiChevronRight size={14} className="text-[var(--color-primary)]" aria-hidden />
+              </>
+            )}
           </Link>
         )}
       </div>
