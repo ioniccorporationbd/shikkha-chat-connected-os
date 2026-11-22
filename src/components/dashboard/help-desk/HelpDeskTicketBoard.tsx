@@ -315,18 +315,18 @@ export default function HelpDeskTicketBoard({
             unseenIds={unseen}
             slStart={start + 1}
             stamp={isSolved ? "resolved" : "created"}
-            /* Waiting rows use the service-build ইনভয়েস তালিকা pill (eye +
-               label); they are links, so no onViewDetails dialog.
-               Staff dashboard (userDashboard) open rows match the
-               আপনার এক্সপেন্স ক্লেম অ্যাকশন view-details pill exactly. */
+            /* Every non-staff row uses the service-build /clientDashboard/
+               service-build ইনভয়েস তালিকা অ্যাকশন pill (rounded-full, eye +
+               label) byte-for-byte: the customer tickets table matches that
+               invoice list, and waiting rows already did. They are links, so
+               no onViewDetails dialog. Staff dashboard (userDashboard) open
+               rows match the আপনার এক্সপেন্স ক্লেম অ্যাকশন pill exactly. */
             actionVariant={
               isSolved
                 ? "pill"
-                : isWaiting
-                  ? "link-pill"
-                  : basePath === STAFF_DASHBOARD_PATH || basePath.startsWith(`${STAFF_DASHBOARD_PATH}/`)
-                    ? "expense-pill"
-                    : "default"
+                : basePath === STAFF_DASHBOARD_PATH || basePath.startsWith(`${STAFF_DASHBOARD_PATH}/`)
+                  ? (isWaiting ? "link-pill" : "expense-pill")
+                  : "link-pill"
             }
             onViewDetails={isSolved ? setDetailTicket : undefined}
           />

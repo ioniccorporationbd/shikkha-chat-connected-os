@@ -214,10 +214,14 @@ export default function TicketList({
                   ) : actionVariant === "link-pill" ? (
                     /* Byte-identical classes to the service-build
                        /clientDashboard/service-build ইনভয়েস তালিকা অ্যাকশন
-                       button (also a Link, so it navigates). */
+                       button (also a Link, so it navigates). The inline
+                       color is required because globals.css ships an
+                       unlayered `a { color: inherit }` which outranks the
+                       layered text-[var(--color-action)] utility. */
                     <Link
                       href={detailHref ? detailHref(ticket.id) : links.ticket(ticket.id)}
                       className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                      style={{ color: "var(--color-action)" }}
                     >
                       <FiEye size={12} className="pointer-events-none" aria-hidden />
                       <span className="pointer-events-none text-[var(--color-action)]">{copy.viewDetails}</span>
