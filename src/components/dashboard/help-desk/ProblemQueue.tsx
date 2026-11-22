@@ -55,8 +55,9 @@ export default function ProblemQueue({
   mode,
 }: {
   language: string;
-  /** `open` = New Problem, `solve` = Solve Problem. */
-  mode: "open" | "solve";
+  /** `open` = New Problem, `solve` = Solve Problem (Resolved list),
+   *  `waiting` = Waiting for your reply (Waiting queue). */
+  mode: "open" | "solve" | "waiting";
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
   const paginationCopy = useMemo(() => genericPaginationCopy(language), [language]);
@@ -70,7 +71,9 @@ export default function ProblemQueue({
     (row: ConversationSummary) =>
       mode === "solve"
         ? row.resolvedAt || row.submittedAt || row.lastMessageAt
-        : row.submittedAt || row.lastMessageAt,
+        : mode === "waiting"
+          ? row.lastMessageAt || row.submittedAt
+          : row.submittedAt || row.lastMessageAt,
     [mode],
   );
 
@@ -117,9 +120,9 @@ export default function ProblemQueue({
           page,
           pageSize: rowsPerPage,
           includeEmpty: true,
-          /* The staff Solve queue is now the Resolved list: only tickets whose
-             status category is Resolved (সমাধান হয়েছে) are listed. */
-          statuses: mode === "open" ? "open" : "resolved",
+          /* Each staff queue is a single-status list: Open / Resolved
+             (সমাধান হয়েছে) / Waiting for your reply (আপনার উত্তরের অপেক্ষায়). */
+          statuses: mode === "open" ? "open" : mode === "waiting" ? "waiting_for_user" : "resolved",
         });
         setRows(data.conversations);
         setTotal(data.total);
@@ -190,10 +193,16 @@ export default function ProblemQueue({
   const rangeStart = total === 0 ? 0 : (page - 1) * rowsPerPage + 1;
   const rangeEnd = Math.min(page * rowsPerPage, total);
 
-  const title = mode === "open" ? copy.queueNewTitle : copy.queueSolveTitle;
-  const subtitle = mode === "open" ? copy.queueNewSubtitle : copy.queueSolveSubtitle;
-  const emptyTitle = mode === "open" ? copy.queueNewEmptyTitle : copy.queueSolveEmptyTitle;
-  const emptyHint = mode === "open" ? copy.queueNewEmptyHint : copy.queueSolveEmptyHint;
+  const title = mode === "open" ? copy.queueNewTitle : mode === "waiting" ? copy.queueWaitingTitle : copy.queueSolveTitle;
+  const subtitle = mode === "open" ? copy.queueNewSubtitle : mode === "waiting" ? copy.queueWaitingSubtitle : copy.queueSolveSubtitle;
+  const emptyTitle = mode === "open" ? copy.queueNewEmptyTitle : mode === "waiting" ? copy.queueWaitingEmptyTitle : copy.queueSolveEmptyTitle;
+  const emptyHint = mode === "open" ? copy.queueNewEmptyHint : mode === "waiting" ? copy.queueWaitingEmptyHint : copy.queueSolveEmptyHint;
+  /* In the Waiting queue the status chip reads exactly like the heading/tile
+     ("আপনার উত্তরের অপেক্ষায়"); other queues keep the shared status labels. */
+  const statusText = (row: ConversationSummary) =>
+    mode === "waiting"
+      ? copy.queueWaitingTitle
+      : conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status;
 
   return (
     <div className="flex flex-col gap-4">
@@ -395,7 +404,7 @@ export default function ProblemQueue({
                             color: STATUS_TONE[row.status],
                           }}
                         >
-                          {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                          {statusText(row)}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5">
@@ -456,7 +465,7 @@ export default function ProblemQueue({
                         color: STATUS_TONE[row.status],
                       }}
                     >
-                      {conversationStatusLabel[row.status]?.[language === "en" ? "en" : "bn"] ?? row.status}
+                      {statusText(row)}
                     </span>
                     <span className="inline-flex items-center gap-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
                       {mode === "solve" && row.status === "closed" ? (

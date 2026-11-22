@@ -115,7 +115,14 @@ export default function HelpDeskDashboard({
   }
 
   if (view === "waiting") {
-    return <HelpDeskWaitingTickets copy={copy} language={language} basePath={basePath} />;
+    // Employee route = Waiting-for-your-reply queue (same table family as the
+    // Resolved list, status chip reads আপনার উত্তরের অপেক্ষায়); the customer
+    // keeps their own waiting board untouched.
+    return staff ? (
+      <ProblemQueue language={language} mode="waiting" />
+    ) : (
+      <HelpDeskWaitingTickets copy={copy} language={language} basePath={basePath} />
+    );
   }
 
   if (view === "solved") {

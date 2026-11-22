@@ -154,6 +154,7 @@ export default function HelpDeskOverview({
   const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
     ? [
         { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
+        { key: "waiting", label: conversationCopy.quickWaitingProblem, href: links.waiting, icon: FiClock },
         { key: "solve-problem", label: conversationCopy.quickSolveProblem, href: links.solved, icon: FiTool },
       ]
     : [
@@ -243,8 +244,9 @@ export default function HelpDeskOverview({
           <section className={`rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:p-6`}>
             <h2 className="text-[15px] font-semibold">{copy.quickActions}</h2>
             {/* Customer: all four tiles inline on one row from lg up — never a
-               3+1 wrap. Staff keeps its two-tile row. */}
-            <div className={`mt-3 grid gap-3 ${staff ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+                3+1 wrap. Staff holds exactly three tiles and keeps them on one
+                line (grid-cols-3 at every width) — never a 2+1 wrap. */}
+            <div className={`mt-3 grid gap-3 ${staff ? "grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (

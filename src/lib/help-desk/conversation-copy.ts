@@ -227,14 +227,20 @@ export interface ConversationCopy {
    *  Deliberately separate from navSolveProblem so the sidebar nav keeps its
    *  own wording. */
   quickSolveProblem: string;
+  /** Staff দ্রুত অ্যাকশন tile that opens the Waiting queue (আপনার উত্তরের অপেক্ষায়). */
+  quickWaitingProblem: string;
   queueNewTitle: string;
   queueNewSubtitle: string;
   queueSolveTitle: string;
   queueSolveSubtitle: string;
+  queueWaitingTitle: string;
+  queueWaitingSubtitle: string;
   queueNewEmptyTitle: string;
   queueNewEmptyHint: string;
   queueSolveEmptyTitle: string;
   queueSolveEmptyHint: string;
+  queueWaitingEmptyTitle: string;
+  queueWaitingEmptyHint: string;
   queueViewDetails: string;
   /** Solved queue (mode "solve") action label — mirrors the client table's বিস্তারিত দেখুন. */
   queueViewDetailsSolved: string;
@@ -459,14 +465,19 @@ const bn: ConversationCopy = {
   navNewProblem: "নিউ প্রবলেম",
   navSolveProblem: "সলভ প্রবলেম",
   quickSolveProblem: "সমাধান হয়েছে",
+  quickWaitingProblem: "আপনার উত্তরের অপেক্ষায়",
   queueNewTitle: "নিউ প্রবলেম",
   queueNewSubtitle: "গ্রাহকের পাঠানো নতুন সমস্যা — স্ট্যাটাস এখনও খোলা। টেবিল থেকে বিস্তারিত দেখুন, উত্তর দিন বা স্ট্যাটাস বদলান।",
   queueSolveTitle: "সমাধান হয়েছে",
   queueSolveSubtitle: "যেসব সমস্যা ইতিমধ্যে সমাধান হয়ে গেছে — শুধু সমাধান হয়েছে স্ট্যাটাসের টিকিট এখানে দেখানো হয়।",
+  queueWaitingTitle: "আপনার উত্তরের অপেক্ষায়",
+  queueWaitingSubtitle: "যেসব টিকিটে আপনার উত্তর প্রয়োজন — সহায়তা দল উত্তর দিয়েছে, গ্রাহকের পরবর্তী বার্তার অপেক্ষায় আছে।",
   queueNewEmptyTitle: "নতুন কোনো সমস্যা নেই",
   queueNewEmptyHint: "গ্রাহক নতুন সমস্যা পাঠালে সেটি সাথে সাথে এখানে দেখা যাবে।",
   queueSolveEmptyTitle: "এখনো কোনো সমাধান হওয়া টিকিট নেই",
   queueSolveEmptyHint: "কোনো সমস্যা সমাধান হয়েছে হিসেবে চিহ্নিত হলে সেটি এখানে চলে আসবে।",
+  queueWaitingEmptyTitle: "উত্তরের অপেক্ষায় কোনো টিকিট নেই",
+  queueWaitingEmptyHint: "গ্রাহকের উত্তর প্রয়োজন হলে টিকিটটি এখানে দেখা যাবে।",
   queueViewDetails: "ভিউ ডিটেইলস",
   queueViewDetailsSolved: "বিস্তারিত দেখুন",
   queueCount: (count) => `${count}টি সমস্যা`,
@@ -687,14 +698,19 @@ const en: ConversationCopy = {
   navNewProblem: "New problems",
   navSolveProblem: "Solve problems",
   quickSolveProblem: "Solved",
+  quickWaitingProblem: "Waiting for your reply",
   queueNewTitle: "New problems",
   queueNewSubtitle: "Every customer problem still in the Open state — open it, read the details, reply and change its status.",
   queueSolveTitle: "Resolved",
   queueSolveSubtitle: "Problems that are already resolved — only tickets with the Resolved status are listed here.",
+  queueWaitingTitle: "Waiting for your reply",
+  queueWaitingSubtitle: "Tickets that need your reply — the support team has answered and the customer's next message is pending.",
   queueNewEmptyTitle: "No new problems",
   queueNewEmptyHint: "A problem appears here the moment a customer submits it.",
   queueSolveEmptyTitle: "No resolved tickets yet",
   queueSolveEmptyHint: "A problem appears here once it is marked as resolved.",
+  queueWaitingEmptyTitle: "Nothing is waiting for your reply",
+  queueWaitingEmptyHint: "A ticket appears here when it is waiting for the customer.",
   queueViewDetails: "View details",
   queueViewDetailsSolved: "View details",
   queueCount: (count) => `${count} problem${count === 1 ? "" : "s"}`,
