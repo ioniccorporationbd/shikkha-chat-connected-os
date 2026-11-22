@@ -395,13 +395,10 @@ export default function ProblemQueue({
                           {row.ticketId}
                         </span>
                       </td>
+                      {/* গ্রাহক column shows the customer name only — no unread
+                          count number next to it. */}
                       <td className="whitespace-nowrap px-3 py-2.5 text-[12.5px] font-semibold text-[var(--color-primary)]">
                         {row.customer}
-                        {row.unread > 0 ? (
-                          <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--color-action)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--color-white)]">
-                            {row.unread}
-                          </span>
-                        ) : null}
                       </td>
                       <td className="max-w-[18rem] px-3 py-2.5">
                         <span className="block truncate text-[13px] font-semibold text-[var(--color-primary)]">{row.subject}</span>
