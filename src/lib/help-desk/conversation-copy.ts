@@ -464,7 +464,7 @@ const bn: ConversationCopy = {
 
   navNewProblem: "নিউ প্রবলেম",
   navSolveProblem: "সলভ প্রবলেম",
-  quickSolveProblem: "সমাধান হয়েছে",
+  quickSolveProblem: "সমাধান হওয়া টিকিট",
   quickWaitingProblem: "আপনার উত্তরের অপেক্ষায়",
   queueNewTitle: "নিউ প্রবলেম",
   queueNewSubtitle: "গ্রাহকের পাঠানো নতুন সমস্যা — স্ট্যাটাস এখনও খোলা। টেবিল থেকে বিস্তারিত দেখুন, উত্তর দিন বা স্ট্যাটাস বদলান।",
@@ -697,7 +697,7 @@ const en: ConversationCopy = {
 
   navNewProblem: "New problems",
   navSolveProblem: "Solve problems",
-  quickSolveProblem: "Solved",
+  quickSolveProblem: "Resolved tickets",
   quickWaitingProblem: "Waiting for your reply",
   queueNewTitle: "New problems",
   queueNewSubtitle: "Every customer problem still in the Open state — open it, read the details, reply and change its status.",
