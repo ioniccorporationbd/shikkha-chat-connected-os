@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FiArrowRight, FiEye, FiInbox, FiRefreshCw, FiSearch, FiX } from "react-icons/fi";
 
 import HelpDeskBackButton from "@/components/dashboard/help-desk/HelpDeskBackButton";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/help-desk/conversation-copy";
 import { STATUS_TONE, PRIORITY_TONE } from "@/lib/help-desk/config";
 import { listConversations } from "@/lib/help-desk/conversations";
+import { helpDeskLinks } from "@/lib/help-desk/paths";
 import { formatDate, formatTime } from "@/lib/help-desk/format";
 import type { ConversationSummary } from "@/lib/help-desk/types";
 import { reportClientError } from "@/lib/log/report-error";
@@ -47,19 +49,25 @@ const QUEUE_REFRESH_MS = 6_000;
  * The split is a server-side status filter on the same conversation listing the
  * Messages index uses (`statuses=open` / `statuses=not_open`), so both queues
  * always agree with the ticket data — the browser never re-filters a page.
- * "View details" opens the problem card in place; the queue does not navigate
- * away, and refetches after a reply or a status change.
+ * "View details" opens the problem card in place on the New Problem and Solve
+ * Problem queues; the Waiting queue instead navigates to the ticket's chat box
+ * (`/userDashboard/help-desk/tickets/<id>`), mirroring the customer ticket page.
  */
 export default function ProblemQueue({
   language,
   mode,
+  basePath = "/userDashboard/help-desk",
 }: {
   language: string;
   /** `open` = New Problem, `solve` = Solve Problem (Resolved list),
    *  `waiting` = Waiting for your reply (Waiting queue). */
   mode: "open" | "solve" | "waiting";
+  /** Help-desk root the queue links into (its ticket chat box lives there). */
+  basePath?: string;
 }) {
   const copy = useMemo(() => conversationCopyFor(language), [language]);
+  const router = useRouter();
+  const links = useMemo(() => helpDeskLinks(basePath), [basePath]);
   const paginationCopy = useMemo(() => genericPaginationCopy(language), [language]);
 
   /**
@@ -89,6 +97,22 @@ export default function ProblemQueue({
   const [titleInput, setTitleInput] = useState("");
   const [titleFilter, setTitleFilter] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+
+  /**
+   * Row action. New Problem / Solve Problem open the problem card in place;
+   * the Waiting queue goes to the ticket's own chat box
+   * (`{basePath}/tickets/<id>`), exactly like the customer's ticket page.
+   */
+  const openRow = useCallback(
+    (ticketId: string) => {
+      if (mode === "waiting") {
+        router.push(links.ticket(ticketId));
+        return;
+      }
+      setSelected(ticketId);
+    },
+    [mode, router, links],
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -418,7 +442,7 @@ export default function ProblemQueue({
                       <td className="px-3 py-2.5">
                         <button
                           type="button"
-                          onClick={() => setSelected(row.ticketId)}
+                          onClick={() => openRow(row.ticketId)}
                           className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-offset-2"
                         >
                           <FiEye size={12} className="pointer-events-none text-[var(--color-action)]" aria-hidden />
@@ -440,7 +464,7 @@ export default function ProblemQueue({
               <li key={row.ticketId}>
                 <button
                   type="button"
-                  onClick={() => setSelected(row.ticketId)}
+                  onClick={() => openRow(row.ticketId)}
                   className={`block w-full rounded-2xl border ${CARD_BORDER} bg-[var(--color-white)] p-3.5 text-left ${CARD_SHADOW} transition hover:border-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]`}
                 >
                   <div className="flex items-center gap-2">

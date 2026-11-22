@@ -119,7 +119,7 @@ export default function HelpDeskDashboard({
     // Resolved list, status chip reads আপনার উত্তরের অপেক্ষায়); the customer
     // keeps their own waiting board untouched.
     return staff ? (
-      <ProblemQueue language={language} mode="waiting" />
+      <ProblemQueue language={language} mode="waiting" basePath={basePath} />
     ) : (
       <HelpDeskWaitingTickets copy={copy} language={language} basePath={basePath} />
     );
@@ -130,7 +130,7 @@ export default function HelpDeskDashboard({
     // employee the same route is the Solve Problem queue — the tickets they are
     // working on or have finished, with the detail card in place.
     return staff ? (
-      <ProblemQueue language={language} mode="solve" />
+      <ProblemQueue language={language} mode="solve" basePath={basePath} />
     ) : (
       <HelpDeskSolvedTickets copy={copy} language={language} basePath={basePath} />
     );
@@ -139,7 +139,7 @@ export default function HelpDeskDashboard({
   if (view === "problems") {
     // New Problem: only tickets the ERP still reports as open. The queue opens
     // the detail card in place, so there is no separate problem page to visit.
-    return <ProblemQueue language={language} mode="open" />;
+    return <ProblemQueue language={language} mode="open" basePath={basePath} />;
   }
 
   if (view === "problem" && ticketId) {
