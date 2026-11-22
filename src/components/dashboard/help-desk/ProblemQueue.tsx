@@ -105,7 +105,9 @@ export default function ProblemQueue({
    */
   const openRow = useCallback(
     (ticketId: string) => {
-      if (mode === "waiting") {
+      // Open + waiting rows go straight to the ticket's chat box; only the
+      // solved queue keeps its in-place details dialog.
+      if (mode !== "solve") {
         router.push(links.ticket(ticketId));
         return;
       }
