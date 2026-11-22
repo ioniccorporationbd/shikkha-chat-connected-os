@@ -117,7 +117,9 @@ export default function ProblemQueue({
           page,
           pageSize: rowsPerPage,
           includeEmpty: true,
-          statuses: mode === "open" ? "open" : "not_open",
+          /* The staff Solve queue is now the Resolved list: only tickets whose
+             status category is Resolved (সমাধান হয়েছে) are listed. */
+          statuses: mode === "open" ? "open" : "resolved",
         });
         setRows(data.conversations);
         setTotal(data.total);

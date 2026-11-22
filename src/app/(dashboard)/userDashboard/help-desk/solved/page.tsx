@@ -23,7 +23,8 @@ export const metadata: Metadata = {
 const SUFFIX = "/solved";
 const DESK_ROOT = `${STAFF_DASHBOARD_PATH}/${HELP_DESK_SEGMENT}${SUFFIX}`;
 
-/** Dashboard Help Desk (staff): solved (closed) tickets — same board as the open list. */
+/** Dashboard Help Desk (staff): সমাধান হয়েছে — only tickets whose status is
+ *  Resolved are listed (was: every non-open ticket). */
 export default async function UserHelpDeskSolvedPage() {
   const cookieStore = await cookies();
   const sid = cookieStore.get(SESSION_COOKIE)?.value;
