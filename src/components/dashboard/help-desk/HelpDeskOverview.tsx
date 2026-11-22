@@ -154,7 +154,7 @@ export default function HelpDeskOverview({
   const quickActions: { key: string; label: string; href: string; icon: typeof FiPlusCircle }[] = staff
     ? [
         { key: "new-problem", label: conversationCopy.navNewProblem, href: links.problems, icon: FiInbox },
-        { key: "solve-problem", label: conversationCopy.navSolveProblem, href: links.solved, icon: FiTool },
+        { key: "solve-problem", label: conversationCopy.quickSolveProblem, href: links.solved, icon: FiTool },
       ]
     : [
         { key: "new", label: copy.navNewTicket, href: links.newTicket, icon: FiPlusCircle },

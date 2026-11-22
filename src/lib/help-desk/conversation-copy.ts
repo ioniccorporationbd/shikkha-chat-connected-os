@@ -223,6 +223,10 @@ export interface ConversationCopy {
   /* ---- employee queues: New Problem / Solve Problem ---- */
   navNewProblem: string;
   navSolveProblem: string;
+  /** Label of the staff দ্রুত অ্যাকশন tile that opens সমাধান হওয়া টিকিট.
+   *  Deliberately separate from navSolveProblem so the sidebar nav keeps its
+   *  own wording. */
+  quickSolveProblem: string;
   queueNewTitle: string;
   queueNewSubtitle: string;
   queueSolveTitle: string;
@@ -454,6 +458,7 @@ const bn: ConversationCopy = {
 
   navNewProblem: "নিউ প্রবলেম",
   navSolveProblem: "সলভ প্রবলেম",
+  quickSolveProblem: "সমাধান হয়েছে",
   queueNewTitle: "নিউ প্রবলেম",
   queueNewSubtitle: "গ্রাহকের পাঠানো নতুন সমস্যা — স্ট্যাটাস এখনও খোলা। টেবিল থেকে বিস্তারিত দেখুন, উত্তর দিন বা স্ট্যাটাস বদলান।",
   queueSolveTitle: "সলভ প্রবলেম",
@@ -681,6 +686,7 @@ const en: ConversationCopy = {
 
   navNewProblem: "New problems",
   navSolveProblem: "Solve problems",
+  quickSolveProblem: "Solved",
   queueNewTitle: "New problems",
   queueNewSubtitle: "Every customer problem still in the Open state — open it, read the details, reply and change its status.",
   queueSolveTitle: "Solve problems",
