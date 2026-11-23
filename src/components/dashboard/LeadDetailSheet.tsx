@@ -593,11 +593,14 @@ function TaskPriorityChip({ priority, language }: { priority: string; language: 
   );
 }
 
-/** YYYY-MM-DD -> "5 Mar 2027" (Bengali numerals under the Bengali locale). */
+/** YYYY-MM-DD (or a full datetime) -> "5 Mar 2027" — date only, never a time.
+ *  Bengali numerals under the Bengali locale. Frappe sometimes hands back a
+ *  datetime ("2027-03-05 14:30:00"); we keep only the calendar date. */
 function formatDueDate(value: string, language: string): string {
   if (!value) return "";
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
+  const day = value.trim().slice(0, 10);
+  const date = new Date(`${day}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return day;
 
   try {
     return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", {
@@ -606,7 +609,7 @@ function formatDueDate(value: string, language: string): string {
       year: "numeric",
     }).format(date);
   } catch {
-    return value;
+    return day;
   }
 }
 
@@ -638,6 +641,17 @@ function TasksPanel({
   const headClass =
     "whitespace-nowrap px-3 py-2 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] max-sm:px-2";
   const cellClass = "px-3 py-2.5 align-middle max-sm:px-2";
+
+  // Newest first: the current/latest dates ride on top, older dates fall to the
+  // bottom. Tasks with no due date keep their source order at the very end.
+  const sortedItems = [...items].sort((a, b) => {
+    const da = (a.due_date || "").trim().slice(0, 10);
+    const db = (b.due_date || "").trim().slice(0, 10);
+    if (da && db) return db.localeCompare(da);
+    if (da) return -1;
+    if (db) return 1;
+    return (b.at || "").localeCompare(a.at || "");
+  });
 
   return (
     <div data-lead-tasks="">
@@ -696,7 +710,7 @@ function TasksPanel({
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {sortedItems.map((item) => (
                 <tr
                   key={item.key}
                   data-lead-task-item={item.key}
