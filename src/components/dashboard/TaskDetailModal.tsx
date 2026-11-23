@@ -295,16 +295,38 @@ export default function TaskDetailModal({
               {`${dt.subtitle} · ${taskName}`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={saving}
-            aria-label={detail.close}
-            data-task-detail-close=""
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
-          >
-            <FiX size={16} className="pointer-events-none" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleDownload}
+              data-task-detail-download=""
+              title={dt.download}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-white)] shadow-sm transition hover:bg-[#b91c1c]"
+            >
+              <FiDownload size={13} className="pointer-events-none" />
+              <span className="pointer-events-none hidden sm:inline">{dt.download}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              data-task-detail-print=""
+              title={dt.print}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-white)] shadow-sm transition hover:bg-[#b91c1c]"
+            >
+              <FiPrinter size={13} className="pointer-events-none" />
+              <span className="pointer-events-none hidden sm:inline">{dt.print}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              aria-label={detail.close}
+              data-task-detail-close=""
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+            >
+              <FiX size={16} className="pointer-events-none" />
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3.5">
@@ -445,27 +467,7 @@ export default function TaskDetailModal({
           </p>
         ) : null}
 
-        <div className="mt-5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDownload}
-              data-task-detail-download=""
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-            >
-              <FiDownload size={13} className="pointer-events-none" />
-              <span className="pointer-events-none">{dt.download}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              data-task-detail-print=""
-              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-            >
-              <FiPrinter size={13} className="pointer-events-none" />
-              <span className="pointer-events-none">{dt.print}</span>
-            </button>
-          </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
           <div className="flex items-center gap-2">
             {readOnly ? (
               <button
