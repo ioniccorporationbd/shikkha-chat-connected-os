@@ -385,6 +385,48 @@ function CommentsList({
   );
 }
 
+/** The Comments tab: a count + "New comment" button over the comment list. */
+function CommentsPanel({
+  items,
+  copy,
+  empty,
+  detail,
+  language,
+  onNew,
+  onPreview,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  empty: string;
+  detail: LeadsDetailCopy;
+  language: string;
+  onNew: () => void;
+  onPreview: (file: LeadAttachment) => void;
+}) {
+  return (
+    <div data-lead-comments-panel="">
+      <div className="mb-3.5 flex items-center justify-between gap-3">
+        <p
+          className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]"
+          data-lead-comment-count=""
+        >
+          {items.length ? formatCount(items.length, language) : ""}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-comment=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newComment}</span>
+        </button>
+      </div>
+      <CommentsList items={items} copy={copy} empty={empty} detail={detail} onPreview={onPreview} />
+    </div>
+  );
+}
+
 function NotesTable({
   items,
   copy,
@@ -3899,11 +3941,16 @@ function LeadDetailPanel({
             }}
           />
         ) : activeTab === "comments" ? (
-          <CommentsList
+          <CommentsPanel
             items={payload.comments}
             copy={copy}
             empty={detail.empty.comments}
             detail={detail}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setComposerState({ name, mode: "comment" });
+            }}
             onPreview={(file) => setPreviewFile(file)}
           />
         ) : activeTab === "data" ? (
@@ -3970,7 +4017,7 @@ function LeadDetailPanel({
         )}
       </div>
 
-      {/* ------------------------------------------------------ composer + bar */}
+      {/* ------------------------------------------------------ notice + composer */}
       {notice ? (
         <p
           className={`border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-5 py-2 text-[12px] font-medium ${
@@ -4026,50 +4073,7 @@ function LeadDetailPanel({
             </div>
           </div>
         </div>
-      ) : (
-        <div className="flex shrink-0 items-center gap-4 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3">
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: null });
-              setEmailFormOpen(true);
-            }}
-            data-lead-reply=""
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-          >
-            <FiMail size={14} className="pointer-events-none" />
-            <span className="pointer-events-none">{detail.reply}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: "comment" });
-            }}
-            data-lead-comment=""
-            className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-          >
-            <FiMessageSquare size={14} className="pointer-events-none" />
-            <span className="pointer-events-none">{detail.comment}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setNotice(null);
-              setComposerState({ name, mode: "comment" });
-              // Open the picker on the next tick so the bar stays in place.
-              window.setTimeout(() => fileInputRef.current?.click(), 0);
-            }}
-            data-lead-attach-bar=""
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
-            aria-label={detail.attach}
-            title={detail.attach}
-          >
-            <FiPaperclip size={14} className="pointer-events-none" />
-          </button>
-        </div>
-      )}
+      ) : null}
 
       {/* The New-task form floats over the whole sheet. */}
       {taskFormOpen ? (

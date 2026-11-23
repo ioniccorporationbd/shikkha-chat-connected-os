@@ -45,6 +45,7 @@ export interface LeadsDetailCopy {
   /** Tasks tab: the top-right New-task button and its form. */
   newTask: string;
   newNote: string;
+  newComment: string;
   /** Convert-to-Deal: the sheet's top-right button and its popup. */
   convertToDeal: string;
   convert: {
@@ -582,6 +583,7 @@ const bn: LeadsCopy = {
     saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
     newTask: "নতুন টাস্ক",
     newNote: "নতুন নোট",
+    newComment: "নতুন মন্তব্য",
     convertToDeal: "ডিলে রূপান্তর",
     convert: {
       heading: "ডিলে রূপান্তর করুন",
@@ -978,6 +980,7 @@ const en: LeadsCopy = {
     saveFailed: "The lead could not be saved",
     newTask: "New task",
     newNote: "New note",
+    newComment: "New comment",
     convertToDeal: "Convert to Deal",
     convert: {
       heading: "Convert to Deal",
