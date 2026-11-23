@@ -125,6 +125,9 @@ export interface LeadsDetailCopy {
     /** Section captions inside the popup. */
     sectionDetails: string;
     sectionPeople: string;
+    /** Print / download the task as an A4 document. */
+    print: string;
+    download: string;
   };
   taskTable: {
     /** Column headers of the Tasks tab table. */
@@ -657,6 +660,8 @@ const bn: LeadsCopy = {
       emptyDescription: "এই টাস্কে কোনো বিবরণ লেখা হয়নি।",
       sectionDetails: "বিবরণ",
       sectionPeople: "দায়িত্ব ও সময়সূচি",
+      print: "প্রিন্ট",
+      download: "ডাউনলোড",
     },
     taskTable: {
       task: "টাস্ক",
@@ -1054,6 +1059,8 @@ const en: LeadsCopy = {
       emptyDescription: "This task has no description yet.",
       sectionDetails: "Details",
       sectionPeople: "Ownership & schedule",
+      print: "Print",
+      download: "Download",
     },
     taskTable: {
       task: "Task",

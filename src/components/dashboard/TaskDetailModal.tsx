@@ -2,9 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { FiEdit2, FiX } from "react-icons/fi";
+import { FiEdit2, FiX, FiPrinter, FiDownload } from "react-icons/fi";
 
 import { ApiError } from "@/lib/api/http";
+import {
+  buildDetailDocumentHtml,
+  downloadDetailDocument,
+  printDetailDocument,
+} from "@/lib/dashboard/detail-document";
 import {
   fetchLeadTaskDetail,
   fetchLeadTaskOptions,
@@ -212,6 +217,53 @@ export default function TaskDetailModal({
     }
   };
 
+  // Resolve human labels for the printed/downloaded document (the popup shows
+  // raw values via selects; the paper copy should read like a real document).
+  const priorityLabel =
+    priorities.find((option) => option.value === priority)?.label || priority || "—";
+  const statusLabel =
+    statuses.find((option) => option.value === statusValue)?.label || statusValue || "—";
+  const assigneeLabel =
+    employees.find((employee) => employee.value === assignedTo)?.label || "—";
+
+  const buildDocument = () =>
+    buildDetailDocumentHtml({
+      eyebrow: dt.title,
+      title: title.trim() || dt.subtitle,
+      subtitle: `${dt.subtitle} · ${taskName}`,
+      sections: [
+        {
+          title: dt.sectionDetails,
+          rows: [
+            { label: cf.title, value: title.trim() || "—", emphasis: true },
+            {
+              label: cf.description,
+              value: description.trim() || dt.emptyDescription,
+            },
+          ],
+        },
+        {
+          title: dt.sectionPeople,
+          rows: [
+            { label: cf.priority, value: priorityLabel },
+            { label: cf.status, value: statusLabel },
+            { label: cf.assignedTo, value: assigneeLabel },
+            { label: cf.dueDate, value: dueDate || "—" },
+          ],
+        },
+      ],
+      footerNote: `${dt.subtitle} · ${taskName}`,
+      locale: language === "bn" ? "bn-BD" : "en-GB",
+    });
+
+  const handlePrint = () => {
+    printDetailDocument(buildDocument());
+  };
+
+  const handleDownload = () => {
+    downloadDetailDocument(buildDocument(), `task-${taskName}`);
+  };
+
   const labelClass =
     "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
   const fieldClass =
@@ -393,39 +445,61 @@ export default function TaskDetailModal({
           </p>
         ) : null}
 
-        <div className="mt-5 flex items-center justify-end gap-2">
-          {readOnly ? (
+        <div className="mt-5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
-              data-task-detail-cancel=""
-              className="rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+              onClick={handleDownload}
+              data-task-detail-download=""
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
             >
-              {detail.close}
+              <FiDownload size={13} className="pointer-events-none" />
+              <span className="pointer-events-none">{dt.download}</span>
             </button>
-          ) : (
-            <>
+            <button
+              type="button"
+              onClick={handlePrint}
+              data-task-detail-print=""
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+            >
+              <FiPrinter size={13} className="pointer-events-none" />
+              <span className="pointer-events-none">{dt.print}</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {readOnly ? (
               <button
                 type="button"
                 onClick={onClose}
-                disabled={saving}
                 data-task-detail-cancel=""
-                className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+                className="rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
               >
-                {detail.cancel}
+                {detail.close}
               </button>
-              <button
-                type="button"
-                onClick={() => void submit()}
-                disabled={saving}
-                data-task-detail-save=""
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <FiEdit2 size={13} className="pointer-events-none" />
-                <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
-              </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={saving}
+                  data-task-detail-cancel=""
+                  className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+                >
+                  {detail.cancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void submit()}
+                  disabled={saving}
+                  data-task-detail-save=""
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FiEdit2 size={13} className="pointer-events-none" />
+                  <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
