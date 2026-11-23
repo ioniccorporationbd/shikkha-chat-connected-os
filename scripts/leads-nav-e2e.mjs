@@ -270,8 +270,8 @@ async function login() {
     );
 
     // Comment from the panel (the Desk comment box)
-    await page.locator('[data-lead-tab="activity"]').click();
-    await page.locator("[data-lead-comment]").click();
+    await page.locator('[data-lead-tab="comments"]').click();
+    await page.locator("[data-lead-new-comment]").click();
     await page.locator("[data-lead-composer]").fill("portal probe comment");
     await page.locator("[data-lead-send]").click();
     await page.locator('[data-lead-notice="ok"]').waitFor({ state: "visible", timeout: 30000 });
@@ -668,47 +668,44 @@ async function login() {
     await page.locator("[data-task-detail-modal]").waitFor({ state: "visible", timeout: 20000 });
     check(true, `[${viewport.tag}] the task row's বিস্তারিত button opens the task popup`);
 
-    const prefilledTitle = await page.locator("[data-task-detail-title]").inputValue();
+    // Task details popup: title/description/priority/assignee/due are read-only
+    // displays; ONLY the status field is editable, and Save round-trips it.
+    const prefilledTitle = (await page.locator("[data-task-detail-title]").innerText()).trim();
     check(
       prefilledTitle === taskTitle,
-      `[${viewport.tag}] the task popup is pre-filled with the task title (${prefilledTitle})`
+      `[${viewport.tag}] the task popup shows the task title (${prefilledTitle})`
     );
-    const prefilledPriority = await page.locator("[data-task-detail-priority]").inputValue();
+    const prefilledPriority = (
+      await page.locator("[data-task-detail-priority]").innerText()
+    ).trim();
     check(
-      prefilledPriority === "High",
-      `[${viewport.tag}] the task popup is pre-filled with its priority (${prefilledPriority})`
+      prefilledPriority.length > 0,
+      `[${viewport.tag}] the task popup shows the priority (${prefilledPriority})`
     );
     const prefilledStatus = await page.locator("[data-task-detail-status]").inputValue();
     check(
       prefilledStatus === "In Progress",
-      `[${viewport.tag}] the task popup is pre-filled with its status (${prefilledStatus})`
+      `[${viewport.tag}] the task popup shows status in the only editable field (${prefilledStatus})`
     );
-    const prefilledDue = await page.locator("[data-task-detail-due]").inputValue();
+    const prefilledDue = (await page.locator("[data-task-detail-due]").innerText()).trim();
     check(
-      prefilledDue === "2026-12-31",
-      `[${viewport.tag}] the task popup is pre-filled with its due date (${prefilledDue})`
-    );
-    const prefilledAssignee = await page.locator("[data-task-detail-assignee]").inputValue();
-    check(
-      !chosenEmployee || prefilledAssignee === chosenEmployee,
-      `[${viewport.tag}] the task popup resolves the assignee to the right employee (${prefilledAssignee})`
+      prefilledDue.length > 0 && !/\d:\d/.test(prefilledDue),
+      `[${viewport.tag}] the task popup shows the due date without time (${prefilledDue})`
     );
 
-    // Editable: every field accepts typing/selection.
-    const detailTitle = `${taskTitle} edited`;
-    await page.locator("[data-task-detail-title]").fill(detailTitle);
-    await page.locator("[data-task-detail-description]").fill("QA detail description");
-    await page.locator("[data-task-detail-priority]").selectOption("Low");
+    // Read-only: the non-status fields must NOT be editable inputs.
+    check(
+      (await page.locator("input[data-task-detail-title]").count()) === 0 &&
+        (await page.locator("textarea[data-task-detail-description]").count()) === 0 &&
+        (await page.locator("select[data-task-detail-priority]").count()) === 0 &&
+        (await page.locator("input[data-task-detail-due]").count()) === 0 &&
+        (await page.locator("select[data-task-detail-assignee]").count()) === 0,
+      `[${viewport.tag}] only the status field is editable; the rest are read-only`
+    );
+
+    // Only status may be changed.
     await page.locator("[data-task-detail-status]").selectOption("Done");
-    await page.locator("[data-task-detail-due]").fill("2027-01-15");
-    check(true, `[${viewport.tag}] all task fields accept edits in the popup`);
-
-    // An emptied title is refused before any round-trip.
-    await page.locator("[data-task-detail-title]").fill("   ");
-    await page.locator("[data-task-detail-save]").click();
-    await page.locator("[data-task-detail-error]").waitFor({ state: "visible", timeout: 10000 });
-    check(true, `[${viewport.tag}] the task popup refuses an empty title`);
-    await page.locator("[data-task-detail-title]").fill(detailTitle);
+    check(true, `[${viewport.tag}] the status field accepts a change`);
 
     await page.locator("[data-task-detail-save]").click();
     await page.locator("[data-task-detail-modal]").waitFor({ state: "detached", timeout: 30000 });
@@ -717,36 +714,19 @@ async function login() {
     check(true, `[${viewport.tag}] saving the task shows the success notice`);
 
     await page.locator("[data-lead-tasks]").waitFor({ state: "visible", timeout: 20000 });
-    const editedTasksText = (await page.locator("[data-lead-tasks]").innerText()) || "";
-    check(
-      editedTasksText.includes(detailTitle),
-      `[${viewport.tag}] the edited title shows in the Tasks tab`
-    );
     check(
       (await page.locator('[data-lead-task-status="Done"]').count()) >= 1,
       `[${viewport.tag}] the edited status shows in the Tasks tab`
     );
-    check(
-      (await page.locator('[data-lead-task-priority="Low"]').count()) >= 1,
-      `[${viewport.tag}] the edited priority shows in the Tasks tab`
-    );
 
-    // Re-opening proves the change was really written, not just echoed.
+    // Re-opening proves the status change was really written, not just echoed.
     await page.locator("[data-lead-task-details]").first().click();
     await page.locator("[data-task-detail-modal]").waitFor({ state: "visible", timeout: 20000 });
-    const reopenedTitle = await page.locator("[data-task-detail-title]").inputValue();
-    const reopenedDescription = await page
-      .locator("[data-task-detail-description]")
-      .inputValue();
     const reopenedStatus = await page.locator("[data-task-detail-status]").inputValue();
-    const reopenedDue = await page.locator("[data-task-detail-due]").inputValue();
+    const reopenedTitle = (await page.locator("[data-task-detail-title]").innerText()).trim();
     check(
-      reopenedTitle === detailTitle && reopenedDescription === "QA detail description",
-      `[${viewport.tag}] the saved title and description come back from the ERP`
-    );
-    check(
-      reopenedStatus === "Done" && reopenedDue === "2027-01-15",
-      `[${viewport.tag}] the saved status and due date come back from the ERP`
+      reopenedStatus === "Done" && reopenedTitle === taskTitle,
+      `[${viewport.tag}] the saved status comes back from the ERP and title is unchanged`
     );
     // Closing without edits must not write anything.
     await page.locator("[data-task-detail-cancel]").click();

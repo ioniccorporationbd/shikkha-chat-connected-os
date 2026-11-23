@@ -77,7 +77,6 @@ import type {
   LeadEmailDraft,
   LeadNoteCreated,
   LeadTaskCreated,
-  LeadTaskEdit,
   LeadTaskOptions,
 } from "@/lib/leads/types";
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
@@ -2061,28 +2060,14 @@ function TaskDetailModal({
   const cf = detail.taskForm;
   const dt = detail.taskDetail;
   const [options, setOptions] = useState<LeadTaskOptions | null>(null);
-  const [optionsFailed, setOptionsFailed] = useState(false);
-  const [title, setTitle] = useState(task.title || task.text || "");
-  const [description, setDescription] = useState(task.description || "");
-  const [priority, setPriority] = useState(task.priority || "");
+  // Only the status is editable; every other field is shown read-only.
   const [status, setStatus] = useState(task.status || "");
-  const [assignedTo, setAssignedTo] = useState("");
-  const [dueDate, setDueDate] = useState(task.due_date || "");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const titleRef = useRef<HTMLInputElement | null>(null);
-  // The values as loaded — Save only sends what changed from here.
-  const baselineRef = useRef<LeadTaskEdit>({
-    title: task.title || task.text || "",
-    description: task.description || "",
-    priority: task.priority || "",
-    status: task.status || "",
-    due_date: task.due_date || "",
-  });
-
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+  // The status as loaded — Save only writes when it actually changed.
+  const baselineStatus = useRef(task.status || "");
+  const readonlyClass =
+    "min-h-[42px] w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_85%,transparent)]";
 
   useEffect(() => {
     let cancelled = false;
@@ -2091,20 +2076,8 @@ function TaskDetailModal({
         const payload = await fetchLeadTaskOptions(language);
         if (cancelled) return;
         setOptions(payload);
-
-        // The row carries the assignee's User, the dropdown lists Employees —
-        // resolve once so the select shows the right person, not "—".
-        const assigneeUser = (task.assigned_to || "").trim();
-        const match = assigneeUser
-          ? payload.employees.find((employee) => employee.user === assigneeUser)
-          : undefined;
-        if (match) {
-          setAssignedTo(match.value);
-          baselineRef.current = { ...baselineRef.current, assigned_to: match.value };
-        }
       } catch (cause) {
         if (cancelled) return;
-        setOptionsFailed(true);
         reportClientError({
           scope: "leads:task-detail-options",
           message: "The task details options could not be loaded",
@@ -2115,32 +2088,13 @@ function TaskDetailModal({
     return () => {
       cancelled = true;
     };
-  }, [language, task.assigned_to]);
+  }, [language]);
 
-  const priorities =
-    options && options.priorities.length > 0 ? options.priorities : FALLBACK_TASK_PRIORITIES;
   const statuses = options && options.statuses?.length ? options.statuses : FALLBACK_TASK_STATUSES;
-  const employees = options?.employees ?? [];
   const statusValue = status || options?.status_default || "Todo";
 
   const submit = async () => {
     if (saving) return;
-
-    const cleanTitle = title.trim();
-    if (!cleanTitle) {
-      setFormError(cf.required);
-      titleRef.current?.focus();
-      return;
-    }
-
-    const base = baselineRef.current;
-    const edits: LeadTaskEdit = {};
-    if (cleanTitle !== (base.title ?? "")) edits.title = cleanTitle;
-    if (description.trim() !== (base.description ?? "")) edits.description = description.trim();
-    if (priority !== (base.priority ?? "")) edits.priority = priority;
-    if (statusValue !== (base.status ?? "")) edits.status = statusValue;
-    if (assignedTo !== (base.assigned_to ?? "")) edits.assigned_to = assignedTo;
-    if (dueDate !== (base.due_date ?? "")) edits.due_date = dueDate;
 
     const taskName = task.task || task.key;
     if (!taskName) {
@@ -2148,8 +2102,8 @@ function TaskDetailModal({
       return;
     }
 
-    // Nothing changed — closing is the honest outcome, no write, no noise.
-    if (Object.keys(edits).length === 0) {
+    // Only the status is editable; write it only if the user changed it.
+    if (statusValue === baselineStatus.current) {
       onClose();
       return;
     }
@@ -2157,7 +2111,7 @@ function TaskDetailModal({
     setSaving(true);
     setFormError(null);
     try {
-      const result = await updateLeadTask(name, taskName, edits, language);
+      const result = await updateLeadTask(name, taskName, { status: statusValue }, language);
       await onSaved(result.task);
     } catch (cause) {
       setFormError(cause instanceof ApiError ? cause.message : dt.updateFailed);
@@ -2212,119 +2166,76 @@ function TaskDetailModal({
 
         <div className="flex flex-col gap-3.5">
           <div>
-            <label className={labelClass} htmlFor="lead-task-detail-title">
-              {cf.title}
-            </label>
-            <input
-              id="lead-task-detail-title"
-              ref={titleRef}
-              value={title}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                if (formError) setFormError(null);
-              }}
-              placeholder={cf.titlePlaceholder}
-              maxLength={140}
-              data-task-detail-title=""
-              className={fieldClass}
-            />
+            <span className={labelClass}>{dt.sectionDetails}</span>
+            <div className="flex flex-col gap-3.5">
+              <div>
+                <span className={labelClass}>{cf.title}</span>
+                <p
+                  className={readonlyClass}
+                  data-task-detail-title=""
+                >
+                  {task.title || task.text || "—"}
+                </p>
+              </div>
+              <div>
+                <span className={labelClass}>{cf.description}</span>
+                <p
+                  className={`${readonlyClass} whitespace-pre-wrap`}
+                  data-task-detail-description=""
+                >
+                  {task.description?.trim() ? task.description : dt.emptyDescription}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="lead-task-detail-description">
-              {cf.description}
+            <span className={labelClass}>{dt.sectionPeople}</span>
+            <div className="flex flex-col gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <span className={labelClass}>{cf.priority}</span>
+                  <div className={readonlyClass} data-task-detail-priority="">
+                    <TaskPriorityChip priority={task.priority || ""} language={language} />
+                    {!(task.priority || "").trim() ? <span>—</span> : null}
+                  </div>
+                </div>
+                <div>
+                  <span className={labelClass}>{cf.assignedTo}</span>
+                  <p className={readonlyClass} data-task-detail-assignee="">
+                    {task.assigned_label?.trim() || cf.unassigned || "—"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <span className={labelClass}>{cf.dueDate}</span>
+                <p className={readonlyClass} data-task-detail-due="">
+                  {task.due_date ? formatDueDate(task.due_date, language) : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-detail-status">
+              {cf.status}
             </label>
-            <textarea
-              id="lead-task-detail-description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder={cf.descriptionPlaceholder || dt.emptyDescription}
-              rows={4}
-              maxLength={5000}
-              data-task-detail-description=""
-              className={`${fieldClass} resize-none`}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <div>
-              <label className={labelClass} htmlFor="lead-task-detail-priority">
-                {cf.priority}
-              </label>
-              <select
-                id="lead-task-detail-priority"
-                value={priority}
-                onChange={(event) => setPriority(event.target.value)}
-                data-task-detail-priority=""
-                className={fieldClass}
-              >
-                {priorities.map((option) => (
-                  <option key={option.value || "none"} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass} htmlFor="lead-task-detail-status">
-                {cf.status}
-              </label>
-              <select
-                id="lead-task-detail-status"
-                value={statusValue}
-                onChange={(event) => setStatus(event.target.value)}
-                data-task-detail-status=""
-                className={fieldClass}
-              >
-                {statuses.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            <div>
-              <label className={labelClass} htmlFor="lead-task-detail-assignee">
-                {cf.assignedTo}
-              </label>
-              <select
-                id="lead-task-detail-assignee"
-                value={assignedTo}
-                onChange={(event) => setAssignedTo(event.target.value)}
-                data-task-detail-assignee=""
-                className={fieldClass}
-              >
-                <option value="">—</option>
-                {employees.map((employee) => (
-                  <option key={employee.value} value={employee.value}>
-                    {employee.designation
-                      ? `${employee.label} · ${employee.designation}`
-                      : employee.label}
-                  </option>
-                ))}
-              </select>
-              {optionsFailed ? (
-                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
-              ) : null}
-            </div>
-
-            <div>
-              <label className={labelClass} htmlFor="lead-task-detail-due">
-                {cf.dueDate}
-              </label>
-              <input
-                id="lead-task-detail-due"
-                type="date"
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-                data-task-detail-due=""
-                className={fieldClass}
-              />
-            </div>
+            <select
+              id="lead-task-detail-status"
+              value={statusValue}
+              onChange={(event) => {
+                setStatus(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              data-task-detail-status=""
+              className={fieldClass}
+            >
+              {statuses.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
