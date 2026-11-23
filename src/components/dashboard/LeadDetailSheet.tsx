@@ -3876,15 +3876,6 @@ function LeadDetailPanel({
               <h3 className="text-[16px] font-bold text-[var(--color-primary)]" data-lead-activity-heading="">
                 {detail.activityHeading}
               </h3>
-              <button
-                type="button"
-                data-lead-new=""
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:opacity-90"
-              >
-                <FiPlus size={13} className="pointer-events-none" />
-                <span className="pointer-events-none">{detail.newAction}</span>
-                <FiChevronDown size={12} className="pointer-events-none opacity-80" />
-              </button>
             </div>
             {payload.activity.length === 0 ? (
               <EmptyTab text={detail.empty.activity} />
