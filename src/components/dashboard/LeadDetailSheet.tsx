@@ -2576,7 +2576,7 @@ function NoteFormModal({
             onClick={() => void submit()}
             disabled={submitting}
             data-note-create=""
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
           </button>
