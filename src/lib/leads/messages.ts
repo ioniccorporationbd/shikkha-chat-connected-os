@@ -1242,11 +1242,47 @@ export function leadStatusTone(status: string): { bg: string; fg: string } {
 }
 
 /**
+ * Parse the many shapes a Frappe/DocType timestamp can arrive in and return
+ * epoch ms, or NaN when nothing usable is present. Frappe's `creation` is
+ * normally "YYYY-MM-DD HH:mm:ss[.ffffff]" but older deploys / serializers can
+ * hand us an ISO string, a bare epoch (seconds or ms), or a value with a
+ * trailing offset — so try each before giving up, and finally rebuild from
+ * the raw date/time parts. This keeps the "time" column from silently going
+ * blank on one unexpected format.
+ */
+export function parseLeadTime(at: unknown): number {
+  const raw = String(at ?? "").trim();
+  if (!raw) return NaN;
+
+  // Bare epoch: 10 digits = seconds, 13 = milliseconds.
+  if (/^\d{10,13}$/.test(raw)) {
+    const n = Number(raw);
+    return raw.length >= 13 ? n : n * 1000;
+  }
+
+  // "YYYY-MM-DD HH:mm:ss[.ffffff][+TZ]" → ISO variant Date() understands.
+  const iso = raw.replace(" ", "T");
+  let ms = new Date(iso).getTime();
+  if (Number.isFinite(ms)) return ms;
+
+  // Drop a fractional-seconds or trailing-offset tail Date() may choke on.
+  ms = new Date(iso.replace(/(\.\d+)?([+-]\d{2}:?\d{2})?$/, "$2") + (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? "" : "Z")).getTime();
+  if (Number.isFinite(ms)) return ms;
+
+  // Last resort: build from explicit date/time parts (local time).
+  const m = raw.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+  }
+  return NaN;
+}
+
+/**
  * Desk-style relative timestamp ("2 hours ago" / "২ ঘণ্টা আগে"). Digits follow
  * the language, like every other number on the dashboard.
  */
 export function leadRelativeTime(copy: LeadsCopy, at: string, language: string): string {
-  const then = new Date(String(at).replace(" ", "T")).getTime();
+  const then = parseLeadTime(at);
   if (!Number.isFinite(then)) return "";
 
   const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));

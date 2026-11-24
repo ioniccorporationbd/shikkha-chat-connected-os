@@ -60,6 +60,7 @@ import {
   formatFileSize,
   leadInitials,
   leadRelativeTime,
+  parseLeadTime,
   leadsCopyFor,
   leadStatusLabel,
   leadStatusTone,
@@ -148,11 +149,25 @@ const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
 function RelativeTime({ at, copy }: { at: string; copy: LeadsCopy }) {
   const { language } = useLanguage();
   const label = leadRelativeTime(copy, at, language);
-  if (!label) return null;
+  // Fall back to an absolute date when the relative formatter can't parse the
+  // stamp, so the cell never renders blank just because the live backend sent
+  // an unexpected datetime shape.
+  const text =
+    label ||
+    (Number.isFinite(parseLeadTime(at))
+      ? new Date(parseLeadTime(at)).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "");
+  if (!text) return null;
 
   return (
     <span className={`shrink-0 whitespace-nowrap text-[11.5px] ${MUTED}`} data-lead-time={at}>
-      {label}
+      {text}
     </span>
   );
 }
@@ -469,7 +484,17 @@ function NotesTable({
         </thead>
         <tbody>
           {items.map((note) => {
-            const when = note.at || note.updated;
+            // Prefer the created time; fall back through every other name a
+            // live/older backend might use for the stamp so the column never
+            // goes blank on a naming mismatch.
+            const rec = note as LeadActivity & {
+              created?: string;
+              creation?: string;
+              date?: string;
+              timestamp?: string;
+            };
+            const when =
+              note.at || note.updated || rec.created || rec.creation || rec.date || rec.timestamp || "";
             return (
               <tr
                 key={note.key}
