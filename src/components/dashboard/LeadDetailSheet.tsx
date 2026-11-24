@@ -460,10 +460,7 @@ function NotesTable({
               {th.note}
             </th>
             <th scope="col" className={`${headClass} max-sm:hidden`}>
-              {th.updated}
-            </th>
-            <th scope="col" className={`${headClass} max-sm:hidden`}>
-              {th.actor}
+              {th.time}
             </th>
             <th scope="col" className={`${headClass} text-right`}>
               {th.actions}
@@ -472,7 +469,7 @@ function NotesTable({
         </thead>
         <tbody>
           {items.map((note) => {
-            const when = note.updated || note.at;
+            const when = note.at || note.updated;
             return (
               <tr
                 key={note.key}
@@ -500,16 +497,15 @@ function NotesTable({
                           {note.body}
                         </p>
                       ) : null}
-                      {/* Phones drop the updated/author columns, so their
-                          information rides along under the title. */}
-                      <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:hidden">
-                        {note.actor ? <span className="truncate">{note.actor}</span> : null}
-                        {when ? (
+                      {/* Phones drop the time column, so the created time
+                          rides along under the title. */}
+                      {when ? (
+                        <p className="mt-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:hidden">
                           <span className="whitespace-nowrap">
                             <RelativeTime at={when} copy={copy} />
                           </span>
-                        ) : null}
-                      </p>
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </td>
@@ -523,14 +519,6 @@ function NotesTable({
                       —
                     </span>
                   )}
-                </td>
-                <td className={`${cellClass} max-sm:hidden`}>
-                  <span
-                    className="block text-[11.5px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
-                    data-lead-note-actor=""
-                  >
-                    {note.actor || "—"}
-                  </span>
                 </td>
                 <td className={`${cellClass} text-right`}>
                   <button

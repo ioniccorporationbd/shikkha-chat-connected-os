@@ -144,9 +144,8 @@ export interface LeadsDetailCopy {
   noteTable: {
     /** Column headers of the Notes tab table. */
     note: string;
-    updated: string;
+    time: string;
     created: string;
-    actor: string;
     actions: string;
     /** Caption above the table: how many notes, with a live count slot. */
     count: string;
@@ -675,9 +674,8 @@ const bn: LeadsCopy = {
     },
     noteTable: {
       note: "নোট",
-      updated: "সর্বশেষ হালনাগাদ",
+      time: "সময়",
       created: "তৈরি",
-      actor: "লিখেছেন",
       actions: "অ্যাকশন",
       count: "মোট নোট",
       untitled: "শিরোনামহীন নোট",
@@ -1074,9 +1072,8 @@ const en: LeadsCopy = {
     },
     noteTable: {
       note: "Note",
-      updated: "Last updated",
+      time: "Time",
       created: "Created",
-      actor: "Author",
       actions: "Action",
       count: "Total notes",
       untitled: "Untitled note",
