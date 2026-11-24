@@ -35,6 +35,8 @@ export interface LeadsDetailCopy {
   attachmentAdded: string;
   attachmentFailed: string;
   attachmentTooLarge: string;
+  /** Attachments tab: the red Upload Attachment button and its picker. */
+  uploadAttachment: string;
   leadOwner: string;
   edit: string;
   save: string;
@@ -577,6 +579,7 @@ const bn: LeadsCopy = {
     attachmentAdded: "সংযুক্তি যোগ হয়েছে — Desk → File-এ সংরক্ষিত",
     attachmentFailed: "সংযুক্তি আপলোড করা যায়নি",
     attachmentTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না",
+    uploadAttachment: "সংযুক্তি আপলোড করুন",
     leadOwner: "লিড ওনার",
     edit: "সম্পাদনা",
     save: "সংরক্ষণ",
@@ -976,6 +979,7 @@ const en: LeadsCopy = {
     attachmentAdded: "Attachment added — saved to Desk → File",
     attachmentFailed: "The attachment could not be uploaded",
     attachmentTooLarge: "The file cannot be larger than 5 MB",
+    uploadAttachment: "Upload Attachment",
     leadOwner: "Lead Owner",
     edit: "Edit",
     save: "Save",
