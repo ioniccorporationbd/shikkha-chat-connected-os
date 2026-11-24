@@ -441,6 +441,74 @@ function CommentsPanel({
   );
 }
 
+/**
+ * Find the created/updated time for a note row no matter what the backend
+ * called the field. Prefers the known names, then scans every own string field
+ * for a value that parses as a real datetime (skipping the obvious content
+ * fields so a body/title that happens to look date-ish never wins). This keeps
+ * the সময় column populated even when the live payload names the stamp
+ * something we didn't anticipate.
+ */
+const NOTE_TIME_KEYS = [
+  "at",
+  "updated",
+  "created",
+  "creation",
+  "date",
+  "timestamp",
+  "time",
+  "note_date",
+  "created_on",
+  "created_at",
+  "modified",
+  "modified_on",
+  "posted_on",
+] as const;
+
+const NOTE_TEXT_FIELDS = new Set([
+  "key",
+  "kind",
+  "actor",
+  "actor_email",
+  "actor_image",
+  "text",
+  "body",
+  "title",
+  "description",
+  "subject",
+  "recipients",
+  "status",
+  "priority",
+  "type",
+  "from",
+  "to",
+  "duration",
+]);
+
+function resolveNoteWhen(note: LeadActivity): string {
+  const rec = note as LeadActivity & Record<string, unknown>;
+
+  for (const key of NOTE_TIME_KEYS) {
+    const raw = rec[key];
+    if (raw == null) continue;
+    const value = String(raw).trim();
+    if (!value) continue;
+    if (Number.isFinite(parseLeadTime(value))) return value;
+  }
+
+  for (const [key, raw] of Object.entries(rec)) {
+    if (NOTE_TEXT_FIELDS.has(key)) continue;
+    if (raw == null || typeof raw === "object") continue;
+    const value = String(raw).trim();
+    if (!value) continue;
+    // Only accept fields that clearly look like a date/time, then confirm.
+    if (!/[0-9]{4}-[0-9]{2}-[0-9]{2}|^[0-9]{10,13}$/.test(value)) continue;
+    if (Number.isFinite(parseLeadTime(value))) return value;
+  }
+
+  return "";
+}
+
 function NotesTable({
   items,
   copy,
@@ -484,17 +552,9 @@ function NotesTable({
         </thead>
         <tbody>
           {items.map((note) => {
-            // Prefer the created time; fall back through every other name a
-            // live/older backend might use for the stamp so the column never
-            // goes blank on a naming mismatch.
-            const rec = note as LeadActivity & {
-              created?: string;
-              creation?: string;
-              date?: string;
-              timestamp?: string;
-            };
-            const when =
-              note.at || note.updated || rec.created || rec.creation || rec.date || rec.timestamp || "";
+            // Find the created time under whatever name the backend used so the
+            // সময় column never goes blank on a naming mismatch.
+            const when = resolveNoteWhen(note);
             return (
               <tr
                 key={note.key}
