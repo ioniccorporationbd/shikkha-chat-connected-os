@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
  * Same-origin proxy for the staff Payment Entry form catalogue.
  *
  * Returns the payment types, party types, enabled Modes of Payment (with their
- * resolved ledger accounts) and the Bank/Cash transfer accounts. The ERP only
- * answers for a caller allowed to create a Payment Entry.
+ * resolved ledger accounts) and the Bank/Cash transfer accounts. The ERP reads
+ * these catalogues under a controlled elevation, so any signed-in staff member
+ * gets the full list even without read permission on the accounting doctypes.
  */
 export async function GET(request: Request) {
   const sid = readCookie(request, SESSION_COOKIE);
