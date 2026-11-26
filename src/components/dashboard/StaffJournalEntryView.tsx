@@ -125,13 +125,18 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
   };
 
   const onAccountChange = (id: string, account: string) => {
-    const partyType = partyTypeFor(context?.accounts || [], account);
+    const suggested = partyTypeFor(context?.accounts || [], account);
+    const allowed = (context?.party_types || []).some((type) => type.value === suggested);
+    const partyType = suggested && allowed ? suggested : "";
     setRows((prev) =>
-      prev.map((row) =>
-        row.id === id
-          ? { ...row, account, partyType, party: partyType ? row.party : "" }
-          : row
-      )
+      prev.map((row) => (row.id === id ? { ...row, account, partyType, party: "" } : row))
+    );
+    if (partyType) void ensureParties(partyType);
+  };
+
+  const onPartyTypeChange = (id: string, partyType: string) => {
+    setRows((prev) =>
+      prev.map((row) => (row.id === id ? { ...row, partyType, party: "" } : row))
     );
     if (partyType) void ensureParties(partyType);
   };
@@ -160,6 +165,10 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       (context?.cost_centers || []).map((center) => ({ value: center.value, label: center.label })),
     [context]
   );
+  const partyTypeOptions: SelectOption[] = useMemo(
+    () => (context?.party_types || []).map((type) => ({ value: type.value, label: type.label })),
+    [context]
+  );
   const vendorOptions: SelectOption[] = useMemo(
     () => (context?.companies || []).map((option) => ({ value: option.value, label: option.label })),
     [context]
@@ -179,6 +188,10 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       const debit = toNumber(row.debit);
       const credit = toNumber(row.credit);
       if ((debit > 0 && credit > 0) || (debit <= 0 && credit <= 0)) return copy.errDebitCredit;
+      const type = (context?.accounts.find((account) => account.value === row.account)?.account_type || "")
+        .trim()
+        .toLowerCase();
+      if ((type === "payable" || type === "receivable") && !row.partyType) return copy.errPartyType;
       if (row.partyType && !row.party) return copy.errParty;
     }
     if (!balanced) return copy.errBalance;
@@ -352,6 +365,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
             <thead>
               <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
                 <th className="whitespace-nowrap px-2 py-2">{copy.colAccount}</th>
+                <th className="whitespace-nowrap px-2 py-2">{copy.colPartyType}</th>
                 <th className="whitespace-nowrap px-2 py-2">{copy.colParty}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colDebit}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colCredit}</th>
@@ -371,18 +385,24 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       ariaLabel={copy.colAccount}
                     />
                   </td>
+                  <td className="min-w-[150px] px-2 py-2">
+                    <DashboardSelect
+                      value={row.partyType}
+                      onChange={(value) => onPartyTypeChange(row.id, value)}
+                      options={partyTypeOptions}
+                      placeholder={copy.selectPartyType}
+                      ariaLabel={copy.colPartyType}
+                    />
+                  </td>
                   <td className="min-w-[170px] px-2 py-2">
-                    {row.partyType ? (
-                      <DashboardSelect
-                        value={row.party}
-                        onChange={(value) => updateRow(row.id, { party: value })}
-                        options={partyCache[row.partyType] || []}
-                        placeholder={copy.selectParty}
-                        ariaLabel={copy.colParty}
-                      />
-                    ) : (
-                      <span className="block px-1 py-2 text-[12px] text-[var(--color-muted)]">—</span>
-                    )}
+                    <DashboardSelect
+                      value={row.party}
+                      onChange={(value) => updateRow(row.id, { party: value })}
+                      options={partyCache[row.partyType] || []}
+                      placeholder={copy.selectParty}
+                      ariaLabel={copy.colParty}
+                      disabled={!row.partyType}
+                    />
                   </td>
                   <td className="px-2 py-2 text-right">
                     <input
@@ -498,12 +518,14 @@ interface Copy {
   removeRow: string;
   colAccount: string;
   colParty: string;
+  colPartyType: string;
   colDebit: string;
   colCredit: string;
   colCostCenter: string;
   colAction: string;
   selectAccount: string;
   selectParty: string;
+  selectPartyType: string;
   selectCostCenter: string;
   totalDebit: string;
   totalCredit: string;
@@ -518,6 +540,7 @@ interface Copy {
   errAccount: string;
   errDebitCredit: string;
   errParty: string;
+  errPartyType: string;
   errBalance: string;
 }
 
@@ -541,12 +564,14 @@ const EN: Copy = {
   removeRow: "Remove row",
   colAccount: "Account",
   colParty: "Party",
+  colPartyType: "Party type",
   colDebit: "Debit",
   colCredit: "Credit",
   colCostCenter: "Cost center",
   colAction: "Action",
   selectAccount: "Select account",
   selectParty: "Select party",
+  selectPartyType: "Select party type",
   selectCostCenter: "Select cost center",
   totalDebit: "Total debit",
   totalCredit: "Total credit",
@@ -561,6 +586,7 @@ const EN: Copy = {
   errAccount: "Every line needs an account.",
   errDebitCredit: "Each line must have either a debit or a credit, not both.",
   errParty: "Choose the party for the payable / receivable line.",
+  errPartyType: "Choose a party type for the payable / receivable line.",
   errBalance: "Debit and credit must be equal and greater than zero.",
 };
 
@@ -584,12 +610,14 @@ const BN: Copy = {
   removeRow: "সারি মুছুন",
   colAccount: "অ্যাকাউন্ট",
   colParty: "পক্ষ",
+  colPartyType: "পক্ষের ধরন",
   colDebit: "ডেবিট",
   colCredit: "ক্রেডিট",
   colCostCenter: "কস্ট সেন্টার",
   colAction: "অ্যাকশন",
   selectAccount: "অ্যাকাউন্ট নির্বাচন করুন",
   selectParty: "পক্ষ নির্বাচন করুন",
+  selectPartyType: "পক্ষের ধরন নির্বাচন করুন",
   selectCostCenter: "কস্ট সেন্টার নির্বাচন করুন",
   totalDebit: "মোট ডেবিট",
   totalCredit: "মোট ক্রেডিট",
@@ -603,7 +631,8 @@ const BN: Copy = {
   errRows: "কমপক্ষে দুটি অ্যাকাউন্ট সারি যোগ করুন।",
   errAccount: "প্রতিটি সারিতে অ্যাকাউন্ট লাগবে।",
   errDebitCredit: "প্রতিটি সারিতে হয় ডেবিট নাহয় ক্রেডিট, দুটোই নয়।",
-  errParty: "পেয়েবল / রিসিভেবল সারির জন্য পক্ষ নির্বাচন করুন।",
+  errParty: "পেয়েবল / রিসিভেবল সারির জন্য পক্ষ নির্বাচন করুন।",
+  errPartyType: "পেয়েবল / রিসিভেবল সারির জন্য পক্ষের ধরন নির্বাচন করুন।",
   errBalance: "ডেবিট ও ক্রেডিট সমান এবং শূন্যের বেশি হতে হবে।",
 };
 

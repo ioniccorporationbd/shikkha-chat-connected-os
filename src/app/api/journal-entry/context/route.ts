@@ -120,6 +120,15 @@ export async function GET(request: Request) {
     .map((row) => ({ value: String(row.name ?? ""), label: String(row.name ?? "") }))
     .filter((option) => option.value);
 
+  const partyTypeRes = await getList("Party Type", ["name"], [], sid, "name asc");
+  if (!partyTypeRes.ok) {
+    const response = fromFrappeFailure(partyTypeRes);
+    return partyTypeRes.status === 401 ? clearSessionCookie(response) : response;
+  }
+  const party_types: SelectOption[] = (Array.isArray(partyTypeRes.data) ? partyTypeRes.data : [])
+    .map((row) => ({ value: String(row.name ?? ""), label: String(row.name ?? "") }))
+    .filter((option) => option.value);
+
   const payload: JournalEntryFormContext = {
     company,
     companies,
@@ -128,6 +137,7 @@ export async function GET(request: Request) {
     voucher_types: VOUCHER_TYPES.map((value) => ({ value, label: value })),
     accounts,
     cost_centers,
+    party_types,
   };
 
   return jsonOk(payload);

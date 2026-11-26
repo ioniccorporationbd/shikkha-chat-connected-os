@@ -21,6 +21,8 @@ export interface JournalEntryFormContext {
   voucher_types: SelectOption[];
   accounts: AccountOption[];
   cost_centers: CostCenterOption[];
+  /** Party types from the ERP "Party Type" doctype (Customer, Supplier, Employee, ...). */
+  party_types: SelectOption[];
 }
 
 /** One line of the accounts grid as the browser sends it. */
