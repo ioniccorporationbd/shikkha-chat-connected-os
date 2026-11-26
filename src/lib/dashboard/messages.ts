@@ -14,6 +14,8 @@ export interface DashboardCopy {
     expenseClaim: string;
     /** Staff-only make-a-payment form (`/userDashboard/payment-entry`). */
     paymentEntry: string;
+    /** Staff-only create-a-journal-entry form (`/userDashboard/journal-entry`). */
+    journalEntry: string;
     /** Customer-facing Payment History link (client scope only). */
     paymentHistory: string;
     /** Customer-facing Service Build (Sales Invoice) link (client scope only). */
@@ -162,6 +164,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       leads: "লিডস",
       expenseClaim: "এক্সপেন্স ক্লেম",
       paymentEntry: "পেমেন্ট এন্ট্রি",
+      journalEntry: "জার্নাল এন্ট্রি",
       paymentHistory: "পেমেন্ট এন্ট্রি",
       serviceBuild: "সার্ভিস বিল্ড",
       helpDesk: "হেল্প ডেস্ক",
@@ -332,6 +335,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       leads: "Leads",
       expenseClaim: "Expense Claim",
       paymentEntry: "Payment Entry",
+      journalEntry: "Journal Entry",
       paymentHistory: "Payment Entry",
       serviceBuild: "Service Build",
       helpDesk: "Help Desk",

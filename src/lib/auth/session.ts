@@ -53,6 +53,12 @@ export const EXPENSE_CLAIM_NEW_PATH = `${EXPENSE_CLAIM_PATH}/new`;
 export const PAYMENT_ENTRY_PATH = `${STAFF_DASHBOARD_PATH}/payment-entry`;
 
 /**
+ * Staff Journal Entry creator (`/userDashboard/journal-entry`). Sits directly
+ * below Payment Entry in the rail and renders inside the same dashboard shell.
+ */
+export const JOURNAL_ENTRY_PATH = `${STAFF_DASHBOARD_PATH}/journal-entry`;
+
+/**
  * Staff-only sub-route that renders the CRM lead board (`/userDashboard/leads`),
  * the portal mirror of Desk's `/crm/leads/view/list`.
  */

@@ -41,6 +41,7 @@ import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
 import PaymentSuccessView from "@/components/dashboard/payment/PaymentSuccessView";
 import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
 import StaffPaymentEntryView from "@/components/dashboard/StaffPaymentEntryView";
+import StaffJournalEntryView from "@/components/dashboard/StaffJournalEntryView";
 import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
@@ -399,6 +400,7 @@ export default function DashboardShell({
   const expenseClaimPath = `${basePath}/expense-claim`;
   const expenseClaimNewPath = `${expenseClaimPath}/new`;
   const paymentEntryPath = `${basePath}/payment-entry`;
+  const journalEntryPath = `${basePath}/journal-entry`;
   const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
   const onCheckinView = !isClient && pathname.startsWith(checkinPath);
   const onLeadsView = !isClient && pathname.startsWith(leadsPath);
@@ -407,6 +409,7 @@ export default function DashboardShell({
     !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
   // The staff "Payment Entry" form, directly below Expense Claim in the rail.
   const onPaymentEntryView = !isClient && pathname.startsWith(paymentEntryPath);
+  const onJournalEntryView = !isClient && pathname.startsWith(journalEntryPath);
   // The client panel's own sub-route: the account's Payment Entry history.
   const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
   // The client panel's child route: the confirmation page for a just-created
@@ -641,6 +644,9 @@ export default function DashboardShell({
   // "Payment Entry" — the staff make-a-payment form — sits directly below
   // Expense Claim in the rail. Same audience (the desk staff panel).
   const showPaymentEntry = !isClient && isSystemUser;
+  // "Journal Entry" — the staff create-a-journal-entry form — sits directly
+  // below Payment Entry in the rail. Same audience (the desk staff panel).
+  const showJournalEntry = !isClient && isSystemUser;
 
   const roles = user?.roles ?? [];
   // The Payment History link is a customer-panel feature: it appears only on the
@@ -700,7 +706,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentEntryView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
+      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentEntryView && !onJournalEntryView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
 
       return (
         <button
@@ -835,6 +841,29 @@ export default function DashboardShell({
           <span className={navLabelClass(active)}>
             <PayEntryIcon className="shrink-0 text-[16px]" />
             <span className="truncate">{copy.nav.paymentEntry}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showJournalEntry) {
+      const JournalIcon = NAV_ICONS.journalentry;
+      const active = onJournalEntryView;
+
+      items.push(
+        <button
+          key="journal-entry"
+          type="button"
+          onClick={() => {
+            router.push(journalEntryPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <JournalIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.journalEntry}</span>
           </span>
         </button>
       );
@@ -1129,6 +1158,8 @@ export default function DashboardShell({
               <CheckInOutView onBack={() => router.push(basePath)} />
             ) : onLeadsView ? (
               <LeadsView />
+            ) : onJournalEntryView ? (
+              <StaffJournalEntryView onBack={() => router.push(basePath)} />
             ) : onPaymentEntryView ? (
               <StaffPaymentEntryView onBack={() => router.push(basePath)} />
             ) : onExpenseClaimNewView ? (
