@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiArrowLeft, FiCreditCard, FiHash, FiLayers, FiPlusCircle, FiRotateCcw } from "react-icons/fi";
+import { FiArrowLeft, FiCreditCard, FiDollarSign, FiEye, FiHash, FiLayers, FiPlusCircle, FiRotateCcw } from "react-icons/fi";
 
 import ListFilterBar from "./ListFilterBar";
 import ListPagination from "./ListPagination";
+import DetailSheet, { type DetailRow, type DetailSection } from "./DetailSheet";
 
 import {
   DEFAULT_ROWS_PER_PAGE,
@@ -59,6 +60,7 @@ export default function StaffPaymentHistoryPanel({
   const [currency, setCurrency] = useState("BDT");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [detailRow, setDetailRow] = useState<PaymentEntryRow | null>(null);
 
   // ---- Filters (identical state machine to the client payment list) ----
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -454,6 +456,7 @@ export default function StaffPaymentHistoryPanel({
                           copy.colAmount,
                           copy.colMode,
                           copy.colStatus,
+                          copy.colAction,
                         ].map((heading) => (
                           <th
                             key={heading}
@@ -491,6 +494,18 @@ export default function StaffPaymentHistoryPanel({
                           <td className="whitespace-nowrap px-4 py-3">
                             <StatusBadge status={payment.display_status} copy={copy} emphasis />
                           </td>
+                          <td className="whitespace-nowrap px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => setDetailRow(payment)}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                            >
+                              <span className="pointer-events-none">
+                                <FiEye size={12} />
+                              </span>
+                              <span className="pointer-events-none">{copy.viewDetails}</span>
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -517,6 +532,15 @@ export default function StaffPaymentHistoryPanel({
           </div>
         </>
       )}
+
+      {detailRow ? (
+        <StaffDetailsDialog
+          row={detailRow}
+          copy={copy}
+          language={language}
+          onClose={() => setDetailRow(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -598,4 +622,101 @@ function StatusBadge({
       </span>
     </span>
   );
+}
+
+/** The "view details" popup for a staff payment row. Reuses the shared
+ *  {@link DetailSheet} so its visual family, Print and Download match the
+ *  customer Payment History popup exactly. Built from the owner-scoped list row
+ *  (no extra backend read), so it works as soon as the employee has Payment
+ *  Entry read access. */
+function StaffDetailsDialog({
+  row,
+  copy,
+  language,
+  onClose,
+}: {
+  row: PaymentEntryRow;
+  copy: PaymentEntryCopy;
+  language: string;
+  onClose: () => void;
+}) {
+  const statusLabel =
+    copy.statuses[String(row.display_status || "").trim().toLowerCase() as keyof typeof copy.statuses] ||
+    String(row.display_status || "");
+
+  return (
+    <DetailSheet
+      open
+      onClose={onClose}
+      closeLabel={copy.close}
+      eyebrow={copy.detailsHeading}
+      title={row.name}
+      subtitle={row.party_name || row.party || ""}
+      icon={<FiCreditCard size={20} />}
+      badges={<StatusBadge status={row.display_status} copy={copy} emphasis />}
+      sections={staffDetailSections(row, copy, language)}
+      document={{
+        brand: "Shikkha Chat",
+        badges: [statusLabel].filter(Boolean) as string[],
+        filename: `payment-${row.name}`,
+        printLabel: language === "en" ? "Print" : "প্রিন্ট",
+        downloadLabel: language === "en" ? "Download" : "ডাউনলোড",
+        footerNote: language === "en" ? "Staff copy" : "স্টাফ কপি",
+        locale: language === "en" ? "en-GB" : "bn-BD",
+      }}
+    />
+  );
+}
+
+/** Grouped sections of the staff payment popup, from real row fields only. */
+function staffDetailSections(
+  row: PaymentEntryRow,
+  copy: PaymentEntryCopy,
+  language: string,
+): DetailSection[] {
+  const code = row.currency || "BDT";
+  const num = (value: unknown) => Number(value ?? 0);
+  const fmt = (value: unknown) => formatAmount(num(value), code, language);
+
+  const statusKey = String(row.display_status || "").trim().toLowerCase();
+  const isUnpaid = statusKey === "draft" || statusKey === "unpaid";
+  const settledLabel = isUnpaid ? copy.dUnpaidAmount : copy.dPaidAmount;
+  const settledValue = num(row.paid_amount) || (isUnpaid ? num(row.amount) : 0);
+
+  const infoRows: DetailRow[] = (
+    [
+      { label: copy.dParty, value: row.party_name || row.party || "" },
+      { label: copy.dPostingDate, value: formatDate(row.posting_date, language) },
+      {
+        label: copy.dPaymentType,
+        value: copy.paymentTypes[String(row.payment_type || "").trim()] || row.payment_type || "",
+      },
+      { label: copy.dMode, value: row.mode_of_payment || "" },
+    ] as DetailRow[]
+  ).filter((item) => Boolean(item.value));
+
+  const amountRows: DetailRow[] = (
+    [
+      { label: copy.dAmount, value: fmt(row.amount), emphasis: true },
+      { label: settledLabel, value: settledValue ? fmt(settledValue) : "" },
+      { label: copy.dReceivedAmount, value: num(row.received_amount) ? fmt(row.received_amount) : "" },
+      { label: copy.dCurrency, value: row.currency || "" },
+    ] as DetailRow[]
+  ).filter((item) => Boolean(item.value));
+
+  const referenceRows: DetailRow[] = (
+    [
+      { label: copy.dReferenceNo, value: row.reference_no || "" },
+      { label: copy.dReferenceDate, value: row.reference_date ? formatDate(row.reference_date, language) : "" },
+      { label: copy.dCompany, value: row.company || "" },
+    ] as DetailRow[]
+  ).filter((item) => Boolean(item.value));
+
+  const sections: DetailSection[] = [
+    { key: "info", title: copy.dSecInfo, icon: <FiCreditCard size={15} />, rows: infoRows },
+    { key: "amount", title: copy.dSecAmount, icon: <FiDollarSign size={15} />, rows: amountRows },
+    { key: "reference", title: copy.dSecReference, icon: <FiHash size={15} />, rows: referenceRows },
+  ];
+
+  return sections.filter((section) => section.rows.length > 0);
 }
