@@ -43,7 +43,8 @@ export interface PartyOptionsPayload {
 }
 
 export type PaymentType = "Receive" | "Pay" | "Internal Transfer";
-export type PartyType = "Customer" | "Employee" | "Shareholder" | "Supplier";
+/** Any Party Type doctype record name (Customer, Supplier, Employee, ...). */
+export type PartyType = string;
 
 /** `POST /api/payment-entry/create` — the validated form values. */
 export interface PaymentEntryCreateInput {
