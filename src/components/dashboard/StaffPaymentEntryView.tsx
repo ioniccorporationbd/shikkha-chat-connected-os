@@ -576,7 +576,7 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
 
   if (created) {
     return (
-      <>
+      <div className="flex flex-col gap-5">
       <section className={CARD}>
         {heading}
         <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,var(--color-white))] p-5">
@@ -630,12 +630,12 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
         </div>
       </section>
       <StaffPaymentHistoryPanel refreshToken={historyToken} />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="flex flex-col gap-5">
     <section className={CARD}>
       {heading}
 
@@ -868,6 +868,6 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
       </div>
     </section>
       <StaffPaymentHistoryPanel refreshToken={historyToken} />
-    </>
+    </div>
   );
 }
