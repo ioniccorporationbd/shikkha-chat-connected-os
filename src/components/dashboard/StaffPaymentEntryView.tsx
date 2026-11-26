@@ -27,6 +27,7 @@ import type {
   PartyType,
 } from "@/lib/staff-payment/types";
 import { toast } from "@/lib/ui/toast";
+import { reportClientError } from "@/lib/log/report-error";
 
 const CARD =
   "rounded-[22px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-28px_color-mix(in_srgb,var(--color-primary)_40%,transparent)] sm:p-5";
@@ -227,8 +228,14 @@ function PartyPicker({
           if (id !== requestId.current) return;
           setOptions(payload.options ?? []);
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (id !== requestId.current) return;
+          const failure = error as { code?: string; message?: string };
+          reportClientError({
+            scope: "payment-entry:parties",
+            message: failure?.message || "Party search failed",
+            detail: failure,
+          });
           setOptions([]);
         })
         .finally(() => {
@@ -360,9 +367,11 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
       setPostingDate(data.posting_date || todayLocalIso());
     } catch (error) {
       const failure = error as { code?: string; message?: string };
+      const message = failure?.message || copy.loadFailed;
+      reportClientError({ scope: "payment-entry:load", message, detail: failure });
       setLoadError({
         code: failure?.code || "load_failed",
-        message: failure?.message || copy.loadFailed,
+        message,
       });
     } finally {
       setLoading(false);
@@ -387,6 +396,10 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
   );
   const partyTypeOptions = useMemo(
     () => (context?.party_types ?? []).map((item) => ({ value: item.value, label: item.label })),
+    [context]
+  );
+  const paymentTypeOptions = useMemo(
+    () => (context?.payment_types ?? []).map((item) => ({ value: item.value, label: item.label })),
     [context]
   );
 
@@ -452,7 +465,9 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
       setCreated(result);
       toast.success(`${result.name} · ${result.status}`, copy.successTitle);
     } catch (error) {
-      const message = (error as { message?: string })?.message || copy.loadFailed;
+      const failure = error as { code?: string; message?: string };
+      const message = failure?.message || copy.loadFailed;
+      reportClientError({ scope: "payment-entry:create", message, detail: failure });
       toast.error(message, copy.heading);
     } finally {
       setSubmitting(false);
@@ -618,35 +633,24 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
       {heading}
 
       <div className="mt-4 space-y-4">
-        {/* Payment type — segmented control */}
-        <div>
-          <span className={LABEL}>{copy.paymentType}</span>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {(context?.payment_types ?? []).map((item) => {
-              const active = item.value === paymentType;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => {
-                    setPaymentType(item.value as PaymentType);
-                    setErrors({});
-                  }}
-                  className={`rounded-2xl border px-3.5 py-2 text-[13px] font-semibold transition ${
-                    active
-                      ? "border-[var(--color-action)] bg-[var(--color-action-tint)] text-[var(--color-action)]"
-                      : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] text-[var(--color-primary)] hover:border-[var(--color-action)]"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+        {/* Row 1: Payment type (left) | Mode of Payment (right) */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <span className={LABEL}>{copy.paymentType}</span>
+            <div className="mt-1.5">
+              <DashboardSelect
+                value={paymentType}
+                onChange={(value) => {
+                  setPaymentType(value as PaymentType);
+                  setErrors({});
+                }}
+                options={paymentTypeOptions}
+                placeholder={copy.paymentType}
+                ariaLabel={copy.paymentType}
+              />
+            </div>
           </div>
-        </div>
-
-        {isTransfer ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          {isTransfer ? (
             <div>
               <span className={LABEL}>{copy.fromAccount}</span>
               <div className="mt-1.5">
@@ -660,6 +664,27 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
                 />
               </div>
             </div>
+          ) : (
+            <div>
+              <span className={LABEL}>{copy.mode}</span>
+              <div className="mt-1.5">
+                <DashboardSelect
+                  value={mode}
+                  onChange={setMode}
+                  options={modeOptions}
+                  placeholder={copy.modePlaceholder}
+                  ariaLabel={copy.mode}
+                  invalid={Boolean(errors.mode)}
+                />
+              </div>
+              {errors.mode ? <p className="mt-1 text-[11.5px] text-[var(--color-danger-strong)]">{errors.mode}</p> : null}
+            </div>
+          )}
+        </div>
+
+        {/* Row 2: party (receive/pay) or destination account (transfer) */}
+        {isTransfer ? (
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <span className={LABEL}>{copy.toAccount}</span>
               <div className="mt-1.5">
@@ -717,20 +742,6 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
                 />
               </div>
               {errors.party ? <p className="mt-1 text-[11.5px] text-[var(--color-danger-strong)]">{errors.party}</p> : null}
-            </div>
-            <div className="sm:col-span-2">
-              <span className={LABEL}>{copy.mode}</span>
-              <div className="mt-1.5">
-                <DashboardSelect
-                  value={mode}
-                  onChange={setMode}
-                  options={modeOptions}
-                  placeholder={copy.modePlaceholder}
-                  ariaLabel={copy.mode}
-                  invalid={Boolean(errors.mode)}
-                />
-              </div>
-              {errors.mode ? <p className="mt-1 text-[11.5px] text-[var(--color-danger-strong)]">{errors.mode}</p> : null}
             </div>
           </div>
         )}
