@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
+import StaffPaymentHistoryPanel from "@/components/dashboard/StaffPaymentHistoryPanel";
 import { todayLocalIso } from "@/lib/format/datetime";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -353,6 +354,7 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<PaymentEntryResult | null>(null);
+  const [historyToken, setHistoryToken] = useState(0);
 
   const loadedRef = useRef(false);
 
@@ -463,6 +465,7 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
         language
       );
       setCreated(result);
+      setHistoryToken((token) => token + 1);
       toast.success(`${result.name} · ${result.status}`, copy.successTitle);
     } catch (error) {
       const failure = error as { code?: string; message?: string };
@@ -573,6 +576,7 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
 
   if (created) {
     return (
+      <>
       <section className={CARD}>
         {heading}
         <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-success)_32%,transparent)] bg-[color-mix(in_srgb,var(--color-success)_8%,var(--color-white))] p-5">
@@ -625,10 +629,13 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
           </div>
         </div>
       </section>
+      <StaffPaymentHistoryPanel refreshToken={historyToken} />
+      </>
     );
   }
 
   return (
+    <>
     <section className={CARD}>
       {heading}
 
@@ -860,5 +867,7 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
         </div>
       </div>
     </section>
+      <StaffPaymentHistoryPanel refreshToken={historyToken} />
+    </>
   );
 }

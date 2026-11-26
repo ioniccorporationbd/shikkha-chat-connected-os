@@ -81,3 +81,14 @@ export interface PaymentEntryResult {
   paid_from: string;
   paid_to: string;
 }
+
+/**
+ * `GET /api/payment-entry/list` — the Payment Entries *this employee* created
+ * (owner-scoped), shaped exactly like the customer "পেমেন্ট তালিকা" rows so the
+ * staff history table reuses the same UI/columns/statuses.
+ */
+export interface StaffPaymentEntryListResult {
+  doctype: string;
+  entries: import("@/lib/payment-entry/types").PaymentEntryRow[];
+  summary: import("@/lib/payment-entry/types").PaymentEntrySummary;
+}

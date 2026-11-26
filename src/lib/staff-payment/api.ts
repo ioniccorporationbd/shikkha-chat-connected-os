@@ -7,6 +7,7 @@ import type {
   PaymentEntryCreateInput,
   PaymentEntryFormContext,
   PaymentEntryResult,
+  StaffPaymentEntryListResult,
 } from "./types";
 
 /**
@@ -41,4 +42,13 @@ export function createPaymentEntry(
   language: string
 ): Promise<PaymentEntryResult> {
   return postJson<PaymentEntryResult>("/api/payment-entry/create", { data: values, language });
+}
+
+/**
+ * The Payment Entries created by *this employee* (owner-scoped), for the
+ * history table below the form. Rows mirror the customer "পেমেন্ট তালিকা" table.
+ */
+export function fetchStaffPaymentEntries(language: string): Promise<StaffPaymentEntryListResult> {
+  const params = new URLSearchParams({ language });
+  return getJson<StaffPaymentEntryListResult>(`/api/payment-entry/list?${params.toString()}`);
 }
