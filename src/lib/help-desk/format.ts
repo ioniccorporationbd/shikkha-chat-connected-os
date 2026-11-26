@@ -1,0 +1,432 @@
+/**
+ * Help Desk — small formatting helpers (dates, sizes, ids).
+ *
+ * Kept pure so they can be unit-tested and reused by list, card and details
+ * views without duplicating locale logic.
+ */
+
+import type { TicketStatus } from "./types";
+
+/**
+ * The header lines an ERP Communication carries in front of the words the
+ * employee typed — `To: someone@example.com`, `From: …`, `Subject: …`. The chat
+ * bubble and the audit trail both print the stored body, so a bare `To:` line
+ * would read as the first sentence of the reply; strip that leading block only.
+ */
+const LEADING_HEADER_LINES = /^(?:\s*(?:to|from|cc|bcc|subject|date)\s*:[^\n]*\n?)+/i;
+
+export function displayBody(body: unknown): string {
+  return String(body ?? "")
+    .replace(LEADING_HEADER_LINES, "")
+    .replace(/^[\s\u00a0]+/, "");
+}
+
+/**
+ * Parse an ERP timestamp without guessing the timezone.
+ *
+ * Frappe stores `creation`/`modified` as a *naive* datetime in the site's
+ * business timezone (Asia/Dhaka) — "2026-10-26 18:20:00". Handing that to
+ * `new Date()` makes the browser read it in ITS OWN zone and then the Dhaka
+ * formatter shifts it by the difference, so a UTC visitor saw 00:20 and a
+ * Dhaka visitor saw 18:20 for the same row. Attaching the fixed +06:00 offset
+ * (Dhaka has never observed DST) turns the wall clock the ERP recorded into
+ * the instant it actually was, so every formatter below prints the time the
+ * ticket was really created.
+ *
+ * Strings that already carry an offset or `Z` are respected as-is.
+ */
+/**
+ * The stamp a stored row carries, whichever name its payload gives it.
+ *
+ * The desk names the same column differently per feed: the activity feed says
+ * `timestamp`, the portal rows say `at`, a raw Frappe document says `creation`.
+ * Reading only one name left whole author-sides undated — the row drew with a
+ * bare "—" while the other side showed its time. Every reader asks this
+ * function instead of reaching for one field.
+ */
+export function erpStampOf(row: unknown): string {
+  if (!row || typeof row !== "object") return "";
+  const record = row as Record<string, unknown>;
+  // One row, however the desk spelled its clock: camelCase from the current
+  // API, snake_case from an older build, the doctype's own `creation`/`modified`
+  // — any of them is the same moment.
+  for (const key of [
+    "at",
+    "createdAt",
+    "created_at",
+    "timestamp",
+    "sentAt",
+    "sent_at",
+    "postedAt",
+    "posted_at",
+    "creation",
+    "modified",
+    "modifiedAt",
+    "modified_at",
+    "lastUpdated",
+    "date",
+    "datetime",
+    "communicationDate",
+    "communication_date",
+  ]) {
+    const text = String(record[key] ?? "").trim();
+    if (text) return text;
+  }
+  // A message the desk filed through its mail log carries the moment on the
+  // activity rows instead of the message itself.
+  const activities = record.activities;
+  if (Array.isArray(activities)) {
+    for (const activity of activities) {
+      if (!activity || typeof activity !== "object") continue;
+      const text = String((activity as Record<string, unknown>).timestamp ?? "").trim();
+      if (text) return text;
+    }
+  }
+  return "";
+}
+
+/**
+ * A per-row date reader for a trail whose rows may arrive with no time at all.
+ *
+ * The portal draws two feeds of the same conversation: the trail rows the desk
+ * files (which the ERP can hand over with no id and no stamp under any name) and
+ * the chat messages (whose `creation` is known). When a trail row cannot date
+ * itself it borrows the time of the message that says the same words on the
+ * same side — the twin it was re-shaped from. The words are compared after the
+ * desk's `To:`/`From:` header block is stripped, since a reply row carries the
+ * recipient line and the bubble does not; a row whose words match no twin takes
+ * the next unused dated message of its own side, so a Support row is never left
+ * printing a bare "—" while the customer side shows its clock.
+ */
+export function makeStampBorrower(messages: readonly unknown[]): (event: unknown) => string {
+  const sideOf = (row: unknown) =>
+    String((row as Record<string, unknown>)?.author ?? "").trim().toLowerCase();
+  const wordsOf = (text: unknown) =>
+    displayBody(text).replace(/\s+/g, " ").trim().toLowerCase();
+  const usable = (stamp: string) => Boolean(stamp) && !Number.isNaN(parseErpTimestamp(stamp).getTime());
+
+  const pool = messages
+    .map((message, index) => {
+      const stamp = erpStampOf(message);
+      return {
+        index,
+        stamp: usable(stamp) ? stamp : "",
+        side: sideOf(message),
+        words: wordsOf((message as Record<string, unknown>)?.body),
+      };
+    })
+    .filter((entry) => entry.stamp);
+  const spoken = new Set<number>();
+  // The same row is asked for its time once per pass (sort, room, audit list);
+  // the answer is remembered so a second pass cannot consume another twin.
+  const answered = new WeakMap<object, string>();
+
+  return (event: unknown): string => {
+    if (event && typeof event === "object" && answered.has(event as object)) {
+      return answered.get(event as object) as string;
+    }
+    const answer = resolve(event);
+    if (event && typeof event === "object") answered.set(event as object, answer);
+    return answer;
+  };
+
+  function resolve(event: unknown): string {
+    const own = erpStampOf(event);
+    if (usable(own)) return own;
+
+    const side = sideOf(event);
+    const words = wordsOf((event as Record<string, unknown>)?.text);
+
+    // The twin that says exactly these words on this side.
+    let hit = pool.find((entry) => !spoken.has(entry.index) && entry.side === side && entry.words && entry.words === words);
+    // Or the twin whose words these are a part of (the trail pads the bubble
+    // with the recipient block, the stored body keeps only what was typed).
+    if (!hit && words.length >= 12) {
+      hit = pool.find(
+        (entry) =>
+          !spoken.has(entry.index) &&
+          entry.side === side &&
+          entry.words.length >= 12 &&
+          (entry.words.includes(words) || words.includes(entry.words)),
+      );
+    }
+    // Or the next dated message of this side, in the order the desk filed them.
+    if (!hit) hit = pool.find((entry) => !spoken.has(entry.index) && entry.side === side);
+    if (hit) {
+      spoken.add(hit.index);
+      return hit.stamp;
+    }
+    return own;
+  };
+}
+
+/**
+ * Last resort for a trail that arrived with holes: a row the desk filed with no
+ * time at all is dated by the row above it (the thread is chronological, so a
+ * reply never predates the message it answers). Only rows that still have
+ * nothing — an entirely undated thread — fall back to the ticket's own moment.
+ */
+export function fillBlankStamps<T>(rows: readonly T[], fallback?: string): T[] {
+  const usable = (value: unknown) => {
+    const text = String(value ?? "").trim();
+    return text && !Number.isNaN(parseErpTimestamp(text).getTime()) ? text : "";
+  };
+  const out = rows.map((row) => ({ ...(row as object) }) as Record<string, unknown>);
+  // A row's moment may live under `createdAt` (the API's field) rather than
+  // `at`, so read it the way the bubble does (erpStampOf) — otherwise a
+  // trail of `createdAt`-only rows all look undated and every bubble is
+  // stamped with the ticket's own moment.
+  const ownStamp = (row: Record<string, unknown>) => usable(erpStampOf(row));
+  // Fill each undated row from the nearest PRECEDING dated row; rows that lead
+  // the thread (nothing dated above them) take `fallback` — the ticket's own
+  // stable creation moment. Deliberately NO backward pass: borrowing the NEXT
+  // dated row's clock made every earlier undated row jump forward to the newest
+  // send's time the moment a fresh message (text or file) was posted — the exact
+  // "a previous send's time changes to the current time" drift. A row's stamp now
+  // only ever comes from itself, an earlier row, or the fixed ticket moment, so
+  // it can never slide forward when new messages arrive.
+  let last = usable(fallback);
+  for (const row of out) {
+    const own = ownStamp(row);
+    if (own) last = own;
+    else row.at = last;
+  }
+  return out as unknown as T[];
+}
+
+export function parseErpTimestamp(iso: string): Date {
+  const text = iso.trim();
+  const naive = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/;
+  if (naive.test(text)) {
+    return new Date(`${text.replace(" ", "T")}+06:00`);
+  }
+  return new Date(text);
+}
+
+/** Uppercase the day-period token (`pm` -> `PM`) without touching the digits. */
+function upperPeriod(text: string): string {
+  return text.replace(/\b(am|pm)\b/gi, (match) => match.toUpperCase());
+}
+
+/** Render an ISO timestamp as a readable date (locale follows the language). */
+export function formatDateTime(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    // Every timestamp in the Help Desk is shown in Asia/Dhaka — the site's
+    // business timezone — so a browser set to UTC+0 and one set to Dhaka read
+    // the same time, and the ERP's stored value is never shifted.
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString();
+  }
+}
+
+/**
+ * The list column stamp, e.g. `26/10/2026, 06:20 PM` — day/month/year and a
+ * 12-hour clock, both from the ERP timestamp in Asia/Dhaka.
+ */
+export function formatDateTimeNumeric(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return upperPeriod(
+      new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Dhaka",
+      }).format(date),
+    );
+  } catch {
+    return date.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
+/**
+ * Date only, numeric — the date half of {@link formatDateTimeNumeric} without
+ * the clock (e.g. `16/11/2026`). Used by the overview table's তৈরি হয়েছে
+ * column, which shows the filing date only.
+ */
+export function formatDateNumeric(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+/** Render an ISO timestamp as a readable date only. */
+export function formatDate(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+/** Time of day only, e.g. `08:10 PM` — the clock half of a chat-style stamp. */
+export function formatTime(iso: string | undefined, language: string): string {
+  if (!iso) return "";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(11, 16);
+  }
+}
+
+/**
+ * Time shown inside a chat bubble footer, e.g. `08:10:42 PM`.
+ *
+ * The chat reads messages sent seconds apart, so the stamp carries the second:
+ * a customer watching their own message appear can tell which line was theirs
+ * and which came from support a moment later. Still Asia/Dhaka, still the ERP
+ * timestamp — only the precision changed.
+ */
+export function formatBubbleTime(iso: string, language: string): string {
+  if (!iso) return "";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    // Fallback: the ERP stamp is ISO, so 11..19 is the Dhaka wall clock.
+    return date.toISOString().slice(11, 19);
+  }
+}
+
+/**
+ * Date **and** time shown inside a chat bubble footer, e.g.
+ * `15 Nov 2026, 05:12:00 PM`.
+ *
+ * The chat needs to say which day a message belongs to together with the exact
+ * send time down to the second — a customer reading their own text/file bubble
+ * wants the date plus the hour, minute and second it was posted. Still
+ * Asia/Dhaka, still the ERP timestamp; only the date was added to the stamp.
+ */
+export function formatBubbleStamp(iso: string, language: string): string {
+  if (!iso) return "";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    // Fallback: ISO is `YYYY-MM-DDTHH:mm:ss…` — keep the date and the clock.
+    return date.toISOString().slice(0, 19).replace("T", " ");
+  }
+}
+
+/** Day the timestamp belongs to in Asia/Dhaka, as `YYYY-MM-DD`. */
+function dhakaDayKey(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Dhaka",
+  }).format(date);
+  return parts; // en-CA renders as YYYY-MM-DD
+}
+
+/**
+ * Separator label for a chat day: Today / Yesterday, otherwise a short date.
+ * The comparison uses the site business timezone, not the browser's.
+ */
+export function formatChatDay(iso: string | undefined, language: string): string {
+  if (!iso) return "—";
+  const date = parseErpTimestamp(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const key = dhakaDayKey(date);
+  const now = Date.now();
+  if (key === dhakaDayKey(new Date(now))) return language === "en" ? "Today" : "আজ";
+  if (key === dhakaDayKey(new Date(now - 86_400_000))) return language === "en" ? "Yesterday" : "গতকাল";
+
+  try {
+    // Carry the year so an old thread reads "১৮ অক্টোবর, ২০২৬" instead of a
+    // bare day/month that could be any October.
+    return new Intl.DateTimeFormat(language === "en" ? "en-GB" : "bn-BD", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Dhaka",
+    }).format(date);
+  } catch {
+    return key;
+  }
+}
+
+/** Human file size, e.g. `184 KB`. */
+export function formatFileSize(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Sort tickets newest-updated first. */
+export function byUpdatedDesc<T extends { updatedAt: string }>(a: T, b: T): number {
+  return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+}
+
+/** True when a status means the ticket is finished. */
+export function isFinishedStatus(status: TicketStatus): boolean {
+  return status === "resolved" || status === "closed";
+}

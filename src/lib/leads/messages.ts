@@ -1,0 +1,1318 @@
+/** Bilingual copy for the staff **Leads** page (`/userDashboard/leads`). */
+
+/** Copy for the desk-style lead detail panel (`View details`). */
+export interface LeadsDetailCopy {
+  tabs: {
+    activity: string;
+    emails: string;
+    comments: string;
+    data: string;
+    calls: string;
+    tasks: string;
+    notes: string;
+    attachments: string;
+  };
+  activityHeading: string;
+  newAction: string;
+  close: string;
+  loading: string;
+  errorTitle: string;
+  retry: string;
+  reply: string;
+  comment: string;
+  composerPlaceholder: string;
+  send: string;
+  sending: string;
+  commentAdded: string;
+  commentFailed: string;
+  attach: string;
+  attaching: string;
+  commentAttach: string;
+  commentFileAdded: string;
+  commentFileFailed: string;
+  commentFileTooLarge: string;
+  commentFileBlocked: string;
+  attachmentAdded: string;
+  attachmentFailed: string;
+  attachmentTooLarge: string;
+  leadOwner: string;
+  edit: string;
+  save: string;
+  cancel: string;
+  saving: string;
+  saved: string;
+  saveFailed: string;
+  /** Tasks tab: the top-right New-task button and its form. */
+  newTask: string;
+  newNote: string;
+  newComment: string;
+  /** Convert-to-Deal: the sheet's top-right button and its popup. */
+  convertToDeal: string;
+  convert: {
+    heading: string;
+    description: string;
+    statusLabel: string;
+    submit: string;
+    submitting: string;
+    cancel: string;
+    success: string;
+    successAlready: string;
+    failed: string;
+    statusRequired: string;
+    loadingOptions: string;
+    loadFailed: string;
+    /** Read-only summary labels in the popup. */
+    detailsHeading: string;
+    orgLabel: string;
+    emailLabel: string;
+    phoneLabel: string;
+  };
+  noteForm: {
+    title: string;
+    titlePlaceholder: string;
+    content: string;
+    contentPlaceholder: string;
+    create: string;
+    creating: string;
+    titleRequired: string;
+    created: string;
+    saveFailed: string;
+    heading: string;
+    bold: string;
+    italic: string;
+    strike: string;
+    bulletList: string;
+    numberedList: string;
+    insertLink: string;
+    inlineCode: string;
+    insertImage: string;
+    clearFormatting: string;
+    linkPrompt: string;
+    imagePrompt: string;
+  };
+  taskForm: {
+    title: string;
+    titlePlaceholder: string;
+    description: string;
+    descriptionPlaceholder: string;
+    priority: string;
+    assignedTo: string;
+    assignedNone: string;
+    dueDate: string;
+    status: string;
+    create: string;
+    creating: string;
+    created: string;
+    failed: string;
+    required: string;
+    noEmployees: string;
+    priorityLabel: string;
+    dueLabel: string;
+    unassigned: string;
+  };
+  taskDetail: {
+    /** The row button that opens the task's own popup. */
+    viewDetails: string;
+    /** The popup's heading. */
+    title: string;
+    /** Eyebrow under the heading: the task's docname. */
+    subtitle: string;
+    saving: string;
+    updated: string;
+    updateFailed: string;
+    notFound: string;
+    emptyDescription: string;
+    /** Section captions inside the popup. */
+    sectionDetails: string;
+    sectionPeople: string;
+    /** Print / download the task as an A4 document. */
+    print: string;
+    download: string;
+  };
+  taskTable: {
+    /** Column headers of the Tasks tab table. */
+    task: string;
+    priority: string;
+    status: string;
+    assignee: string;
+    due: string;
+    created: string;
+    actions: string;
+    /** Caption above the table: how many tasks, with a live count slot. */
+    count: string;
+  };
+  noteTable: {
+    /** Column headers of the Notes tab table. */
+    note: string;
+    time: string;
+    created: string;
+    actions: string;
+    /** Caption above the table: how many notes, with a live count slot. */
+    count: string;
+    /** Fallback title when a note has none. */
+    untitled: string;
+  };
+  noteDetail: {
+    /** The row button that opens the note's own popup. */
+    viewDetails: string;
+    /** The popup's heading. */
+    title: string;
+    /** Eyebrow under the heading. */
+    subtitle: string;
+    saving: string;
+    updated: string;
+    updateFailed: string;
+    notFound: string;
+    emptyContent: string;
+    /** Field captions inside the popup. */
+    titleLabel: string;
+    contentLabel: string;
+    loading: string;
+    /** Heading of the edit popup ("Edit Note"). */
+    editTitle: string;
+    /** Button that jumps back to the lead overview. */
+    openLead: string;
+    /** Primary save button in the edit popup. */
+    update: string;
+  };
+  /** Calls tab: count caption, the Log-a-Call button, and its form. */
+  callTable: {
+    /** Caption above the calls list: how many calls, with a live count slot. */
+    count: string;
+    /** The primary button that opens the Create Call Log form. */
+    logCall: string;
+  };
+  callForm: {
+    /** The popup's heading. */
+    title: string;
+    /** Field captions. */
+    type: string;
+    typeIncoming: string;
+    typeOutgoing: string;
+    from: string;
+    to: string;
+    status: string;
+    duration: string;
+    /** Shown only when Type = Incoming. */
+    receivedBy: string;
+    /** Shown only when Type = Outgoing. */
+    caller: string;
+    /** Placeholders. */
+    fromPlaceholder: string;
+    toPlaceholder: string;
+    durationPlaceholder: string;
+    personPlaceholder: string;
+    /** Buttons + states. */
+    create: string;
+    creating: string;
+    cancel: string;
+    created: string;
+    failed: string;
+    /** Inline validation. */
+    typeRequired: string;
+    fromRequired: string;
+    toRequired: string;
+    noEmployees: string;
+  };
+  /** Calls tab rows: the Desk-style call card wording + status chips. */
+  callRow: {
+    inboundTitle: string;
+    outboundTitle: string;
+    reachedOut: string;
+    madeCall: string;
+  };
+  /** Localized call-status labels, keyed by the raw CRM Call Log status. */
+  callStatus: Record<string, string>;
+  /** Emails tab: the New Email button, list caption, and empty state. */
+  emailTable: {
+    /** Caption above the thread: how many emails, with a live count slot. */
+    count: string;
+    /** The primary button that opens the New Email composer. */
+    newEmail: string;
+    /** Empty-state title + hint (the image's "No Emails Found"). */
+    emptyTitle: string;
+    emptyHint: string;
+    /** Direction badges on a thread row. */
+    sent: string;
+    received: string;
+    attachment: string;
+  };
+  /** Emails tab: the New Email composer form. */
+  emailForm: {
+    heading: string;
+    to: string;
+    toPlaceholder: string;
+    cc: string;
+    bcc: string;
+    subject: string;
+    subjectPlaceholder: string;
+    body: string;
+    bodyPlaceholder: string;
+    send: string;
+    sending: string;
+    discard: string;
+    sent: string;
+    failed: string;
+    toRequired: string;
+    bodyRequired: string;
+    addAddress: string;
+    /** Link shown when the site has no outgoing Email Account. */
+    setupAccount: string;
+  };
+  empty: {
+    activity: string;
+    emails: string;
+    comments: string;
+    data: string;
+    calls: string;
+    tasks: string;
+    notes: string;
+    attachments: string;
+  };
+  /** Copy for the Attachments tab: opening a file / its image preview. */
+  attachment: {
+    openTab: string;
+    preview: string;
+    loadFailed: string;
+    blocked: string;
+    /** e.g. "240 KB" */
+    size: (value: string) => string;
+  };
+  justNow: string;
+  minuteAgo: (n: string) => string;
+  hourAgo: (n: string) => string;
+  dayAgo: (n: string) => string;
+  weekAgo: (n: string) => string;
+  monthAgo: (n: string) => string;
+  yearAgo: (n: string) => string;
+}
+
+export type NewLeadFieldKey =
+  | "salutation"
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "mobileNo"
+  | "gender"
+  | "organization"
+  | "website"
+  | "noOfEmployees"
+  | "territory"
+  | "annualRevenue"
+  | "industry"
+  | "companyDescription"
+  | "status"
+  | "leadOwner";
+
+/** Copy for the New-Lead navbar button + create form. */
+export interface NewLeadCopy {
+  button: string;
+  opening: string;
+  title: string;
+  loadingOptions: string;
+  loadOptionsFailed: string;
+  retry: string;
+  requiredMark: string;
+  descriptionHint: string;
+  cancel: string;
+  create: string;
+  creating: string;
+  close: string;
+  firstNameRequired: string;
+  statusRequired: string;
+  createFailed: string;
+  created: string;
+  fields: Record<NewLeadFieldKey, string>;
+  placeholders: Record<NewLeadFieldKey, string>;
+}
+
+export interface LeadsCopy {
+  title: string;
+  subtitle: string;
+  sourceNote: string;
+  searchPlaceholder: string;
+  allStatuses: string;
+  statusLabel: string;
+  refresh: string;
+  refreshing: string;
+  loading: string;
+  errorTitle: string;
+  retry: string;
+  emptyTitle: string;
+  emptyHint: string;
+  noMatchTitle: string;
+  noMatchHint: string;
+  unavailableTitle: string;
+  unavailableHint: string;
+  loadMore: string;
+  columns: {
+    serial: string;
+    lead: string;
+    organization: string;
+    mobile: string;
+    email: string;
+    status: string;
+    source: string;
+    action: string;
+  };
+  /** "View details" action button in the Action column. */
+  viewDetails: string;
+  /** New-Lead navbar button + create form copy. */
+  newLead: NewLeadCopy;
+  /** The desk-style lead detail panel behind "View details". */
+  detail: LeadsDetailCopy;
+  /** CRM status → display label; unknown statuses fall through verbatim. */
+  statusLabels: Record<string, string>;
+  total: (count: string, more?: boolean) => string;
+  /** View tabs above the list (All Leads / My Leads / Assigned Tasks / All Tasks). */
+  tabs: {
+    allLeads: string;
+    myLeads: string;
+    assignedTasks: string;
+    allTasks: string;
+    completedTasks: string;
+  };
+  /** The Leads ▸ Tasks board (summary + window toggle + filters + table). */
+  tasksBoard: LeadsTasksBoardCopy;
+}
+
+/** Copy for the Leads ▸ Tasks / Assigned Tasks board. */
+export interface LeadsTasksBoardCopy {
+  summary: {
+    today: string;
+    week: string;
+    completed: string;
+    overdue: string;
+  };
+  window: {
+    today: string;
+    next: string;
+    all: string;
+    overdue: string;
+  };
+  allAssignees: string;
+  allTaskTypes: string;
+  /** Completed Tasks view: "from date" → "to date" filter labels. */
+  dateRange: { from: string; to: string };
+  columns: {
+    task: string;
+    lead: string;
+    dueDate: string;
+    assignedTo: string;
+    status: string;
+    action: string;
+  };
+  /** Row action button label that opens the editable task-detail popup. */
+  viewDetails: string;
+  /** The "Due Date" chip when the task is due today. */
+  today: string;
+  loading: string;
+  errorTitle: string;
+  retry: string;
+  emptyTitle: string;
+  emptyHint: string;
+  unavailable: string;
+  unassigned: string;
+  /** CRM Task status → display label; unknown statuses fall through verbatim. */
+  statusLabels: Record<string, string>;
+}
+
+const bn: LeadsCopy = {
+  title: "লিডস",
+  subtitle: "CRM-এর লিড বোর্ড — ডেস্কের লিড লিস্টের সাথে একই ডেটা",
+  sourceNote: "সোর্স: dash.shikkhachat.com/crm/leads/view/list",
+  tabs: {
+    allLeads: "সব লিড",
+    myLeads: "আমার লিড",
+    assignedTasks: "অ্যাসাইনড টাস্ক",
+    allTasks: "সব টাস্ক",
+    completedTasks: "সম্পন্ন টাস্ক",
+  },
+  tasksBoard: {
+    summary: {
+      today: "আজকের টাস্ক",
+      week: "পরবর্তী ৭ দিনের টাস্ক",
+      completed: "সম্পন্ন (৭ দিন)",
+      overdue: "ওভারডিউ",
+    },
+    window: { today: "আজ", next: "পরবর্তী ৭ দিন", all: "সব টাস্ক", overdue: "ওভারডিউ" },
+    allAssignees: "সব অ্যাসাইনি",
+    allTaskTypes: "সব টাস্ক টাইপ",
+    dateRange: { from: "শুরুর তারিখ", to: "শেষ তারিখ" },
+    columns: {
+      task: "টাস্ক",
+      lead: "লিড",
+      dueDate: "ডিউ তারিখ",
+      assignedTo: "অ্যাসাইন করা",
+      status: "স্ট্যাটাস",
+      action: "অ্যাকশন",
+    },
+    viewDetails: "বিস্তারিত দেখুন",
+    today: "আজ",
+    loading: "টাস্ক লোড হচ্ছে…",
+    errorTitle: "টাস্ক লোড করা যায়নি",
+    retry: "আবার চেষ্টা করুন",
+    emptyTitle: "কোনো টাস্ক নেই",
+    emptyHint: "এই তালিকায় এখন কোনো টাস্ক নেই।",
+    unavailable: "এই সাইটে টাস্ক মডিউল চালু নেই।",
+    unassigned: "অ্যাসাইন করা হয়নি",
+    statusLabels: {
+      Backlog: "ব্যাকলগ",
+      Todo: "করণীয়",
+      "In Progress": "চলমান",
+      Done: "সম্পন্ন",
+      Cancelled: "বাতিল",
+    },
+  },
+  searchPlaceholder: "নাম, প্রতিষ্ঠান, মোবাইল বা ইমেইল দিয়ে খুঁজুন…",
+  allStatuses: "সব স্ট্যাটাস",
+  statusLabel: "স্ট্যাটাস",
+  refresh: "হালনাগাদ",
+  refreshing: "হালনাগাদ হচ্ছে…",
+  loading: "লিড লোড হচ্ছে…",
+  errorTitle: "লিড লোড করা যায়নি",
+  retry: "আবার চেষ্টা করুন",
+  emptyTitle: "এখনো কোনো লিড নেই",
+  emptyHint: "CRM-এ নতুন লিড যোগ হলে এখানে দেখা যাবে।",
+  noMatchTitle: "কোনো লিড মেলেনি",
+  noMatchHint: "অন্য নাম বা স্ট্যাটাস দিয়ে আবার খুঁজুন।",
+  unavailableTitle: "এই সাইটে CRM লিড পাওয়া যায়নি",
+  unavailableHint: "Frappe-এ CRM (বা ERPNext) ইনস্টল করে মাইগ্রেট করলে লিড এখানে দেখা যাবে।",
+  loadMore: "আরও লিড দেখুন",
+  columns: {
+    serial: "ক্রমিক",
+    lead: "লিড",
+    organization: "প্রতিষ্ঠান",
+    mobile: "মোবাইল",
+    email: "ইমেইল",
+    status: "স্ট্যাটাস",
+    source: "সোর্স",
+    action: "অ্যাকশন",
+  },
+  viewDetails: "বিস্তারিত দেখুন",
+  newLead: {
+    button: "নতুন লিড",
+    opening: "লোড হচ্ছে…",
+    title: "নতুন লিড তৈরি করুন",
+    loadingOptions: "ড্রপডাউন লোড হচ্ছে…",
+    loadOptionsFailed: "ড্রপডাউন লোড করা যায়নি।",
+    retry: "আবার চেষ্টা করুন",
+    requiredMark: "*",
+    descriptionHint: "ডোমেইন এনরিচমেন্ট থেকে কোম্পানির বর্ণনা পাওয়া যায়।",
+    cancel: "বাতিল",
+    create: "তৈরি করুন",
+    creating: "তৈরি হচ্ছে…",
+    close: "বন্ধ করুন",
+    firstNameRequired: "প্রথম নাম দিতে হবে।",
+    statusRequired: "স্ট্যাটাস নির্বাচন করুন।",
+    createFailed: "লিড তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+    created: "লিড তৈরি হয়েছে।",
+    fields: {
+      salutation: "সালুটেশন",
+      firstName: "প্রথম নাম",
+      lastName: "শেষ নাম",
+      email: "ইমেইল",
+      mobileNo: "মোবাইল নম্বর",
+      gender: "লিঙ্গ",
+      organization: "প্রতিষ্ঠান",
+      website: "ওয়েবসাইট",
+      noOfEmployees: "কর্মচারীর সংখ্যা",
+      territory: "টেরিটরি",
+      annualRevenue: "বার্ষিক আয়",
+      industry: "শিল্প",
+      companyDescription: "কোম্পানির বিবরণ",
+      status: "স্ট্যাটাস",
+      leadOwner: "লিড ওনার",
+    },
+    placeholders: {
+      salutation: "সালুটেশন",
+      firstName: "প্রথম নাম",
+      lastName: "শেষ নাম",
+      email: "ইমেইল",
+      mobileNo: "মোবাইল নম্বর",
+      gender: "লিঙ্গ",
+      organization: "প্রতিষ্ঠান",
+      website: "ওয়েবসাইট",
+      noOfEmployees: "কর্মচারীর সংখ্যা",
+      territory: "টেরিটরি",
+      annualRevenue: "বার্ষিক আয়",
+      industry: "শিল্প",
+      companyDescription: "কোম্পানির বিবরণ",
+      status: "স্ট্যাটাস",
+      leadOwner: "লিড ওনার",
+    },
+  },
+  detail: {
+    tabs: {
+      activity: "অ্যাক্টিভিটি",
+      emails: "ইমেইল",
+      comments: "মন্তব্য",
+      data: "ডেটা",
+      calls: "কল",
+      tasks: "টাস্ক",
+      notes: "নোট",
+      attachments: "সংযুক্তি",
+    },
+    activityHeading: "অ্যাক্টিভিটি",
+    newAction: "নতুন",
+    close: "বন্ধ করুন",
+    loading: "লিডের বিস্তারিত লোড হচ্ছে…",
+    errorTitle: "লিডের বিস্তারিত লোড করা যায়নি",
+    retry: "আবার চেষ্টা করুন",
+    reply: "রিপ্লাই",
+    comment: "মন্তব্য",
+    composerPlaceholder: "একটি মন্তব্য লিখুন…",
+    send: "পাঠান",
+    sending: "পাঠানো হচ্ছে…",
+    commentAdded: "মন্তব্য যোগ হয়েছে",
+    commentFailed: "মন্তব্য যোগ করা যায়নি",
+    attach: "সংযুক্তি",
+    attaching: "সংযুক্তি আপলোড হচ্ছে…",
+    commentAttach: "ফাইল সংযুক্ত করুন",
+    commentFileAdded: "ফাইলসহ মন্তব্য যোগ হয়েছে",
+    commentFileFailed: "ফাইলটি পাঠানো যায়নি। আবার চেষ্টা করুন।",
+    commentFileTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না।",
+    commentFileBlocked: "এই ধরনের ফাইল অনুমোদিত নয়।",
+    attachmentAdded: "সংযুক্তি যোগ হয়েছে — Desk → File-এ সংরক্ষিত",
+    attachmentFailed: "সংযুক্তি আপলোড করা যায়নি",
+    attachmentTooLarge: "ফাইলটি ৫ MB-এর বেশি হতে পারবে না",
+    leadOwner: "লিড ওনার",
+    edit: "সম্পাদনা",
+    save: "সংরক্ষণ",
+    cancel: "বাতিল",
+    saving: "সংরক্ষণ হচ্ছে…",
+    saved: "লিডের তথ্য সংরক্ষণ হয়েছে",
+    saveFailed: "লিডের তথ্য সংরক্ষণ করা যায়নি",
+    newTask: "নতুন টাস্ক",
+    newNote: "নতুন নোট",
+    newComment: "নতুন মন্তব্য",
+    convertToDeal: "ডিলে রূপান্তর",
+    convert: {
+      heading: "ডিলে রূপান্তর করুন",
+      description: "নিচের তথ্য যাচাই করে একটি স্ট্যাটাস বেছে নিন, তারপর ডিল তৈরি করুন।",
+      statusLabel: "স্ট্যাটাস",
+      submit: "রূপান্তর করুন",
+      submitting: "রূপান্তর হচ্ছে…",
+      cancel: "বাতিল",
+      success: "ডিলটি তৈরি হয়েছে।",
+      successAlready: "এই লিড ইতিমধ্যে একটি ডিলে রূপান্তরিত হয়েছে।",
+      failed: "ডিলটি তৈরি করা যায়নি। আবার চেষ্টা করুন।",
+      statusRequired: "ডিলের স্ট্যাটাস নির্বাচন করুন।",
+      loadingOptions: "স্ট্যাটাস লোড হচ্ছে…",
+      loadFailed: "স্ট্যাটাস তালিকা লোড করা যায়নি।",
+      detailsHeading: "লিডের তথ্য",
+      orgLabel: "প্রতিষ্ঠান",
+      emailLabel: "ইমেইল",
+      phoneLabel: "মোবাইল",
+    },
+    noteForm: {
+      title: "শিরোনাম",
+      titlePlaceholder: "শিরোনাম",
+      content: "বিষয়বস্তু",
+      contentPlaceholder: "বিষয়বস্তু",
+      create: "তৈরি করুন",
+      creating: "সংরক্ষণ হচ্ছে…",
+      titleRequired: "নোটের শিরোনাম দিতে হবে।",
+      created: "নোটটি সংরক্ষণ হয়েছে।",
+      saveFailed: "নোট সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
+      heading: "হেডিং",
+      bold: "বোল্ড",
+      italic: "ইটালিক",
+      strike: "স্ট্রাইকথ্রু",
+      bulletList: "বুলেট তালিকা",
+      numberedList: "ক্রমিক তালিকা",
+      insertLink: "লিংক যোগ করুন",
+      inlineCode: "কোড",
+      insertImage: "ছবি যোগ করুন",
+      clearFormatting: "ফরম্যাটিং মুছুন",
+      linkPrompt: "লিংকের ঠিকানা দিন (https://…)",
+      imagePrompt: "ছবির ঠিকানা দিন (https://…)",
+    },
+    taskForm: {
+      title: "টাস্কের শিরোনাম",
+      titlePlaceholder: "যেমন: গ্রাহককে কলব্যাক করা",
+      description: "বিবরণ",
+      descriptionPlaceholder: "এই টাস্কটি সম্পর্কে বিস্তারিত…",
+      priority: "প্রায়োরিটি",
+      assignedTo: "অ্যাসাইন করা হবে",
+      assignedNone: "কেউ নির্বাচন করা হয়নি",
+      dueDate: "শেষ তারিখ",
+      status: "স্ট্যাটাস",
+      create: "টাস্ক তৈরি করুন",
+      creating: "তৈরি হচ্ছে…",
+      created: "টাস্কটি তৈরি হয়েছে",
+      failed: "টাস্কটি তৈরি করা যায়নি",
+      required: "টাস্কের শিরোনাম দিতে হবে",
+      noEmployees: "কোনো সক্রিয় কর্মচারী পাওয়া যায়নি",
+      priorityLabel: "প্রায়োরিটি",
+      dueLabel: "শেষ তারিখ",
+      unassigned: "অ্যাসাইন করা নেই",
+    },
+    taskDetail: {
+      viewDetails: "বিস্তারিত",
+      title: "টাস্কের বিবরণ",
+      subtitle: "টাস্ক",
+      saving: "সংরক্ষণ হচ্ছে…",
+      updated: "টাস্কটি আপডেট হয়েছে",
+      updateFailed: "টাস্কটি সংরক্ষণ করা যায়নি।",
+      notFound: "টাস্কটি পাওয়া যায়নি।",
+      emptyDescription: "এই টাস্কে কোনো বিবরণ লেখা হয়নি।",
+      sectionDetails: "বিবরণ",
+      sectionPeople: "দায়িত্ব ও সময়সূচি",
+      print: "প্রিন্ট",
+      download: "ডাউনলোড",
+    },
+    taskTable: {
+      task: "টাস্ক",
+      priority: "প্রায়োরিটি",
+      status: "স্ট্যাটাস",
+      assignee: "দায়িত্বপ্রাপ্ত",
+      due: "শেষ তারিখ",
+      created: "তৈরি",
+      actions: "অ্যাকশন",
+      count: "মোট টাস্ক",
+    },
+    noteTable: {
+      note: "নোট",
+      time: "সময়",
+      created: "তৈরি",
+      actions: "অ্যাকশন",
+      count: "মোট নোট",
+      untitled: "শিরোনামহীন নোট",
+    },
+    noteDetail: {
+      viewDetails: "বিস্তারিত",
+      title: "নোটের বিবরণ",
+      subtitle: "নোট",
+      saving: "সংরক্ষণ হচ্ছে…",
+      updated: "নোটটি আপডেট হয়েছে",
+      updateFailed: "নোটটি সংরক্ষণ করা যায়নি।",
+      notFound: "নোটটি পাওয়া যায়নি।",
+      emptyContent: "এই নোটে কিছু লেখা হয়নি।",
+      titleLabel: "শিরোনাম",
+      contentLabel: "বিষয়বস্তু",
+      loading: "লোড হচ্ছে…",
+      editTitle: "নোট সম্পাদনা",
+      openLead: "লিড খুলুন",
+      update: "আপডেট",
+    },
+    callTable: {
+      count: "মোট কল",
+      logCall: "Log a Call",
+    },
+    callForm: {
+      title: "Create Call Log",
+      type: "ধরন",
+      typeIncoming: "ইনকামিং",
+      typeOutgoing: "আউটগোয়িং",
+      from: "ফ্রম নম্বর",
+      to: "টু নম্বর",
+      status: "স্ট্যাটাস",
+      duration: "সময়কাল",
+      receivedBy: "কল রিসিভ করেছেন",
+      caller: "কলার",
+      fromPlaceholder: "ফ্রম নম্বর",
+      toPlaceholder: "টু নম্বর",
+      durationPlaceholder: "সময়কাল",
+      personPlaceholder: "কর্মী নির্বাচন করুন",
+      create: "Create",
+      creating: "তৈরি হচ্ছে…",
+      cancel: "বাতিল",
+      created: "কল-লগটি তৈরি হয়েছে",
+      failed: "কল-লগটি তৈরি করা যায়নি।",
+      typeRequired: "কলের ধরন (ইনকামিং / আউটগোয়িং) বেছে নিন।",
+      fromRequired: "ফ্রম নম্বর দিন।",
+      toRequired: "টু নম্বর দিন।",
+      noEmployees: "কোনো সক্রিয় কর্মী পাওয়া যায়নি।",
+    },
+    callRow: {
+      inboundTitle: "ইনবাউন্ড কল",
+      outboundTitle: "আউটবাউন্ড কল",
+      reachedOut: "যোগাযোগ করেছেন",
+      madeCall: "কল করেছেন",
+    },
+    callStatus: {
+      Completed: "সম্পন্ন",
+      Initiated: "শুরু হয়েছে",
+      Busy: "ডিক্লাইনড",
+      Failed: "ব্যর্থ",
+      Queued: "সারিতে",
+      Canceled: "বাতিল",
+      Ringing: "রিং হচ্ছে",
+      "No Answer": "উত্তর নেই",
+      "In Progress": "চলছে",
+      Missed: "মিসড কল",
+    },
+    emailTable: {
+      count: "মোট ইমেইল",
+      newEmail: "নতুন ইমেইল",
+      emptyTitle: "কোনো ইমেইল পাওয়া যায়নি",
+      emptyHint: "আপনার ইনবক্সে কোনো ইমেইল নেই। নতুন বার্তা এখানে দেখা যাবে।",
+      sent: "পাঠানো হয়েছে",
+      received: "গৃহীত",
+      attachment: "সংযুক্তি আছে",
+    },
+    emailForm: {
+      heading: "নতুন ইমেইল",
+      to: "প্রাপক",
+      toPlaceholder: "ইমেইল ঠিকানা লিখুন",
+      cc: "CC",
+      bcc: "BCC",
+      subject: "বিষয়",
+      subjectPlaceholder: "বিষয় লিখুন",
+      body: "বার্তা",
+      bodyPlaceholder: "আপনার বার্তা লিখুন…",
+      send: "পাঠান (Ctrl+Enter)",
+      sending: "পাঠানো হচ্ছে…",
+      discard: "বাতিল করুন",
+      sent: "ইমেইল পাঠানো হয়েছে",
+      failed: "ইমেইল পাঠানো যায়নি। আবার চেষ্টা করুন।",
+      toRequired: "অন্তত একটি প্রাপকের ইমেইল দিন।",
+      bodyRequired: "ইমেইলের বার্তা লিখুন।",
+      addAddress: "যোগ করুন",
+      setupAccount: "Email Account সেটআপ করুন",
+    },
+    empty: {
+      activity: "এখনো কোনো অ্যাক্টিভিটি নেই।",
+      emails: "কোনো ইমেইল নেই।",
+      comments: "কোনো মন্তব্য নেই।",
+      data: "কোনো তথ্য নেই।",
+      calls: "কোনো কল নেই।",
+      tasks: "কোনো টাস্ক নেই।",
+      notes: "কোনো নোট নেই।",
+      attachments: "কোনো সংযুক্তি নেই।",
+    },
+    attachment: {
+      openTab: "নতুন ট্যাবে খুলুন",
+      preview: "সংযুক্তির ছবি",
+      loadFailed: "ছবিটি লোড করা যায়নি। ফাইলটি নতুন ট্যাবে খুলুন।",
+      blocked: "ব্রাউজার নতুন ট্যাব আটকে দিয়েছে — পপ-আপ অনুমোদন করুন।",
+      size: (value) => value,
+    },
+    justNow: "এইমাত্র",
+    minuteAgo: (n) => `${n} মিনিট আগে`,
+    hourAgo: (n) => `${n} ঘণ্টা আগে`,
+    dayAgo: (n) => `${n} দিন আগে`,
+    weekAgo: (n) => `${n} সপ্তাহ আগে`,
+    monthAgo: (n) => `${n} মাস আগে`,
+    yearAgo: (n) => `${n} বছর আগে`,
+  },
+  statusLabels: {
+    New: "নতুন",
+    Contacted: "যোগাযোগ হয়েছে",
+    Nurturing: "নাটারিং",
+    Qualified: "কোয়ালিফাইড",
+    Converted: "কনভার্টেড",
+    Unqualified: "অযোগ্য",
+    Junk: "বাতিল",
+    Lost: "হারানো",
+    Open: "ওপেন",
+    Lead: "লিড",
+    Opportunity: "সুযোগ",
+    Interested: "আগ্রহী",
+    "Do Not Contact": "যোগাযোগ নয়",
+  },
+  total: (count, more) => `মোট ${count}${more ? "+" : ""}টি লিড`,
+};
+
+const en: LeadsCopy = {
+  title: "Leads",
+  subtitle: "The CRM lead board — same data as the Desk lead list",
+  sourceNote: "Source: dash.shikkhachat.com/crm/leads/view/list",
+  tabs: {
+    allLeads: "All Leads",
+    myLeads: "My Leads",
+    assignedTasks: "Assigned Tasks",
+    allTasks: "All Tasks",
+    completedTasks: "Completed Tasks",
+  },
+  tasksBoard: {
+    summary: {
+      today: "Today's Tasks",
+      week: "Next 7 Days Tasks",
+      completed: "Completed (7 Days)",
+      overdue: "Overdue",
+    },
+    window: { today: "Today", next: "Next 7 Days", all: "All Tasks", overdue: "Overdue" },
+    allAssignees: "All Assignees",
+    allTaskTypes: "All Task Types",
+    dateRange: { from: "From", to: "To" },
+    columns: {
+      task: "Task",
+      lead: "Lead",
+      dueDate: "Due Date",
+      assignedTo: "Assigned To",
+      status: "Status",
+      action: "Action",
+    },
+    viewDetails: "View details",
+    today: "Today",
+    loading: "Loading tasks…",
+    errorTitle: "The tasks could not be loaded",
+    retry: "Try again",
+    emptyTitle: "No tasks",
+    emptyHint: "There are no tasks in this list yet.",
+    unavailable: "The task module is not enabled on this site.",
+    unassigned: "Unassigned",
+    statusLabels: {
+      Backlog: "Backlog",
+      Todo: "Todo",
+      "In Progress": "In Progress",
+      Done: "Done",
+      Cancelled: "Cancelled",
+    },
+  },
+  searchPlaceholder: "Search name, organisation, mobile or email…",
+  allStatuses: "All statuses",
+  statusLabel: "Status",
+  refresh: "Refresh",
+  refreshing: "Refreshing…",
+  loading: "Loading leads…",
+  errorTitle: "The leads could not be loaded",
+  retry: "Try again",
+  emptyTitle: "No leads yet",
+  emptyHint: "Leads added in the CRM will show up here.",
+  noMatchTitle: "No lead matched",
+  noMatchHint: "Try another name or status.",
+  unavailableTitle: "CRM leads are not available on this site",
+  unavailableHint: "Install the CRM (or ERPNext) app and migrate to see leads here.",
+  loadMore: "Load more leads",
+  columns: {
+    serial: "#",
+    lead: "Lead",
+    organization: "Organisation",
+    mobile: "Mobile",
+    email: "Email",
+    status: "Status",
+    source: "Source",
+    action: "Action",
+  },
+  viewDetails: "View details",
+  newLead: {
+    button: "New Lead",
+    opening: "Loading…",
+    title: "Create Lead",
+    loadingOptions: "Loading dropdowns…",
+    loadOptionsFailed: "Could not load the dropdowns.",
+    retry: "Try again",
+    requiredMark: "*",
+    descriptionHint: "Company description discovered by Domain Enrichment.",
+    cancel: "Cancel",
+    create: "Create",
+    creating: "Creating…",
+    close: "Close",
+    firstNameRequired: "First name is required.",
+    statusRequired: "Choose a status.",
+    createFailed: "Could not create the lead. Please try again.",
+    created: "Lead created.",
+    fields: {
+      salutation: "Salutation",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email",
+      mobileNo: "Mobile No.",
+      gender: "Gender",
+      organization: "Organization",
+      website: "Website",
+      noOfEmployees: "No. of Employees",
+      territory: "Territory",
+      annualRevenue: "Annual Revenue",
+      industry: "Industry",
+      companyDescription: "Company Description",
+      status: "Status",
+      leadOwner: "Lead Owner",
+    },
+    placeholders: {
+      salutation: "Salutation",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email",
+      mobileNo: "Mobile No.",
+      gender: "Gender",
+      organization: "Organization",
+      website: "Website",
+      noOfEmployees: "No. of Employees",
+      territory: "Territory",
+      annualRevenue: "Annual Revenue",
+      industry: "Industry",
+      companyDescription: "Company Description",
+      status: "Status",
+      leadOwner: "Lead Owner",
+    },
+  },
+  detail: {
+    tabs: {
+      activity: "Activity",
+      emails: "Emails",
+      comments: "Comments",
+      data: "Data",
+      calls: "Calls",
+      tasks: "Tasks",
+      notes: "Notes",
+      attachments: "Attachments",
+    },
+    activityHeading: "Activity",
+    newAction: "New",
+    close: "Close",
+    loading: "Loading the lead…",
+    errorTitle: "The lead could not be loaded",
+    retry: "Try again",
+    reply: "Reply",
+    comment: "Comment",
+    composerPlaceholder: "Write a comment…",
+    send: "Send",
+    sending: "Sending…",
+    commentAdded: "Comment added",
+    commentFailed: "The comment could not be added",
+    attach: "Attachment",
+    attaching: "Uploading…",
+    commentAttach: "Attach a file",
+    commentFileAdded: "Comment added with the file",
+    commentFileFailed: "The file could not be sent. Try again.",
+    commentFileTooLarge: "The file cannot be larger than 5 MB.",
+    commentFileBlocked: "This file type is not allowed.",
+    attachmentAdded: "Attachment added — saved to Desk → File",
+    attachmentFailed: "The attachment could not be uploaded",
+    attachmentTooLarge: "The file cannot be larger than 5 MB",
+    leadOwner: "Lead Owner",
+    edit: "Edit",
+    save: "Save",
+    cancel: "Cancel",
+    saving: "Saving…",
+    saved: "The lead has been saved",
+    saveFailed: "The lead could not be saved",
+    newTask: "New task",
+    newNote: "New note",
+    newComment: "New comment",
+    convertToDeal: "Convert to Deal",
+    convert: {
+      heading: "Convert to Deal",
+      description: "Review the details, pick a status below, then create the deal.",
+      statusLabel: "Status",
+      submit: "Convert",
+      submitting: "Converting…",
+      cancel: "Cancel",
+      success: "The deal has been created.",
+      successAlready: "This lead has already been converted to a deal.",
+      failed: "The deal could not be created. Try again.",
+      statusRequired: "Choose a deal status.",
+      loadingOptions: "Loading statuses…",
+      loadFailed: "The status list could not be loaded.",
+      detailsHeading: "Lead details",
+      orgLabel: "Organization",
+      emailLabel: "Email",
+      phoneLabel: "Mobile",
+    },
+    noteForm: {
+      title: "Title",
+      titlePlaceholder: "Title",
+      content: "Content",
+      contentPlaceholder: "Content",
+      create: "Create",
+      creating: "Saving…",
+      titleRequired: "Give the note a title.",
+      created: "The note has been saved.",
+      saveFailed: "Could not save the note. Please try again.",
+      heading: "Heading",
+      bold: "Bold",
+      italic: "Italic",
+      strike: "Strikethrough",
+      bulletList: "Bulleted list",
+      numberedList: "Numbered list",
+      insertLink: "Insert link",
+      inlineCode: "Code",
+      insertImage: "Insert image",
+      clearFormatting: "Clear formatting",
+      linkPrompt: "Link URL (https://…)",
+      imagePrompt: "Image URL (https://…)",
+    },
+    taskForm: {
+      title: "Task title",
+      titlePlaceholder: "e.g. Call the customer back",
+      description: "Description",
+      descriptionPlaceholder: "What this task is about…",
+      priority: "Priority",
+      assignedTo: "Assigned To",
+      assignedNone: "Not assigned",
+      dueDate: "Due date",
+      status: "Status",
+      create: "Create task",
+      creating: "Creating…",
+      created: "The task was created",
+      failed: "The task could not be created",
+      required: "Give the task a title",
+      noEmployees: "No active employees found",
+      priorityLabel: "Priority",
+      dueLabel: "Due",
+      unassigned: "Unassigned",
+    },
+    taskDetail: {
+      viewDetails: "View details",
+      title: "Task details",
+      subtitle: "Task",
+      saving: "Saving…",
+      updated: "The task was updated",
+      updateFailed: "The task could not be saved.",
+      notFound: "The task was not found.",
+      emptyDescription: "This task has no description yet.",
+      sectionDetails: "Details",
+      sectionPeople: "Ownership & schedule",
+      print: "Print",
+      download: "Download",
+    },
+    taskTable: {
+      task: "Task",
+      priority: "Priority",
+      status: "Status",
+      assignee: "Assignee",
+      due: "Due",
+      created: "Created",
+      actions: "Action",
+      count: "Total tasks",
+    },
+    noteTable: {
+      note: "Note",
+      time: "Time",
+      created: "Created",
+      actions: "Action",
+      count: "Total notes",
+      untitled: "Untitled note",
+    },
+    noteDetail: {
+      viewDetails: "View details",
+      title: "Note details",
+      subtitle: "Note",
+      saving: "Saving…",
+      updated: "The note was updated",
+      updateFailed: "The note could not be saved.",
+      notFound: "The note was not found.",
+      emptyContent: "This note has no content yet.",
+      titleLabel: "Title",
+      contentLabel: "Content",
+      loading: "Loading…",
+      editTitle: "Edit Note",
+      openLead: "Open Lead",
+      update: "Update",
+    },
+    callTable: {
+      count: "Total calls",
+      logCall: "Log a Call",
+    },
+    callForm: {
+      title: "Create Call Log",
+      type: "Type",
+      typeIncoming: "Incoming",
+      typeOutgoing: "Outgoing",
+      from: "From Number",
+      to: "To Number",
+      status: "Status",
+      duration: "Duration",
+      receivedBy: "Call Received By",
+      caller: "Caller",
+      fromPlaceholder: "From Number",
+      toPlaceholder: "To Number",
+      durationPlaceholder: "Duration",
+      personPlaceholder: "Select an employee",
+      create: "Create",
+      creating: "Creating…",
+      cancel: "Cancel",
+      created: "The call log was created",
+      failed: "The call log could not be created.",
+      typeRequired: "Choose the call type.",
+      fromRequired: "Enter the From number.",
+      toRequired: "Enter the To number.",
+      noEmployees: "No active employees found.",
+    },
+    callRow: {
+      inboundTitle: "Inbound Call",
+      outboundTitle: "Outbound Call",
+      reachedOut: "has reached out",
+      madeCall: "has made a call",
+    },
+    callStatus: {
+      Completed: "Completed",
+      Initiated: "Initiated",
+      Busy: "Declined",
+      Failed: "Failed",
+      Queued: "Queued",
+      Canceled: "Canceled",
+      Ringing: "Ringing",
+      "No Answer": "No Answer",
+      "In Progress": "In Progress",
+      Missed: "Missed Call",
+    },
+    emailTable: {
+      count: "Total emails",
+      newEmail: "New Email",
+      emptyTitle: "No Emails Found",
+      emptyHint: "No emails found in your inbox. New messages will appear here soon.",
+      sent: "Sent",
+      received: "Received",
+      attachment: "Has attachment",
+    },
+    emailForm: {
+      heading: "New Email",
+      to: "To",
+      toPlaceholder: "Enter an email address",
+      cc: "Cc",
+      bcc: "Bcc",
+      subject: "Subject",
+      subjectPlaceholder: "Enter a subject",
+      body: "Message",
+      bodyPlaceholder: "Write your message…",
+      send: "Send (Ctrl+Enter)",
+      sending: "Sending…",
+      discard: "Discard",
+      sent: "The email was sent",
+      failed: "The email could not be sent. Please try again.",
+      toRequired: "Add at least one recipient.",
+      bodyRequired: "Write the email body.",
+      addAddress: "Add",
+      setupAccount: "Set up Email Account",
+    },
+    empty: {
+      activity: "No activity yet.",
+      emails: "No e-mails.",
+      comments: "No comments.",
+      data: "No fields.",
+      calls: "No calls.",
+      tasks: "No tasks.",
+      notes: "No notes.",
+      attachments: "No attachments.",
+    },
+    attachment: {
+      openTab: "Open in a new tab",
+      preview: "Attachment image",
+      loadFailed: "The picture did not load. Open the file in a new tab.",
+      blocked: "The browser blocked the new tab — allow pop-ups for this site.",
+      size: (value) => value,
+    },
+    justNow: "just now",
+    minuteAgo: (n) => `${n} minute${n === "1" ? "" : "s"} ago`,
+    hourAgo: (n) => `${n} hour${n === "1" ? "" : "s"} ago`,
+    dayAgo: (n) => `${n} day${n === "1" ? "" : "s"} ago`,
+    weekAgo: (n) => `${n} week${n === "1" ? "" : "s"} ago`,
+    monthAgo: (n) => `${n} month${n === "1" ? "" : "s"} ago`,
+    yearAgo: (n) => `${n} year${n === "1" ? "" : "s"} ago`,
+  },
+  statusLabels: {
+    New: "New",
+    Contacted: "Contacted",
+    Nurturing: "Nurturing",
+    Qualified: "Qualified",
+    Converted: "Converted",
+    Unqualified: "Unqualified",
+    Junk: "Junk",
+    Lost: "Lost",
+    Open: "Open",
+    Lead: "Lead",
+    Opportunity: "Opportunity",
+    Interested: "Interested",
+    "Do Not Contact": "Do Not Contact",
+  },
+  total: (count, more) => `${count}${more ? "+" : ""} leads in total`,
+};
+
+/** "240 KB" / "1.4 MB" — the attachment row's file-size chip. */
+export function formatFileSize(bytes: number): string {
+  const value = Number(bytes) || 0;
+  if (value <= 0) return "";
+  const kb = value / 1024;
+  if (kb < 1024) return `${Math.max(1, Math.round(kb))} KB`;
+  return `${(kb / 1024).toFixed(kb / 1024 >= 10 ? 0 : 1)} MB`;
+}
+
+export function leadsCopyFor(language: string): LeadsCopy {
+  return language === "en" ? en : bn;
+}
+
+/** Display label for a CRM status, with the raw value as the last resort. */
+export function leadStatusLabel(copy: LeadsCopy, status: string): string {
+  if (!status) return "";
+  return copy.statusLabels[status] ?? status;
+}
+
+/** Stable per-status accent so the board is scannable (status → CSS colour pair). */
+export function leadStatusTone(status: string): { bg: string; fg: string } {
+  const key = status.toLowerCase();
+  if (/(converted|won|qualified)/.test(key)) return { bg: "rgba(22,128,84,0.12)", fg: "#168054" };
+  if (/(contacted|nurturing|interested|open)/.test(key)) return { bg: "rgba(21,101,192,0.12)", fg: "#1565c0" };
+  if (/(lost|junk|unqualified|do not contact)/.test(key)) return { bg: "rgba(180,69,58,0.14)", fg: "#b4453a" };
+  return { bg: "rgba(224,5,22,0.10)", fg: "#e00516" };
+}
+
+/**
+ * Parse the many shapes a Frappe/DocType timestamp can arrive in and return
+ * epoch ms, or NaN when nothing usable is present. Frappe's `creation` is
+ * normally "YYYY-MM-DD HH:mm:ss[.ffffff]" but older deploys / serializers can
+ * hand us an ISO string, a bare epoch (seconds or ms), or a value with a
+ * trailing offset — so try each before giving up, and finally rebuild from
+ * the raw date/time parts. This keeps the "time" column from silently going
+ * blank on one unexpected format.
+ */
+export function parseLeadTime(at: unknown): number {
+  const raw = String(at ?? "").trim();
+  if (!raw) return NaN;
+
+  // Bare epoch: 10 digits = seconds, 13 = milliseconds.
+  if (/^\d{10,13}$/.test(raw)) {
+    const n = Number(raw);
+    return raw.length >= 13 ? n : n * 1000;
+  }
+
+  // "YYYY-MM-DD HH:mm:ss[.ffffff][+TZ]" → ISO variant Date() understands.
+  const iso = raw.replace(" ", "T");
+  let ms = new Date(iso).getTime();
+  if (Number.isFinite(ms)) return ms;
+
+  // Drop a fractional-seconds or trailing-offset tail Date() may choke on.
+  ms = new Date(iso.replace(/(\.\d+)?([+-]\d{2}:?\d{2})?$/, "$2") + (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? "" : "Z")).getTime();
+  if (Number.isFinite(ms)) return ms;
+
+  // Last resort: build from explicit date/time parts (local time).
+  const m = raw.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)).getTime();
+  }
+  return NaN;
+}
+
+/**
+ * Desk-style relative timestamp ("2 hours ago" / "২ ঘণ্টা আগে"). Digits follow
+ * the language, like every other number on the dashboard.
+ */
+export function leadRelativeTime(copy: LeadsCopy, at: string, language: string): string {
+  const then = parseLeadTime(at);
+  if (!Number.isFinite(then)) return "";
+
+  const seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+  const step = (unit: number, format: (n: string) => string) =>
+    format(formatCount(Math.max(1, Math.round(seconds / unit)), language));
+
+  const detail = copy.detail;
+  if (seconds < 60) return detail.justNow;
+  if (seconds < 3600) return step(60, detail.minuteAgo);
+  if (seconds < 86_400) return step(3600, detail.hourAgo);
+  if (seconds < 7 * 86_400) return step(86_400, detail.dayAgo);
+  if (seconds < 30 * 86_400) return step(7 * 86_400, detail.weekAgo);
+  if (seconds < 365 * 86_400) return step(30 * 86_400, detail.monthAgo);
+  return step(365 * 86_400, detail.yearAgo);
+}
+
+/** Locale-aware count (bn-BD digits for Bengali, en-BD for English). */
+export function formatCount(value: number, language: string): string {
+  return new Intl.NumberFormat(language === "en" ? "en-BD" : "bn-BD").format(
+    Number.isFinite(value) ? value : 0
+  );
+}
+
+/** Initials for the lead avatar ("Md. Rakib Hasan" → "MR"). */
+export function leadInitials(name: string): string {
+  const words = String(name || "")
+    .replace(/[^\p{L}\p{N}\s.]/gu, " ")
+    .split(/\s+/)
+    .filter((word) => word && !/^[.]+$/.test(word));
+  if (!words.length) return "?";
+  const initials = words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "");
+  return initials.join("") || "?";
+}

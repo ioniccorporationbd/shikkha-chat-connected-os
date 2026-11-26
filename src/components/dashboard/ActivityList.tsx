@@ -1,0 +1,52 @@
+import type { DashboardActivityRow } from "@/lib/auth/types";
+import { relativeTime, type DashboardCopy } from "@/lib/dashboard/messages";
+
+interface ActivityListProps {
+  rows: DashboardActivityRow[];
+  copy: DashboardCopy;
+}
+
+function dotClass(row: DashboardActivityRow): string {
+  if (row.status === "Failed") return "bg-[var(--color-danger)]";
+  if (row.status === "Blocked") return "bg-[var(--color-warning)]";
+  // The logout marker uses the Shikkha-red action token so signing out reads as
+  // the deliberate end of a session; sign-in / session-probe rows keep the
+  // neutral success green, and failed/blocked keep their semantic colours.
+  if (row.event === "logout") return "bg-[var(--color-action)]";
+  return "bg-[var(--color-success)]";
+}
+
+export default function ActivityList({ rows, copy }: ActivityListProps) {
+  if (!rows.length) {
+    return (
+      <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+        {copy.activityEmpty}
+      </p>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]">
+      {rows.map((row) => (
+        <li key={row.name} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${dotClass(row)}`} />
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-[var(--color-primary)]">
+              {copy.events[row.event] ?? row.event}
+            </p>
+            <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_56%,transparent)]">
+              {[copy.statuses[row.status] ?? row.status, row.client_ip]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+
+          <span className="shrink-0 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_54%,transparent)]">
+            {relativeTime(row.creation, copy)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}

@@ -1,0 +1,4084 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FiActivity,
+  FiAlertCircle,
+  FiBold,
+  FiCalendar,
+  FiCheckSquare,
+  FiChevronDown,
+  FiDatabase,
+  FiEdit2,
+  FiFileText,
+  FiCode,
+  FiImage,
+  FiInbox,
+  FiItalic,
+  FiLink,
+  FiList,
+  FiMail,
+  FiMessageSquare,
+  FiPhone,
+  FiPhoneIncoming,
+  FiPhoneOutgoing,
+  FiPhoneMissed,
+  FiPhoneOff,
+  FiClock,
+  FiPaperclip,
+  FiExternalLink,
+  FiMaximize2,
+  FiMoreHorizontal,
+  FiPlus,
+  FiSend,
+  FiTrendingUp,
+  FiType,
+  FiUserPlus,
+  FiX,
+} from "react-icons/fi";
+
+import ShikkhaLoader from "./ShikkhaLoader";
+import { ApiError } from "@/lib/api/http";
+import {
+  addLeadCall,
+  addLeadComment,
+  addLeadNote,
+  addLeadTask,
+  fetchLeadDetail,
+  fetchLeadNote,
+  fetchLeadTaskOptions,
+  leadFileSrc,
+  sendLeadEmail,
+  updateLeadDetail,
+  updateLeadTask,
+  addLeadCommentFile,
+  fetchDealOptions,
+  convertLeadToDeal,
+} from "@/lib/leads/api";
+import {
+  formatCount,
+  formatFileSize,
+  leadInitials,
+  leadRelativeTime,
+  parseLeadTime,
+  leadsCopyFor,
+  leadStatusLabel,
+  leadStatusTone,
+  type LeadsCopy,
+  type LeadsDetailCopy,
+} from "@/lib/leads/messages";
+import type {
+  DealConvertResult,
+  DealStatusOption,
+  LeadActivity,
+  LeadAttachment,
+  LeadCallCreated,
+  LeadDetail,
+  LeadDetailPayload,
+  LeadEmailDraft,
+  LeadNoteCreated,
+  LeadTaskCreated,
+  LeadTaskOptions,
+} from "@/lib/leads/types";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+import { createPortal } from "react-dom";
+import { reportClientError } from "@/lib/log/report-error";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+
+/** Must stay in sync with `MAX_ATTACHMENT_BYTES` in the attachment proxy route. */
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+/** What the file picker offers; the proxy and the ERP enforce size + name. */
+const ATTACHMENT_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,.svg,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip";
+
+/** `File` -> bare base64 (no data: prefix): what the JSON proxy forwards. */
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("The file could not be read."));
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+
+const TAB_KEYS = [
+  "activity",
+  "emails",
+  "comments",
+  "data",
+  "calls",
+  "tasks",
+  "notes",
+  "attachments",
+] as const;
+
+type TabKey = (typeof TAB_KEYS)[number];
+
+const TAB_ICONS: Record<TabKey, typeof FiActivity> = {
+  activity: FiActivity,
+  emails: FiMail,
+  comments: FiMessageSquare,
+  data: FiDatabase,
+  calls: FiPhone,
+  tasks: FiCheckSquare,
+  notes: FiFileText,
+  attachments: FiPaperclip,
+};
+
+const ACTIVITY_ICONS: Record<string, typeof FiActivity> = {
+  created: FiUserPlus,
+  owner: FiUserPlus,
+  status: FiActivity,
+  comment: FiMessageSquare,
+  note: FiFileText,
+  email: FiMail,
+  call: FiPhone,
+  task: FiCheckSquare,
+  attachment: FiPaperclip,
+  version: FiActivity,
+};
+
+const MUTED = "text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]";
+
+function RelativeTime({ at, copy }: { at: string; copy: LeadsCopy }) {
+  const { language } = useLanguage();
+  const label = leadRelativeTime(copy, at, language);
+  // Fall back to an absolute date when the relative formatter can't parse the
+  // stamp, so the cell never renders blank just because the live backend sent
+  // an unexpected datetime shape.
+  const text =
+    label ||
+    (Number.isFinite(parseLeadTime(at))
+      ? new Date(parseLeadTime(at)).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "");
+  if (!text) return null;
+
+  return (
+    <span className={`shrink-0 whitespace-nowrap text-[11.5px] ${MUTED}`} data-lead-time={at}>
+      {text}
+    </span>
+  );
+}
+
+function EmptyTab({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 py-14 text-center" data-lead-tab-empty="true">
+      <FiInbox size={24} className="text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]" />
+      <p className={`text-[12.5px] ${MUTED}`}>{text}</p>
+    </div>
+  );
+}
+
+/** One activity row of the desk timeline: icon rail, actor + action, body, relative time. */
+function ActivityItem({ activity, copy }: { activity: LeadActivity; copy: LeadsCopy }) {
+  const Icon = ACTIVITY_ICONS[activity.kind] ?? FiActivity;
+  const isBody = Boolean(activity.body) && (activity.kind === "comment" || activity.kind === "note");
+
+  return (
+    <li className="relative flex gap-3 pb-5 last:pb-0" data-lead-activity={activity.key}>
+      {/* connector */}
+      <span
+        aria-hidden
+        className="absolute left-[13px] top-8 bottom-0 w-px bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] last:hidden"
+      />
+      <span className="relative z-[1] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
+        <Icon size={13} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className="min-w-0 text-[12.5px] leading-relaxed text-[var(--color-primary)]">
+            <span className="font-semibold">{activity.actor}</span>{" "}
+            <span className={MUTED}>{activity.text}</span>
+          </p>
+          <RelativeTime at={activity.at} copy={copy} />
+        </div>
+        {isBody ? (
+          <div
+            className="mt-2 whitespace-pre-line rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]"
+            data-lead-activity-body=""
+          >
+            {activity.body}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+/**
+ * A person's picture with a monogram fallback.
+ *
+ * ERP avatars hold site-relative paths (`/files/sir_shakil_10.jpeg`) that the
+ * portal origin cannot load — before this component every timeline avatar was
+ * a broken-image icon. `leadFileSrc` routes them through the same-origin file
+ * proxy; when the picture is missing or not an image at all, the monogram wins.
+ */
+function PersonAvatar({
+  actor,
+  email,
+  image,
+}: {
+  actor?: string | null;
+  email?: string | null;
+  image?: string | null;
+}) {
+  const [broken, setBroken] = useState(false);
+  const src = broken ? "" : leadFileSrc(image);
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={actor || email || ""}
+        data-lead-avatar=""
+        onError={() => setBroken(true)}
+        className="h-7 w-7 shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] object-cover"
+      />
+    );
+  }
+
+  return (
+    <span
+      data-lead-avatar-fallback=""
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] text-[11px] font-bold text-[var(--color-primary)]"
+    >
+      {(actor || email || "?").trim().charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+/** `/files/dokhina-1f5fe50.jpeg` -> the shape the preview/lightbox expects. */
+function fileFromUrl(url: string): LeadAttachment {
+  let name = url.split("/").pop() || url;
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    /* keep the raw name */
+  }
+  return { key: `url:${url}`, file_name: name, file_url: url, file_size: 0, at: "" };
+}
+
+/** The picture(s) a comment embeds — click one to see it full size. */
+function CommentImages({
+  images,
+  detail,
+  onPreview,
+}: {
+  images: string[];
+  detail: LeadsDetailCopy;
+  onPreview: (file: LeadAttachment) => void;
+}) {
+  const [broken, setBroken] = useState<Record<string, true>>({});
+
+  return (
+    <div className="mt-2 flex flex-wrap items-start gap-2" data-lead-comment-images="">
+      {images.map((url) => {
+        const file = fileFromUrl(url);
+
+        if (!isImageAttachment(file)) {
+          return (
+            <a
+              key={url}
+              href={attachmentSrc(file, true)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-lead-comment-file={url}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
+            >
+              <FiPaperclip size={11} className="pointer-events-none shrink-0" />
+              <span className="truncate">{file.file_name}</span>
+            </a>
+          );
+        }
+
+        if (broken[url]) {
+          return (
+            <button
+              key={url}
+              type="button"
+              onClick={() => onPreview(file)}
+              data-lead-comment-file={url}
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-primary)]"
+              title={detail.attachment.loadFailed}
+            >
+              <FiPaperclip size={11} className="pointer-events-none shrink-0" />
+              <span className="truncate">{file.file_name}</span>
+            </button>
+          );
+        }
+
+        return (
+          <button
+            key={url}
+            type="button"
+            onClick={() => onPreview(file)}
+            data-lead-comment-image={url}
+            title={file.file_name}
+            className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={attachmentSrc(file)}
+              alt={file.file_name}
+              loading="lazy"
+              data-lead-comment-thumb=""
+              className="h-full w-full object-cover transition group-hover:scale-[1.04]"
+              onError={() => setBroken((prev) => (prev[url] ? prev : { ...prev, [url]: true }))}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CommentsList({
+  items,
+  copy,
+  empty,
+  detail,
+  onPreview,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  empty: string;
+  detail: LeadsDetailCopy;
+  onPreview: (file: LeadAttachment) => void;
+}) {
+  if (items.length === 0) return <EmptyTab text={empty} />;
+
+  return (
+    <ul className="flex flex-col gap-3" data-lead-comments="">
+      {items.map((entry) => (
+        <li
+          key={entry.key}
+          data-lead-comment-item={entry.key}
+          className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_2%,var(--color-white))] px-4 py-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <PersonAvatar actor={entry.actor} email={entry.actor_email} image={entry.actor_image} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12.5px] font-semibold text-[var(--color-primary)]">
+                {entry.actor || entry.actor_email}
+              </p>
+              {entry.actor_email ? (
+                <p className="truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                  {entry.actor_email}
+                </p>
+              ) : null}
+            </div>
+            <RelativeTime at={entry.at} copy={copy} />
+          </div>
+          {entry.body ? (
+            <p
+              className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_80%,transparent)]"
+              data-lead-comment-body=""
+            >
+              {entry.body}
+            </p>
+          ) : null}
+          {entry.images && entry.images.length > 0 ? (
+            <CommentImages images={entry.images} detail={detail} onPreview={onPreview} />
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The Comments tab: a count + "New comment" button over the comment list. */
+function CommentsPanel({
+  items,
+  copy,
+  empty,
+  detail,
+  language,
+  onNew,
+  onPreview,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  empty: string;
+  detail: LeadsDetailCopy;
+  language: string;
+  onNew: () => void;
+  onPreview: (file: LeadAttachment) => void;
+}) {
+  return (
+    <div data-lead-comments-panel="">
+      <div className="mb-3.5 flex items-center justify-between gap-3">
+        <p
+          className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]"
+          data-lead-comment-count=""
+        >
+          {items.length ? formatCount(items.length, language) : ""}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-comment=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newComment}</span>
+        </button>
+      </div>
+      <CommentsList items={items} copy={copy} empty={empty} detail={detail} onPreview={onPreview} />
+    </div>
+  );
+}
+
+function NotesTable({
+  items,
+  detail,
+  empty,
+  onOpenNote,
+}: {
+  items: LeadActivity[];
+  detail: LeadsDetailCopy;
+  empty: string;
+  /** Opens one note's own editable popup (the row's বিস্তারিত button). */
+  onOpenNote: (item: LeadActivity) => void;
+}) {
+  const th = detail.noteTable;
+  const nd = detail.noteDetail;
+  const headClass =
+    "whitespace-nowrap px-3 py-2 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] max-sm:px-2";
+  const cellClass = "px-3 py-2.5 align-middle max-sm:px-2";
+
+  if (items.length === 0) return <EmptyTab text={empty} />;
+
+  return (
+    <div
+      className="overflow-x-auto rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+      data-lead-notes=""
+    >
+      <table className="w-full border-collapse text-left sm:min-w-[560px]" data-lead-note-list="">
+        <thead>
+          <tr className="bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
+            <th scope="col" className={headClass}>
+              {th.note}
+            </th>
+            <th scope="col" className={`${headClass} text-right`}>
+              {th.actions}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((note) => {
+            return (
+              <tr
+                key={note.key}
+                data-lead-note={note.key}
+                className="border-t border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] align-top transition hover:bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]"
+              >
+                <td className={cellClass}>
+                  <div className="flex items-start gap-2">
+                    <FiFileText
+                      size={13}
+                      className="mt-0.5 shrink-0 text-[var(--color-action)]"
+                    />
+                    <div className="min-w-0">
+                      <p
+                        className="text-[12.5px] font-semibold leading-snug text-[var(--color-primary)]"
+                        data-lead-note-title=""
+                      >
+                        {note.text?.trim() || th.untitled}
+                      </p>
+                      {note.body ? (
+                        <p
+                          className="mt-1 line-clamp-2 max-w-[48ch] whitespace-pre-line text-[11.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
+                          data-lead-note-body=""
+                        >
+                          {note.body}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                </td>
+                <td className={`${cellClass} text-right`}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenNote(note)}
+                    data-lead-note-details={note.key}
+                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] hover:text-[var(--color-action)]"
+                  >
+                    <FiEdit2 size={11} className="pointer-events-none" />
+                    <span className="pointer-events-none">{nd.viewDetails}</span>
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Bengali labels for CRM Task's statuses; English is the stored value. */
+const TASK_STATUS_LABELS: Record<string, { en: string; bn: string }> = {
+  Backlog: { en: "Backlog", bn: "ব্যাকলগ" },
+  Todo: { en: "Todo", bn: "করণীয়" },
+  "In Progress": { en: "In Progress", bn: "চলমান" },
+  Done: { en: "Done", bn: "সম্পন্ন" },
+  Cancelled: { en: "Cancelled", bn: "বাতিল" },
+};
+
+/** Display labels for the fixed CRM Task priorities. */
+const TASK_PRIORITY_LABELS: Record<string, { en: string; bn: string }> = {
+  High: { en: "High", bn: "হাই" },
+  Medium: { en: "Medium", bn: "মিডিয়াম" },
+  Low: { en: "Low", bn: "লো" },
+};
+
+/** Priority chip for task rows and the form's dropdown. "" is No Priority. */
+function TaskPriorityChip({ priority, language }: { priority: string; language: string }) {
+  const value = (priority || "").trim();
+  if (!value) return null;
+  const label = TASK_PRIORITY_LABELS[value]?.[language === "bn" ? "bn" : "en"] ?? value;
+
+  const tone =
+    value === "High"
+      ? { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" }
+      : value === "Medium"
+        ? { bg: "color-mix(in srgb, #f5a524 18%, white)", fg: "#8a5a00" }
+        : { bg: "color-mix(in srgb, #12b76a 12%, white)", fg: "#067647" };
+
+  return (
+    <span
+      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+      style={{ backgroundColor: tone.bg, color: tone.fg }}
+      data-lead-task-priority={value}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** YYYY-MM-DD (or a full datetime) -> "5 Mar 2027" — date only, never a time.
+ *  Bengali numerals under the Bengali locale. Frappe sometimes hands back a
+ *  datetime ("2027-03-05 14:30:00"); we keep only the calendar date. */
+function formatDueDate(value: string, language: string): string {
+  if (!value) return "";
+  const day = value.trim().slice(0, 10);
+  const date = new Date(`${day}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return day;
+
+  try {
+    return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return day;
+  }
+}
+
+/**
+ * The Tasks tab: the lead's CRM Tasks as a **table** (task, priority, status,
+ * assignee, due date, created, action) with a **New task** button in the
+ * section's top-right corner. Each row's বিস্তারিত button opens that task's own
+ * editable popup.
+ */
+function TasksPanel({
+  items,
+  copy,
+  detail,
+  empty,
+  language,
+  onNew,
+  onOpenTask,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  empty: string;
+  language: string;
+  onNew: () => void;
+  /** Opens one task's own editable popup (the row's বিস্তারিত button). */
+  onOpenTask: (item: LeadActivity) => void;
+}) {
+  const th = detail.taskTable;
+  const headClass =
+    "whitespace-nowrap px-3 py-2 text-[10.5px] font-bold uppercase tracking-[0.04em] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)] max-sm:px-2";
+  const cellClass = "px-3 py-2.5 align-middle max-sm:px-2";
+
+  // Newest first: the current/latest dates ride on top, older dates fall to the
+  // bottom. Tasks with no due date keep their source order at the very end.
+  const sortedItems = [...items].sort((a, b) => {
+    const da = (a.due_date || "").trim().slice(0, 10);
+    const db = (b.due_date || "").trim().slice(0, 10);
+    if (da && db) return db.localeCompare(da);
+    if (da) return -1;
+    if (db) return 1;
+    return (b.at || "").localeCompare(a.at || "");
+  });
+
+  return (
+    <div data-lead-tasks="">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p
+          className="text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          data-lead-task-count=""
+        >
+          {th.count} · {formatCount(items.length, language)}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-task=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newTask}</span>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyTab text={empty} />
+      ) : (
+        <div
+          className="overflow-x-auto rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+          data-lead-task-scroll=""
+        >
+          <table
+            className="w-full border-collapse text-left sm:min-w-[640px]"
+            data-lead-task-list=""
+          >
+            <thead>
+              <tr className="bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]">
+                <th scope="col" className={headClass}>
+                  {th.task}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.priority}
+                </th>
+                <th scope="col" className={headClass}>
+                  {th.status}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.assignee}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.due}
+                </th>
+                <th scope="col" className={`${headClass} max-sm:hidden`}>
+                  {th.created}
+                </th>
+                <th scope="col" className={`${headClass} text-right`}>
+                  {th.actions}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedItems.map((item) => (
+                <tr
+                  key={item.key}
+                  data-lead-task-item={item.key}
+                  className="border-t border-[color-mix(in_srgb,var(--color-primary)_9%,transparent)] align-top transition hover:bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))]"
+                >
+                  <td className={cellClass}>
+                    <div className="flex items-start gap-2">
+                      <FiCheckSquare
+                        size={13}
+                        className="mt-0.5 shrink-0 text-[var(--color-action)]"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] font-semibold leading-snug text-[var(--color-primary)]">
+                          {item.title || item.text}
+                        </p>
+                        {/* Phones drop the priority/assignee/created columns, so
+                            their information rides along under the title. */}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:hidden">
+                          <TaskPriorityChip priority={item.priority || ""} language={language} />
+                          <span className="truncate">
+                            {item.assigned_label || detail.taskForm.unassigned}
+                          </span>
+                          {item.due_date ? (
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                              <FiCalendar size={10} className="pointer-events-none" />
+                              {formatDueDate(item.due_date, language)}
+                            </span>
+                          ) : null}
+                          {item.at ? (
+                            <span className="whitespace-nowrap">
+                              <RelativeTime at={item.at} copy={copy} />
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`${cellClass} max-sm:hidden`}>
+                    <TaskPriorityChip priority={item.priority || ""} language={language} />
+                  </td>
+                  <td className={cellClass}>
+                    {item.status ? (
+                      <span
+                        className="inline-block whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] px-2 py-0.5 text-[10.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"
+                        data-lead-task-status={item.status}
+                      >
+                        {TASK_STATUS_LABELS[item.status]?.[language === "bn" ? "bn" : "en"] ??
+                          item.status}
+                      </span>
+                    ) : (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td className={`${cellClass} max-sm:hidden`}>
+                    <span
+                      className="block text-[11.5px] leading-snug text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]"
+                      data-lead-task-assignee=""
+                    >
+                      {item.assigned_label || detail.taskForm.unassigned}
+                    </span>
+                  </td>
+                  <td className={`${cellClass} whitespace-nowrap max-sm:hidden`}>
+                    <span className="inline-flex items-center gap-1 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]">
+                      {item.due_date ? (
+                        <>
+                          <FiCalendar size={11} className="pointer-events-none" />
+                          {formatDueDate(item.due_date, language)}
+                        </>
+                      ) : (
+                        <span className="text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                          —
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className={`${cellClass} whitespace-nowrap max-sm:hidden`}>
+                    {item.at ? (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                        <RelativeTime at={item.at} copy={copy} />
+                      </span>
+                    ) : (
+                      <span className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)]">
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td className={`${cellClass} text-right`}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenTask(item)}
+                      data-lead-task-details={item.key}
+                      className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] px-2.5 py-1 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:border-[color-mix(in_srgb,var(--color-action)_40%,transparent)] hover:text-[var(--color-action)]"
+                    >
+                      <FiEdit2 size={11} className="pointer-events-none" />
+                      <span className="pointer-events-none">{detail.taskDetail.viewDetails}</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Server priorities, with a local fallback when the options call fails. */
+const FALLBACK_TASK_PRIORITIES = [
+  { value: "", label: "No Priority" },
+  { value: "High", label: "High" },
+  { value: "Medium", label: "Medium" },
+  { value: "Low", label: "Low" },
+];
+
+/** Used only when the options call fails; mirrors CRM Task's own statuses. */
+const FALLBACK_TASK_STATUSES = [
+  { value: "Backlog", label: "Backlog" },
+  { value: "Todo", label: "Todo" },
+  { value: "In Progress", label: "In Progress" },
+  { value: "Done", label: "Done" },
+  { value: "Cancelled", label: "Cancelled" },
+];
+
+/** CRM Call Log statuses, in the order the Desk form shows them. */
+const CALL_STATUSES = [
+  "Initiated",
+  "Ringing",
+  "In Progress",
+  "Completed",
+  "Failed",
+  "Busy",
+  "No Answer",
+  "Queued",
+  "Canceled",
+];
+
+/** Desk-style tones for the call status chip (mirrors CRM's statusColorMap). */
+const CALL_STATUS_TONE: Record<string, { bg: string; fg: string }> = {
+  Completed: { bg: "color-mix(in srgb, #12b76a 12%, white)", fg: "#067647" },
+  "In Progress": { bg: "color-mix(in srgb, #2e90fa 12%, white)", fg: "#0b5cab" },
+  Queued: { bg: "color-mix(in srgb, #2e90fa 12%, white)", fg: "#0b5cab" },
+  Failed: { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" },
+  "No Answer": { bg: "color-mix(in srgb, #e5484d 12%, white)", fg: "#b42318" },
+  Busy: { bg: "color-mix(in srgb, #f5a524 18%, white)", fg: "#8a5a00" },
+};
+
+/** ISO/datetime -> "11 Nov, Wed" (Bengali numerals under the bn locale). */
+function formatCallDate(value: string, language: string): string {
+  if (!value) return "";
+  const date = new Date(value.replace(" ", "T").slice(0, 19));
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      weekday: "short",
+    }).format(date);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * The Calls tab, mirroring the CRM Desk lead page's Calls section: a live
+ * count + **Log a Call** button over a timeline of calls. Each call is a
+ * rail icon (inbound / outbound / missed / declined), a "who has reached out /
+ * made a call" line with relative time, and a bordered card carrying the
+ * Inbound/Outbound title, caller + receiver avatars, and date / duration /
+ * status chips. Read-only here; the button opens `CallFormModal`, which creates
+ * a real `CRM Call Log` (Desk ▸ CRM ▸ Call Logs) linked back to this lead.
+ */
+function CallsPanel({
+  items,
+  copy,
+  detail,
+  empty,
+  language,
+  onLog,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  empty: string;
+  language: string;
+  onLog: () => void;
+}) {
+  return (
+    <div data-lead-calls="">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p
+          className="text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+          data-lead-call-count=""
+        >
+          {detail.callTable.count} · {formatCount(items.length, language)}
+        </p>
+        <button
+          type="button"
+          onClick={onLog}
+          data-lead-log-call=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-2 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPhone size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.callTable.logCall}</span>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyTab text={empty} />
+      ) : (
+        <ul className="flex flex-col">
+          {items.map((call) => {
+            const incoming = call.type === "Incoming";
+            const missed = call.status === "No Answer" && incoming;
+            const busy = call.status === "Busy";
+            const RailIcon = missed
+              ? FiPhoneMissed
+              : busy
+                ? FiPhoneOff
+                : incoming
+                  ? FiPhoneIncoming
+                  : FiPhoneOutgoing;
+            const tone = CALL_STATUS_TONE[call.status ?? ""] ?? {
+              bg: "color-mix(in srgb, var(--color-primary) 8%, var(--color-white))",
+              fg: "color-mix(in srgb, var(--color-primary) 62%, transparent)",
+            };
+            const statusText =
+              call.status === "No Answer" && incoming
+                ? detail.callStatus.Missed ?? call.status
+                : detail.callStatus[call.status ?? ""] ?? call.status;
+            const avatarA = { label: call.caller_label, email: call.caller, image: call.caller_image };
+            const avatarB = { label: call.receiver_label, email: call.receiver, image: call.receiver_image };
+
+            return (
+              <li
+                key={call.key}
+                className="relative flex gap-3 pb-4 last:pb-0"
+                data-lead-call={call.call || call.key}
+              >
+                <span
+                  aria-hidden
+                  className="absolute left-[13px] top-8 bottom-0 w-px bg-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] last:hidden"
+                />
+                <span
+                  className="relative z-[1] grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+                  style={missed ? { color: "#e5484d" } : undefined}
+                >
+                  <RailIcon
+                    size={13}
+                    className={missed ? "" : "text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]"}
+                  />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <p className="min-w-0 text-[12.5px] leading-relaxed text-[var(--color-primary)]">
+                      <span className="font-semibold">{call.caller_label || call.actor || "—"}</span>{" "}
+                      <span className={MUTED}>{incoming ? detail.callRow.reachedOut : detail.callRow.madeCall}</span>
+                    </p>
+                    <RelativeTime at={call.at} copy={copy} />
+                  </div>
+
+                  <div
+                    className="mt-2 flex flex-col gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3 py-2.5"
+                    data-lead-call-card=""
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">
+                        {incoming ? detail.callRow.inboundTitle : detail.callRow.outboundTitle}
+                      </span>
+                      <span className="flex shrink-0 items-center -space-x-1.5">
+                        {avatarA.label || avatarA.email ? (
+                          <PersonAvatar
+                            actor={avatarA.label || avatarA.email}
+                            email={avatarA.email}
+                            image={avatarA.image}
+                          />
+                        ) : null}
+                        {avatarB.label || avatarB.email ? (
+                          <PersonAvatar
+                            actor={avatarB.label || avatarB.email}
+                            email={avatarB.email}
+                            image={avatarB.image}
+                          />
+                        ) : null}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {call.at ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-2 py-0.5 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                          <FiCalendar size={10} />
+                          {formatCallDate(call.at, language)}
+                        </span>
+                      ) : null}
+                      {call.duration && call.status === "Completed" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-2 py-0.5 text-[10.5px] font-medium text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+                          <FiClock size={10} />
+                          {call.duration}
+                        </span>
+                      ) : null}
+                      {call.status ? (
+                        <span
+                          className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                          style={{ backgroundColor: tone.bg, color: tone.fg }}
+                          data-lead-call-status={call.status}
+                        >
+                          {statusText}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The Emails tab, mirroring the CRM Desk lead page's Emails section: a heading
+ * with a live count + a **New Email** button over the lead's email thread. Each
+ * row is the sender avatar, subject, body preview, a Sent/Received badge and the
+ * relative time. Empty state matches Desk's "No Emails Found". This list is
+ * read-only; **New Email** opens `EmailComposerModal`, which sends a real email
+ * and writes the linked `Communication` this list reads back.
+ */
+function EmailsPanel({
+  items,
+  copy,
+  detail,
+  language,
+  onNew,
+}: {
+  items: LeadActivity[];
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  language: string;
+  onNew: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 px-5 py-4" data-lead-emails="">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+          {detail.emailTable.count} · {formatCount(items.length, language)}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-email=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.emailTable.newEmail}</span>
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-6 py-14 text-center">
+          <FiMail size={26} className="text-[color-mix(in_srgb,var(--color-primary)_30%,transparent)]" />
+          <p className="mt-1.5 text-[13px] font-semibold text-[var(--color-primary)]">{detail.emailTable.emptyTitle}</p>
+          <p className="max-w-[280px] text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+            {detail.emailTable.emptyHint}
+          </p>
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {items.map((item) => {
+            const sent = (item.sent_or_received || "").toLowerCase() === "sent";
+            const subject = (item.subject || "").trim();
+            const preview = (item.body || "").trim();
+            return (
+              <li
+                key={item.key}
+                className="rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-3.5 py-3"
+                data-lead-email={item.key}
+              >
+                <div className="flex items-start gap-2.5">
+                  <PersonAvatar actor={item.actor} email={item.actor_email} image={item.actor_image} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-[var(--color-primary)]">
+                        {subject || detail.tabs.emails}
+                      </p>
+                      <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={
+                          sent
+                            ? { backgroundColor: "color-mix(in srgb, #12b76a 14%, white)", color: "#067647" }
+                            : { backgroundColor: "color-mix(in srgb, #2e90fa 14%, white)", color: "#0b5cab" }
+                        }
+                      >
+                        {sent ? detail.emailTable.sent : detail.emailTable.received}
+                      </span>
+                    </div>
+                    {item.recipients ? (
+                      <p className="mt-0.5 truncate text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {item.recipients}
+                      </p>
+                    ) : null}
+                    {preview ? (
+                      <p
+                        className="mt-1 text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {preview}
+                      </p>
+                    ) : null}
+                    <div className="mt-1.5 flex items-center gap-2.5 text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      {item.at ? <span>{leadRelativeTime(copy, item.at, language)}</span> : null}
+                      {item.has_attachment ? (
+                        <span className="inline-flex items-center gap-1">
+                          <FiPaperclip size={10} className="pointer-events-none" />
+                          {detail.emailTable.attachment}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The **New Email** composer: a popup over the lead sheet that sends a real
+ * email to the lead's customer through Frappe's own mailer. On success the sent
+ * message is written as a linked `Communication` (reference_doctype/_name), so
+ * it immediately shows in the Emails tab and in Desk. If the site has no
+ * outgoing Email Account the ERP returns a clear message pointing at
+ * /desk/system/email-account; every failure is logged to the browser console AND
+ * to Desk's Error Log via `reportClientError`.
+ */
+function EmailComposerModal({
+  name,
+  leadEmail,
+  defaultSubject,
+  language,
+  detail,
+  onClose,
+  onSent,
+}: {
+  name: string;
+  leadEmail: string;
+  defaultSubject: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const ef = detail.emailForm;
+  const [to, setTo] = useState<string[]>(() => {
+    const seed = (leadEmail || "").trim();
+    return seed ? [seed] : [];
+  });
+  const [toInput, setToInput] = useState("");
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    window.setTimeout(() => bodyRef.current?.focus(), 40);
+  }, []);
+
+  const addAddress = (raw: string) => {
+    const value = raw.trim().replace(/,$/, "");
+    if (!value) return;
+    setTo((prev) => (prev.includes(value) ? prev : [...prev, value]));
+    setToInput("");
+    if (formError) setFormError(null);
+  };
+
+  const removeAddress = (value: string) => {
+    setTo((prev) => prev.filter((item) => item !== value));
+  };
+
+  const splitList = (value: string) =>
+    value
+      .split(/[,;]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+  const submit = async () => {
+    if (sending) return;
+
+    const pending = toInput.trim();
+    const recipients = pending && !to.includes(pending) ? [...to, pending] : to;
+    if (recipients.length === 0) {
+      setFormError(ef.toRequired);
+      return;
+    }
+    if (!body.trim()) {
+      setFormError(ef.bodyRequired);
+      return;
+    }
+
+    setSending(true);
+    setFormError(null);
+    try {
+      const payload: LeadEmailDraft = {
+        to: recipients,
+        cc: splitList(cc),
+        bcc: splitList(bcc),
+        subject: subject.trim() || defaultSubject,
+        content: body,
+      };
+      await sendLeadEmail(name, payload, language);
+      onSent();
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : ef.failed);
+      reportClientError({
+        scope: "leads:email",
+        message: "The lead email could not be sent",
+        detail: {
+          error: cause instanceof Error ? cause.message : String(cause),
+          to: recipients,
+          subject: subject.trim() || defaultSubject,
+        },
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus:bg-[var(--color-white)]";
+  const chipClass =
+    "inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] px-2 py-0.5 text-[12px] font-medium text-[var(--color-primary)]";
+  const toggleClass =
+    "text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:text-[var(--color-primary)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={ef.heading}
+      data-email-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !sending) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[600px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{ef.heading}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            aria-label={detail.close}
+            data-email-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className={`${labelClass} mb-0`} htmlFor="lead-email-to">
+                {ef.to} <span className="text-[var(--color-danger)]">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <button type="button" className={toggleClass} onClick={() => setShowCc((v) => !v)} data-email-cc-toggle="">
+                  {ef.cc}
+                </button>
+                <button type="button" className={toggleClass} onClick={() => setShowBcc((v) => !v)} data-email-bcc-toggle="">
+                  {ef.bcc}
+                </button>
+              </div>
+            </div>
+            <div
+              data-email-to=""
+              className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-2.5 py-2 focus-within:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus-within:bg-[var(--color-white)]"
+            >
+              {to.map((addr) => (
+                <span key={addr} className={chipClass}>
+                  {addr}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${addr}`}
+                    onClick={() => removeAddress(addr)}
+                    className="grid place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:text-[var(--color-danger)]"
+                  >
+                    <FiX size={11} className="pointer-events-none" />
+                  </button>
+                </span>
+              ))}
+              <input
+                id="lead-email-to"
+                value={toInput}
+                onChange={(event) => setToInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === ",") {
+                    event.preventDefault();
+                    addAddress(toInput);
+                  }
+                }}
+                onBlur={() => addAddress(toInput)}
+                placeholder={ef.toPlaceholder}
+                className="min-w-[140px] flex-1 bg-transparent py-0.5 text-[13px] text-[var(--color-primary)] outline-none placeholder:text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+              />
+            </div>
+          </div>
+
+          {showCc ? (
+            <div>
+              <label className={labelClass} htmlFor="lead-email-cc">
+                {ef.cc}
+              </label>
+              <input
+                id="lead-email-cc"
+                value={cc}
+                onChange={(event) => setCc(event.target.value)}
+                placeholder={ef.toPlaceholder}
+                data-email-cc=""
+                className={fieldClass}
+              />
+            </div>
+          ) : null}
+
+          {showBcc ? (
+            <div>
+              <label className={labelClass} htmlFor="lead-email-bcc">
+                {ef.bcc}
+              </label>
+              <input
+                id="lead-email-bcc"
+                value={bcc}
+                onChange={(event) => setBcc(event.target.value)}
+                placeholder={ef.toPlaceholder}
+                data-email-bcc=""
+                className={fieldClass}
+              />
+            </div>
+          ) : null}
+
+          <div>
+            <label className={labelClass} htmlFor="lead-email-subject">
+              {ef.subject}
+            </label>
+            <input
+              id="lead-email-subject"
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+              placeholder={ef.subjectPlaceholder}
+              maxLength={140}
+              data-email-subject=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-email-body">
+              {ef.body} <span className="text-[var(--color-danger)]">*</span>
+            </label>
+            <textarea
+              id="lead-email-body"
+              ref={bodyRef}
+              value={body}
+              onChange={(event) => {
+                setBody(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                  event.preventDefault();
+                  void submit();
+                }
+              }}
+              placeholder={ef.bodyPlaceholder}
+              rows={7}
+              data-email-body=""
+              className={`${fieldClass} resize-y leading-relaxed`}
+            />
+          </div>
+        </div>
+
+        {formError ? (
+          <div className="mt-3" data-email-error="">
+            <p className="text-[12px] font-medium text-[var(--color-danger)]">{formError}</p>
+            {/email-account/i.test(formError) ? (
+              <a
+                href="https://dash.shikkhachat.com/desk/system/email-account"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-email-setup-account=""
+                className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-[var(--color-action)] underline decoration-[color-mix(in_srgb,var(--color-action)_45%,transparent)] underline-offset-2 hover:text-[var(--color-action-hover)]"
+              >
+                {ef.setupAccount} →
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={sending}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {ef.discard}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={sending}
+            data-email-send=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiSend size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{sending ? ef.sending : ef.send}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/**
+ * The **Log a Call** form: a popup over the lead sheet that creates a real
+ * `CRM Call Log` linked to this lead (Desk ▸ CRM ▸ Call Logs).
+ *
+ * Type (Incoming / Outgoing) drives a conditional person field — **Call
+ * Received By** for Incoming, **Caller** for Outgoing — both sourced from HR ▸
+ * Employee (active), the same list the task form assigns from. The ERP resolves
+ * the employee to its User id for the Call Log's `receiver` / `caller`.
+ */
+function CallFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (call: LeadCallCreated) => void | Promise<void>;
+}) {
+  const cf = detail.callForm;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  const [optionsFailed, setOptionsFailed] = useState(false);
+  const [type, setType] = useState("Outgoing");
+  const [fromNo, setFromNo] = useState("");
+  const [toNo, setToNo] = useState("");
+  const [status, setStatus] = useState("Initiated");
+  const [duration, setDuration] = useState("");
+  const [employee, setEmployee] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (!cancelled) setOptions(payload);
+      } catch (cause) {
+        if (cancelled) return;
+        setOptionsFailed(true);
+        reportClientError({
+          scope: "leads:call-options",
+          message: "The call form employee list could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const employees = options?.employees ?? [];
+  const isIncoming = type === "Incoming";
+  const personLabel = isIncoming ? cf.receivedBy : cf.caller;
+
+  const submit = async () => {
+    if (submitting) return;
+    if (!type) {
+      setFormError(cf.typeRequired);
+      return;
+    }
+    if (!fromNo.trim()) {
+      setFormError(cf.fromRequired);
+      return;
+    }
+    if (!toNo.trim()) {
+      setFormError(cf.toRequired);
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadCall(
+        name,
+        {
+          type,
+          from: fromNo.trim(),
+          to: toNo.trim(),
+          status,
+          duration: duration.trim(),
+          employee,
+        },
+        language
+      );
+      await onCreated(result.call);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.failed);
+      reportClientError({
+        scope: "leads:call",
+        message: "The lead call log could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] px-3 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_55%,transparent)] focus:bg-[var(--color-white)]";
+  const requiredDot = <span className="text-[var(--color-danger)]">*</span>;
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={cf.title}
+      data-call-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[560px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{cf.title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-call-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-type">
+                {cf.type} {requiredDot}
+              </label>
+              <select
+                id="lead-call-type"
+                value={type}
+                onChange={(event) => {
+                  setType(event.target.value);
+                  setEmployee("");
+                  if (formError) setFormError(null);
+                }}
+                data-call-type=""
+                className={fieldClass}
+              >
+                <option value="Incoming">{cf.typeIncoming}</option>
+                <option value="Outgoing">{cf.typeOutgoing}</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-to">
+                {cf.to} {requiredDot}
+              </label>
+              <input
+                id="lead-call-to"
+                value={toNo}
+                onChange={(event) => {
+                  setToNo(event.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder={cf.toPlaceholder}
+                maxLength={50}
+                data-call-to=""
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-from">
+                {cf.from} {requiredDot}
+              </label>
+              <input
+                id="lead-call-from"
+                value={fromNo}
+                onChange={(event) => {
+                  setFromNo(event.target.value);
+                  if (formError) setFormError(null);
+                }}
+                placeholder={cf.fromPlaceholder}
+                maxLength={50}
+                data-call-from=""
+                className={fieldClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-status">
+                {cf.status} {requiredDot}
+              </label>
+              <select
+                id="lead-call-status"
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+                data-call-status=""
+                className={fieldClass}
+              >
+                {CALL_STATUSES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-call-person">
+                {personLabel}
+              </label>
+              <select
+                id="lead-call-person"
+                value={employee}
+                onChange={(event) => setEmployee(event.target.value)}
+                data-call-person={type}
+                className={fieldClass}
+              >
+                <option value="">{cf.personPlaceholder}</option>
+                {employees.map((emp) => (
+                  <option key={emp.value} value={emp.value}>
+                    {emp.designation ? `${emp.label} · ${emp.designation}` : emp.label}
+                  </option>
+                ))}
+              </select>
+              {optionsFailed ? (
+                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
+              ) : null}
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="lead-call-duration">
+                {cf.duration}
+              </label>
+              <input
+                id="lead-call-duration"
+                value={duration}
+                onChange={(event) => setDuration(event.target.value)}
+                placeholder={cf.durationPlaceholder}
+                maxLength={20}
+                data-call-duration=""
+                className={fieldClass}
+              />
+            </div>
+          </div>
+        </div>
+
+        {formError ? (
+          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-call-error="">
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-call-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPhone size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/**
+ * The New-task form: a popup over the lead sheet.
+ *
+ * Field set mirrors Frappe CRM's own task form — Title (required),
+ * Description, Priority (High / Medium / Low / No Priority), Assigned To
+ * (HR ▸ Employee) and Due date. Submitting creates a real `CRM Task` linked
+ * to this lead, so the record shows up in Desk ▸ CRM ▸ Tasks.
+ */
+function TaskFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (task: LeadTaskCreated) => void | Promise<void>;
+}) {
+  const cf = detail.taskForm;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  const [optionsFailed, setOptionsFailed] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("");
+  const [status, setStatus] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (!cancelled) setOptions(payload);
+      } catch (cause) {
+        if (cancelled) return;
+        // The form still works: priorities fall back to the four fixed
+        // choices and the assignee simply stays optional.
+        setOptionsFailed(true);
+        reportClientError({
+          scope: "leads:task-options",
+          message: "The task form options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const priorities =
+    options && options.priorities.length > 0 ? options.priorities : FALLBACK_TASK_PRIORITIES;
+  const statuses =
+    options && options.statuses?.length ? options.statuses : FALLBACK_TASK_STATUSES;
+  const employees = options?.employees ?? [];
+  // The ERP decides the default status ("Todo"); keep the dropdown in sync.
+  const statusValue = status || options?.status_default || "Todo";
+
+  const submit = async () => {
+    if (submitting) return;
+
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setFormError(cf.required);
+      titleRef.current?.focus();
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadTask(
+        name,
+        {
+          title: cleanTitle,
+          description: description.trim(),
+          priority,
+          status: statusValue,
+          assigned_to: assignedTo,
+          due_date: dueDate,
+        },
+        language
+      );
+      await onCreated(result.task);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.failed);
+      reportClientError({
+        scope: "leads:task",
+        message: "The lead task could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass = "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={detail.newTask}
+      data-task-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[520px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{detail.newTask}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-task-cancel=""
+            className="grid h-8 w-8 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <label className={labelClass} htmlFor="lead-task-title">
+              {cf.title}
+            </label>
+            <input
+              id="lead-task-title"
+              ref={titleRef}
+              value={title}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder={cf.titlePlaceholder}
+              maxLength={140}
+              data-task-title=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-description">
+              {cf.description}
+            </label>
+            <textarea
+              id="lead-task-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={cf.descriptionPlaceholder}
+              rows={3}
+              maxLength={5000}
+              data-task-description=""
+              className={`${fieldClass} resize-none`}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-priority">
+                {cf.priority}
+              </label>
+              <select
+                id="lead-task-priority"
+                value={priority}
+                onChange={(event) => setPriority(event.target.value)}
+                data-task-priority=""
+                className={fieldClass}
+              >
+                {priorities.map((option) => (
+                  <option key={option.value || "none"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-assignee">
+                {cf.assignedTo}
+              </label>
+              <select
+                id="lead-task-assignee"
+                value={assignedTo}
+                onChange={(event) => setAssignedTo(event.target.value)}
+                data-task-assignee=""
+                className={fieldClass}
+              >
+                <option value="">—</option>
+                {employees.map((employee) => (
+                  <option key={employee.value} value={employee.value}>
+                    {employee.designation
+                      ? `${employee.label} · ${employee.designation}`
+                      : employee.label}
+                  </option>
+                ))}
+              </select>
+              {optionsFailed ? (
+                <p className="mt-1 text-[11px] text-[var(--color-danger)]">{cf.noEmployees}</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="lead-task-due">
+                {cf.dueDate}
+              </label>
+              <input
+                id="lead-task-due"
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                data-task-due=""
+                className={fieldClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass} htmlFor="lead-task-status">
+                {cf.status}
+              </label>
+              <select
+                id="lead-task-status"
+                value={statusValue}
+                onChange={(event) => setStatus(event.target.value)}
+                data-task-status=""
+                className={fieldClass}
+              >
+                {statuses.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {formError ? (
+          <p className="mt-3 text-[12px] font-medium text-[var(--color-danger)]" data-task-error="">
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-task-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiPlus size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body>: the sheet keeps an animation fill-mode transform,
+  // which would otherwise trap a `fixed` popup inside the sheet's box.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/**
+ * One task's own popup, opened from the Tasks tab's **বিস্তারিত** button.
+ *
+ * Same field set as the New-task form (title, description, priority,
+ * assigned-to, due date, status) but pre-filled from the CRM Task and
+ * **editable**: Save patches only the fields the user actually changed, so a
+ * concurrent edit elsewhere is never blanked. Saving goes through
+ * `POST /api/leads/<name>/task/<task>` -> leads.update_lead_task.
+ */
+function TaskDetailModal({
+  name,
+  task,
+  language,
+  detail,
+  onClose,
+  onSaved,
+}: {
+  name: string;
+  task: LeadActivity;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onSaved: (updated: LeadTaskCreated) => void | Promise<void>;
+}) {
+  const cf = detail.taskForm;
+  const dt = detail.taskDetail;
+  const [options, setOptions] = useState<LeadTaskOptions | null>(null);
+  // Only the status is editable; every other field is shown read-only.
+  const [status, setStatus] = useState(task.status || "");
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  // The status as loaded — Save only writes when it actually changed.
+  const baselineStatus = useRef(task.status || "");
+  const readonlyClass =
+    "min-h-[42px] w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-3 py-2 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_85%,transparent)]";
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadTaskOptions(language);
+        if (cancelled) return;
+        setOptions(payload);
+      } catch (cause) {
+        if (cancelled) return;
+        reportClientError({
+          scope: "leads:task-detail-options",
+          message: "The task details options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [language]);
+
+  const statuses = options && options.statuses?.length ? options.statuses : FALLBACK_TASK_STATUSES;
+  const statusValue = status || options?.status_default || "Todo";
+
+  const submit = async () => {
+    if (saving) return;
+
+    const taskName = task.task || task.key;
+    if (!taskName) {
+      setFormError(dt.notFound);
+      return;
+    }
+
+    // Only the status is editable; write it only if the user changed it.
+    if (statusValue === baselineStatus.current) {
+      onClose();
+      return;
+    }
+
+    setSaving(true);
+    setFormError(null);
+    try {
+      const result = await updateLeadTask(name, taskName, { status: statusValue }, language);
+      await onSaved(result.task);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : dt.updateFailed);
+      reportClientError({
+        scope: "leads:task-detail",
+        message: "The lead task could not be saved",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={dt.title}
+      data-task-detail-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !saving) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[540px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{dt.title}</h3>
+            <p
+              className="mt-0.5 truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+              data-task-detail-name=""
+            >
+              {`${dt.subtitle} · ${task.task || task.key}`}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            aria-label={detail.close}
+            data-task-detail-close=""
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={16} className="pointer-events-none" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div>
+            <span className={labelClass}>{dt.sectionDetails}</span>
+            <div className="flex flex-col gap-3.5">
+              <div>
+                <span className={labelClass}>{cf.title}</span>
+                <p
+                  className={readonlyClass}
+                  data-task-detail-title=""
+                >
+                  {task.title || task.text || "—"}
+                </p>
+              </div>
+              <div>
+                <span className={labelClass}>{cf.description}</span>
+                <p
+                  className={`${readonlyClass} whitespace-pre-wrap`}
+                  data-task-detail-description=""
+                >
+                  {task.description?.trim() ? task.description : dt.emptyDescription}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <span className={labelClass}>{dt.sectionPeople}</span>
+            <div className="flex flex-col gap-3.5">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                <div>
+                  <span className={labelClass}>{cf.priority}</span>
+                  <div className={readonlyClass} data-task-detail-priority="">
+                    <TaskPriorityChip priority={task.priority || ""} language={language} />
+                    {!(task.priority || "").trim() ? <span>—</span> : null}
+                  </div>
+                </div>
+                <div>
+                  <span className={labelClass}>{cf.assignedTo}</span>
+                  <p className={readonlyClass} data-task-detail-assignee="">
+                    {task.assigned_label?.trim() || cf.unassigned || "—"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <span className={labelClass}>{cf.dueDate}</span>
+                <p className={readonlyClass} data-task-detail-due="">
+                  {task.due_date ? formatDueDate(task.due_date, language) : "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor="lead-task-detail-status">
+              {cf.status}
+            </label>
+            <select
+              id="lead-task-detail-status"
+              value={statusValue}
+              onChange={(event) => {
+                setStatus(event.target.value);
+                if (formError) setFormError(null);
+              }}
+              data-task-detail-status=""
+              className={fieldClass}
+            >
+              {statuses.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {formError ? (
+          <p
+            className="mt-3 text-[12px] font-medium text-[var(--color-danger)]"
+            data-task-detail-error=""
+          >
+            {formError}
+          </p>
+        ) : null}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            data-task-detail-cancel=""
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={saving}
+            data-task-detail-save=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiEdit2 size={13} className="pointer-events-none" />
+            <span className="pointer-events-none">{saving ? dt.saving : detail.save}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body>: the sheet's animation fill-mode transform would
+  // otherwise trap a `fixed` popup inside the sheet's box.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/** The Notes tab: a count + "New note" button over a table of every note. */
+function NotesPanel({
+  items,
+  detail,
+  empty,
+  language,
+  onNew,
+  onOpenNote,
+}: {
+  items: LeadActivity[];
+  detail: LeadsDetailCopy;
+  empty: string;
+  language: string;
+  onNew: () => void;
+  onOpenNote: (item: LeadActivity) => void;
+}) {
+  return (
+    <div data-lead-notes-panel="">
+      <div className="mb-3.5 flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]" data-lead-note-count="">
+          {detail.noteTable.count}
+          {items.length ? ` · ${formatCount(items.length, language)}` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={onNew}
+          data-lead-new-note=""
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+        >
+          <FiPlus size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.newNote}</span>
+        </button>
+      </div>
+      <NotesTable
+        items={items}
+        detail={detail}
+        empty={empty}
+        onOpenNote={onOpenNote}
+      />
+    </div>
+  );
+}
+
+/**
+ * Desk-style "Create Note" form: a required title and a rich-text content box,
+ * writing a `FCRM Note` linked to the lead (it then shows at /crm/notes too).
+ */
+function NoteFormModal({
+  name,
+  language,
+  detail,
+  onClose,
+  onCreated,
+}: {
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  onCreated: (note: LeadNoteCreated) => void | Promise<void>;
+}) {
+  const cf = detail.noteForm;
+  const [title, setTitle] = useState("");
+  const [empty, setEmpty] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
+
+  const syncEmpty = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const hasMedia = editor.querySelector("img,hr,table,li") !== null;
+    setEmpty(!(editor.innerText || "").trim() && !hasMedia);
+  };
+
+  const exec = (command: string, value?: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    try {
+      document.execCommand(command, false, value);
+    } catch {
+      /* older engines simply ignore unsupported commands */
+    }
+    syncEmpty();
+  };
+
+  const escapeHtml = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const onlyHttpUrl = (value: string | null) => {
+    const url = (value || "").trim();
+    if (!url) return "";
+    return /^https?:\/\//i.test(url) ? url : "";
+  };
+
+  const addLink = () => {
+    const url = onlyHttpUrl(window.prompt(cf.linkPrompt));
+    if (url) exec("createLink", url);
+  };
+
+  const addImage = () => {
+    const url = onlyHttpUrl(window.prompt(cf.imagePrompt));
+    if (url) exec("insertImage", url);
+  };
+
+  const addCode = () => {
+    const editor = editorRef.current;
+    const selected = window.getSelection()?.toString() ?? "";
+    if (!editor || !selected.trim()) {
+      exec("insertHTML", `<code>${escapeHtml(selected || "code")}</code>`);
+      return;
+    }
+    exec("insertHTML", `<code>${escapeHtml(selected)}</code>`);
+  };
+
+  const submit = async () => {
+    if (submitting) return;
+
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
+      setFormError(cf.titleRequired);
+      titleRef.current?.focus();
+      return;
+    }
+
+    const content = editorRef.current?.innerHTML ?? "";
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const result = await addLeadNote(name, { title: cleanTitle, content }, language);
+      await onCreated(result.note);
+    } catch (cause) {
+      setFormError(cause instanceof ApiError ? cause.message : cf.saveFailed);
+      reportClientError({
+        scope: "leads:note",
+        message: "The lead note could not be created",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const labelClass =
+    "mb-1 block text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]";
+  const fieldClass =
+    "w-full rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]";
+  const toolClass =
+    "inline-flex h-7 min-w-[26px] items-center justify-center rounded-md px-1.5 text-[11.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={detail.newNote}
+      data-note-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !submitting) onClose();
+      }}
+    >
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[560px] sm:rounded-[20px]">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-[15px] font-bold text-[var(--color-primary)]">{detail.newNote}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            aria-label={detail.close}
+            data-note-close=""
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))] disabled:opacity-50"
+          >
+            <FiX size={15} />
+          </button>
+        </div>
+
+        <div className="space-y-3.5">
+          <div>
+            <label className={labelClass} htmlFor="lead-note-title">
+              {cf.title} <span className="text-[#e0483f]">*</span>
+            </label>
+            <input
+              id="lead-note-title"
+              ref={titleRef}
+              type="text"
+              value={title}
+              maxLength={140}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder={cf.titlePlaceholder}
+              data-note-title=""
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <span className={labelClass}>{cf.content}</span>
+            <div className="overflow-hidden rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] focus-within:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]">
+              <div
+                role="toolbar"
+                aria-label={cf.content}
+                className="flex flex-wrap items-center gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,var(--color-white))] px-1.5 py-1"
+              >
+                <button type="button" title={cf.heading} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h1>"); }}>
+                  <FiType size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title="H2" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h2>"); }}>
+                  H2
+                </button>
+                <button type="button" title="H3" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h3>"); }}>
+                  H3
+                </button>
+                <button type="button" title="H4" className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", "<h4>"); }}>
+                  H4
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.bold} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("bold"); }}>
+                  <FiBold size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.italic} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("italic"); }}>
+                  <FiItalic size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.strike} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("strikeThrough"); }}>
+                  <span className="line-through">S</span>
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.bulletList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}>
+                  <FiList size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.numberedList} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("insertOrderedList"); }}>
+                  <span className="text-[11px]">1.</span>
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.insertLink} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addLink(); }}>
+                  <FiLink size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.inlineCode} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addCode(); }}>
+                  <FiCode size={13} className="pointer-events-none" />
+                </button>
+                <button type="button" title={cf.insertImage} className={toolClass} onMouseDown={(e) => { e.preventDefault(); addImage(); }}>
+                  <FiImage size={13} className="pointer-events-none" />
+                </button>
+                <span className="mx-1 h-4 w-px bg-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]" />
+                <button type="button" title={cf.clearFormatting} className={toolClass} onMouseDown={(e) => { e.preventDefault(); exec("removeFormat"); }}>
+                  <FiMoreHorizontal size={14} className="pointer-events-none" />
+                </button>
+              </div>
+              <div className="relative">
+                {empty ? (
+                  <span className="pointer-events-none absolute inset-x-3 top-2.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]">
+                    {cf.contentPlaceholder}
+                  </span>
+                ) : null}
+                <div
+                  ref={editorRef}
+                  role="textbox"
+                  aria-multiline="true"
+                  aria-label={cf.content}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={syncEmpty}
+                  data-note-content=""
+                  className="min-h-[180px] max-h-[340px] w-full overflow-y-auto px-3 py-2.5 text-[12.5px] leading-relaxed text-[var(--color-primary)] outline-none [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
+                />
+              </div>
+            </div>
+          </div>
+
+          {formError ? (
+            <p role="alert" data-note-error="" className="text-[11.5px] font-medium text-[#d0453c]">
+              {formError}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:opacity-50"
+          >
+            {detail.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            data-note-create=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#dc2626] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[#b91c1c] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="pointer-events-none">{submitting ? cf.creating : cf.create}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Rendered into <body> for the same reason as the task form: the sheet's
+  // animation fill-mode transform would otherwise clip a `fixed` popup.
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/**
+ * One note's own popup, opened from a row of the Notes table.
+ *
+ * The table rows only carry plain text, so opening the popup fetches the note's
+ * full HTML record (`get_lead_note`) and renders it as a READ-ONLY view: the
+ * title and the rich-text body are shown as stored, with no editable field, no
+ * formatting toolbar and no save button. Creating a note stays in the
+ * Create Note form (`NoteFormModal`); this popup only reads.
+ */
+function NoteDetailModal({
+  name,
+  note,
+  language,
+  detail,
+  onClose,
+  onOpenLead,
+}: {
+  name: string;
+  note: LeadActivity;
+  language: string;
+  detail: LeadsDetailCopy;
+  onClose: () => void;
+  /** "Open Lead" — close the popup and jump back to the lead's overview. */
+  onOpenLead?: () => void;
+}) {
+  const nd = detail.noteDetail;
+  // The row may arrive with a CRM-note docname (`note`) or, for older Desk
+  // notes, only a `note:<comment>` key / `source`; any of these identifies the
+  // record the popup loads.
+  const noteName = (
+    note.note ||
+    (typeof note.key === "string" && note.key.startsWith("note:") ? note.key.slice(5) : "") ||
+    note.source ||
+    ""
+  ).trim();
+
+  // Seed from the row itself so the popup is never blank — the list carries the
+  // note's plain text, and the full HTML replaces it once loaded.
+  const seedContent = note.body
+    ? `<p>${String(note.body)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")}</p>`
+    : "";
+
+  const [state, setState] = useState<"loading" | "ready" | "failed">(
+    noteName ? "loading" : "failed"
+  );
+  const [title, setTitle] = useState(note.title || note.text || "");
+  const [content, setContent] = useState(seedContent);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // Load the note's full record; the row we were handed only has plain text.
+  useEffect(() => {
+    if (!noteName) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await fetchLeadNote(name, noteName, language);
+        if (cancelled) return;
+        const loaded = payload.note;
+        setTitle(loaded.title || "");
+        setContent(loaded.content || "");
+        setState("ready");
+      } catch (cause) {
+        if (cancelled) return;
+        // Read-only view: the row's seeded title/body stay on screen and the
+        // failure is only logged (console + ERP Error Log) — no error sentence
+        // is ever shown in the popup.
+        setState("failed");
+        const apiCause = cause instanceof ApiError ? cause : null;
+        reportClientError({
+          scope: "leads:note-detail",
+          message: "The lead note could not be opened",
+          detail: apiCause
+            ? `${apiCause.message} (code=${apiCause.code}, status=${apiCause.status})`
+            : cause instanceof Error
+              ? cause.message
+              : String(cause),
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [name, noteName, language, nd.notFound]);
+
+  // Paint the stored HTML into the read-only surface (React never owns its
+  // children); a failed fetch keeps whatever the row seeded so it is not blank.
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    if (el.innerHTML !== content) el.innerHTML = content;
+  }, [content, state]);
+
+  const hasContent =
+    content.replace(/<[^>]*>/g, "").trim().length > 0 || /<(img|hr|table|li|ul|ol)\b/i.test(content);
+
+  const labelClass =
+    "mb-1 block text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]";
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={nd.title}
+      data-note-detail-modal=""
+      className="fixed inset-0 z-[160] flex items-end justify-center bg-[rgba(9,12,24,0.42)] sm:items-center sm:p-6"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="max-h-[94vh] w-full overflow-y-auto rounded-t-[20px] bg-[var(--color-white)] p-5 pb-6 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.5)] sm:max-w-[680px] sm:rounded-[20px] sm:p-7">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="text-[19px] font-bold text-[var(--color-primary)]" data-note-detail-heading="">
+            {nd.title}
+          </h2>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onOpenLead}
+              data-note-detail-openlead=""
+              className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
+            >
+              {nd.openLead}
+            </button>
+            <button
+              type="button"
+              onClick={onOpenLead}
+              aria-label={nd.openLead}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+            >
+              <FiExternalLink size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={detail.close}
+              data-note-detail-close=""
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))]"
+            >
+              <FiX size={16} />
+            </button>
+          </div>
+        </div>
+
+        {!noteName ? (
+          <p role="alert" data-note-detail-error="" className="py-8 text-center text-[12.5px] font-medium text-[#d0453c]">
+            {nd.notFound}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {state === "loading" ? (
+              <p data-note-detail-loading="" className="text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                {nd.loading}
+              </p>
+            ) : null}
+
+            <div>
+              <span className={labelClass}>{nd.titleLabel}</span>
+              <p
+                data-note-detail-title=""
+                className="rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-2.5 text-[14px] font-semibold break-words text-[var(--color-primary)]"
+              >
+                {title.trim() || detail.noteTable.untitled}
+              </p>
+            </div>
+
+            <div>
+              <span className={labelClass}>{nd.contentLabel}</span>
+              {hasContent ? (
+                <div
+                  ref={contentRef}
+                  data-note-detail-content=""
+                  className="max-h-[52vh] min-h-[120px] w-full overflow-y-auto rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--color-primary)] [&_a]:text-[var(--color-action)] [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:pl-2.5 [&_code]:rounded [&_code]:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] [&_code]:px-1 [&_h1]:text-[17px] [&_h1]:font-bold [&_h2]:text-[15px] [&_h2]:font-bold [&_h3]:text-[13.5px] [&_h3]:font-semibold [&_h4]:text-[12.5px] [&_h4]:font-semibold [&_img]:max-w-full [&_li]:ml-4 [&_ol]:list-decimal [&_ul]:list-disc"
+                />
+              ) : (
+                <p
+                  data-note-detail-content=""
+                  className="rounded-xl bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))] px-3.5 py-3 text-[12.5px] italic text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
+                >
+                  {nd.emptyContent}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            data-note-detail-done=""
+            className="rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-4 py-2 text-[13px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_5%,var(--color-white))]"
+          >
+            {detail.close}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+/** Same-origin streamer for the lead's files — the ERP host stays hidden. */
+function attachmentSrc(file: LeadAttachment, raw = false): string {
+  const query = `path=${encodeURIComponent(file.file_url)}`;
+  return `/api/frappe-file?${query}${raw ? "&raw=1" : ""}`;
+}
+
+/** Pictures can be shown inline; everything else opens in a new tab. */
+function isImageAttachment(file: LeadAttachment): boolean {
+  const name = file.file_name || file.file_url || "";
+  return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(name);
+}
+
+/** The Attachments tab: thumbnails for pictures, click to open / preview. */
+function AttachmentList({
+  items,
+  empty,
+  copy,
+  detail,
+  onOpen,
+}: {
+  items: LeadAttachment[];
+  empty: string;
+  copy: LeadsCopy;
+  detail: LeadsDetailCopy;
+  onOpen: (file: LeadAttachment) => void;
+}) {
+  const [broken, setBroken] = useState<Record<string, true>>({});
+
+  if (items.length === 0) return <EmptyTab text={empty} />;
+
+  return (
+    <ul className="flex flex-col gap-2" data-lead-attachments="">
+      {items.map((file) => {
+        const image = isImageAttachment(file) && !broken[file.key];
+        return (
+          <li key={file.key}>
+            <button
+              type="button"
+              onClick={() => onOpen(file)}
+              data-attachment-open=""
+              title={isImageAttachment(file) ? detail.attachment.preview : detail.attachment.openTab}
+              className="flex w-full items-center gap-2.5 rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] px-3 py-2 text-left transition hover:bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]"
+            >
+              {isImageAttachment(file) ? (
+                <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))]">
+                  {image ? (
+                    <img
+                      src={attachmentSrc(file)}
+                      alt={file.file_name}
+                      loading="lazy"
+                      data-attachment-thumb=""
+                      className="h-full w-full object-cover"
+                      onError={() => {
+                        console.warn("[leads] attachment thumbnail failed", file.file_url);
+                        setBroken((current) => ({ ...current, [file.key]: true }));
+                      }}
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      <FiImage size={15} />
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] text-[var(--color-action)]">
+                  <FiPaperclip size={15} />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium text-[var(--color-primary)]">
+                  {file.file_name}
+                </span>
+                <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                  <RelativeTime at={file.at} copy={copy} />
+                  {formatFileSize(file.file_size) ? (
+                    <span aria-hidden="true">· {formatFileSize(file.file_size)}</span>
+                  ) : null}
+                </span>
+              </span>
+              <span className="shrink-0 text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
+                {isImageAttachment(file) ? <FiMaximize2 size={13} /> : <FiExternalLink size={13} />}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Clicking a picture attachment opens it right here, over the lead sheet —
+ * the file itself is streamed through the portal's session-aware proxy.
+ */
+function AttachmentPreview({
+  file,
+  detail,
+  copy,
+  onClose,
+}: {
+  file: LeadAttachment;
+  detail: LeadsDetailCopy;
+  copy: LeadsCopy;
+  onClose: () => void;
+}) {
+  const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const modal = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${detail.attachment.preview}: ${file.file_name}`}
+      data-attachment-preview=""
+      className="fixed inset-0 z-[170] flex items-center justify-center bg-[rgba(9,12,24,0.66)] p-4 sm:p-8"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <div className="flex max-h-full w-full max-w-[880px] flex-col overflow-hidden rounded-2xl bg-[var(--color-white)] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]">
+        <div className="flex items-start gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-[var(--color-primary)]" data-attachment-name="">
+              {file.file_name}
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+              <RelativeTime at={file.at} copy={copy} />
+              {formatFileSize(file.file_size) ? (
+                <span aria-hidden="true">· {formatFileSize(file.file_size)}</span>
+              ) : null}
+            </p>
+          </div>
+          <a
+            href={attachmentSrc(file, true)}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-attachment-newtab=""
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_8%,var(--color-white))]"
+          >
+            <FiExternalLink size={12} />
+            <span className="hidden sm:inline">{detail.attachment.openTab}</span>
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={detail.close}
+            data-attachment-close=""
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-white))]"
+          >
+            <FiX size={15} />
+          </button>
+        </div>
+
+        <div className="flex min-h-[220px] items-center justify-center overflow-auto bg-[color-mix(in_srgb,var(--color-primary)_4%,var(--color-white))] p-3">
+          {state === "failed" ? (
+            <div className="max-w-[320px] text-center">
+              <FiImage size={22} className="mx-auto mb-2 text-[color-mix(in_srgb,var(--color-primary)_35%,transparent)]" />
+              <p className="text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)]" data-attachment-error="">
+                {detail.attachment.loadFailed}
+              </p>
+            </div>
+          ) : (
+            <img
+              src={attachmentSrc(file)}
+              alt={file.file_name}
+              data-attachment-image=""
+              onLoad={() => setState("ready")}
+              onError={() => {
+                console.error("[leads] attachment image failed", file.file_url);
+                setState("failed");
+                reportClientError({
+                  scope: "leads:attachment",
+                  message: "The attachment image could not be shown",
+                  detail: { file_url: file.file_url, file_name: file.file_name },
+                });
+              }}
+              className="max-h-[70vh] w-auto max-w-full rounded-lg object-contain shadow-[0_10px_30px_-18px_rgba(0,0,0,0.5)]"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modal, document.body);
+}
+
+
+
+/** Mirrors `_EDITABLE_FIELDS` in the ERP endpoint; only a UI ordering hint. */
+const FALLBACK_EDITABLE_FIELDS = [
+  "first_name",
+  "last_name",
+  "salutation",
+  "email",
+  "mobile_no",
+  "phone",
+  "organization",
+  "organization_name",
+  "company_name",
+  "job_title",
+  "website",
+  "territory",
+  "industry",
+  "status",
+  "source",
+];
+
+/**
+ * The Data tab: the lead's fields, editable in place.
+ *
+ * First Name / Last Name / E-mail are permanent rows (the ERP includes them
+ * even when empty) so a lead created without them can be completed here. The
+ * edit form only offers fields the ERP endpoint accepts — `editable` comes
+ * from `_EDITABLE_FIELDS` server-side, and the endpoint re-validates on save.
+ */
+function DataGrid({
+  payload,
+  name,
+  language,
+  detail,
+  onSaved,
+  onNotice,
+}: {
+  payload: LeadDetailPayload;
+  name: string;
+  language: string;
+  detail: LeadsDetailCopy;
+  onSaved: () => Promise<void> | void;
+  onNotice: (notice: { tone: "ok" | "error"; text: string } | null) => void;
+}) {
+  const fields = useMemo(() => payload.lead?.fields ?? [], [payload.lead?.fields]);
+
+  const editableFields = useMemo(() => {
+    const byField = new Map<string, (typeof fields)[number]>();
+    for (const field of fields) {
+      if (!field.field) continue;
+      if (!field.editable && !FALLBACK_EDITABLE_FIELDS.includes(field.field)) continue;
+      byField.set(field.field, field);
+    }
+    return byField;
+  }, [fields]);
+
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+
+  if (fields.length === 0) return null;
+
+  const startEditing = () => {
+    const next: Record<string, string> = {};
+    for (const field of editableFields.values()) {
+      if (field.field) next[field.field] = field.value;
+    }
+    setDraft(next);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setDraft({});
+  };
+
+  const save = async () => {
+    if (saving) return;
+
+    const updates: Record<string, string> = {};
+    for (const field of editableFields.values()) {
+      if (!field.field) continue;
+      const value = (draft[field.field] ?? "").trim();
+      if (value !== (field.value ?? "").trim()) updates[field.field] = value;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      cancelEditing();
+      return;
+    }
+
+    setSaving(true);
+    onNotice(null);
+    try {
+      await updateLeadDetail(name, updates, language);
+      onNotice({ tone: "ok", text: detail.saved });
+      setEditing(false);
+      setDraft({});
+      await onSaved();
+    } catch (cause) {
+      onNotice({
+        tone: "error",
+        text: cause instanceof ApiError && cause.message ? cause.message : detail.saveFailed,
+      });
+      reportClientError({
+        scope: "leads:update",
+        message: "The lead could not be saved",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div data-lead-data-wrapper="">
+      <div className="mb-3 flex items-center justify-end gap-2">
+        {editing ? (
+          <>
+            <button
+              type="button"
+              onClick={cancelEditing}
+              disabled={saving}
+              data-lead-edit-cancel=""
+              className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {detail.cancel}
+            </button>
+            <button
+              type="button"
+              onClick={() => void save()}
+              disabled={saving}
+              data-lead-save=""
+              className="rounded-full bg-[var(--color-action)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? detail.saving : detail.save}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={startEditing}
+            disabled={editableFields.size === 0}
+            data-lead-edit=""
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FiEdit2 size={12} className="pointer-events-none" />
+            <span className="pointer-events-none">{detail.edit}</span>
+          </button>
+        )}
+      </div>
+
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2" data-lead-data="" data-editing={editing ? "true" : undefined}>
+        {fields.map((field) => {
+          const key = field.field || field.label;
+          const editable = Boolean(field.field && editableFields.has(field.field));
+
+          return (
+            <div
+              key={key}
+              className="flex flex-col gap-0.5 border-b border-[color-mix(in_srgb,var(--color-primary)_7%,transparent)] pb-2"
+            >
+              <dt className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                {field.label}
+              </dt>
+              {editing && editable && field.field ? (
+                <dd>
+                  <input
+                    value={draft[field.field] ?? ""}
+                    onChange={(event) =>
+                      setDraft((prev) => ({ ...prev, [field.field as string]: event.target.value }))
+                    }
+                    placeholder={field.label}
+                    aria-label={field.label}
+                    data-lead-edit-field={field.field}
+                    className="w-full rounded-lg border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-2.5 py-1.5 text-[13px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+                  />
+                </dd>
+              ) : (
+                <dd
+                  className="break-words text-[13px] text-[var(--color-primary)]"
+                  data-lead-field={field.field || undefined}
+                >
+                  {field.value || "—"}
+                </dd>
+              )}
+            </div>
+          );
+        })}
+      </dl>
+    </div>
+  );
+}
+
+interface LeadDetailSheetProps {
+  open: boolean;
+  name: string | null;
+  onClose: () => void;
+}
+
+/**
+ * Desk-style lead panel behind the list's **View details** action.
+ *
+ * Mirrors the CRM lead page the sales team already knows: the same tab strip
+ * (Activity / Emails / Comments / Data / Calls / Tasks / Notes / Attachments),
+ * the timeline with its actor + relative time, comment/note bodies, and the
+ * Reply / Comment composer. Data comes from `leads.lead_detail`, so the ERP
+ * permission on the doc decides whether it opens at all.
+ */
+/** Frappe colour names → hex, for the Deal-status indicator dots. */
+const DEAL_COLOR_HEX: Record<string, string> = {
+  gray: "#6b7280",
+  grey: "#6b7280",
+  blue: "#3b82f6",
+  green: "#22c55e",
+  orange: "#f97316",
+  yellow: "#eab308",
+  amber: "#f59e0b",
+  red: "#ef4444",
+  purple: "#a855f7",
+  violet: "#8b5cf6",
+  pink: "#ec4899",
+  cyan: "#06b6d4",
+  teal: "#14b8a6",
+};
+
+function dealColorHex(color?: string): string {
+  const key = String(color ?? "").trim().toLowerCase();
+  return DEAL_COLOR_HEX[key] || "#94a3b8";
+}
+
+/**
+ * Convert-to-Deal popup. Shows the lead's own details read-only plus a Status
+ * dropdown (the CRM Deal Status master), then posts exactly one status to
+ * `/api/leads/<name>/convert`, which creates the Deal, Contact and Organization
+ * server-side. Nothing but the chosen status leaves the browser.
+ */
+function ConvertDealModal({
+  name,
+  lead,
+  detail,
+  language,
+  onClose,
+  onConverted,
+}: {
+  name: string;
+  lead: LeadDetail | null | undefined;
+  detail: LeadsDetailCopy;
+  language: string;
+  onClose: () => void;
+  onConverted: (result: DealConvertResult) => void;
+}) {
+  const overlay = useOverlayPresence(true, 180);
+  const [statuses, setStatuses] = useState<DealStatusOption[]>([]);
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchDealOptions(name, language)
+      .then((data) => {
+        if (cancelled) return;
+        const list = Array.isArray(data.statuses) ? data.statuses : [];
+        setStatuses(list);
+        setStatus((current) => current || list[0]?.value || "");
+      })
+      .catch((cause) => {
+        if (cancelled) return;
+        setLoadError(
+          cause instanceof ApiError && cause.message
+            ? cause.message
+            : detail.convert.loadFailed
+        );
+        reportClientError({
+          scope: "leads:convert-options",
+          message: "Deal status options could not be loaded",
+          detail: cause instanceof Error ? cause.message : cause,
+        });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [name, language, detail.convert.loadFailed]);
+
+  if (!overlay.mounted) return null;
+
+  const selectedColor = dealColorHex(statuses.find((option) => option.value === status)?.color);
+  const busy = submitting || loading || Boolean(loadError) || statuses.length === 0;
+
+  const submit = async () => {
+    if (!status) {
+      setSubmitError(detail.convert.statusRequired);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await convertLeadToDeal(name, { status }, language);
+      onConverted(result);
+    } catch (cause) {
+      setSubmitError(
+        cause instanceof ApiError && cause.message ? cause.message : detail.convert.failed
+      );
+      reportClientError({
+        scope: "leads:convert-deal",
+        message: "Lead could not be converted to a deal",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const summaryRows: Array<{ label: string; value: string }> = [
+    { label: detail.convert.orgLabel, value: (lead?.organization || "").trim() },
+    { label: detail.convert.emailLabel, value: (lead?.email || "").trim() },
+    { label: detail.convert.phoneLabel, value: (lead?.mobile || "").trim() },
+  ];
+
+  const modal = (
+    <div
+      className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center sm:p-4"
+      data-no-translate="true"
+    >
+      <div
+        aria-hidden="true"
+        onClick={() => {
+          if (!submitting) onClose();
+        }}
+        className={`absolute inset-0 bg-[rgba(9,26,23,0.5)] ${
+          overlay.exiting
+            ? "animate-[u-shk-fade-out_160ms_ease-in_forwards]"
+            : "animate-[u-shk-fade-in_160ms_ease-out]"
+        }`}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={detail.convert.heading}
+        data-lead-convert-modal=""
+        className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[22px] border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[var(--color-white)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)] sm:max-h-[85vh] sm:max-w-[460px] sm:rounded-[22px]"
+      >
+        <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,transparent)] text-[var(--color-action)]">
+            <FiTrendingUp size={16} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14.5px] font-bold text-[var(--color-primary)]">
+              {detail.convert.heading}
+            </p>
+            <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+              {lead?.lead_name || name}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!submitting) onClose();
+            }}
+            disabled={submitting}
+            aria-label={detail.convert.cancel}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] disabled:opacity-50"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <p className="text-[12px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)]">
+            {detail.convert.description}
+          </p>
+
+          <div className="space-y-2 rounded-[14px] border border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] bg-[color-mix(in_srgb,var(--color-primary)_3%,transparent)] p-3.5">
+            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              {detail.convert.detailsHeading}
+            </p>
+            {summaryRows.map((row) => (
+              <div key={row.label} className="flex items-start justify-between gap-3">
+                <span className="shrink-0 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                  {row.label}
+                </span>
+                <span className="min-w-0 break-words text-right text-[12px] font-medium text-[var(--color-primary)]">
+                  {row.value || "—"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1 text-[12px] font-semibold text-[var(--color-primary)]">
+              {detail.convert.statusLabel}
+              <span className="text-[var(--color-danger)]">*</span>
+            </label>
+            {loading ? (
+              <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {detail.convert.loadingOptions}
+              </p>
+            ) : loadError ? (
+              <p className="text-[12px] text-[var(--color-danger)]">{loadError}</p>
+            ) : statuses.length === 0 ? (
+              <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">—</p>
+            ) : (
+              <div className="relative">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+                  style={{ backgroundColor: selectedColor }}
+                />
+                <select
+                  value={status}
+                  onChange={(event) => setStatus(event.target.value)}
+                  data-lead-convert-status=""
+                  className="w-full appearance-none rounded-[12px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] py-2.5 pl-7 pr-9 text-[13px] font-medium text-[var(--color-primary)] outline-none transition focus:border-[var(--color-action)]"
+                >
+                  {statuses.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <FiChevronDown
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
+                />
+              </div>
+            )}
+          </div>
+
+          {submitError ? <p className="text-[12px] text-[var(--color-danger)]">{submitError}</p> : null}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="rounded-full px-4 py-2 text-[12.5px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] disabled:opacity-50"
+          >
+            {detail.convert.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={busy}
+            data-lead-convert-submit=""
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_88%,black)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <FiTrendingUp size={13} />
+            {submitting ? detail.convert.submitting : detail.convert.submit}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modal, document.body);
+}
+
+export default function LeadDetailSheet({ open, name, onClose }: LeadDetailSheetProps) {
+  const { mounted, exiting } = useOverlayPresence(open, 220);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!mounted || !name) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-end justify-center sm:items-center sm:p-4"
+      data-no-translate="true"
+    >
+      <div
+        aria-hidden
+        onClick={onClose}
+        className={`absolute inset-0 bg-[rgba(9,26,23,0.45)] ${
+          exiting ? "animate-[u-shk-fade-out_180ms_ease-in_forwards]" : "animate-[u-shk-fade-in_180ms_ease-out]"
+        }`}
+      />
+      {/* Keyed by lead name so tab / composer / draft state resets per lead. */}
+      <LeadDetailPanel key={name} name={name} onClose={onClose} exiting={exiting} />
+    </div>
+  );
+}
+
+function LeadDetailPanel({
+  name,
+  onClose,
+  exiting,
+}: {
+  name: string;
+  onClose: () => void;
+  exiting: boolean;
+}) {
+  const { language } = useLanguage();
+  const copy = useMemo(() => leadsCopyFor(language), [language]);
+  const detail: LeadsDetailCopy = copy.detail;
+
+  const [payload, setPayload] = useState<LeadDetailPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tabState, setTabState] = useState<{ name: string; tab: TabKey }>({
+    name: "",
+    tab: "activity",
+  });
+  const activeTab: TabKey = tabState.name === name ? tabState.tab : "activity";
+
+  const [composerState, setComposerState] = useState<{
+    name: string;
+    mode: "reply" | "comment" | null;
+  }>({ name: "", mode: null });
+  const composerMode = composerState.name === name ? composerState.mode : null;
+
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [callFormOpen, setCallFormOpen] = useState(false);
+  const [emailFormOpen, setEmailFormOpen] = useState(false);
+  // The task whose own popup is open (Tasks tab -> বিস্তারিত).
+  const [detailTask, setDetailTask] = useState<LeadActivity | null>(null);
+  const [detailNote, setDetailNote] = useState<LeadActivity | null>(null);
+  const [noteFormOpen, setNoteFormOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<LeadAttachment | null>(null);
+  const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [convertOpen, setConvertOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const requestId = useRef(0);
+
+  const load = useCallback(async () => {
+    const ticket = ++requestId.current;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchLeadDetail(name, language);
+      if (ticket !== requestId.current) return;
+      setPayload(data);
+    } catch (cause) {
+      if (ticket !== requestId.current) return;
+      setPayload(null);
+      setError(cause instanceof ApiError ? cause.message : detail.errorTitle);
+      reportClientError({
+        scope: "leads:detail",
+        message: "The lead detail could not be loaded",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      if (ticket === requestId.current) setLoading(false);
+    }
+  }, [name, language, detail.errorTitle]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void load();
+    });
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  const counts = useMemo(() => {
+    if (!payload) return {} as Record<TabKey, number>;
+    return {
+      activity: payload.activity.length,
+      emails: payload.emails.length,
+      comments: payload.comments.length,
+      data: payload.lead?.fields.length ?? 0,
+      calls: payload.calls.length,
+      tasks: payload.tasks.length,
+      notes: payload.notes.length,
+      attachments: payload.attachments.length,
+    } as Record<TabKey, number>;
+  }, [payload]);
+
+  const lead = payload?.lead;
+
+  const sendComment = async () => {
+    const content = draft.trim();
+    if (!content || sending) return;
+
+    setSending(true);
+    setNotice(null);
+    try {
+      await addLeadComment(name, content, language);
+      setDraft("");
+      setNotice({ tone: "ok", text: detail.commentAdded });
+      setComposerState({ name, mode: null });
+      await load();
+    } catch (cause) {
+      setNotice({
+        tone: "error",
+        text: cause instanceof ApiError ? cause.message : detail.commentFailed,
+      });
+      reportClientError({
+        scope: "leads:comment",
+        message: "The lead comment could not be added",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+
+  const pickAttachment = () => {
+    if (uploading) return;
+    setNotice(null);
+    fileInputRef.current?.click();
+  };
+
+  /**
+   * The comment box's paperclip: the file becomes a PUBLIC `File` row on the
+   * lead (is_private=0 — unchecked in /desk/data/file) and its comment shows
+   * the picture right in the thread. Any text already typed rides along as the
+   * caption, exactly like Desk's comment editor.
+   */
+  const uploadCommentFile = async (file: File) => {
+    if (uploading) return;
+
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setNotice({ tone: "error", text: detail.commentFileTooLarge });
+      return;
+    }
+
+    setUploading(true);
+    setNotice(null);
+    try {
+      // The proxy speaks JSON to the ERP, so the bytes travel base64-encoded.
+      const content_base64 = await readFileAsBase64(file);
+      await addLeadCommentFile(
+        name,
+        { file_name: file.name, content_base64, content: draft.trim() },
+        language
+      );
+      setDraft("");
+      setNotice({ tone: "ok", text: detail.commentFileAdded });
+      // Show the result where the user expects it: the comment stream.
+      setComposerState({ name, mode: null });
+      setTabState({ name, tab: "comments" });
+      await load();
+    } catch (cause) {
+      setNotice({
+        tone: "error",
+        text: cause instanceof ApiError ? cause.message : detail.commentFileFailed,
+      });
+      reportClientError({
+        scope: "leads:comment-file",
+        message: "The comment attachment could not be uploaded",
+        detail: cause instanceof Error ? cause.message : cause,
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  /** A picture opens in the in-sheet preview; any other file opens a tab. */
+  const openAttachment = (file: LeadAttachment) => {
+    setNotice(null);
+    if (isImageAttachment(file)) {
+      setPreviewFile(file);
+      return;
+    }
+    const opened = window.open(attachmentSrc(file, true), "_blank", "noopener,noreferrer");
+    if (!opened) setNotice({ tone: "error", text: detail.attachment.blocked });
+  };
+
+  const statusTone = lead?.status ? leadStatusTone(lead.status) : null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={lead?.lead_name || name}
+      data-lead-detail={name}
+      className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[24px] bg-[var(--color-white)] shadow-[0_30px_80px_-40px_rgba(0,0,0,0.55)] sm:max-h-[88vh] sm:max-w-[1040px] sm:rounded-[24px] ${
+        exiting
+          ? "animate-[u-shk-sheet-out_200ms_ease-in_forwards]"
+          : "animate-[u-shk-sheet-in_220ms_ease-out]"
+      }`}
+    >
+      {/* One hidden picker serves both the composer paperclip and the bar one. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ATTACHMENT_ACCEPT}
+        data-lead-attach-input=""
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void uploadCommentFile(file);
+        }}
+      />
+
+      {convertOpen ? (
+        <ConvertDealModal
+          name={name}
+          lead={lead}
+          detail={detail}
+          language={language}
+          onClose={() => setConvertOpen(false)}
+          onConverted={(result) => {
+            setConvertOpen(false);
+            setNotice({
+              tone: "ok",
+              text: result.already ? detail.convert.successAlready : detail.convert.success,
+            });
+          }}
+        />
+      ) : null}
+
+      {/* ------------------------------------------------------------- header */}
+      <div className="flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3.5">
+        <span
+          aria-hidden
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[12.5px] font-bold text-[var(--color-action)]"
+        >
+          {leadInitials(lead?.lead_name || name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-bold text-[var(--color-primary)]" data-lead-detail-title="">
+            {lead?.lead_name || name}
+          </p>
+          <p className={`truncate text-[11.5px] ${MUTED}`}>
+            {[lead?.organization, name].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setNotice(null);
+            setConvertOpen(true);
+          }}
+          data-lead-convert-deal=""
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3 py-1.5 text-[11.5px] font-semibold text-[var(--color-white)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_88%,black)]"
+        >
+          <FiTrendingUp size={13} className="pointer-events-none" />
+          <span className="pointer-events-none">{detail.convertToDeal}</span>
+        </button>
+        {lead?.status && statusTone ? (
+          <span
+            className="hidden shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold sm:inline-flex"
+            style={{ backgroundColor: statusTone.bg, color: statusTone.fg }}
+            data-lead-status={lead.status}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusTone.fg }} />
+            {leadStatusLabel(copy, lead.status)}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={detail.close}
+          data-lead-detail-close=""
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_7%,var(--color-white))]"
+        >
+          <FiX size={16} className="pointer-events-none" />
+        </button>
+      </div>
+
+      {/* --------------------------------------------------------------- tabs */}
+      <div
+        role="tablist"
+        className="flex shrink-0 items-stretch gap-1 overflow-x-auto border-b border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-2 sm:px-4"
+      >
+        {TAB_KEYS.map((key) => {
+          const Icon = TAB_ICONS[key];
+          const active = activeTab === key;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTabState({ name, tab: key })}
+              data-lead-tab={key}
+              data-active={active ? "true" : undefined}
+              className={`relative -mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-3 text-[12.5px] font-medium transition sm:px-3 ${
+                active
+                  ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                  : "border-transparent text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] hover:text-[var(--color-primary)]"
+              }`}
+            >
+              <Icon size={14} className="pointer-events-none" />
+              <span className="pointer-events-none">{detail.tabs[key]}</span>
+              {counts[key] > 0 && key !== "data" ? (
+                <span
+                  className={`pointer-events-none rounded-full px-1.5 text-[10.5px] font-semibold ${
+                    active
+                      ? "bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))] text-[var(--color-primary)]"
+                      : "bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                  }`}
+                >
+                  {formatCount(counts[key], language)}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* --------------------------------------------------------------- body */}
+      <div className="min-h-[240px] flex-1 overflow-y-auto px-5 py-5 sm:px-6" data-lead-tab-panel={activeTab}>
+        {loading ? (
+          <div className="grid place-items-center py-16" data-lead-detail-loading="true">
+            <ShikkhaLoader label={detail.loading} />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center gap-3 py-14 text-center" data-lead-detail-error="true">
+            <FiAlertCircle size={26} className="text-[var(--color-danger)]" />
+            <p className="text-[13.5px] font-semibold text-[var(--color-primary)]">{detail.errorTitle}</p>
+            <p className={`max-w-[46ch] text-[12px] ${MUTED}`}>{error}</p>
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="rounded-full bg-[var(--color-action)] px-4 py-2 text-[12.5px] font-semibold text-[var(--color-white)]"
+            >
+              {detail.retry}
+            </button>
+          </div>
+        ) : !payload || !payload.available || !lead ? (
+          <EmptyTab text={detail.empty.data} />
+        ) : activeTab === "activity" ? (
+          <>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-[16px] font-bold text-[var(--color-primary)]" data-lead-activity-heading="">
+                {detail.activityHeading}
+              </h3>
+            </div>
+            {payload.activity.length === 0 ? (
+              <EmptyTab text={detail.empty.activity} />
+            ) : (
+              <ul className="flex flex-col" data-lead-activity-list="">
+                {payload.activity.map((activity) => (
+                  <ActivityItem key={activity.key} activity={activity} copy={copy} />
+                ))}
+              </ul>
+            )}
+          </>
+        ) : activeTab === "emails" ? (
+          <EmailsPanel
+            items={payload.emails}
+            copy={copy}
+            detail={detail}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setEmailFormOpen(true);
+            }}
+          />
+        ) : activeTab === "comments" ? (
+          <CommentsPanel
+            items={payload.comments}
+            copy={copy}
+            empty={detail.empty.comments}
+            detail={detail}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setComposerState({ name, mode: "comment" });
+            }}
+            onPreview={(file) => setPreviewFile(file)}
+          />
+        ) : activeTab === "data" ? (
+          <DataGrid
+            payload={payload}
+            name={name}
+            language={language}
+            detail={detail}
+            onSaved={load}
+            onNotice={setNotice}
+          />
+        ) : activeTab === "calls" ? (
+          <CallsPanel
+            items={payload.calls}
+            copy={copy}
+            detail={detail}
+            empty={detail.empty.calls}
+            language={language}
+            onLog={() => {
+              setNotice(null);
+              setCallFormOpen(true);
+            }}
+          />
+        ) : activeTab === "tasks" ? (
+          <TasksPanel
+            items={payload.tasks}
+            copy={copy}
+            detail={detail}
+            empty={detail.empty.tasks}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setTaskFormOpen(true);
+            }}
+            onOpenTask={(item) => {
+              setNotice(null);
+              setDetailTask(item);
+            }}
+          />
+        ) : activeTab === "notes" ? (
+          <NotesPanel
+            items={payload.notes}
+            detail={detail}
+            empty={detail.empty.notes}
+            language={language}
+            onNew={() => {
+              setNotice(null);
+              setNoteFormOpen(true);
+            }}
+            onOpenNote={(item) => {
+              setNotice(null);
+              setDetailNote(item);
+            }}
+          />
+        ) : (
+          <AttachmentList
+            items={payload.attachments}
+            empty={detail.empty.attachments}
+            copy={copy}
+            detail={detail}
+            onOpen={openAttachment}
+          />
+        )}
+      </div>
+
+      {/* ------------------------------------------------------ notice + composer */}
+      {notice ? (
+        <p
+          className={`border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] px-5 py-2 text-[12px] font-medium ${
+            notice.tone === "ok" ? "text-[var(--color-primary)]" : "text-[var(--color-danger)]"
+          }`}
+          data-lead-notice={notice.tone}
+        >
+          {notice.text}
+        </p>
+      ) : null}
+
+      {composerMode ? (
+        <div className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] px-5 py-3">
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={detail.composerPlaceholder}
+            rows={3}
+            data-lead-composer=""
+            className="w-full resize-none rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 text-[12.5px] text-[var(--color-primary)] outline-none transition focus:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]"
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={pickAttachment}
+              disabled={uploading}
+              data-lead-attach=""
+              aria-label={detail.commentAttach}
+              title={detail.commentAttach}
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_65%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiPaperclip size={13} className="pointer-events-none" />
+              <span className="pointer-events-none">{uploading ? detail.attaching : detail.attach}</span>
+            </button>
+            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setComposerState({ name, mode: null })}
+              className="rounded-full px-3 py-1.5 text-[12px] font-semibold text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]"
+            >
+              {detail.close}
+            </button>
+            <button
+              type="button"
+              onClick={() => void sendComment()}
+              disabled={sending || draft.trim().length === 0}
+              data-lead-send=""
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-4 py-1.5 text-[12px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FiSend size={12} className="pointer-events-none" />
+              <span className="pointer-events-none">{sending ? detail.sending : detail.send}</span>
+            </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* The New-task form floats over the whole sheet. */}
+      {taskFormOpen ? (
+        <TaskFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setTaskFormOpen(false)}
+          onCreated={async () => {
+            setTaskFormOpen(false);
+            setNotice({ tone: "ok", text: detail.taskForm.created });
+            setTabState({ name, tab: "tasks" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* One task's own editable popup, opened from its row. */}
+      {detailTask ? (
+        <TaskDetailModal
+          name={name}
+          task={detailTask}
+          language={language}
+          detail={detail}
+          onClose={() => setDetailTask(null)}
+          onSaved={async () => {
+            setDetailTask(null);
+            setNotice({ tone: "ok", text: detail.taskDetail.updated });
+            setTabState({ name, tab: "tasks" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {previewFile ? (
+        <AttachmentPreview
+          file={previewFile}
+          detail={detail}
+          copy={copy}
+          onClose={() => setPreviewFile(null)}
+        />
+      ) : null}
+
+      {/* One note's own read-only popup, opened from its table row. */}
+      {detailNote ? (
+        <NoteDetailModal
+          key={detailNote.key}
+          name={name}
+          note={detailNote}
+          language={language}
+          detail={detail}
+          onClose={() => setDetailNote(null)}
+          onOpenLead={() => {
+            setDetailNote(null);
+            setTabState({ name, tab: "activity" });
+          }}
+        />
+      ) : null}
+
+      {noteFormOpen ? (
+        <NoteFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setNoteFormOpen(false)}
+          onCreated={async () => {
+            setNoteFormOpen(false);
+            setNotice({ tone: "ok", text: detail.noteForm.created });
+            setTabState({ name, tab: "notes" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* The Log-a-Call form: creates a CRM Call Log for this lead. */}
+      {callFormOpen ? (
+        <CallFormModal
+          name={name}
+          language={language}
+          detail={detail}
+          onClose={() => setCallFormOpen(false)}
+          onCreated={async () => {
+            setCallFormOpen(false);
+            setNotice({ tone: "ok", text: detail.callForm.created });
+            setTabState({ name, tab: "calls" });
+            await load();
+          }}
+        />
+      ) : null}
+
+      {/* The New Email composer: sends a real email to this lead's customer. */}
+      {emailFormOpen ? (
+        <EmailComposerModal
+          name={name}
+          leadEmail={(lead?.email || "").trim()}
+          defaultSubject={`${lead?.lead_name || name} (#${name})`}
+          language={language}
+          detail={detail}
+          onClose={() => setEmailFormOpen(false)}
+          onSent={async () => {
+            setEmailFormOpen(false);
+            setNotice({ tone: "ok", text: detail.emailForm.sent });
+            setTabState({ name, tab: "emails" });
+            await load();
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}

@@ -1,0 +1,59 @@
+import type { IconType } from "react-icons";
+import {
+  FiActivity,
+  FiAward,
+  FiBarChart2,
+  FiBookOpen,
+  FiBox,
+  FiBriefcase,
+  FiClock,
+  FiCreditCard,
+  FiDollarSign,
+  FiFileText,
+  FiGrid,
+  FiHeadphones,
+  FiMonitor,
+  FiSettings,
+  FiShield,
+  FiTarget,
+  FiUserCheck,
+  FiUserPlus,
+  FiUsers,
+} from "react-icons/fi";
+
+/** Icon keys come from the API (`stat.icon`), so unknown keys fall back safely. */
+const STAT_ICONS: Record<string, IconType> = {
+  users: FiUsers,
+  building: FiBriefcase,
+  customer: FiUserCheck,
+  box: FiBox,
+  badge: FiAward,
+  receipt: FiFileText,
+  shield: FiShield,
+  device: FiMonitor,
+  grid: FiGrid,
+  target: FiTarget,
+  clock: FiClock,
+  chart: FiBarChart2,
+};
+
+export function statIcon(key: string): IconType {
+  return STAT_ICONS[key] ?? FiActivity;
+}
+
+export const NAV_ICONS: Record<string, IconType> = {
+  overview: FiGrid,
+  customers: FiUserPlus,
+  checkin: FiClock,
+  leads: FiTarget,
+  expenseclaim: FiDollarSign,
+  paymententry: FiCreditCard,
+  journalentry: FiBookOpen,
+  paymenthistory: FiCreditCard,
+  servicebuild: FiFileText,
+  helpdesk: FiHeadphones,
+  analytics: FiBarChart2,
+  reports: FiFileText,
+  users: FiUsers,
+  settings: FiSettings,
+};

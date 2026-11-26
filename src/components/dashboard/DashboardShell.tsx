@@ -1,0 +1,1595 @@
+"use client";
+
+import Image from "next/image";
+import Link, { useLinkStatus } from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import {
+  FiCamera,
+  FiClock,
+  FiDollarSign,
+  FiEdit2,
+  FiHome,
+  FiLock,
+  FiLogOut,
+  FiMenu,
+  FiRefreshCw,
+  FiSmartphone,
+  FiX,
+} from "react-icons/fi";
+
+import ChangePasswordModal from "@/components/dashboard/ChangePasswordModal";
+import CheckInOutView from "@/components/dashboard/CheckInOutView";
+import CustomerRoutes from "@/components/dashboard/CustomerRoutes";
+import HelpDeskDashboard, { type HelpDeskView } from "@/components/dashboard/help-desk/HelpDeskDashboard";
+import LeadsView from "@/components/dashboard/LeadsView";
+import EditProfileModal from "@/components/dashboard/EditProfileModal";
+import ProfileImageMenu from "@/components/dashboard/ProfileImageMenu";
+import LogoutConfirmModal from "@/components/dashboard/LogoutConfirmModal";
+import ExpenseClaimView from "@/components/dashboard/ExpenseClaimView";
+import LoginHistoryCard from "@/components/dashboard/LoginHistoryCard";
+import NewExpenseClaimView from "@/components/dashboard/NewExpenseClaimView";
+import PanelCard from "@/components/dashboard/PanelCard";
+import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
+import PaymentSuccessView from "@/components/dashboard/payment/PaymentSuccessView";
+import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
+import StaffPaymentEntryView from "@/components/dashboard/StaffPaymentEntryView";
+import StaffJournalEntryView from "@/components/dashboard/StaffJournalEntryView";
+import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
+import QuickLinks from "@/components/dashboard/QuickLinks";
+import StatCard from "@/components/dashboard/StatCard";
+import UserAvatar from "@/components/dashboard/UserAvatar";
+import UserMenu from "@/components/dashboard/UserMenu";
+import ClientErrorBridge from "@/components/dashboard/ClientErrorBridge";
+import { postJson } from "@/lib/api/http";
+import { reportClientError } from "@/lib/log/report-error";
+import { authCopyFor } from "@/lib/auth/messages";
+import { useDashboardQuery } from "@/lib/auth/queries";
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_HISTORY_PATH, PAYMENT_SUCCESS_PATH, SERVICE_BUILD_PATH, STAFF_DASHBOARD_PATH } from "@/lib/auth/session";
+import { useAuthStore } from "@/lib/auth/store";
+import type { DashboardLink, DashboardPayload } from "@/lib/auth/types";
+import { dashboardCopyFor, localizeStat } from "@/lib/dashboard/messages";
+import { fetchExpenseClaims } from "@/lib/expense-claim/api";
+import type { ExpenseClaimSummary } from "@/lib/expense-claim/types";
+import { fetchLeads, fetchLeadTasks } from "@/lib/leads/api";
+import type { LeadTasksSummary } from "@/lib/leads/types";
+import { fetchPayments } from "@/lib/payment-entry/api";
+
+/** One quick retry so a cold Next route (first hit compiles) can't leave a rail
+ *  stuck on its fallback rows for the rest of the visit. */
+async function withRetry<T>(fn: () => Promise<T>, tries = 2, delayMs = 900): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      last = error;
+      if (i < tries - 1) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw last;
+}
+import type { PaymentEntrySummary } from "@/lib/payment-entry/types";
+import {
+  formatAmount as formatPayAmount,
+  formatDate as formatPayDate,
+} from "@/lib/payment-entry/format";
+import { fetchInvoices } from "@/lib/service-build/api";
+import type { SalesInvoiceSummary } from "@/lib/service-build/types";
+import {
+  formatAmount as formatBillAmount,
+  formatDate as formatBillDate,
+} from "@/lib/service-build/format";
+import { ReloadRegistryProvider, useReloadRegistry } from "@/lib/dashboard/reload-registry";
+import { dashboardSnapshot } from "@/lib/dashboard/snapshot";
+import { runSmartReload } from "@/lib/dashboard/smart-reload";
+import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
+import { formatBdMobile } from "@/lib/format/mobile";
+import { NAV_ICONS } from "@/lib/dashboard/icons";
+import { helpDeskCopyFor } from "@/lib/help-desk/messages";
+import { HELP_DESK_SEGMENT } from "@/lib/help-desk/paths";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import { toast } from "@/lib/ui/toast";
+
+/**
+ * Publishes the Help Desk link's own transition state to the watchdog below.
+ *
+ * `useLinkStatus` reports only the navigation started by the enclosing `<Link>`,
+ * so this has to sit inside it. It renders nothing.
+ */
+function HelpDeskLinkStatus({ onChange }: { onChange: (pending: boolean) => void }) {
+  const { pending } = useLinkStatus();
+
+  useEffect(() => {
+    onChange(pending);
+  }, [pending, onChange]);
+
+  return null;
+}
+
+interface DashboardShellProps {
+  initialData?: DashboardPayload;
+  initialError?: string;
+  /**
+   * `staff` (default) is the desk panel at `/userDashboard`; `client` is the
+   * customer-facing panel at `/clientDashboard`. The two differ only in the nav
+   * they advertise and the subtitle they carry — every figure in the payload is
+   * already scoped to the account by the ERP.
+   */
+  scope?: "staff" | "client";
+}
+
+/**
+ * Only real, working navigation lives in the rail. The former placeholder
+ * entries (analytics / reports / users / settings) pointed at static "coming
+ * soon" cards and have been removed — the rail now advertises exactly what the
+ * dashboard can actually do.
+ */
+const STAFF_NAV_KEYS = ["overview"] as const;
+const CLIENT_NAV_KEYS = ["overview"] as const;
+
+const CARD_BORDER = "border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)]";
+const CARD_SHADOW = "shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]";
+
+/** Roles shown before the "+N more" control appears. */
+const MAX_ROLES = 3;
+
+export default function DashboardShell({
+  initialData,
+  initialError,
+  scope = "staff",
+}: DashboardShellProps) {
+  const { language } = useLanguage();
+  const copy = dashboardCopyFor(language);
+  const authCopy = authCopyFor(language).userMenu;
+
+  const isClient = scope === "client";
+  const navKeys = isClient ? CLIENT_NAV_KEYS : STAFF_NAV_KEYS;
+  const subtitle = isClient ? copy.clientSubtitle : copy.subtitle;
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const resetSession = useAuthStore((state) => state.reset);
+  const storeUser = useAuthStore((state) => state.user);
+  // The single reload button drives whichever panel is on screen; local-state
+  // panels register their own refresh here (see reload-registry.tsx).
+  const reloadRegistry = useReloadRegistry();
+
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const drawerPresence = useOverlayPresence(navOpen, 300);
+  const [editOpen, setEditOpen] = useState(false);
+  const [imageMenuOpen, setImageMenuOpen] = useState(false);
+  const [imageIntent, setImageIntent] = useState<"change-photo" | "remove-photo" | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
+  const [reloading, setReloading] = useState(false);
+
+  // Client rail summaries. The quick-links panel shows the account's Payment
+  // Entry summary and the system panel shows the Service Build (Sales Invoice)
+  // summary, both read from the endpoints the client's own panels already use so
+  // the numbers match those pages exactly. Presentation is untouched: the tiles
+  // and the label/value rows keep their existing markup, and a failed fetch
+  // falls back to the payload the overview already shipped with.
+  const [paySummary, setPaySummary] = useState<PaymentEntrySummary | null>(null);
+  // Staff rail summary mirroring the Leads page: my leads and the four task
+  // counters its Tasks board shows (today / next 7 days / overdue / done this
+  // week). Same endpoints the Leads page itself calls, so the numbers agree.
+  const [leadBoard, setLeadBoard] = useState<{ leads: number; more: boolean; tasks: LeadTasksSummary } | null>(null);
+  // Staff rail সিস্টেম panel mirrors the Expense Claim page's সারসংক্ষেপ: the
+  // same list_mine endpoint the page calls, so the numbers always agree.
+  const [expSummary, setExpSummary] = useState<ExpenseClaimSummary | null>(null);
+  const [billSummary, setBillSummary] = useState<SalesInvoiceSummary | null>(null);
+
+  // Help Desk navigation watchdog state: the link's live transition status and
+  // the single pending poll timer (so a second click restarts the watch instead
+  // of stacking timers).
+  const helpDeskStatusRef = useRef<{ pending: boolean }>({ pending: false });
+  const navWatchRef = useRef<number | undefined>(undefined);
+  const onHelpDeskStatus = useCallback((pending: boolean) => {
+    helpDeskStatusRef.current.pending = pending;
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(navWatchRef.current), []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    let cancelled = false;
+
+    fetchPayments(language)
+      .then((payload) => {
+        if (!cancelled) setPaySummary(payload.summary);
+      })
+      .catch((error) => {
+        reportClientError({
+          scope: "client-dashboard:payment-summary",
+          message: "The payment entry summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    fetchInvoices(language)
+      .then((payload) => {
+        if (!cancelled) setBillSummary(payload.summary);
+      })
+      .catch((error) => {
+        reportClientError({
+          scope: "client-dashboard:service-summary",
+          message: "The service bill summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  useEffect(() => {
+    if (isClient) return;
+
+    let cancelled = false;
+
+    withRetry(() =>
+      Promise.all([
+        fetchLeads({ language, mine: true, limit: 200 }),
+        fetchLeadTasks({ language, mine: true, window: "today" }),
+      ])
+    )
+      .then(([leadsPayload, tasksPayload]) => {
+        if (cancelled) return;
+        if (!leadsPayload.available || !tasksPayload.available) return;
+        setLeadBoard({
+          leads: leadsPayload.leads.length,
+          more: Boolean(leadsPayload.has_more),
+          tasks: tasksPayload.summary,
+        });
+      })
+      .catch((error) => {
+        // Fall back to the shipped quick links; never block the rail.
+        reportClientError({
+          scope: "staff-dashboard:lead-summary",
+          message: "The leads and tasks summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  useEffect(() => {
+    if (isClient) return;
+
+    let cancelled = false;
+
+    withRetry(() => fetchExpenseClaims(language))
+      .then((payload) => {
+        if (cancelled) return;
+        setExpSummary(payload.summary);
+      })
+      .catch((error) => {
+        // Keep the system rows; never block the rail.
+        reportClientError({
+          scope: "staff-dashboard:expense-summary",
+          message: "The expense-claim summary could not be loaded",
+          detail: error instanceof Error ? error.message : error,
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isClient, language]);
+
+  // Payment Entry summary, laid out with the same tiles the quick-links panel
+  // already uses (icon + label + description); each tile opens the payments page.
+  const paymentTiles = useMemo<DashboardLink[]>(() => {
+    if (!isClient || !paySummary) return [];
+
+    // Counts follow the active language's digits, like the amounts beside them.
+    const count = (value: number) =>
+      new Intl.NumberFormat(language === "en" ? "en-BD" : "bn-BD").format(value);
+
+    return [
+      {
+        key: "pay_total",
+        label: copy.paySummaryTotal,
+        description: count(paySummary.total),
+        icon: "receipt",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_amount",
+        label: copy.paySummaryAmount,
+        description: formatPayAmount(paySummary.total_amount, paySummary.currency, language),
+        icon: "badge",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_month",
+        label: copy.paySummaryMonth,
+        description: `${formatPayAmount(paySummary.this_month_amount, paySummary.currency, language)} · ${count(paySummary.this_month_count)}`,
+        icon: "device",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+      {
+        key: "pay_latest",
+        label: copy.paySummaryLatest,
+        description: formatPayDate(paySummary.latest_payment_date, language) || "—",
+        icon: "shield",
+        href: PAYMENT_HISTORY_PATH,
+        external: false,
+      },
+    ];
+  }, [isClient, paySummary, copy, language]);
+
+  // Staff quick-links panel: instead of desk shortcuts it now summarises what the
+  // Leads page shows — my leads plus the Tasks board counters — with the exact
+  // same tile markup (label + description), each opening the Leads page.
+  const leadTiles = useMemo<DashboardLink[]>(() => {
+    if (isClient || !leadBoard) return [];
+
+    const count = (value: number) =>
+      new Intl.NumberFormat(language === "en" ? "en-BD" : "bn-BD").format(value);
+
+    return [
+      {
+        key: "lead_mine",
+        label: copy.leadSummaryLeads,
+        description: copy.leadSummaryLeadsDesc(count(leadBoard.leads), leadBoard.more),
+        icon: "target",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_today",
+        label: copy.leadSummaryToday,
+        description: copy.leadSummaryTodayDesc(count(leadBoard.tasks.today)),
+        icon: "clock",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_week",
+        label: copy.leadSummaryWeek,
+        description: copy.leadSummaryWeekDesc(count(leadBoard.tasks.week)),
+        icon: "chart",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_overdue",
+        label: copy.leadSummaryOverdue,
+        description: copy.leadSummaryOverdueDesc(count(leadBoard.tasks.overdue)),
+        icon: "shield",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+      {
+        key: "lead_tasks_done",
+        label: copy.leadSummaryDone,
+        description: copy.leadSummaryDoneDesc(count(leadBoard.tasks.completed_week)),
+        icon: "badge",
+        href: `${STAFF_DASHBOARD_PATH}/leads`,
+        external: false,
+      },
+    ];
+  }, [isClient, leadBoard, copy, language]);
+
+  // The active panel is driven by the URL, not local state: "Create Customer"
+  // has its own route inside this shell, so the address bar reflects it and the
+  // browser Back button works. The client scope has no such sub-route.
+  const basePath = isClient ? CLIENT_DASHBOARD_PATH : STAFF_DASHBOARD_PATH;
+  const createCustomerPath = `${basePath}/create-customer`;
+  const checkinPath = `${basePath}/check-in-out`;
+  const leadsPath = `${basePath}/leads`;
+  const expenseClaimPath = `${basePath}/expense-claim`;
+  const expenseClaimNewPath = `${expenseClaimPath}/new`;
+  const paymentEntryPath = `${basePath}/payment-entry`;
+  const journalEntryPath = `${basePath}/journal-entry`;
+  const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
+  const onCheckinView = !isClient && pathname.startsWith(checkinPath);
+  const onLeadsView = !isClient && pathname.startsWith(leadsPath);
+  const onExpenseClaimNewView = !isClient && pathname.startsWith(expenseClaimNewPath);
+  const onExpenseClaimView =
+    !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
+  // The staff "Payment Entry" form, directly below Expense Claim in the rail.
+  const onPaymentEntryView = !isClient && pathname.startsWith(paymentEntryPath);
+  const onJournalEntryView = !isClient && pathname.startsWith(journalEntryPath);
+  // The client panel's own sub-route: the account's Payment Entry history.
+  const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
+  // The client panel's child route: the confirmation page for a just-created
+  // Payment Entry (`/clientDashboard/payment-entry/success`). It renders inside
+  // this shell, and `onPaymentHistoryView` stays true for it so the Payment
+  // Entry rail item remains the active one.
+  const onPaymentSuccessView = isClient && pathname.startsWith(PAYMENT_SUCCESS_PATH);
+  // The client panel's own sub-route: the account's Service Build (Sales Invoice) history.
+  const onServiceBuildView = isClient && pathname.startsWith(SERVICE_BUILD_PATH);
+  // The help desk is a dashboard-internal module on BOTH panels — the same
+  // shared component, mounted under each panel's own help-desk route.
+  const helpDeskPath = `${basePath}/${HELP_DESK_SEGMENT}`;
+  const onHelpDeskView = pathname.startsWith(helpDeskPath);
+  const helpDeskSuffix = onHelpDeskView ? pathname.slice(helpDeskPath.length) : "";
+  const onHelpDeskNew = helpDeskSuffix === "/new";
+  const onHelpDeskTickets = helpDeskSuffix === "/tickets";
+  const onHelpDeskSolved = helpDeskSuffix === "/solved";
+  const onHelpDeskWaiting = helpDeskSuffix === "/waiting";
+  const onHelpDeskConversation = /^\/tickets\/[^/]+\/conversation$/.test(helpDeskSuffix);
+  const onHelpDeskDetail = helpDeskSuffix.startsWith("/tickets/") && !onHelpDeskConversation;
+  const onHelpDeskProblems = helpDeskSuffix === "/problems";
+  const onHelpDeskProblem = helpDeskSuffix.startsWith("/problems/");
+  const helpDeskTicketId = onHelpDeskDetail
+    ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length))
+    : onHelpDeskConversation
+      ? decodeURIComponent(helpDeskSuffix.slice("/tickets/".length, helpDeskSuffix.length - "/conversation".length))
+    : onHelpDeskProblem
+      ? decodeURIComponent(helpDeskSuffix.slice("/problems/".length))
+      : undefined;
+  const helpDeskView: HelpDeskView = onHelpDeskNew
+    ? "new"
+    : onHelpDeskConversation
+      ? "conversation"
+      : onHelpDeskDetail
+      ? "detail"
+      : onHelpDeskTickets
+        ? "tickets"
+        : onHelpDeskSolved
+          ? "solved"
+          : onHelpDeskWaiting
+            ? "waiting"
+          : onHelpDeskProblems
+                ? "problems"
+                : onHelpDeskProblem
+                  ? "problem"
+                  : "overview";
+
+  /**
+   * Rail click for Help Desk.
+   *
+   * The link itself is a plain `<Link href>`, so the address bar is the source of
+   * truth. This handler only adds a watchdog, and the watchdog is *progress
+   * aware*: it follows the link's own transition (`useLinkStatus`) instead of a
+   * blind timer. The old 2.5s timer treated a slow route - a cold dev compile, a
+   * slow RSC fetch on a phone - as a failure, reported it to the Error Log and
+   * force-reloaded the page, which then aborted the request that was about to
+   * land. Now we only escalate when nothing is happening at all:
+   *   - the transition never started (dead router, stale chunk), or
+   *   - it finished without landing on the help-desk route, or
+   *   - it has been pending past the hard cap.
+   * In those cases the visitor still gets the route via a full page load, and the
+   * Error Log gets a diagnostic that says which of the three it was.
+   * Modified clicks (new tab, middle click) are left to the browser.
+   */
+  const onHelpDeskClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>) => {
+      setNavOpen(false);
+
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      window.clearTimeout(navWatchRef.current);
+
+      const startedAt = Date.now();
+      let sawPending = false;
+      let settled = false;
+
+      const fail = (reason: "never-started" | "transition-ended" | "timeout") => {
+        if (settled) return;
+        settled = true;
+        reportClientError({
+          scope: "help-desk:navigation",
+          message: "Help Desk navigation did not complete; falling back to a full page load.",
+          detail: {
+            from: window.location.pathname,
+            to: helpDeskPath,
+            reason,
+            elapsedMs: Date.now() - startedAt,
+          },
+        });
+        window.location.assign(helpDeskPath);
+      };
+
+      const poll = () => {
+        if (window.location.pathname.startsWith(helpDeskPath)) {
+          settled = true;
+          return;
+        }
+
+        const elapsed = Date.now() - startedAt;
+        const { pending } = helpDeskStatusRef.current;
+        if (pending) sawPending = true;
+
+        if (elapsed >= 20000) {
+          fail("timeout");
+          return;
+        }
+
+        // Give the router a moment to pick the click up before judging it.
+        if (!pending && elapsed >= 1500) {
+          if (sawPending) {
+            fail("transition-ended");
+            return;
+          }
+
+          if (elapsed >= 4000) {
+            fail("never-started");
+            return;
+          }
+        }
+
+        navWatchRef.current = window.setTimeout(poll, 250);
+      };
+
+      navWatchRef.current = window.setTimeout(poll, 400);
+    },
+    [helpDeskPath]
+  );
+
+  const viewTitle = onHelpDeskView
+    ? copy.nav.helpDesk
+    : onPaymentHistoryView
+    ? copy.nav.paymentHistory
+    : onServiceBuildView
+      ? copy.nav.serviceBuild
+      : onLeadsView
+      ? copy.nav.leads
+      : onExpenseClaimNewView
+      ? copy.nav.expenseClaim
+      : onExpenseClaimView
+        ? copy.nav.expenseClaim
+        : onCheckinView
+          ? copy.nav.checkin
+          : onCreateView
+            ? copy.nav.customers
+            : copy.nav.overview;
+
+  const { data, isFetching, isError, error, refetch } = useDashboardQuery(initialData);
+
+  const user = data?.user ?? initialData?.user ?? storeUser ?? null;
+  const loadError = data ? undefined : isError ? (error as Error)?.message || initialError : initialError;
+
+  const handleSignOut = useCallback(async () => {
+    setSigningOut(true);
+
+    try {
+      await postJson("/api/auth/logout");
+    } catch {
+      // The portal cookie is cleared by the route regardless of the ERP answer.
+    }
+
+    resetSession();
+    router.replace(LOGIN_PATH);
+    router.refresh();
+  }, [resetSession, router]);
+
+  // Every Logout button opens the confirmation dialog first; only "Yes" runs the
+  // real sign-out flow above (existing auth/session logic, unchanged). This is
+  // the single confirmation modal shared by the sidebar rail and the dropdown.
+  const requestSignOut = useCallback(() => setSignOutOpen(true), []);
+  const confirmSignOut = useCallback(async () => {
+    setSignOutOpen(false);
+    await handleSignOut();
+  }, [handleSignOut]);
+
+  const handleReload = useCallback(async () => {
+    if (reloading) return; // one reload at a time — ignore double clicks
+    setReloading(true);
+    try {
+      // Refresh the panel that is actually on screen first. Payment Entry, Service
+      // Build, Check-In/Out, Expense Claim and the Customer list keep their data in
+      // local state (not React Query), so a dashboard refetch alone never refreshed
+      // them — that is why the shared reload button looked dead on those pages.
+      // Each of those panels registers its own reload with this button.
+      if (reloadRegistry.hasHandlers()) {
+        const { ok } = await reloadRegistry.runAll();
+        if (ok) toast.success(copy.reloadNoChanges);
+        else toast.error(copy.reloadFailed);
+        return;
+      }
+
+      // Overview (no panel override) → the Smart reload (shared helper):
+      // snapshot → refetch → compare. Nothing changed → the lightweight query
+      // refresh is enough; something changed → a full browser reload so every
+      // panel resyncs. Runs once per click, so a reload can never loop.
+      await runSmartReload({
+        before: data,
+        refetch: async () => {
+          const result = await refetch();
+          return { data: result.data, error: result.error };
+        },
+        snapshot: dashboardSnapshot,
+        copy: {
+          unchanged: copy.reloadNoChanges,
+          changed: copy.reloadChanged,
+          failed: copy.reloadFailed,
+        },
+      });
+    } catch {
+      toast.error(copy.reloadFailed);
+    } finally {
+      setReloading(false);
+    }
+  }, [reloadRegistry, refetch, copy, data, reloading]);
+
+  const displayName = user?.full_name || user?.name || "";
+  const accountType = (user?.user_type ?? "").trim();
+  const accountLabel = accountType
+    ? accountType.toLowerCase() === "system user"
+      ? authCopy.systemUser
+      : authCopy.websiteUser
+    : "";
+
+  // The "Create Customer" rail link is visible to a System User only, on the
+  // staff panel — a Website User (portal customer) never sees it.
+  const isSystemUser = accountType.toLowerCase() === "system user" || Boolean(user?.is_admin);
+  const showLeads = !isClient && isSystemUser;
+  const showCreateCustomer = !isClient && isSystemUser;
+  const showCheckin = !isClient && isSystemUser;
+  const showExpenseClaim = !isClient && isSystemUser;
+  // "Payment Entry" — the staff make-a-payment form — sits directly below
+  // Expense Claim in the rail. Same audience (the desk staff panel).
+  const showPaymentEntry = !isClient && isSystemUser;
+  // "Journal Entry" — the staff create-a-journal-entry form — sits directly
+  // below Payment Entry in the rail. Same audience (the desk staff panel).
+  const showJournalEntry = !isClient && isSystemUser;
+
+  const roles = user?.roles ?? [];
+  // The Payment History link is a customer-panel feature: it appears only on the
+  // client dashboard, and only for an account that is a customer (a Website User,
+  // or one holding the Customer role). The staff panel never shows it, so there
+  // is no duplicate link on the desk.
+  const isWebsiteUser = accountType.toLowerCase() === "website user";
+  const showPaymentHistory = isClient && (isWebsiteUser || roles.includes("Customer"));
+  // The Service Build link is likewise a customer-panel feature: client scope,
+  // customer accounts only, shown directly below Payment History.
+  const showServiceBuild = isClient && (isWebsiteUser || roles.includes("Customer"));
+  const hiddenRoles = Math.max(0, roles.length - MAX_ROLES);
+  const visibleRoles = rolesOpen ? roles : roles.slice(0, MAX_ROLES);
+
+  // Profile rows the ERP sends for the account (label → value).
+  const profileRow = (label: string) =>
+    (data?.profile ?? []).find((row) => row.label.toLowerCase() === label.toLowerCase())?.value ?? "";
+
+  // The Overview shows the account's mobile in the local 01XXXXXXXXX form.
+  const mobileRaw =
+    (data?.profile ?? []).find((row) => /mobile|phone|মোবাইল|ফোন/i.test(row.label))?.value ?? "";
+  const mobileNumber = formatBdMobile(mobileRaw);
+
+  const username = user?.name ?? "";
+  const emailValue = user?.email ?? "";
+
+  // Only the meaningful, non-empty profile fields — never a blank row.
+  const profileInfo = [
+    { label: "Full Name", value: displayName },
+    { label: "Username", value: username && username !== emailValue ? username : "" },
+    { label: "Mobile", value: mobileNumber },
+    { label: "Email", value: emailValue },
+    { label: "Designation", value: user?.designation ?? profileRow("Designation") },
+    { label: "Department", value: user?.department ?? profileRow("Department") },
+    { label: "Location", value: profileRow("Location") },
+    { label: "Time Zone", value: user?.time_zone ?? profileRow("Time Zone") },
+    { label: "Language", value: user?.language ?? profileRow("Language") },
+  ].filter((row) => String(row.value ?? "").trim() !== "");
+
+  // Prefill the New Ticket form from the signed-in profile (name/email/mobile).
+  const helpDeskContact = {
+    name: displayName || undefined,
+    email: user?.email || undefined,
+    mobile:
+      (data?.profile ?? []).find((row) => /mobile|phone|মোবাইল/i.test(row.label))?.value || undefined,
+  };
+
+  const navButtonClass = (active: boolean) =>
+    active
+      ? "flex w-full items-center gap-3 rounded-2xl bg-[var(--color-action)] px-3 py-2.5 text-left shadow-[0_12px_26px_-14px_color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+      : "group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)] transition hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]";
+
+  const navLabelClass = (active: boolean) =>
+    `inline-flex min-w-0 flex-1 items-center gap-3 text-[13px] leading-snug ${active ? "font-semibold text-[var(--color-white)]" : "font-medium"}`;
+
+  /** The rail nav, shared by the desktop sidebar and the mobile drawer. */
+  const renderNav = () => {
+    const items = navKeys.map((key) => {
+      const Icon = NAV_ICONS[key];
+      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentEntryView && !onJournalEntryView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
+
+      return (
+        <button
+          key={key}
+          type="button"
+          onClick={() => {
+            router.push(basePath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          data-nav-key={key}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <Icon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav[key]}</span>
+          </span>
+        </button>
+      );
+    });
+
+    // Leads sits directly under Overview (the rail order the desk team asked for).
+    if (showLeads) {
+      const LeadsIcon = NAV_ICONS.leads;
+      const active = onLeadsView;
+
+      items.push(
+        <button
+          key="leads"
+          type="button"
+          onClick={() => {
+            router.push(leadsPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          data-nav-leads=""
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <LeadsIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.leads}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showCreateCustomer) {
+      const CreateIcon = NAV_ICONS.customers;
+      const active = onCreateView;
+
+      items.push(
+        <button
+          key="create-customer"
+          type="button"
+          onClick={() => {
+            router.push(createCustomerPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <CreateIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.customers}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showCheckin) {
+      const CheckinIcon = NAV_ICONS.checkin;
+      const active = onCheckinView;
+
+      items.push(
+        <button
+          key="check-in-out"
+          type="button"
+          onClick={() => {
+            router.push(checkinPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <CheckinIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.checkin}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showExpenseClaim) {
+      const ExpenseIcon = NAV_ICONS.expenseclaim;
+      const active = onExpenseClaimView || onExpenseClaimNewView;
+
+      items.push(
+        <button
+          key="expense-claim"
+          type="button"
+          onClick={() => {
+            router.push(expenseClaimPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <ExpenseIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.expenseClaim}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showPaymentEntry) {
+      const PayEntryIcon = NAV_ICONS.paymententry;
+      const active = onPaymentEntryView;
+
+      items.push(
+        <button
+          key="payment-entry"
+          type="button"
+          onClick={() => {
+            router.push(paymentEntryPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          data-nav-payment-entry=""
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <PayEntryIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.paymentEntry}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showJournalEntry) {
+      const JournalIcon = NAV_ICONS.journalentry;
+      const active = onJournalEntryView;
+
+      items.push(
+        <button
+          key="journal-entry"
+          type="button"
+          onClick={() => {
+            router.push(journalEntryPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <JournalIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.journalEntry}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showPaymentHistory) {
+      const PaymentIcon = NAV_ICONS.paymenthistory;
+      const active = onPaymentHistoryView;
+
+      items.push(
+        <button
+          key="payment-history"
+          type="button"
+          onClick={() => {
+            router.push(PAYMENT_HISTORY_PATH);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <PaymentIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.paymentHistory}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showServiceBuild) {
+      const ServiceIcon = NAV_ICONS.servicebuild;
+      const active = onServiceBuildView;
+
+      items.push(
+        <button
+          key="service-build"
+          type="button"
+          onClick={() => {
+            router.push(SERVICE_BUILD_PATH);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <ServiceIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.serviceBuild}</span>
+          </span>
+        </button>
+      );
+    }
+
+    // --- Support -----------------------------------------------------------
+    // The Help Desk is a dashboard-internal module on BOTH panels and for every
+    // signed-in role (system user, employee, customer). It is real navigation —
+    // the address bar changes and Back works — and it is "active" whenever a
+    // help-desk screen is open, because those screens render inside this shell.
+    items.push(
+      <div
+        key="help-desk-divider"
+        aria-hidden
+        className="my-1.5 border-t border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)]"
+      />
+    );
+
+    {
+      const HelpDeskIcon = NAV_ICONS.helpdesk;
+      const active = onHelpDeskView;
+
+      // A real link, not a JS `router.push`: the Help Desk entry has to work
+      // like every other URL in the panel - middle-click, refresh and Back all
+      // keep `/clientDashboard/help-desk` (or `/userDashboard/help-desk`), and a
+      // failed client-side navigation can never leave the click doing nothing.
+      items.push(
+        <Link
+          key="help-desk"
+          href={helpDeskPath}
+          onClick={onHelpDeskClick}
+          aria-current={active ? "page" : undefined}
+          className={navButtonClass(active)}
+        >
+          <HelpDeskLinkStatus onChange={onHelpDeskStatus} />
+          <span className={navLabelClass(active)}>
+            <HelpDeskIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.helpDesk}</span>
+          </span>
+        </Link>
+      );
+    }
+
+    return items;
+  };
+
+  /** Brand logo, shared by the desktop rail and the mobile drawer. */
+  const renderLogo = (onClick?: () => void) => (
+    <Link href="/" onClick={onClick} className="block w-full" aria-label={copy.backHome}>
+      <span className="relative block h-11 w-[150px] transition duration-300 hover:scale-[1.02]">
+        <Image
+          src="/images/logo.png"
+          alt="Shikkha Chat"
+          fill
+          priority
+          sizes="150px"
+          className="object-contain object-left"
+        />
+      </span>
+    </Link>
+  );
+
+  /** The prominent "back to home" action (kept above the Overview nav). */
+  const renderHomeAction = (onClick?: () => void) => (
+    <Link
+      href="/"
+      onClick={onClick}
+      className="group flex items-center justify-center gap-2.5 rounded-2xl border border-[var(--color-deep-surface)] bg-[var(--color-deep-surface)] px-3.5 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-primary)_80%,transparent)] transition duration-300 hover:-translate-y-0.5 hover:bg-[var(--color-deep-surface-hover)] hover:shadow-[0_22px_44px_-20px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] active:translate-y-0"
+    >
+      <FiHome aria-hidden size={16} className="shrink-0 text-[var(--color-white)]" />
+      <span className="text-[13px] font-black tracking-[-0.01em] text-[var(--color-white)]">
+        {copy.backHome}
+      </span>
+    </Link>
+  );
+
+  /**
+   * The rail footer holds a single action — sign out. The language switch that
+   * used to live here was a duplicate of the one in the account dropdown and
+   * has been removed (the dropdown is the one place language is chosen).
+   */
+  const renderSidebarFooter = () => (
+    <div className="mt-5 flex flex-col gap-2 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-5">
+      <button
+        type="button"
+        onClick={requestSignOut}
+        disabled={signingOut}
+        className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--color-deep-surface)] px-3.5 py-2.5 transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-60"
+      >
+        <span className="inline-flex items-center justify-center gap-2.5 text-[13px] font-semibold text-[var(--color-white)]">
+          <FiLogOut size={16} />
+          {signingOut ? copy.signingOut : copy.signOut}
+        </span>
+      </button>
+    </div>
+  );
+
+  return (
+    <ReloadRegistryProvider value={reloadRegistry.value}>
+    <ClientErrorBridge />
+    <div
+      data-no-translate="true"
+      className="min-h-screen w-full bg-[color-mix(in_srgb,var(--color-primary)_6%,var(--color-white))] text-[var(--color-primary)]"
+    >
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-5 lg:py-6">
+        {/* ---------------------------------------------------------- rail */}
+        <aside
+          className={`hidden w-[252px] shrink-0 self-start flex-col rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-4 ${CARD_SHADOW} lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain`}
+        >
+          {renderLogo()}
+
+          <div className="mt-5">{renderHomeAction()}</div>
+
+          <p className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+            {copy.navHeading}
+          </p>
+
+          <nav className="mt-2 flex flex-col gap-1.5">{renderNav()}</nav>
+
+          {renderSidebarFooter()}
+        </aside>
+
+        {/* ------------------------------------------------- mobile drawer */}
+        {drawerPresence.mounted ? (
+          <div className="fixed inset-0 z-[120] lg:hidden" data-no-translate="true">
+            <div
+              aria-hidden
+              onClick={() => setNavOpen(false)}
+              className={`absolute inset-0 bg-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] backdrop-blur-sm ${
+                drawerPresence.exiting ? "u-shk-fade-out" : "u-shk-fade-in"
+              }`}
+            />
+            <div
+              className={`absolute inset-y-0 left-0 flex w-[276px] max-w-[82vw] flex-col overflow-y-auto rounded-r-[26px] border-r border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_40px_90px_-30px_color-mix(in_srgb,var(--color-primary)_75%,transparent)] ${
+                drawerPresence.exiting ? "u-shk-drawer-out" : "u-shk-drawer-in"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                {renderLogo(() => setNavOpen(false))}
+
+                <button
+                  type="button"
+                  onClick={() => setNavOpen(false)}
+                  aria-label={copy.closeMenu}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                >
+                  <span className="text-[var(--color-primary)]">
+                    <FiX size={16} />
+                  </span>
+                </button>
+              </div>
+
+              <div className="mt-5">{renderHomeAction(() => setNavOpen(false))}</div>
+
+              <p className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                {copy.navHeading}
+              </p>
+              <nav className="mt-2 flex flex-col gap-1.5">{renderNav()}</nav>
+
+              {renderSidebarFooter()}
+            </div>
+          </div>
+        ) : null}
+
+        {/* ---------------------------------------------------------- main */}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 sm:p-5 lg:p-0">
+          <header
+            className={`flex items-center justify-between gap-3 rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] px-4 py-3 ${CARD_SHADOW} sm:px-5`}
+          >
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setNavOpen(true)}
+                aria-label={copy.openMenu}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] lg:hidden"
+              >
+                <span className="text-[var(--color-primary)]">
+                  <FiMenu size={16} />
+                </span>
+              </button>
+
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold">
+                  {viewTitle}
+                </p>
+                <p className="truncate text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                  {subtitle}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Check In/Out pages portal their punch button into this slot so it
+                  sits left of the refresh button; `empty:hidden` keeps the header
+                  spacing identical on every other view. */}
+              <div data-checkin-header-slot="" className="flex items-center empty:hidden" />
+              <button
+                type="button"
+                onClick={handleReload}
+                disabled={isFetching || reloading}
+                aria-label={copy.refresh}
+                title={copy.refresh}
+                className="grid h-9 w-9 place-items-center rounded-full border border-[var(--color-deep-surface)] bg-[var(--color-deep-surface)] transition hover:bg-[var(--color-deep-surface-hover)] disabled:opacity-70"
+              >
+                <span className="text-[var(--color-white)]">
+                  <FiRefreshCw size={15} className={isFetching || reloading ? "animate-spin" : undefined} />
+                </span>
+              </button>
+
+              {user ? (
+                <UserMenu
+                  user={user}
+                  displayName={displayName}
+                  profile={data?.profile}
+                  signingOut={signingOut}
+                  refreshing={isFetching || reloading}
+                  onSignOut={requestSignOut}
+                  onEditProfile={() => setEditOpen(true)}
+                  onChangePassword={() => setPasswordOpen(true)}
+                  onReload={handleReload}
+                />
+              ) : null}
+            </div>
+          </header>
+
+          <main className="flex min-w-0 flex-col gap-4 pb-4">
+            {onHelpDeskView ? (
+              <HelpDeskDashboard
+                view={helpDeskView}
+                basePath={helpDeskPath}
+                ticketId={helpDeskTicketId}
+                copy={helpDeskCopyFor(language)}
+                staff={!isClient}
+                language={language}
+                contact={helpDeskContact}
+              />
+            ) : onPaymentSuccessView ? (
+              <PaymentSuccessView onBack={() => router.push(PAYMENT_HISTORY_PATH)} />
+            ) : onPaymentHistoryView ? (
+              <PaymentEntryView onBack={() => router.push(basePath)} />
+            ) : onServiceBuildView ? (
+              <ServiceBuildView onBack={() => router.push(basePath)} />
+            ) : onCreateView ? (
+              <CustomerRoutes path={createCustomerPath} onExit={() => router.push(basePath)} />
+            ) : onCheckinView ? (
+              <CheckInOutView onBack={() => router.push(basePath)} />
+            ) : onLeadsView ? (
+              <LeadsView />
+            ) : onJournalEntryView ? (
+              <StaffJournalEntryView onBack={() => router.push(basePath)} />
+            ) : onPaymentEntryView ? (
+              <StaffPaymentEntryView onBack={() => router.push(basePath)} />
+            ) : onExpenseClaimNewView ? (
+              <NewExpenseClaimView onBack={() => router.push(expenseClaimPath)} />
+            ) : onExpenseClaimView ? (
+              <ExpenseClaimView
+                onBack={() => router.push(basePath)}
+                onNew={() => router.push(expenseClaimNewPath)}
+              />
+            ) : (
+              <>
+            {/* Overview — profile hero (item 1) */}
+            <section
+              className={`overflow-hidden rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] ${CARD_SHADOW}`}
+            >
+              <div className="flex flex-col gap-5 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))_0%,var(--color-white)_70%)] p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex min-w-0 flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setImageMenuOpen((value) => !value)}
+                      aria-haspopup="menu"
+                      aria-expanded={imageMenuOpen}
+                      aria-label={copy.changePhoto}
+                      className="group relative block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-secondary)_55%,transparent)]"
+                    >
+                      <UserAvatar
+                        user={user ?? { full_name: displayName, name: displayName }}
+                        size={112}
+                        rounded="rounded-full"
+                        sizeClass="h-24 w-24 sm:h-28 sm:w-28"
+                        className="ring-4 ring-[var(--color-white)] shadow-[0_20px_44px_-22px_color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 grid place-items-center rounded-full bg-[color-mix(in_srgb,var(--color-primary)_58%,transparent)] opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                      >
+                        <span className="flex flex-col items-center gap-1 text-[var(--color-white)]">
+                          <FiCamera size={22} />
+                          <span className="text-[10.5px] font-semibold">{copy.changePhoto}</span>
+                        </span>
+                      </span>
+                    </button>
+
+                    <ProfileImageMenu
+                      open={imageMenuOpen}
+                      hasImage={Boolean((user?.user_image ?? "").trim())}
+                      onChangePhoto={() => {
+                        setImageMenuOpen(false);
+                        setImageIntent("change-photo");
+                        setEditOpen(true);
+                      }}
+                      onRemovePhoto={() => {
+                        setImageMenuOpen(false);
+                        setImageIntent("remove-photo");
+                        setEditOpen(true);
+                      }}
+                      onClose={() => setImageMenuOpen(false)}
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                      {copy.greeting}
+                    </p>
+                    <h1 className="mt-0.5 truncate text-[23px] font-bold leading-tight tracking-[-0.01em] sm:text-[27px]">
+                      {displayName || copy.greetingFallback}
+                    </h1>
+
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 sm:justify-start">
+                      {mobileNumber ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                          <FiSmartphone size={12} />
+                          <span className="tabular-nums">{mobileNumber}</span>
+                        </span>
+                      ) : null}
+
+                      {user?.name ? (
+                        <span className="inline-flex max-w-[220px] items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1 text-[12px] font-medium text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]">
+                          <span className="truncate font-medium">@{user.name}</span>
+                        </span>
+                      ) : null}
+
+                      {accountLabel ? (
+                        <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] px-2.5 py-1">
+                          <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[var(--color-primary)]">
+                            {accountLabel}
+                          </span>
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start lg:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:opacity-60"
+                  >
+                    <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-white)]">
+                      <FiEdit2 size={15} />
+                      {authCopy.editProfile}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPasswordOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))]"
+                  >
+                    <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[var(--color-primary)]">
+                      <FiLock size={15} />
+                      {authCopy.changePassword}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {(profileInfo.length || roles.length) ? (
+                <div className="grid gap-4 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] p-5 sm:grid-cols-2 sm:p-6">
+                  {profileInfo.length ? (
+                    <dl className="grid gap-3 sm:grid-cols-2">
+                      {profileInfo.map((row) => (
+                        <div key={row.label} className="min-w-0">
+                          <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                            {copy.profileFields[row.label] ?? row.label}
+                          </dt>
+                          <dd className="mt-0.5 break-words text-[13px] font-medium text-[var(--color-primary)]">
+                            {row.value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+
+                  {roles.length ? (
+                    <div className={profileInfo.length ? "sm:border-l sm:border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] sm:pl-4" : ""}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {copy.roleLabel}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {visibleRoles.map((role) => (
+                          <span
+                            key={role}
+                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))] px-2.5 py-1 text-[11px] font-medium text-[var(--color-primary)] transition hover:border-[var(--color-primary)]"
+                          >
+                            {role}
+                          </span>
+                        ))}
+                        {hiddenRoles > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setRolesOpen((value) => !value)}
+                            aria-expanded={rolesOpen}
+                            className="rounded-full border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-2.5 py-1 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+                          >
+                            <span className="text-[11px] font-semibold text-[var(--color-primary)]">
+                              {rolesOpen ? copy.lessRoles : copy.moreRoles(hiddenRoles)}
+                            </span>
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </section>
+
+            {showCheckin ? (
+              <section
+                className={`flex flex-col gap-3 rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:flex-row sm:items-center sm:justify-between sm:p-6`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)] shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]">
+                    <FiClock size={20} />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold"><span className="truncate">{copy.nav.checkin}</span></h2>
+                    <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.checkinCardHint}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push(checkinPath)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)]"
+                >
+                  <span className="text-[13px] font-semibold text-[var(--color-white)]">
+                    {copy.openAction}
+                  </span>
+                </button>
+              </section>
+            ) : null}
+
+            {showExpenseClaim ? (
+              <section
+                className={`flex flex-col gap-3 rounded-[26px] border ${CARD_BORDER} bg-[var(--color-white)] p-5 ${CARD_SHADOW} sm:flex-row sm:items-center sm:justify-between sm:p-6`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)] shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-primary)_85%,transparent)]">
+                    <FiDollarSign size={20} />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold"><span className="truncate">{copy.nav.expenseClaim}</span></h2>
+                    <p className="mt-0.5 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.expenseClaimCardHint}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push(expenseClaimPath)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-4 py-2.5 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)]"
+                >
+                  <span className="text-[13px] font-semibold text-[var(--color-white)]">
+                    {copy.openAction}
+                  </span>
+                </button>
+              </section>
+            ) : null}
+
+            {loadError ? (
+              <PanelCard title={copy.errorTitle} hint={loadError}>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="rounded-2xl bg-[var(--color-action)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-white)] transition hover:bg-[var(--color-action-hover)]"
+                >
+                  {copy.retry}
+                </button>
+              </PanelCard>
+            ) : null}
+
+            {!data && !loadError ? (
+              <PanelCard title={copy.loadingTitle} hint={copy.loadingHint}>
+                <ShikkhaLoader size="lg" className="py-12" />
+              </PanelCard>
+            ) : null}
+
+            {data ? (
+              <>
+                <section className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
+                    <h2 className="text-[15px] font-semibold">{copy.metricsHeading}</h2>
+                    <p className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.metricsHint}
+                    </p>
+                  </div>
+
+                  {data.stats.length ? (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {data.stats.map((stat) => (
+                        <StatCard
+                          key={stat.key}
+                          stat={localizeStat(stat, copy)}
+                          scopeLabel={stat.scope === "site" ? copy.scopeSite : copy.scopePersonal}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-2xl border border-dashed border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] px-4 py-6 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.metricsHint}
+                    </p>
+                  )}
+                </section>
+
+                <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
+                  <PanelCard title={copy.loginHistoryHeading} hint={copy.loginHistoryHint}>
+                    <LoginHistoryCard rows={data.activity} copy={copy} language={language} />
+                  </PanelCard>
+
+                  <div className="flex flex-col gap-4">
+                    <PanelCard
+                      title={isClient ? copy.paySummaryHeading : copy.quickLinksHeading}
+                      hint={isClient ? copy.paySummaryHint : copy.leadSummaryHint}
+                      testId="quick-links"
+                    >
+                      <QuickLinks
+                        links={
+                          isClient
+                            ? paymentTiles
+                            : leadTiles.length > 0
+                              ? leadTiles
+                              : data.quick_links
+                        }
+                        labels={isClient ? {} : copy.links}
+                        emptyLabel={isClient ? copy.paySummaryEmpty : copy.quickLinksEmpty}
+                      />
+                    </PanelCard>
+
+                    <PanelCard
+                      title={
+                        isClient
+                          ? copy.billSummaryHeading
+                          : expSummary
+                            ? copy.expenseSummaryHeading
+                            : copy.systemHeading
+                      }
+                      testId="system"
+                    >
+                      <dl className="flex flex-col gap-2.5">
+                        {(isClient && billSummary
+                          ? [
+                              [
+                                copy.billSummaryTotal,
+                                new Intl.NumberFormat(
+                                  language === "en" ? "en-BD" : "bn-BD"
+                                ).format(billSummary.total),
+                              ],
+                              [
+                                copy.billSummaryAmount,
+                                formatBillAmount(
+                                  billSummary.total_amount,
+                                  billSummary.currency,
+                                  language
+                                ),
+                              ],
+                              [
+                                copy.billSummaryDue,
+                                formatBillAmount(
+                                  billSummary.total_outstanding,
+                                  billSummary.currency,
+                                  language
+                                ),
+                              ],
+                              [
+                                copy.billSummaryLatest,
+                                formatBillDate(billSummary.latest_invoice_date, language) || "—",
+                              ],
+                            ]
+                          : expSummary
+                            ? [
+                                [
+                                  copy.expenseSummaryCount,
+                                  new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.total),
+                                ],
+                                [
+                                  copy.expenseSummaryClaimed,
+                                  expSummary.total > 0
+                                    ? formatBillAmount(
+                                        expSummary.total_claimed_amount,
+                                        expSummary.currency,
+                                        language
+                                      )
+                                    : copy.expenseSummaryEmpty,
+                                ],
+                                [
+                                  copy.expenseSummaryDraft,
+                                  new Intl.NumberFormat(
+                                    language === "en" ? "en-BD" : "bn-BD"
+                                  ).format(expSummary.draft),
+                                ],
+                                [
+                                  copy.expenseSummaryApproved,
+                                  formatBillAmount(
+                                    expSummary.total_sanctioned_amount,
+                                    expSummary.currency,
+                                    language
+                                  ),
+                                ],
+                                [
+                                  copy.expenseSummaryPaid,
+                                  formatBillAmount(
+                                    expSummary.total_amount_reimbursed,
+                                    expSummary.currency,
+                                    language
+                                  ),
+                                ],
+                              ]
+                            : [
+                                [copy.systemApi, data.system.api],
+                                [copy.systemVersion, data.system.version],
+                                [copy.systemServer, data.system.base_url],
+                                [
+                                  copy.systemSession,
+                                  `${data.system.session_expiry_hours} ${copy.hoursSuffix}`,
+                                ],
+                              ]
+                        ).map(([label, value]) => (
+                          <div key={label} className="flex items-start justify-between gap-4">
+                            <dt className="text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                              {label}
+                            </dt>
+                            <dd className="max-w-[62%] break-all text-right text-[12px] font-medium">
+                              {value}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </PanelCard>
+                  </div>
+                </div>
+              </>
+            ) : null}
+              </>
+            )}
+          </main>
+        </div>
+      </div>
+
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setImageIntent(null);
+        }}
+        fallbackName={displayName}
+        fallbackEmail={user?.email}
+        intent={imageIntent}
+        onIntentHandled={() => setImageIntent(null)}
+      />
+      <ChangePasswordModal open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+      <LogoutConfirmModal
+        open={signOutOpen}
+        onClose={() => setSignOutOpen(false)}
+        onConfirm={confirmSignOut}
+        signingOut={signingOut}
+        copy={{
+          title: copy.logoutConfirmTitle,
+          message: copy.logoutConfirmMessage,
+          yes: copy.logoutConfirmYes,
+          no: copy.logoutConfirmNo,
+          signing: copy.logoutConfirmSigning,
+        }}
+      />
+    </div>
+    </ReloadRegistryProvider>
+  );
+}

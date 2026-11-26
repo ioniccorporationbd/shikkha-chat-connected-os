@@ -1,0 +1,456 @@
+/**
+ * Server-side Frappe client.
+ *
+ * Every call to the ERP goes through a Next.js route handler, never the
+ * browser:
+ *
+ *  - the ERP API is not exposed to the client,
+ *  - the `sid` cookie stays HttpOnly on the portal origin,
+ *  - Frappe's HTTP errors are normalised before they reach the UI, so a
+ *    `frappe.throw()` message is never replaced by a generic
+ *    "Request failed with status code 417".
+ */
+
+const METHOD_BASE = "/api/method/";
+
+const DEFAULT_TIMEOUT_MS = 15_000;
+
+/**
+ * Ceiling for calls that *write* a ticket (send a message, add a requirement,
+ * change status) instead of merely reading it.
+ *
+ * A write makes the ERP save rows, attach files and — for a customer reply —
+ * hand the row to helpdesk's own writer, which may queue the notification mail
+ * inline. On a slow-mail site that routinely overruns a 15s read budget, and the
+ * portal then told the customer "the ERP did not answer" for a message the ERP
+ * had in fact accepted. Writes get their own, generous ceiling.
+ */
+export const WRITE_TIMEOUT_MS = Number(process.env.HD_WRITE_TIMEOUT_MS || 60_000);
+
+export type FrappeFailureCode =
+  | "not_configured"
+  | "upstream_unreachable"
+  | "upstream_error"
+  | "invalid_payload"
+  | "not_authenticated"
+  | "not_permitted"
+  | "rate_limited"
+  | "validation_error";
+
+export interface FrappeFailure {
+  ok: false;
+  status: number;
+  code: FrappeFailureCode;
+  message: string;
+  /**
+   * Machine-readable sub-reason for an authentication failure, so a 401 can be
+   * diagnosed from the Network tab / server log without guessing:
+   * `session_expired` = Frappe itself dropped the session,
+   * `erp_rejected_session` = the ERP answered 401 but did not say the session
+   * expired (e.g. an `AuthenticationError` raised before the session lookup).
+   */
+  reason?: string;
+}
+
+export interface FrappeSuccess<T> {
+  ok: true;
+  status: number;
+  data: T;
+  setCookies: string[];
+}
+
+export type FrappeResult<T> = FrappeSuccess<T> | FrappeFailure;
+
+export interface CallFrappeOptions {
+  /** HTTP verb used towards Frappe. Defaults to GET. */
+  httpMethod?: "GET" | "POST";
+  body?: unknown;
+  /** ERP `sid` to forward, if the caller has one. */
+  sid?: string | null;
+  timeoutMs?: number;
+}
+
+export function frappeBaseUrl(): string {
+  const raw = process.env.FRAPPE_BASE_URL || process.env.NEXT_PUBLIC_FRAPPE_BASE_URL || "";
+  return raw.trim().replace(/\/+$/, "");
+}
+
+/** The configured ERP host — for error messages and logs, never for secrets. */
+function erpHost(): string {
+  const base = frappeBaseUrl();
+  if (!base) return "(FRAPPE_BASE_URL is not set)";
+
+  try {
+    return new URL(base).host;
+  } catch {
+    return base;
+  }
+}
+
+/** Frappe serves its error *page* (HTML) when a site is down or misrouted. */
+function looksLikeHtml(text: string): boolean {
+  const head = text.slice(0, 400);
+  return /<!doctype|<html|<\?xml/i.test(head) || /<title>[^<]*<\/title>/i.test(head);
+}
+
+/**
+ * Server-side logging switch.
+ *
+ * These lines land in the Next.js **server** output (`npm run dev`, `next start`,
+ * journald) — never in the browser console. Silence them with FRAPPE_DEBUG_LOG=0.
+ */
+function serverLoggingEnabled(): boolean {
+  return process.env.FRAPPE_DEBUG_LOG !== "0";
+}
+
+/**
+ * A one-line trail for sign-in attempts, written on the server. The ERP writes
+ * its own Error Log entry; this is what tells you *which* request failed when a
+ * 502 shows up in the browser console.
+ */
+export function logAuthEvent(message: string): void {
+  if (!serverLoggingEnabled()) return;
+  console.error(`[auth] ${message}`);
+}
+
+/**
+ * The portal's own server log.
+ *
+ * A 502 in the browser console is unactionable on its own, so every upstream
+ * failure is written server-side (visible in `npm run dev`, `next start` or the
+ * systemd journal) with the host, the status and the ERP's own error type.
+ */
+function logUpstreamFailure(method: string, detail: Record<string, unknown>): void {
+  if (!serverLoggingEnabled()) return;
+
+  const parts = Object.entries(detail)
+    .filter(([, value]) => value !== undefined && value !== "")
+    .map(([key, value]) => `${key}=${String(value)}`)
+    .join(" ");
+
+  console.error(`[frappe] ${method} -> ${erpHost()} failed: ${parts}`);
+}
+
+function parseJson(text: string): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * `_server_messages` is a JSON string holding an array of JSON strings.
+ * Each entry is either the message itself or an object with `.message`.
+ */
+function parseServerMessages(raw: unknown): string[] {
+  if (typeof raw !== "string" || !raw.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((entry) => {
+        if (typeof entry !== "string") return "";
+
+        try {
+          const object = JSON.parse(entry) as { message?: unknown };
+          return typeof object?.message === "string" ? object.message : entry;
+        } catch {
+          return entry;
+        }
+      })
+      .map((entry) => stripHtml(entry))
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function extractMessage(payload: unknown, fallback: string): string {
+  const record = (payload ?? {}) as Record<string, unknown>;
+
+  const serverMessages = parseServerMessages(record._server_messages);
+  if (serverMessages.length) return serverMessages[0];
+
+  if (typeof record.message === "string" && record.message.trim()) {
+    return stripHtml(record.message);
+  }
+
+  if (Array.isArray(record.messages) && typeof record.messages[0] === "string") {
+    return stripHtml(record.messages[0]);
+  }
+
+  return fallback;
+}
+
+/** Frappe wraps whitelist return values in `{"message": ...}`. */
+function unwrapEnvelope<T>(payload: unknown): T {
+  const record = (payload ?? {}) as Record<string, unknown>;
+  const envelope = "message" in record ? record.message : payload;
+
+  const inner = (envelope ?? {}) as Record<string, unknown>;
+  if (inner && typeof inner === "object" && "data" in inner && "ok" in inner) {
+    return inner.data as T;
+  }
+
+  return envelope as T;
+}
+
+/** Fallback text when the ERP sent no readable message of its own. */
+export const DEFAULT_REJECTION_MESSAGE = "The ERP rejected the request. Please try again.";
+
+function normalizeFailure(
+  response: Response,
+  payload: unknown,
+  rawText: string,
+  method: string
+): FrappeFailure {
+  const status = response.status;
+  const record = (payload ?? {}) as Record<string, unknown>;
+  const excType = typeof record.exc_type === "string" ? record.exc_type : "";
+  const message = extractMessage(payload, DEFAULT_REJECTION_MESSAGE);
+  const host = erpHost();
+
+  // A site that is down (bad vhost, failed migration, app not installed on the
+  // right site) answers with Frappe's HTML error page instead of JSON. Saying
+  // that out loud is the difference between "502, good luck" and a cause.
+  const htmlError = !payload && looksLikeHtml(rawText);
+
+  logUpstreamFailure(method, {
+    host,
+    status,
+    excType: excType || undefined,
+    htmlError: htmlError || undefined,
+    body: htmlError ? undefined : rawText.slice(0, 300) || undefined,
+  });
+
+  if (status === 429 || excType === "RateLimitExceededError") {
+    return { ok: false, status: 429, code: "rate_limited", message };
+  }
+
+  // A dead or expired `sid` does not come back as an exception body: Frappe
+  // answers `{"session_expired":1,"exc_type":"SessionExpired"}` with HTTP 401
+  // (and a Guest request with no whitelisted method gets 403). Read that as the
+  // ended session it is — 401 + `not_authenticated` — so every API route clears
+  // the stale cookie and the UI can send the visitor back to sign in. Left
+  // unclassified it surfaced as an opaque 502 "ERP server returned an error",
+  // the dead cookie survived, and every retry failed with the same message.
+  if (status === 401 || excType === "SessionExpired" || Boolean(record.session_expired)) {
+    // Two different truths hide behind a 401, and the UI (and this log) must
+    // not pretend they are the same:
+    //  - `session_expired`: Frappe says the stored session is gone. Nothing the
+    //    customer can retry; send them to sign in again.
+    //  - `erp_rejected_session`: the ERP refused the request as unauthenticated
+    //    without claiming the session expired (e.g. `require_login()` raised
+    //    before the session lookup, or a single worker missed the session). That
+    //    can be transient, so the help-desk routes probe the session and retry
+    //    once before dropping the cookie.
+    const sessionGone = excType === "SessionExpired" || Boolean(record.session_expired);
+    const sessionMessage = "Your session has expired. Please sign in again.";
+
+    return {
+      ok: false,
+      status: 401,
+      code: "not_authenticated",
+      reason: sessionGone ? "session_expired" : "erp_rejected_session",
+      message: sessionGone || message === DEFAULT_REJECTION_MESSAGE ? sessionMessage : message,
+    };
+  }
+
+  if (excType === "AuthenticationError") {
+    return {
+      ok: false,
+      status: status === 401 ? 401 : 502,
+      code: "not_authenticated",
+      message,
+    };
+  }
+
+  if (excType === "PermissionError") {
+    // The ERP refused for lack of permission: an expected, actionable outcome.
+    // Give it its own code so the UI reads as guidance, not a bug.
+    return { ok: false, status: 200, code: "not_permitted", message };
+  }
+
+  if (excType === "ValidationError" || status === 417 || status === 418) {
+    // Validation refusals are normal, expected outcomes: hand them to the UI as
+    // a readable message instead of an opaque HTTP failure.
+    return { ok: false, status: 200, code: "validation_error", message };
+  }
+
+  if (htmlError) {
+    return {
+      ok: false,
+      status: 502,
+      code: "upstream_error",
+      message:
+        `The ERP server at ${host} answered with an HTML error page (HTTP ${status}) instead of the API, ` +
+        "so the site is failing before it can serve any request. Check the ERP server log / Error Log.",
+    };
+  }
+
+  if (status >= 500) {
+    return {
+      ok: false,
+      status: 502,
+      code: "upstream_error",
+      message:
+        `The ERP server at ${host} returned an error (HTTP ${status}${excType ? ` ${excType}` : ""}). ` +
+        "Check the ERP Error Log for the traceback.",
+    };
+  }
+
+  return { ok: false, status: 502, code: "upstream_error", message };
+}
+
+export async function callFrappe<T>(
+  method: string,
+  options: CallFrappeOptions = {}
+): Promise<FrappeResult<T>> {
+  const base = frappeBaseUrl();
+
+  if (!base) {
+    logUpstreamFailure(method, { configured: false });
+
+    return {
+      ok: false,
+      status: 502,
+      code: "not_configured",
+      message:
+        "The portal is not connected to an ERP server yet (FRAPPE_BASE_URL is not set).",
+    };
+  }
+
+  const { httpMethod = "GET", body, sid, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+
+  const target = new URL(base);
+  const headers = new Headers({ accept: "application/json" });
+
+  // Frappe resolves the *site* from `x-forwarded-host`. It must be the ERP
+  // host, never the portal host, or the session lands on the wrong site and
+  // every authenticated call arrives as Guest.
+  headers.set("x-forwarded-host", target.host);
+  headers.set("x-forwarded-proto", target.protocol.replace(":", ""));
+
+  if (sid) headers.set("cookie", `sid=${sid}`);
+
+  let payload: string | undefined;
+  if (body !== undefined) {
+    headers.set("content-type", "application/json");
+    payload = JSON.stringify(body);
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${base}${METHOD_BASE}${method}`, {
+      method: httpMethod,
+      headers,
+      body: payload,
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    const timedOut =
+      error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    const cause = (error as { cause?: { code?: string } }).cause?.code;
+    const reason = cause ?? (error instanceof Error ? error.message : String(error));
+
+    logUpstreamFailure(method, {
+      host: erpHost(),
+      unreachable: true,
+      reason,
+      timedOut: timedOut || undefined,
+    });
+
+    return {
+      ok: false,
+      status: 502,
+      code: "upstream_unreachable",
+      message: timedOut
+        ? `The ERP server at ${erpHost()} did not answer within ${Math.round(timeoutMs / 1000)}s.`
+        : `The portal could not reach the ERP server at ${erpHost()} (${reason}). ` +
+          "Check FRAPPE_BASE_URL and that the site is running.",
+    };
+  }
+
+  const text = await response.text();
+  const parsed = parseJson(text);
+
+  if (response.ok) {
+    return {
+      ok: true,
+      status: response.status,
+      data: unwrapEnvelope<T>(parsed),
+      setCookies: response.headers.getSetCookie?.() ?? [],
+    };
+  }
+
+  return normalizeFailure(response, parsed, text, method);
+}
+
+/** Read the ERP `sid` out of a login response's `Set-Cookie` headers. */
+export function extractSid(setCookies: string[]): string | null {
+  const pattern = /(?:^|[,\s])sid=([^;,\s]+)/;
+
+  for (const header of setCookies) {
+    const match = header.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+/** What the ERP says about one forwarded `sid`. */
+export type PortalSessionState = "active" | "expired" | "unknown";
+
+/**
+ * Ask the ERP whether this exact `sid` is still a live session.
+ *
+ * Used only to *verify* a 401 before the portal throws the cookie away: a
+ * single unauthenticated answer is not proof that the customer has been
+ * signed out (a worker restart, a missed session read or a racing keep-alive
+ * can produce one). `shikkha_os.api.v1.auth.session` is the site's canonical
+ * probe — it also slides the session window while the portal is in use.
+ *
+ * Never throws: an unreachable ERP is `unknown`, not `expired`.
+ */
+export async function probePortalSession(sid: string): Promise<PortalSessionState> {
+  const result = await callFrappe<{ authenticated?: boolean }>(
+    "shikkha_os.api.v1.auth.session",
+    { sid }
+  );
+
+  if (result.ok) return result.data?.authenticated ? "active" : "expired";
+  if (result.status === 401) return "expired";
+  return "unknown";
+}
+
+/**
+ * Call the ERP, and when it answers 401 verify the session before accepting it.
+ *
+ * If the probe still sees the session, the 401 was transient and the call is
+ * retried exactly once. A retry is only ever made after a 401, which the ERP
+ * raises before writing anything (`security.require_login()` is the first step
+ * of every help-desk method), so the retry cannot duplicate a message.
+ */
+export async function callFrappeWithSessionCheck<T>(
+  method: string,
+  options: CallFrappeOptions & { sid: string }
+): Promise<FrappeResult<T>> {
+  const first = await callFrappe<T>(method, options);
+  if (first.ok || first.status !== 401) return first;
+
+  if ((await probePortalSession(options.sid)) !== "active") return first;
+
+  return callFrappe<T>(method, options);
+}

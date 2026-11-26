@@ -1,0 +1,620 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FiAlertCircle,
+  FiArrowLeft,
+  FiBriefcase,
+  FiClock,
+  FiEye,
+  FiLock,
+  FiMail,
+  FiPlus,
+  FiRefreshCw,
+  FiSearch,
+  FiUsers,
+} from "react-icons/fi";
+
+import { fetchCustomerDetails, fetchCustomerList } from "@/lib/customer/api";
+import { customerManagementCopyFor } from "@/lib/customer/management-messages";
+import type { CustomerDetailsPayload, CustomerListRow } from "@/lib/customer/types";
+import { genericPaginationCopy, ROWS_PER_PAGE_OPTIONS, DEFAULT_ROWS_PER_PAGE } from "@/lib/dashboard/list-controls";
+import { reportClientError } from "@/lib/log/report-error";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+
+import DetailSheet, { type DetailSection } from "./DetailSheet";
+import ListPagination from "./ListPagination";
+
+/* ------------------------------------------------------------------ */
+/* Layout tokens (mirrors the Create Customer surface)                 */
+/* ------------------------------------------------------------------ */
+
+const PAGE = "mx-auto flex w-full max-w-[1080px] flex-col gap-4";
+
+const CARD =
+  "rounded-[24px] border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 shadow-[0_18px_44px_-28px_color-mix(in_srgb,var(--color-primary)_40%,transparent)] sm:p-5";
+
+const HEADER_CARD =
+  "relative overflow-hidden rounded-[24px] border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_10%,var(--color-white)),var(--color-white)_58%)] p-4 shadow-[0_22px_50px_-30px_color-mix(in_srgb,var(--color-primary)_55%,transparent)] sm:p-6";
+
+const BTN_SECONDARY =
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_20%,transparent)] bg-[var(--color-white)] px-4 py-2.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-60";
+
+const BTN_PRIMARY =
+  "inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-action)] px-5 py-3 shadow-[0_16px_34px_-18px_color-mix(in_srgb,var(--color-action)_85%,transparent)] transition hover:-translate-y-0.5 hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60";
+
+const INPUT_BASE =
+  "w-full rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] bg-[var(--color-white)] px-3.5 py-2.5 text-[13px] text-[var(--color-primary)] outline-none transition placeholder:text-[color-mix(in_srgb,var(--color-primary)_40%,transparent)] focus:border-[color-mix(in_srgb,var(--color-action)_50%,transparent)] focus:ring-2 focus:ring-[var(--color-action-ring)] focus:ring-[color-mix(in_srgb,var(--color-primary)_14%,transparent)]";
+
+const PERMISSION_HINTS = [
+  "permission",
+  "not permitted",
+  "অনুমতি",
+  "not a system user",
+  "only system users",
+];
+
+function isPermissionRefusal(code: string | undefined, message: string): boolean {
+  if (code === "not_permitted" || code === "no_permission") return true;
+  const haystack = (message || "").toLowerCase();
+  return PERMISSION_HINTS.some((hint) => haystack.includes(hint));
+}
+
+/** Frappe returns "YYYY-MM-DD HH:MM:SS" — show just the calendar date. */
+function formatDate(value: string | undefined, locale: string): string {
+  if (!value) return "";
+  const iso = value.replace(" ", "T");
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return value.slice(0, 10);
+  try {
+    return parsed.toLocaleDateString(locale === "en" ? "en-GB" : "bn-BD", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  } catch {
+    return value.slice(0, 10);
+  }
+}
+
+interface CustomerManagementViewProps {
+  onBack: () => void;
+  onNew: () => void;
+}
+
+export default function CustomerManagementView({ onBack, onNew }: CustomerManagementViewProps) {
+  const { language } = useLanguage();
+  const copy = useMemo(() => customerManagementCopyFor(language), [language]);
+
+  const [rows, setRows] = useState<CustomerListRow[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<{ code: string; message: string } | null>(null);
+  const [query, setQuery] = useState("");
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
+  const [page, setPage] = useState(1);
+
+  const loadList = useCallback(
+    async (mode: "initial" | "refresh" = "initial") => {
+      if (mode === "refresh") setRefreshing(true);
+      else setLoading(true);
+      try {
+        const data = await fetchCustomerList(language);
+        const list = data.customers ?? [];
+        setRows(list);
+        setLoadError(null);
+        return list;
+      } catch (error) {
+        const failure = error as { code?: string; message?: string };
+        setLoadError({ code: failure?.code || "error", message: failure?.message || copy.loadFailed });
+        return [];
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [language, copy.loadFailed]
+  );
+
+  // The shell's shared reload button drives this list too (local state).
+  const reloadList = useCallback(() => loadList("refresh"), [loadList]);
+  useReloadHandler(reloadList);
+
+  useEffect(() => {
+    // Kick the async load off the effect's synchronous path (keeps the body free
+    // of setState for react-hooks/set-state-in-effect).
+    const timer = setTimeout(() => {
+      void loadList("initial");
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadList]);
+
+  const filtered = useMemo(() => {
+    // A row with no real document id can never be rendered: no nameless row, no
+    // duplicate/blank React key (the id is what the backend guarantees).
+    const list = (rows ?? []).filter((row) => Boolean(row?.name && String(row.name).trim()));
+    const needle = query.trim().toLowerCase();
+    if (!needle) return list;
+    return list.filter((row) =>
+      [row.name, row.customer_name, row.mobile_no, row.email_id, row.customer_type, row.customer_group, row.territory]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle))
+    );
+  }, [rows, query]);
+
+  const total = useMemo(
+    () => (rows ?? []).filter((row) => Boolean(row?.name && String(row.name).trim())).length,
+    [rows]
+  );
+
+  // Client-side paging — every table shows 10 rows by default and the customer
+  // can widen it with the row-of-buttons control in the shared footer.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * rowsPerPage;
+  const pageRows = filtered.slice(pageStart, pageStart + rowsPerPage);
+  const pageCopy = useMemo(() => genericPaginationCopy(language), [language]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, rowsPerPage]);
+
+  const cell = (value: string | undefined) => (value && String(value).trim() !== "" ? value : copy.notSet);
+
+  /* ------------------------------------------------------ details popup */
+
+  const [detailRow, setDetailRow] = useState<CustomerListRow | null>(null);
+  const [detail, setDetail] = useState<CustomerDetailsPayload | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Click → open the sheet with the loader already spinning, then fill it in.
+  const openDetails = useCallback(
+    (row: CustomerListRow) => {
+      setDetailRow(row);
+      setDetail(null);
+      setDetailError(null);
+      setDetailLoading(true);
+
+      void fetchCustomerDetails(row.name, language)
+        .then((payload) => setDetail(payload))
+        .catch((error: unknown) => {
+          const failure = error as { code?: string; message?: string };
+          setDetailError(failure?.message || copy.detailFailed);
+          // Constraint: a broken popup must leave a trace both in the browser
+          // console and in the ERP Error Log (`/desk/system/error-log`).
+          reportClientError({
+            scope: "customer:details",
+            message: `customer.details failed for ${row.name}`,
+            detail: { code: failure?.code ?? null, message: failure?.message ?? null },
+          });
+        })
+        .finally(() => setDetailLoading(false));
+    },
+    [language, copy.detailFailed]
+  );
+
+  const closeDetails = useCallback(() => {
+    setDetailRow(null);
+    setDetail(null);
+    setDetailError(null);
+    setDetailLoading(false);
+  }, []);
+
+  /**
+   * The popup reads the Customer's stored values, falling back to the list row
+   * (the row is the backend's own summary, so a sparse document still shows
+   * everything the table already knew). Print and Download render this very
+   * section array, so the paper copy can never drift from the screen.
+   */
+  const detailSections = useMemo<DetailSection[]>(() => {
+    const row = detailRow;
+    if (!row) return [];
+
+    const values = detail?.values ?? {};
+    const pick = (key: string, fallback?: string) => {
+      const raw = values[key];
+      const text = raw === null || raw === undefined ? "" : String(raw).trim();
+      return text || (fallback ?? "").trim() || copy.notSet;
+    };
+
+    return [
+      {
+        key: "identity",
+        title: copy.secIdentity,
+        icon: <FiUsers aria-hidden />,
+        rows: [
+          { label: copy.colId, value: row.name },
+          { label: copy.colName, value: pick("customer_name", row.customer_name), emphasis: true },
+          { label: copy.colType, value: pick("customer_type", row.customer_type) },
+          { label: copy.colGroup, value: pick("customer_group", row.customer_group) },
+          { label: copy.colTerritory, value: pick("territory", row.territory) },
+        ],
+      },
+      {
+        key: "contact",
+        title: copy.secContact,
+        icon: <FiMail aria-hidden />,
+        rows: [
+          { label: copy.colMobile, value: pick("mobile_no", row.mobile_no) },
+          { label: copy.colEmail, value: pick("email_id", row.email_id) },
+          { label: copy.fldWebsite, value: pick("website") },
+        ],
+      },
+      {
+        key: "business",
+        title: copy.secBusiness,
+        icon: <FiBriefcase aria-hidden />,
+        rows: [
+          { label: copy.fldTaxId, value: pick("tax_id") },
+          { label: copy.fldCurrency, value: pick("default_currency") },
+          { label: copy.fldPriceList, value: pick("default_price_list") },
+        ],
+      },
+      {
+        key: "record",
+        title: copy.secRecord,
+        icon: <FiClock aria-hidden />,
+        rows: [
+          { label: copy.colCreated, value: formatDate(row.creation, language) || copy.notSet },
+          { label: copy.fldOwner, value: (detail?.owner || row.owner || "").trim() || copy.notSet },
+        ],
+      },
+    ];
+  }, [detail, detailRow, language, copy]);
+
+  const isAuth = loadError?.code === "not_authenticated";
+  const isPermission = loadError ? isPermissionRefusal(loadError.code, loadError.message) : false;
+
+  /* ---------------------------------------------------------------- header */
+
+  const header = (
+    <header className={HEADER_CARD}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[22px] text-[var(--color-white)]">
+            <FiUsers aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-[19px] font-bold tracking-[-0.01em] text-[var(--color-primary)] sm:text-[22px]">
+              {copy.heading}
+            </h1>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)] sm:text-[13.5px]">
+              {copy.hint}
+            </p>
+          </div>
+        </div>
+        <button type="button" onClick={onBack} aria-label={copy.back} className={`${BTN_SECONDARY} shrink-0 px-3`}>
+          <FiArrowLeft aria-hidden className="text-[var(--color-primary)]" />
+          <span className="hidden text-[13px] font-semibold text-[var(--color-primary)] sm:inline">{copy.back}</span>
+        </button>
+      </div>
+    </header>
+  );
+
+  /* ------------------------------------------------------------ states */
+
+  if (loading) {
+    return (
+      <div className={PAGE}>
+        {header}
+        <div className={CARD} aria-busy="true">
+          <div className="h-6 w-56 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--color-secondary)_22%,var(--color-white))]" />
+          <div className="mt-4 space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-12 animate-pulse rounded-2xl bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]" />
+            ))}
+          </div>
+          <span className="sr-only">{copy.loading}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className={PAGE}>
+        {header}
+        <section className={CARD}>
+          <div className="flex flex-col items-start gap-3">
+            <span
+              className={`grid h-12 w-12 place-items-center rounded-2xl text-[22px] ${
+                isPermission
+                  ? "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]"
+                  : "bg-[color-mix(in_srgb,var(--color-danger)_12%,var(--color-white))] text-[var(--color-danger-strong)]"
+              }`}
+            >
+              {isPermission ? <FiLock aria-hidden /> : <FiAlertCircle aria-hidden />}
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">
+                {isPermission ? copy.permissionTitle : isAuth ? copy.sessionExpiredTitle : copy.loadFailed}
+              </h2>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {isPermission ? copy.permissionHint : loadError.message}
+              </p>
+            </div>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              {!isPermission ? (
+                <button type="button" onClick={() => void loadList("initial")} className={BTN_SECONDARY}>
+                  <FiRefreshCw aria-hidden className="text-[var(--color-primary)]" />
+                  <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
+                </button>
+              ) : null}
+              {isAuth ? (
+                <a
+                  href={`/login?next=${encodeURIComponent(window.location.pathname)}`}
+                  className={BTN_PRIMARY}
+                >
+                  <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.signInAgain}</span>
+                </a>
+              ) : null}
+              <button type="button" onClick={onBack} className={BTN_SECONDARY}>
+                <FiArrowLeft aria-hidden className="text-[var(--color-primary)]" />
+                <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.back}</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  /* ------------------------------------------------------------- content */
+
+  return (
+    <div className={PAGE}>
+      {header}
+
+      {/* summary count */}
+      <section className={CARD}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[20px] text-[var(--color-white)]">
+              <FiUsers aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[16px] font-bold text-[var(--color-primary)]">{copy.countLabel(total)}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onNew} className={BTN_PRIMARY}>
+            <FiPlus aria-hidden className="text-[var(--color-white)]" />
+            <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.createNew}</span>
+          </button>
+        </div>
+      </section>
+
+      {/* search */}
+      <section className={CARD}>
+        <div className="relative">
+          <FiSearch
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={copy.searchPlaceholder}
+            aria-label={copy.searchPlaceholder}
+            className={`${INPUT_BASE} pl-9`}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => void loadList("refresh")}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-[12px] font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-action-tint)] disabled:opacity-60"
+          >
+            <FiRefreshCw aria-hidden className={refreshing ? "animate-spin" : ""} />
+            {copy.retry}
+          </button>
+        </div>
+      </section>
+
+      {/* list */}
+      {filtered.length === 0 ? (
+        <section className={CARD}>
+          <div className="flex flex-col items-start gap-2">
+            <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">
+              {total === 0 ? copy.emptyTitle : copy.noResults}
+            </h2>
+            {total === 0 ? (
+              <p className="text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {copy.emptyHint}
+              </p>
+            ) : null}
+          </div>
+        </section>
+      ) : (
+        <>
+          {/* desktop table — ধরন column removed; table-fixed pins the grid to
+              the card width so there is no horizontal scrollbar, and the
+              অ্যাকশন / বিস্তারিত button stays fully visible at every width */}
+          <section className={`${CARD} hidden overflow-hidden p-0 lg:block`}>
+            <table className="w-full table-fixed border-collapse text-left">
+              <thead>
+                <tr className="border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
+                  {([
+                    [copy.colSl, "w-[48px]"],
+                    [copy.colName, ""],
+                    [copy.colType, "w-[104px]"],
+                    [copy.colGroup, "w-[116px]"],
+                    [copy.colTerritory, "w-[116px]"],
+                    [copy.colMobile, "w-[124px]"],
+                    [copy.colEmail, ""],
+                    [copy.colAction, "w-[140px]"],
+                  ] as [string, string][]).map(([label, width]) => (
+                    <th
+                      key={label}
+                      scope="col"
+                      className={`px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)] ${width}`}
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((row, index) => (
+                  <tr
+                    key={row.name}
+                    className="border-b border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] last:border-0 hover:bg-[var(--color-action-tint)]"
+                  >
+                    <td className="px-4 py-3 text-[12.5px] font-semibold tabular-nums text-[color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                      {pageStart + index + 1}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[13px] font-medium text-[var(--color-primary)]"
+                      title={cell(row.customer_name)}
+                    >
+                      {cell(row.customer_name)}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.customer_type)}
+                    >
+                      {cell(row.customer_type)}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.customer_group)}
+                    >
+                      {cell(row.customer_group)}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.territory)}
+                    >
+                      {cell(row.territory)}
+                    </td>
+                    <td className="px-4 py-3 text-[12.5px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]">
+                      {cell(row.mobile_no)}
+                    </td>
+                    <td
+                      className="truncate px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_75%,transparent)]"
+                      title={cell(row.email_id)}
+                    >
+                      {cell(row.email_id)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => openDetails(row)}
+                        aria-label={copy.detailsFor(row.customer_name || row.name)}
+                        data-customer-details={row.name}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                      >
+                        <FiEye size={12} className="pointer-events-none" />
+                        <span className="pointer-events-none">{copy.details}</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          {/* mobile cards */}
+          <div className="flex flex-col gap-3 lg:hidden">
+            {pageRows.map((row, index) => (
+              <section key={row.name} className={CARD}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--color-secondary)_18%,var(--color-white))] text-[11px] font-bold tabular-nums text-[var(--color-primary)]">
+                      {pageStart + index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                        {copy.colId}
+                      </p>
+                      <p className="text-[13px] font-bold tabular-nums text-[var(--color-primary)]">{row.name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-[14px] font-semibold text-[var(--color-primary)]">{cell(row.customer_name)}</p>
+
+                <dl className="mt-3 grid grid-cols-2 gap-2">
+                  {[
+                    [copy.colGroup, cell(row.customer_group)],
+                    [copy.colTerritory, cell(row.territory)],
+                    [copy.colMobile, cell(row.mobile_no)],
+                    [copy.colEmail, cell(row.email_id)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="min-w-0">
+                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_50%,transparent)]">
+                        {label}
+                      </dt>
+                      <dd className="mt-0.5 break-words text-[12.5px] font-medium text-[var(--color-primary)]">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <button
+                  type="button"
+                  onClick={() => openDetails(row)}
+                  aria-label={copy.detailsFor(row.customer_name || row.name)}
+                  data-customer-details={row.name}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                >
+                  <FiEye aria-hidden size={12} className="pointer-events-none shrink-0" />
+                  <span className="pointer-events-none whitespace-nowrap">{copy.details}</span>
+                </button>
+              </section>
+            ))}
+          </div>
+
+          <ListPagination
+            copy={pageCopy}
+            page={currentPage}
+            pageCount={totalPages}
+            onPageChange={setPage}
+            rangeStart={pageStart + 1}
+            rangeEnd={pageStart + pageRows.length}
+            total={filtered.length}
+            rowsPerPage={rowsPerPage}
+            rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows);
+              setPage(1);
+            }}
+          />
+        </>
+      )}
+
+      <DetailSheet
+        open={Boolean(detailRow)}
+        onClose={closeDetails}
+        closeLabel={copy.detailClose}
+        eyebrow={copy.detailEyebrow}
+        title={detailRow ? detail?.customer_name || detailRow.customer_name || detailRow.name : ""}
+        subtitle={detailRow?.name}
+        icon={<FiUsers aria-hidden />}
+        badges={
+          detailRow?.customer_type ? (
+            <span className="inline-flex items-center rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_16%,var(--color-white))] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-primary)]">
+              {detailRow.customer_type}
+            </span>
+          ) : undefined
+        }
+        sections={detailSections}
+        loading={detailLoading}
+        loadingText={copy.detailLoading}
+        error={detailError ?? undefined}
+        errorTitle={copy.detailFailed}
+        document={{
+          brand: "Shikkha Chat",
+          badges: detailRow?.customer_type ? [detailRow.customer_type] : undefined,
+          filename: detailRow ? `customer-${detailRow.name}` : "customer",
+          printLabel: copy.detailPrint,
+          downloadLabel: copy.detailDownload,
+          footerNote: copy.detailFooterNote,
+          locale: language === "en" ? "en-GB" : "bn-BD",
+        }}
+      />
+    </div>
+  );
+}

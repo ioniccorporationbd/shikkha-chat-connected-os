@@ -1,0 +1,602 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FiBookmark, FiCheck, FiCheckCircle, FiCornerUpLeft, FiFileText, FiImage } from "react-icons/fi";
+
+import type { ConversationCopy } from "@/lib/help-desk/conversation-copy";
+import { displayBody, erpStampOf, formatBubbleStamp, formatFileSize } from "@/lib/help-desk/format";
+import { isAudioAttachment, isImageAttachment } from "@/lib/help-desk/attachments";
+import { attachmentUrl } from "@/lib/help-desk/service";
+import type { ConversationMessage, ConversationReplyRef } from "@/lib/help-desk/types";
+
+import { reportClientError } from "@/lib/log/report-error";
+
+import ImageLightbox from "./ImageLightbox";
+import MessageActionMenu from "./MessageActionMenu";
+
+// Shared with the Activity list: one rule for "is this a picture?" across the
+// chat bubble and the audit trail.
+const isImageFile = isImageAttachment;
+const isAudioFile = isAudioAttachment;
+
+/**
+ * Copy plain text, with the old `execCommand` fallback for browsers that deny
+ * the async clipboard (a non-secure origin, an older WebView).
+ */
+async function writeClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const node = document.createElement("textarea");
+      node.value = text;
+      node.style.position = "fixed";
+      node.style.opacity = "0";
+      document.body.appendChild(node);
+      node.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(node);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * One message in a ticket conversation.
+ *
+ * The bubble itself is a record of what was said — clicking the text does
+ * nothing but select it. A small chevron on the header line opens the message
+ * menu (Reply / React / Copy): hidden until the row is hovered on desktop,
+ * always visible on touch, and also opened by long-press / right-click on the
+ * bubble. Emoji reactions collect in chips under the bubble; tapping a chip
+ * toggles your own reaction with exactly that emoji.
+ *
+ * Layout: a header line carries the sender's name and the message time
+ * (Asia/Dhaka, straight from the ERP timestamp), then the bubble with the
+ * responsive width — as narrow as its text, capped at min(32rem, 85%). Mine on
+ * the right, the other party on the left.
+ */
+export default function MessageBubble({
+  message,
+  quoted,
+  onJumpTo,
+  copy,
+  language,
+  pinned = false,
+  grouped = false,
+  onQuote,
+  onReact,
+  onCopied,
+  onCopyFailed,
+}: {
+  message: ConversationMessage;
+  /**
+   * The comment this bubble answers, when the thread inferred the pairing (the
+   * ERP does not link Comment and Communication rows). An explicit
+   * `message.replyTo` always wins, so a real quote is never replaced.
+   */
+  quoted?: ConversationReplyRef;
+  copy: ConversationCopy;
+  language: string;
+  /** Brings the quoted comment back into view: a reply is read with its comment. */
+  onJumpTo?: (id: string) => void;
+  onPin?: (message: ConversationMessage) => void;
+  canPin?: boolean;
+  pinned?: boolean;
+  /**
+   * Directly follows a bubble from the same side, on the same day, within a few
+   * minutes: the stamp (dot, name, separator) is dropped and the bubble tucks up
+   * under the previous one, the way a messenger collapses a run of one person's
+   * lines. The time stays, so nothing is lost.
+   */
+  grouped?: boolean;
+  highlighted?: boolean;
+  canDelete?: boolean;
+  canForward?: boolean;
+  onDelete?: (message: ConversationMessage) => void;
+  onForward?: (message: ConversationMessage) => void;
+  onSelect?: (message: ConversationMessage) => void;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (message: ConversationMessage) => void;
+  /** Reply to this message (opens the composer's quote banner). */
+  onQuote?: (message: ConversationMessage) => void;
+  /** Toggle one emoji reaction on this message (the ERP persists it). */
+  onReact?: (message: ConversationMessage, emoji: string) => void;
+  /** Copied feedback (a toast on the page). */
+  onCopied?: () => void;
+  onCopyFailed?: () => void;
+}) {
+  const mine = message.isMine;
+  const isRequirement = message.kind === "requirement";
+  const isResolution = message.kind === "resolution";
+  // A real ERP quote beats the inferred pairing.
+  const reply: ConversationReplyRef | undefined = message.replyTo ?? quoted;
+  // "আপনি" is the reader's own words: the quote names the reader only when the
+  // quoted comment was written by whoever has the screen open, not by whoever
+  // wrote this reply.
+  const quotedByViewer = reply
+    ? message.isMine
+      ? reply.author === message.author
+      : reply.author !== message.author
+    : false;
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  // Attachment ids whose bytes did not arrive: the bubble then shows the reason
+  // and a link instead of a torn thumbnail.
+  const [brokenFiles, setBrokenFiles] = useState<Record<string, boolean>>({});
+  const copiedTimer = useRef<number | null>(null);
+
+  const stamp = erpStampOf(message);
+  const timeLabel = formatBubbleStamp(stamp, language);
+  const reactions = message.reactions ?? [];
+  const canAct = Boolean(onQuote || onReact || onCopied);
+
+  useEffect(
+    () => () => {
+      if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+    },
+    []
+  );
+
+  const copyMessage = useCallback(async () => {
+    // Only the message text: no author, no timestamp, no formatting.
+    const ok = await writeClipboard(message.body ?? "");
+    if (!ok) {
+      onCopyFailed?.();
+      return;
+    }
+    setCopied(true);
+    if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
+    copiedTimer.current = window.setTimeout(() => setCopied(false), 1600);
+    onCopied?.();
+  }, [message.body, onCopied, onCopyFailed]);
+
+  const toggleReaction = useCallback(
+    (emoji: string) => {
+      onReact?.(message, emoji);
+    },
+    [message, onReact]
+  );
+
+  return (
+    <div
+      id={`msg-${message.id}`}
+      className={[
+        "group/msg flex w-full min-w-0 scroll-mt-4",
+        mine ? "justify-end" : "justify-start",
+        grouped ? "-mt-1" : "",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          // The column is as wide as its content (`w-fit`) and only grows to the
+          // responsive cap, so a short "ok" stays a small bubble. `min-w-0` keeps
+          // long unbroken tokens inside the panel.
+          "flex w-fit min-w-0 max-w-[min(34rem,84%)] flex-col gap-1",
+          mine ? "items-end" : "items-start",
+        ].join(" ")}
+      >
+        {/* Sender: only the first line of a run carries the name, mirrored on
+            the right for my own messages, the way a messenger labels a person
+            once and then simply stacks their lines. The chevron that opens the
+            message menu rides at the end of that line. */}
+        {grouped ? null : (
+          <div className={["flex max-w-full items-center gap-1.5 px-1", mine ? "justify-end" : ""].join(" ")}>
+            {/* The audit trail below names each row by its role — গ্রাহকের বার্তা
+                or সাপোর্ট টিম — so the thread above uses the very same two
+                labels, on the same side as the bubble they belong to. */}
+            <span
+              className={[
+                "max-w-[70%] truncate px-1 text-[11.5px] font-bold tracking-[0.01em]",
+                mine
+                  ? "text-[#008069]"
+                  : "text-[color-mix(in_srgb,var(--color-primary)_68%,transparent)]",
+              ].join(" ")}
+            >
+              {isResolution || message.author === "support"
+                ? copy.timelineSupport
+                : copy.timelineReplyCustomer}
+            </span>
+            {canAct ? (
+              <MessageActionMenu
+                copy={copy}
+                mine={mine}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                onReply={onQuote ? () => onQuote(message) : undefined}
+                onReact={onReact ? toggleReaction : undefined}
+                onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
+              />
+            ) : null}
+            {copied ? (
+              <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
+                {copy.copied}
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        <div
+          onContextMenu={(event) => {
+            // Long-press on touch / right-click on the bubble opens the menu
+            // when the message allows actions; text selection keeps working
+            // otherwise.
+            if (!canAct) return;
+            event.preventDefault();
+            setMenuOpen(true);
+          }}
+          className={[
+            // Read-only surface: no cursor-pointer, no hover, no focus ring —
+            // it is text in a bubble, not a button. `select-text` keeps the copy
+            // gesture available for anyone who wants to quote it themselves.
+            // (No `min-w-*` here: globals.css sets `min-width:0` on every div,
+            // which beats utilities — a short bubble simply hugs its text.)
+            // Messenger surface: the light-green outgoing bubble and the white
+            // incoming one, the top corner of the first line pulled in so a run
+            // of lines stacks as one block.
+            "w-fit max-w-full select-text rounded-[10px] px-3 py-1.5 text-[13.75px] leading-[1.5] text-[#111b21] ring-1 ring-black/[0.06]",
+            mine
+              ? `bg-[#d9fdd3] ${grouped ? "" : "rounded-tr-[4px]"}`
+              : `bg-white ${grouped ? "" : "rounded-tl-[4px]"}`,
+          ].join(" ")}
+        >
+          {isRequirement || isResolution ? (
+            <span
+              className={[
+                "mb-1.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+                isRequirement
+                  ? "bg-[color-mix(in_srgb,var(--color-warning)_18%,var(--color-white))] text-[#8a5a10]"
+                  : "bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[var(--color-primary)]",
+              ].join(" ")}
+            >
+              {isRequirement ? copy.requirementBadge : copy.resolutionBadge}
+            </span>
+          ) : null}
+
+          {reply ? (
+            /* The comment this bubble answers, WhatsApp-style: who said it, then
+               a one-glance snippet, tied to the bubble it belongs to. Clicking
+               scrolls the pair into view together. */
+            <button
+              type="button"
+              data-hd-quote={reply.id ?? ""}
+              onClick={() => onJumpTo?.(reply.id)}
+              title={reply.body}
+              className="mb-1 block w-full max-w-full cursor-pointer rounded-md border-l-[3px] border-[#00a884] bg-black/[0.055] px-2 py-1 text-left transition hover:bg-black/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00a884]/40"
+            >
+              <span className="flex items-center gap-1">
+                <FiCornerUpLeft
+                  size={10.5}
+                  aria-hidden
+                  className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,var(--color-primary))]"
+                />
+                <span className="truncate text-[10.5px] font-semibold tracking-[0.01em] text-[color-mix(in_srgb,var(--color-action)_72%,var(--color-primary))]">
+                  {quotedByViewer
+                    ? copy.conversationYou
+                    : reply.authorName ||
+                      (reply.author === "support" ? copy.conversationSupport : copy.conversationCustomer)}
+                </span>
+              </span>
+              <span className="mt-0.5 line-clamp-2 block text-[11.5px] leading-[1.45] text-[color-mix(in_srgb,var(--color-primary)_60%,transparent)]">
+                {reply.body}
+              </span>
+            </button>
+          ) : null}
+
+          {message.recipients ? (
+            /* The desk prints the address an employee's reply went out to
+               ("To: ...") above that row — the portal shows the same line so
+               the bubble reads exactly like the ticket's Activity tab. */
+            <p className="mb-1 break-all text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+              To: {message.recipients}
+            </p>
+          ) : null}
+
+          {message.body ? <p className="whitespace-pre-wrap break-words">{displayBody(message.body)}</p> : null}
+
+          {!message.body && message.attachments.length > 0 ? (
+            /* An attachment-only row on the desk carries the Attachment
+               comment's own text: "Shared — <file>", printed above the file
+               chip. Mirror it so the bubble reads like the Activity tab. */
+            <p className="mb-1 break-words font-semibold">
+              {copy.conversationShared} — {message.attachments[0].fileName}
+            </p>
+          ) : null}
+
+          {message.attachments.length > 0 ? (
+            <ul className="mt-2 space-y-1.5">
+              {message.attachments.map((file, index) => {
+                const href = attachmentUrl(file);
+                const image = isImageFile(file.fileType, file.fileName);
+                const audio = isAudioFile(file.fileType, file.fileName);
+                const key = `${file.url || file.fileName}-${index}`;
+                // No signed URL means the file could not be resolved for this
+                // viewer; fall through to the plain file row rather than an
+                // <img> with an empty src (the browser would re-fetch the page).
+                if (image && href) {
+                  return (
+                    <li key={key}>
+                      {/* One card, not two blocks: the picture and its file name
+                          are ONE attachment, so the caption rides inside the same
+                          rounded frame under the image. It used to sit below the
+                          frame as a loose row, which read like a second file and
+                          left the picture "dangling" above its own name. The
+                          image opens the lightbox; the caption opens the file. */}
+                      <div className="w-[min(28rem,100%)] max-w-full overflow-hidden rounded-lg border border-black/5 bg-white">
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setLightbox({ src: href, alt: file.fileName || copy.imageOpen });
+                        }}
+                        className="block transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)]"
+                        aria-label={`${copy.imageOpen}: ${file.fileName || ""}`}
+                        title={`${copy.imageOpen}: ${file.fileName || ""}`}
+                      >
+                        {/* A picture whose bytes were refused (a support reply's
+                            private file, or a stale URL) is not left as a torn
+                            icon: the frame says so and still links to the file. */}
+                        {brokenFiles[key] ? (
+                          <span className="flex w-[min(28rem,100%)] items-center gap-2 rounded-lg border border-dashed border-[color-mix(in_srgb,var(--color-danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_7%,transparent)] px-3 py-2 text-[12px] font-semibold text-[var(--color-danger)]">
+                            <FiImage size={14} className="flex-none" aria-hidden />
+                            <span className="min-w-0 truncate">{copy.imageBroken}</span>
+                          </span>
+                        ) : (
+                          <>
+                        {/* A fixed-width thumbnail with both dimensions capped, so
+                            the whole picture fits: a wide screenshot used to be
+                            capped by height alone and spilled over the bubble. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={href}
+                          alt={file.fileName}
+                          loading="lazy"
+                          className="mx-auto block h-auto max-h-[22rem] w-auto max-w-full object-contain"
+                          onLoad={(event) => {
+                            // "The picture does not view properly" must be
+                            // visible, not silent: log every paint, and when the
+                            // frame is empty, squashed off its aspect ratio, or
+                            // wider than the thread, warn in the console and
+                            // file it in Desk -> Error Log.
+                            const node = event.currentTarget;
+                            const box = node.getBoundingClientRect();
+                            const painted = {
+                              fileName: file.fileName ?? "",
+                              naturalWidth: node.naturalWidth,
+                              naturalHeight: node.naturalHeight,
+                              shownWidth: Math.round(box.width),
+                              shownHeight: Math.round(box.height),
+                            };
+                            console.info("[hd:attach] image painted", painted);
+                            const pane = node.closest('[data-hd="thread"]');
+                            const paneWidth = pane instanceof HTMLElement ? pane.clientWidth : 0;
+                            const naturalRatio = node.naturalWidth / Math.max(1, node.naturalHeight);
+                            const shownRatio = box.width / Math.max(1, box.height);
+                            const squashed =
+                              node.naturalWidth > 0 &&
+                              Math.abs(shownRatio - naturalRatio) / naturalRatio > 0.02;
+                            const overflowing = paneWidth > 0 && box.width > paneWidth;
+                            if (node.naturalWidth === 0 || squashed || overflowing) {
+                              const reason = node.naturalWidth === 0
+                                ? "empty"
+                                : squashed
+                                  ? "squashed"
+                                  : "overflowing";
+                              console.warn("[hd:attach] image does not view properly", {
+                                ...painted,
+                                reason,
+                                paneWidth,
+                              });
+                              reportClientError({
+                                scope: "help-desk:attachment",
+                                message: "A ticket attachment does not view properly in the thread.",
+                                detail: JSON.stringify({
+                                  ...painted,
+                                  reason,
+                                  paneWidth,
+                                  url: file.url ?? href ?? "",
+                                  messageId: message.id,
+                                }),
+                              });
+                            }
+                          }}
+                          onError={(event) => {
+                            // A broken attachment otherwise fails silently: the
+                            // browser only paints a torn thumbnail. Ask the same
+                            // URL *why* it failed (403 / 404 / no bytes) so the
+                            // console and Desk -> Error Log name the cause, then
+                            // swap the frame for a clear "cannot be loaded" note.
+                            const node = event.currentTarget;
+                            const src = node.currentSrc || node.src || href || "";
+                            console.error("[hd:attach] image did not load", {
+                              fileName: file.fileName ?? "",
+                              url: file.url ?? "",
+                              src,
+                              messageId: message.id,
+                            });
+                            setBrokenFiles((seen) => ({ ...seen, [key]: true }));
+                            void (async () => {
+                              let reason = "no bytes";
+                              try {
+                                const answer = await fetch(src, { cache: "no-store" });
+                                if (answer.ok) {
+                                  reason = "the bytes did not decode as an image";
+                                } else {
+                                  const body = await answer.text().catch(() => "");
+                                  reason = `HTTP ${answer.status} ${answer.statusText}${body ? ` :: ${body.slice(0, 300)}` : ""}`;
+                                }
+                              } catch (error) {
+                                reason = `the request failed: ${String(error).slice(0, 200)}`;
+                              }
+                              console.warn("[hd:attach] image does not view properly", {
+                                fileName: file.fileName ?? "",
+                                reason,
+                              });
+                              reportClientError({
+                                scope: "help-desk:attachment",
+                                message: "A ticket attachment did not load in the thread.",
+                                detail: JSON.stringify({
+                                  url: file.url ?? href ?? "",
+                                  fileName: file.fileName ?? "",
+                                  fileType: file.fileType ?? "",
+                                  messageId: message.id,
+                                  reason,
+                                }),
+                              });
+                            })();
+                          }}
+                        />
+                          </>
+                        )}
+                      </a>
+                      {file.fileName ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={file.fileName}
+                          className="flex max-w-full items-center gap-1.5 border-t border-black/[0.07] bg-[color-mix(in_srgb,var(--color-white)_92%,transparent)] px-2.5 py-1.5 text-[11px] font-semibold text-[color-mix(in_srgb,var(--color-action)_78%,var(--color-primary))] underline-offset-2 hover:underline"
+                        >
+                          <FiImage size={11} className="flex-none" aria-hidden />
+                          <span className="min-w-0 truncate">{file.fileName}</span>
+                          {file.size > 0 ? (
+                            <span className="ml-auto flex-none pl-2 text-[10px] font-medium text-[color-mix(in_srgb,var(--color-primary)_48%,transparent)]">
+                              {formatFileSize(file.size)}
+                            </span>
+                          ) : null}
+                        </a>
+                      ) : null}
+                      </div>
+                    </li>
+                  );
+                }
+                if (audio) {
+                  return (
+                    <li key={key}>
+                      <div className="rounded-lg bg-[color-mix(in_srgb,var(--color-white)_80%,transparent)] px-1.5 py-1">
+                        <audio
+                          controls
+                          preload="none"
+                          src={href ?? undefined}
+                          aria-label={file.fileName}
+                          className="w-[240px] max-w-full"
+                        >
+                          <track kind="captions" />
+                        </audio>
+                      </div>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={key}>
+                    <a
+                      href={href ?? undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg bg-[color-mix(in_srgb,var(--color-white)_82%,transparent)] px-2.5 py-1.5 transition hover:bg-[var(--color-white)]"
+                    >
+                      <FiFileText size={14} className="flex-none text-[var(--color-primary)]" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-[var(--color-primary)]">
+                        {file.fileName}
+                      </span>
+                      <span className="flex-none text-[10.5px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                        {formatFileSize(file.size)}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+
+          {/* Stamp inside the bubble, bottom-right: the time always, then the
+              delivery ticks for my own lines — and, on a grouped line, the
+              message menu, so it is still one hover away without a header row
+              pushing the bubbles apart. */}
+          <div className="mt-1 flex items-center justify-end gap-1">
+            {pinned ? (
+              <FiBookmark
+                size={10}
+                className="flex-none text-[color-mix(in_srgb,var(--color-action)_75%,transparent)]"
+                aria-label={copy.pinnedBar}
+              />
+            ) : null}
+            {grouped && canAct ? (
+              <MessageActionMenu
+                copy={copy}
+                mine={mine}
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                onReply={onQuote ? () => onQuote(message) : undefined}
+                onReact={onReact ? toggleReaction : undefined}
+                onCopy={onCopied || onCopyFailed ? () => void copyMessage() : undefined}
+              />
+            ) : null}
+            {grouped && copied ? (
+              <span className="flex-none rounded-full bg-[color-mix(in_srgb,var(--color-action)_12%,var(--color-white))] px-1.5 py-[1px] text-[10px] font-bold text-[var(--color-action)]">
+                {copy.copied}
+              </span>
+            ) : null}
+            <time
+              dateTime={stamp}
+              className="flex-none text-[10.5px] font-normal tabular-nums tracking-[0.01em] text-[#667781]"
+            >
+              {timeLabel}
+            </time>
+            {mine ? (
+              message.seen ? (
+                <FiCheckCircle
+                  size={11}
+                  className="flex-none text-[color-mix(in_srgb,var(--color-action)_70%,transparent)]"
+                  aria-hidden
+                />
+              ) : (
+                <FiCheck
+                  size={11}
+                  className="flex-none text-[color-mix(in_srgb,var(--color-primary)_42%,transparent)]"
+                  aria-hidden
+                />
+              )
+            ) : null}
+          </div>
+        </div>
+
+        {reactions.length > 0 ? (
+          <div className="flex max-w-full flex-wrap items-center gap-1 px-0.5">
+            {reactions.map((reaction) => (
+              <button
+                key={reaction.emoji}
+                type="button"
+                onClick={() => (onReact ? toggleReaction(reaction.emoji) : undefined)}
+                disabled={!onReact}
+                aria-label={`${reaction.emoji} ${reaction.count}`}
+                aria-pressed={reaction.mine}
+                className={[
+                  "inline-flex items-center gap-1 rounded-full border px-1.5 py-[1px] text-[11px] leading-[1.5] transition",
+                  reaction.mine
+                    ? "border-[color-mix(in_srgb,var(--color-action)_38%,transparent)] bg-[color-mix(in_srgb,var(--color-action)_10%,var(--color-white))] text-[var(--color-action)]"
+                    : "border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-white)_90%,transparent)] text-[color-mix(in_srgb,var(--color-primary)_78%,transparent)]",
+                  onReact ? "hover:border-[color-mix(in_srgb,var(--color-action)_45%,transparent)]" : "cursor-default",
+                ].join(" ")}
+              >
+                <span aria-hidden>{reaction.emoji}</span>
+                <span className="font-semibold tabular-nums">{reaction.count}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {lightbox ? (
+        <ImageLightbox copy={copy} src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+      ) : null}
+    </div>
+  );
+}

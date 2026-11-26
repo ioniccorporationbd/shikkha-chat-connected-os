@@ -1,0 +1,435 @@
+"use client";
+
+import { type CSSProperties, type ReactNode } from "react";
+import {
+  motion,
+  useReducedMotion,
+  type Transition,
+} from "framer-motion";
+import { FaRegStar } from "react-icons/fa6";
+
+type ProductCard = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  highlight?: boolean;
+  /**
+   * HC-02 — optional explicit rail-panel target for the tile click. Falls back
+   * to `id`, so SA/OE tiles are unaffected; the HC highlighted card uses it to
+   * reach the real `home-connections-panel` element.
+   */
+  targetId?: string;
+};
+
+type OrbitProductPanelProps = {
+  title: string;
+  activeId: string;
+  products: ProductCard[];
+  themeColor: string;
+  darkColor: string;
+  glowColor: string;
+  /** Home Connections middle redesign — red headings/cards, white heading pill. */
+  accent?: "hc";
+};
+
+const premiumEase = [0.22, 1, 0.36, 1] as const;
+
+/*
+ * NOTE (2026-10-10) — scroll-synchronised "assemble".
+ * The heading cluster + card tiles no longer run a ONE-SHOT framer entrance
+ * (the old `wrapperVariants` / `cardVariants`, now removed). Their enter/leave
+ * is a pure CSS function of the pinned engine's continuous `--local`
+ * (see globals.css: `.connected-orbit-wrap` / `.connected-card-slot`), so the
+ * panel assembles as its scene takes focus and disassembles as it leaves —
+ * reversible, deterministic and free of any per-frame React render. The number
+ * of cards drives the stagger via a per-card `--card-delay`. framer-motion
+ * still owns the hover / tap micro-motion only.
+ */
+
+const floatingTransition: Transition = {
+  duration: 6.5,
+  ease: "easeInOut",
+  repeat: Infinity,
+  repeatType: "mirror",
+};
+
+function scrollRightSidebarTo(id: string) {
+  window.dispatchEvent(
+    new CustomEvent("connected-os-scroll-to-section", {
+      detail: { id },
+    })
+  );
+
+  window.dispatchEvent(
+    new CustomEvent("connected-os-active-section", {
+      detail: { id },
+    })
+  );
+}
+
+function formatCardTitle(title: string) {
+  const words = title.trim().split(/\s+/);
+
+  if (words.length === 1) return title;
+
+  if (words.length === 2) {
+    return (
+      <>
+        {words[0]}
+        <br />
+        {words[1]}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {words.slice(0, -1).join(" ")}
+      <br />
+      {words[words.length - 1]}
+    </>
+  );
+}
+
+/* Tile-level SHORT FORMS (2026-10-13). Overlong translated strings (Bengali runs
+ * ~1.7x the width of the English source) would need 3+ lines in a 92px tile, so
+ * instead of only clipping them we show a compact hand-picked form. Display-only:
+ * the underlying i18n strings (shared with section headings) stay untouched. */
+const TILE_SHORT: Record<string, string> = {
+  "এন্টারপ্রাইজ রিসোর্স পরিকল্পনা ব্যবস্থা": "ERP সিস্টেম",
+  "মূল এন্টারপ্রাইজ রিসোর্স পরিকল্পনা": "ERP কোর",
+  "কলেজ, ক্যারিয়ার ও জীবন প্রস্তুতি": "কলেজ ও ক্যারিয়ার",
+  "ক্যারিয়ার ও জীবন প্রস্তুতি নির্দেশনা": "ক্যারিয়ার নির্দেশনা",
+  "বহুস্তরীয় সহায়তা ব্যবস্থা": "বহুস্তর সহায়তা",
+  "College, Career & Life Readiness": "College & Career",
+  "College, Career and Life Readiness": "College & Career",
+  "Career and Life Readiness Guidance": "Career Guidance",
+  "Curriculum & Instruction": "Curriculum",
+  "Curriculum and Instruction": "Curriculum",
+};
+
+/* Lookup is NFC-normalised on BOTH sides: the i18n sources mix precomposed
+ * (য় = U+09DF) and decomposed (য + ় = U+09AF U+09BC) nukta forms — different
+ * code points, identical glyph. Normalising makes the map form-agnostic. */
+const TILE_SHORT_NFC: Record<string, string> = Object.fromEntries(
+  Object.entries(TILE_SHORT).map(([k, v]) => [k.normalize("NFC"), v]),
+);
+
+function shortForm(text?: string): string | undefined {
+  if (!text) return text;
+  return TILE_SHORT_NFC[text.normalize("NFC")] ?? text;
+}
+
+function FloatingDot({
+  className,
+  delay = 0,
+  themeColor,
+}: {
+  className: string;
+  delay?: number;
+  themeColor: string;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <motion.span
+      aria-hidden="true"
+      className={[
+        "pointer-events-none absolute rounded-full",
+        "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 8%, transparent)]",
+        className,
+      ].join(" ")}
+      style={{
+        background: `linear-gradient(145deg, color-mix(in srgb, var(--color-white) 95%, transparent), ${themeColor}55)`,
+      }}
+      animate={
+        shouldReduceMotion
+          ? undefined
+          : {
+              y: [-6.5, 6.5],
+              x: [-3, 3],
+              opacity: [0.4, 0.9, 0.4],
+            }
+      }
+      transition={{
+        ...floatingTransition,
+        delay,
+      }}
+    />
+  );
+}
+
+function ProductTile({
+  item,
+  themeColor,
+  darkColor,
+  titleColor = "var(--color-primary)",
+  hcAccent = false,
+}: {
+  item: ProductCard;
+  themeColor: string;
+  darkColor: string;
+  titleColor?: string;
+  hcAccent?: boolean;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  const displayTitle = shortForm(item.title) ?? item.title;
+  const displaySubtitle = shortForm(item.subtitle);
+  const wordCount = displayTitle.trim().split(/\s+/).length;
+  const isSingleWord = wordCount === 1;
+  const isLongTitle = displayTitle.length > 16;
+
+  return (
+    <motion.button
+      type="button"
+      onClick={() => scrollRightSidebarTo(item.targetId ?? item.id)}
+      aria-label={`Go to ${item.title}`}
+      whileHover={
+        shouldReduceMotion
+          ? undefined
+          : {
+              y: -6,
+              scale: 1.04,
+              transition: {
+                duration: 0.24,
+                ease: premiumEase,
+              },
+            }
+      }
+      whileTap={{ scale: 0.96 }}
+      className={[
+        "connected-spot group relative min-h-[96px] w-full overflow-hidden rounded-[18px]",
+        "flex flex-col items-center justify-center px-[9px] py-[10px] text-center outline-none",
+        "transition-[box-shadow,border-color,background-color] duration-500",
+        "will-change-transform [transform-style:preserve-3d]",
+        "shadow-[0_12px_30px_color-mix(in srgb, var(--color-primary) 6%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 75%, transparent)]",
+        "hover:shadow-[0_24px_58px_color-mix(in srgb, var(--color-primary) 15%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 82%, transparent)]",
+        hcAccent ? "hc-orbit-tile" : "",
+      ].join(" ")}
+      style={{
+        background: item.highlight
+          ? `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}cc 52%, var(--color-white) 100%)`
+          : "linear-gradient(145deg,var(--color-white) 0%,color-mix(in srgb, var(--color-secondary) 12%, var(--color-white)) 54%,color-mix(in srgb, var(--color-secondary) 20%, var(--color-white)) 100%)",
+        boxShadow: item.highlight
+          ? `0 16px 34px ${themeColor}44, inset 0 1px 0 color-mix(in srgb, var(--color-white) 75%, transparent)`
+          : undefined,
+      }}
+    >
+      <span className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_20%_15%,color-mix(in srgb, var(--color-white) 85%, transparent),transparent_34%),linear-gradient(145deg,color-mix(in srgb, var(--color-white) 45%, transparent),transparent_48%,color-mix(in srgb, var(--color-primary) 4%, transparent))]" />
+
+      <motion.span
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-[70%] top-0 h-full w-[60%] skew-x-[-18deg] bg-[#ffffff]/45 blur-[1px]"
+        initial={{ x: "-25%" }}
+        whileHover={
+          shouldReduceMotion
+            ? undefined
+            : {
+                x: "335%",
+                transition: {
+                  duration: 0.82,
+                  ease: premiumEase,
+                },
+              }
+        }
+      />
+
+      {hcAccent ? null : (
+        <FaRegStar
+          className="absolute right-[8px] top-[8px] z-10 text-[13px] text-[color-mix(in srgb, var(--color-primary) 55%, var(--color-white))] transition duration-300 group-hover:rotate-12 group-hover:scale-110"
+          style={{ color: item.highlight ? darkColor : undefined }}
+        />
+      )}
+
+      {item.icon ? (
+        <div
+          className={`relative z-10 mb-[6px] text-[24px] leading-none drop-shadow-sm transition duration-300 group-hover:scale-110${hcAccent ? " hc-orbit-text" : ""}`}
+          style={{ color: hcAccent ? "currentColor" : darkColor }}
+        >
+          <span className="connected-icon-float inline-block">{item.icon}</span>
+        </div>
+      ) : null}
+
+      <div
+        className={[
+          "relative z-10 line-clamp-2 min-h-[30px] max-w-[92px] text-center",
+          "text-center font-normal text-[var(--color-primary)] tracking-[-0.035em]",
+          "transition-colors duration-300",
+          hcAccent ? "hc-orbit-text" : "",
+          isSingleWord
+            ? "text-[14px] leading-none"
+            : isLongTitle
+              ? "text-[11px] leading-[1.08]"
+              : "text-[12px] leading-[1.1]",
+          isLongTitle ? "card-title-compact" : "card-title",
+        ].join(" ")}
+        style={{ color: hcAccent ? "currentColor" : titleColor }}
+      >
+        {formatCardTitle(displayTitle)}
+      </div>
+
+      {displaySubtitle ? (
+        <p className={`card-subtitle relative z-10 mt-[4px] max-w-[92px] line-clamp-2 text-[10px] font-normal leading-[1.2] text-[var(--color-primary)]/90${hcAccent ? " hc-orbit-text" : ""}`}>
+          {displaySubtitle}
+        </p>
+      ) : null}
+
+      {hcAccent ? null : (
+        <span
+          className="absolute bottom-[7px] left-1/2 z-10 h-[3px] w-[28px] -translate-x-1/2 origin-center scale-x-0 rounded-full transition-transform duration-300 group-hover:scale-x-100"
+          style={{ background: themeColor }}
+        />
+      )}
+    </motion.button>
+  );
+}
+
+export default function OrbitProductPanel({
+  title,
+  activeId,
+  products,
+  themeColor,
+  darkColor,
+  glowColor,
+  accent,
+}: OrbitProductPanelProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const isHcAccent = accent === "hc";
+  const headingTextColor = isHcAccent ? "var(--color-action)" : "var(--color-primary)";
+  const cardTitleColor = isHcAccent ? "var(--color-action)" : "var(--color-primary)";
+  const headingBackground = isHcAccent
+    ? "var(--color-white)"
+    : `linear-gradient(145deg, ${themeColor} 0%, ${themeColor}dd 55%, var(--color-white) 100%)`;
+  const headingShadow = isHcAccent
+    ? "0 18px 40px color-mix(in srgb, var(--color-action) 14%, transparent), inset 0 1px 0 color-mix(in srgb, var(--color-white) 70%, transparent)"
+    : `0 18px 40px ${themeColor}55, inset 0 1px 0 color-mix(in srgb, var(--color-white) 45%, transparent)`;
+  const headingBorder = isHcAccent
+    ? "1.5px solid color-mix(in srgb, var(--color-action) 35%, transparent)"
+    : undefined;
+  // Per-card stagger step. Normalised to the card COUNT so the whole cluster
+  // completes its staggered run well before the scene leaves, independent of
+  // how many tiles a panel has (HC 8, SA 10, OE 8). Max delay ≈ 0.16.
+  const cardStep = 0.16 / Math.max(products.length - 1, 1);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))]">
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffffff]/75 opacity-90 blur-[78px]"
+      />
+
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-[52%] top-[48%] h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[92px]"
+        style={{ backgroundColor: glowColor }}
+        animate={
+          shouldReduceMotion
+            ? undefined
+            : {
+                scale: [1, 1.08, 1],
+                opacity: [0.4, 0.68, 0.4],
+              }
+        }
+        transition={{ duration: 6.5, ease: "easeInOut", repeat: Infinity }}
+      />
+
+      <div className="pointer-events-none absolute left-[15%] top-[14%] h-[230px] w-[230px] rounded-full bg-[var(--color-secondary)]/10 blur-[82px]" />
+      <div
+        className="pointer-events-none absolute bottom-[-12%] right-[18%] h-[270px] w-[270px] rounded-full blur-[92px]"
+        style={{ backgroundColor: glowColor }}
+      />
+
+      <FloatingDot className="left-[25%] top-[18%] h-[13px] w-[13px]" delay={0.1} themeColor={themeColor} />
+      <FloatingDot className="right-[25%] top-[18%] h-[9px] w-[9px]" delay={0.8} themeColor={themeColor} />
+      <FloatingDot className="bottom-[23%] left-[24%] h-[10px] w-[10px]" delay={1.2} themeColor={themeColor} />
+      <FloatingDot className="bottom-[18%] right-[28%] h-[14px] w-[14px]" delay={0.4} themeColor={themeColor} />
+
+      <div className="relative z-10 flex h-full w-full items-center justify-center">
+        <div className="connected-orbit-wrap relative [transform-style:preserve-3d]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-[42px] bg-[#ffffff]/35 opacity-60 blur-[34px]"
+          />
+
+          <motion.button
+            type="button"
+            onClick={isHcAccent ? undefined : () => scrollRightSidebarTo(activeId)}
+            whileHover={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    y: -3,
+                    scale: 1.025,
+                    transition: { duration: 0.24, ease: premiumEase },
+                  }
+            }
+            whileTap={{ scale: 0.96 }}
+            className={[
+              "absolute left-1/2 top-[-54px] z-20 -translate-x-1/2",
+              "h-[38px] min-w-[224px] rounded-full px-[30px]",
+              "text-[14px] font-black leading-[38px] text-[var(--color-primary)] whitespace-nowrap orbit-scene-title",
+              "transition-shadow duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+              isHcAccent ? "hc-orbit-pill" : "",
+            ].join(" ")}
+            style={{
+              background: headingBackground,
+              border: headingBorder,
+              boxShadow: headingShadow,
+              color: headingTextColor,
+            }}
+          >
+            {title}
+          </motion.button>
+
+          <div
+            className={[
+              "relative w-fit rounded-[26px] border-[3px] bg-[#ffffff]/18 p-[8px]",
+              "shadow-[0_28px_80px_color-mix(in srgb, var(--color-primary) 9%, transparent),inset_0_1px_0_color-mix(in srgb, var(--color-white) 78%, transparent)]",
+              "backdrop-blur-[4px]",
+            ].join(" ")}
+            style={{ borderColor: themeColor }}
+          >
+            <span className="pointer-events-none absolute inset-[2px] rounded-[22px] bg-[linear-gradient(180deg,color-mix(in srgb, var(--color-white) 24%, transparent),transparent_35%,color-mix(in srgb, var(--color-secondary) 8%, transparent))]" />
+
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-[-3px] rounded-[29px] border opacity-60"
+              style={{ borderColor: `${themeColor}66` }}
+            />
+
+            <div className="connected-card-grid relative z-10 grid w-fit grid-cols-2 items-center justify-center gap-[10px]">
+              {products.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="connected-card-slot"
+                  style={
+                    {
+                      "--card-i": index,
+                      "--card-delay": index * cardStep,
+                      // Cards converge from their own column side as they arrive
+                      // (even index = left column, odd = right, in this 2-col grid).
+                      "--wave-x": index % 2 === 0 ? "-22px" : "22px",
+                    } as CSSProperties
+                  }
+                >
+                  <div className="connected-tilt">
+                    <ProductTile
+                      item={product}
+                      themeColor={themeColor}
+                      darkColor={darkColor}
+                      titleColor={cardTitleColor}
+                      hcAccent={isHcAccent}
+                    />
+                  </div>
+                </div>
+              ))}
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

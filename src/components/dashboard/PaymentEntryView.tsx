@@ -1,0 +1,1139 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  FiActivity,
+  FiArrowLeft,
+  FiCheckCircle,
+  FiChevronRight,
+  FiCreditCard,
+  FiDollarSign,
+  FiEye,
+  FiFileText,
+  FiHash,
+  FiLayers,
+  FiRotateCcw,
+  FiUserCheck,
+  FiPlusCircle,
+} from "react-icons/fi";
+
+import ListFilterBar from "@/components/dashboard/ListFilterBar";
+import ListPagination from "@/components/dashboard/ListPagination";
+import {
+  EMPTY_AMOUNT,
+  EMPTY_APPLIED,
+  ROWS_PER_PAGE_OPTIONS,
+  matchesQuery,
+  type AmountFilter,
+  type AppliedFilters,
+  DEFAULT_ROWS_PER_PAGE,
+} from "@/lib/dashboard/list-controls";
+import { useReloadHandler } from "@/lib/dashboard/reload-registry";
+
+import { useRouter } from "next/navigation";
+
+import DetailSheet, {
+  type DetailRow,
+  type DetailSection,
+} from "@/components/dashboard/DetailSheet";
+
+import { useLanguage } from "@/lib/i18n/LanguageProvider";
+import MakePaymentModal from "@/components/dashboard/payment/MakePaymentModal";
+import { fetchPaymentDetails, fetchPayments } from "@/lib/payment-entry/api";
+import { formatAmount, formatDate } from "@/lib/payment-entry/format";
+import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/messages";
+import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
+import { fetchSslcommerzStatus } from "@/lib/payment-entry/sslcommerz/service";
+import { toast } from "@/lib/ui/toast";
+import type {
+  PaymentEntryDetails,
+  PaymentEntryListPayload,
+  PaymentEntryReference,
+  PaymentEntryRow,
+} from "@/lib/payment-entry/types";
+
+import { CLIENT_DASHBOARD_PATH, LOGIN_PATH, PAYMENT_SUCCESS_PATH } from "@/lib/auth/session";
+import { statusTone } from "@/lib/payment-entry/status";
+
+export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
+  const { language } = useLanguage();
+  const copy = paymentEntryCopyFor(language);
+  const router = useRouter();
+
+  const [data, setData] = useState<PaymentEntryListPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [expired, setExpired] = useState(false);
+
+  const [detailName, setDetailName] = useState<string | null>(null);
+  const [detail, setDetail] = useState<PaymentEntryDetails | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  // ---- Filters ----
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [amountDraft, setAmountDraft] = useState<AmountFilter>(EMPTY_AMOUNT);
+  const [fromDraft, setFromDraft] = useState("");
+  const [toDraft, setToDraft] = useState("");
+  const [searchDraft, setSearchDraft] = useState("");
+  const [applied, setApplied] = useState<AppliedFilters>(EMPTY_APPLIED);
+  const [filterError, setFilterError] = useState("");
+
+  const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE);
+  const [page, setPage] = useState(1);
+
+  // ---- Make Payment (manual payment -> Draft Payment Entry) ----
+  const [makePaymentOpen, setMakePaymentOpen] = useState(false);
+  const mpCopy = manualPaymentCopyFor(language);
+
+  const load = useCallback(async (): Promise<{ data: PaymentEntryListPayload | null; error?: unknown }> => {
+    try {
+      const payload = await fetchPayments(language);
+      setData(payload);
+      setLoadError("");
+      setPermissionDenied(false);
+      setExpired(false);
+      return { data: payload };
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
+      console.error("[payment-entry] list load failed", {
+        code: err?.code ?? null,
+        message: err?.message ?? null,
+      });
+      if (err?.code === "not_authenticated") {
+        setExpired(true);
+      } else if (err?.code === "not_permitted") {
+        setPermissionDenied(true);
+        setData(null);
+      } else {
+        setLoadError(err?.message || copy.loadFailed);
+      }
+      return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  }, [language, copy.loadFailed]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void load();
+    });
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  // Register with the shell's shared reload button — this panel keeps its data
+  // in local state, so a dashboard refetch alone would never refresh it.
+  useReloadHandler(load);
+
+  const openDetails = useCallback(
+    async (name: string) => {
+      setDetailName(name);
+      setDetail(null);
+      setDetailError("");
+      setDetailLoading(true);
+      try {
+        const payload = await fetchPaymentDetails(name, language);
+        setDetail(payload);
+      } catch (error) {
+        const err = error as { message?: string };
+        setDetailError(err?.message || copy.loadFailed);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [language, copy.loadFailed],
+  );
+
+  const closeDetails = useCallback(() => {
+    setDetailName(null);
+    setDetail(null);
+    setDetailError("");
+  }, []);
+
+  const payments = useMemo(
+    () => (data?.payments ?? []).filter((row) => Boolean(row?.name)),
+    [data],
+  );
+
+  // Status options are derived from the real rows only — never hardcoded.
+  const statusOptions = useMemo(() => {
+    const order = ["submitted", "reconciled", "received", "paid", "draft", "cancelled"];
+    const seen = new Set<string>();
+    for (const row of payments) {
+      const raw = String(row.display_status || "").trim();
+      if (raw) seen.add(raw.toLowerCase());
+    }
+    const known = order.filter((key) => seen.has(key));
+    const extra = [...seen].filter((key) => !order.includes(key));
+    return [...known, ...extra].map((key) => ({
+      value: key,
+      label: copy.statuses[key as keyof typeof copy.statuses] || key,
+    }));
+  }, [payments, copy]);
+
+  const filtered = useMemo(() => {
+    const { amount, fromDate, toDate, search } = applied;
+    return payments.filter((row) => {
+      if (statusFilter !== "all" && String(row.display_status || "").trim().toLowerCase() !== statusFilter) {
+        return false;
+      }
+      const value = Number(row.amount) || 0;
+      if (amount.mode === "exact" && amount.exact !== "") {
+        if (Math.abs(value - Number(amount.exact)) > 0.005) return false;
+      }
+      if (amount.mode === "range") {
+        if (amount.min !== "" && value < Number(amount.min)) return false;
+        if (amount.max !== "" && value > Number(amount.max)) return false;
+      }
+      const posting = String(row.posting_date || "");
+      if (fromDate && posting < fromDate) return false;
+      if (toDate && posting > toDate) return false;
+      if (
+        !matchesQuery(
+          [
+            row.name,
+            row.mode_of_payment,
+            (row as { customer_name?: string }).customer_name,
+            (row as { reference_no?: string }).reference_no,
+          ],
+          search,
+        )
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [payments, statusFilter, applied]);
+
+  // Status breakdown for the chart — always derived from the filtered set.
+  const breakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of filtered) {
+      const key = String(row.display_status || "").trim().toLowerCase() || "unknown";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return statusOptions
+      .map((option) => ({
+        key: option.value,
+        label: option.label,
+        count: counts.get(option.value) || 0,
+      }))
+      .filter((segment) => segment.count > 0);
+  }, [filtered, statusOptions]);
+
+  const totals = useMemo(() => {
+    const totalRecords = data?.summary?.total ?? payments.length;
+    const filteredAmount = filtered.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const average = filtered.length > 0 ? filteredAmount / filtered.length : 0;
+    // The bill split the three headline figures are drawn from: পরিশোধিত is the
+    // money in submitted entries, বকেয়া the money still sitting in drafts, and
+    // মোট বিল the whole filtered bill they add up inside.
+    const statusOf = (row: (typeof filtered)[number]) =>
+      String(row.display_status || "").trim().toLowerCase();
+    const sumOf = (key: string) =>
+      filtered
+        .filter((row) => statusOf(row) === key)
+        .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const settledAmount = sumOf("submitted");
+    const dueAmount = sumOf("draft");
+    return { totalRecords, filteredAmount, average, settledAmount, dueAmount };
+  }, [data, payments, filtered]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * rowsPerPage;
+  const pageRows = useMemo(
+    () => filtered.slice(pageStart, pageStart + rowsPerPage),
+    [filtered, pageStart, rowsPerPage],
+  );
+
+  const onAmountChange = useCallback((field: keyof AmountFilter, value: string) => {
+    setAmountDraft((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const applyFilters = useCallback(() => {
+    if (amountDraft.mode === "exact" && amountDraft.exact !== "") {
+      const value = Number(amountDraft.exact);
+      if (!Number.isFinite(value) || value < 0) {
+        setFilterError(copy.filterInvalidAmount);
+        return;
+      }
+    }
+    if (amountDraft.mode === "range") {
+      const min = amountDraft.min === "" ? null : Number(amountDraft.min);
+      const max = amountDraft.max === "" ? null : Number(amountDraft.max);
+      if ((min !== null && (!Number.isFinite(min) || min < 0)) || (max !== null && (!Number.isFinite(max) || max < 0))) {
+        setFilterError(copy.filterInvalidAmount);
+        return;
+      }
+      if (min !== null && max !== null && min > max) {
+        setFilterError(copy.filterInvalidAmountRange);
+        return;
+      }
+    }
+    if (fromDraft && toDraft && fromDraft > toDraft) {
+      setFilterError(copy.filterInvalidDateRange);
+      return;
+    }
+
+    setFilterError("");
+    setAmountDraft((prev) => ({ ...prev }));
+    setApplied({ amount: { ...amountDraft }, fromDate: fromDraft, toDate: toDraft, search: searchDraft });
+    setPage(1);
+  }, [amountDraft, fromDraft, toDraft, searchDraft, copy.filterInvalidAmount, copy.filterInvalidAmountRange, copy.filterInvalidDateRange]);
+
+  const resetFilters = useCallback(() => {
+    setStatusFilter("all");
+    setAmountDraft(EMPTY_AMOUNT);
+    setFromDraft("");
+    setToDraft("");
+    setSearchDraft("");
+    setApplied(EMPTY_APPLIED);
+    setFilterError("");
+    setRowsPerPage(DEFAULT_ROWS_PER_PAGE);
+    setPage(1);
+  }, []);
+
+  // ---- SSLCommerz return: read the FINAL status from our own backend ----
+  // The gateway sends the browser back with ?ssl=1&result=…&tran_id=…; those
+  // params are only a hint. The authoritative state comes from the ERP (via the
+  // sslcommerz.status endpoint), so a hand-edited URL cannot fake a success.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("ssl")) return;
+    const tranId = params.get("tran_id") || "";
+
+    let active = true;
+    void (async () => {
+      let state: "success" | "fail" | "cancel" | "pending" = "fail";
+      try {
+        if (tranId) {
+          const status = await fetchSslcommerzStatus(tranId, language);
+          state = status.state;
+        }
+      } catch {
+        state = "fail";
+      }
+      if (!active) return;
+
+      if (state === "success") {
+        toast.success(mpCopy.sslResultSuccessBody, mpCopy.sslResultSuccessTitle);
+      } else if (state === "cancel") {
+        toast.warning(mpCopy.sslResultCancelBody, mpCopy.sslResultCancelTitle);
+      } else {
+        toast.error(mpCopy.sslResultFailBody, mpCopy.sslResultFailTitle);
+      }
+
+      void load();
+
+      // Strip the gateway params so a reload does not re-run this.
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ssl");
+      url.searchParams.delete("result");
+      url.searchParams.delete("tran_id");
+      router.replace(url.pathname + (url.search ? url.search : ""), { scroll: false });
+    })();
+
+    return () => {
+      active = false;
+    };
+    // Runs once on mount; `language` is stable for the session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const currency = data?.summary?.currency || "BDT";
+
+  return (
+    <section className="flex flex-col gap-5">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
+            <FiCreditCard size={20} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-[20px] font-semibold">{copy.heading}</h1>
+            <p className="mt-0.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+              {copy.subtitle}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMakePaymentOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
+          >
+            <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
+              <FiPlusCircle size={15} />
+              {mpCopy.makePayment}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => (onBack ? onBack() : router.push(CLIENT_DASHBOARD_PATH))}
+            className="hidden items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] sm:inline-flex"
+          >
+            <span className="text-[var(--color-primary)]">
+              <FiArrowLeft size={15} />
+            </span>
+            <span className="text-[12.5px] font-semibold">{copy.back}</span>
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-5">
+        {expired ? (
+          <CalmState
+            icon={<FiUserCheck size={22} />}
+            title={copy.sessionExpiredTitle}
+            action={
+              <button
+                type="button"
+                onClick={() => router.push(LOGIN_PATH)}
+                className="rounded-2xl bg-[var(--color-action)] px-4 py-2"
+              >
+                <span className="text-[13px] font-semibold text-[var(--color-white)]">{copy.signInAgain}</span>
+              </button>
+            }
+          />
+        ) : permissionDenied ? (
+          <CalmState icon={<FiActivity size={22} />} title={copy.permissionTitle} hint={copy.permissionHint} />
+        ) : loading ? (
+          <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-16 text-center">
+            <p className="text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">{copy.loading}</p>
+          </div>
+        ) : loadError ? (
+          <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-danger)_6%,var(--color-white))] px-5 py-10 text-center">
+            <p className="text-[14px] font-semibold text-[var(--color-danger-strong)]">{copy.loadFailed}</p>
+            <p className="mx-auto mt-1 max-w-[46ch] text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {loadError}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                void load();
+              }}
+              className="mt-4 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_24%,transparent)] px-4 py-2"
+            >
+              <span className="text-[13px] font-semibold text-[var(--color-primary)]">{copy.retry}</span>
+            </button>
+          </div>
+        ) : data && !data.linked ? (
+          <CalmState icon={<FiUserCheck size={22} />} title={copy.noCustomerTitle} hint={copy.noCustomerHint} />
+        ) : data ? (
+          payments.length === 0 ? (
+            <CalmState icon={<FiFileText size={22} />} title={copy.emptyTitle} hint={copy.emptyHint} />
+          ) : (
+            <>
+              {/* ---- Summary + chart (synced to filters) ---- */}
+              <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--color-primary)]">
+                    <FiLayers size={16} />
+                  </span>
+                  <h2 className="text-[14px] font-semibold">{copy.chartHeading}</h2>
+                  <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
+                    {copy.chartHint}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
+                  <Stat label={copy.chartTotal} value={String(totals.totalRecords)} tone="blue" />
+                  <Stat
+                    label={copy.chartShowing}
+                    value={formatAmount(totals.filteredAmount, currency, language)}
+                    tone="violet"
+                  />
+                  <Stat
+                    label={copy.chartFilteredAmount}
+                    value={formatAmount(totals.settledAmount, currency, language)}
+                    tone="green"
+                  />
+                  <Stat
+                    label={copy.chartAvg}
+                    value={formatAmount(totals.dueAmount, currency, language)}
+                    tone="red"
+                  />
+                  <Stat
+                    label={copy.summaryMonth}
+                    value={String(data.summary?.this_month_count ?? 0)}
+                    tone="blue"
+                  />
+                  <Stat
+                    label={copy.summaryLatest}
+                    value={
+                      data.summary?.latest_payment_date
+                        ? formatDate(data.summary.latest_payment_date, language)
+                        : copy.summaryNone
+                    }
+                    tone="violet"
+                  />
+                </div>
+
+                <div className="mt-5 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                    {copy.chartStatusBreakdown}
+                  </p>
+                  {breakdown.length === 0 ? (
+                    <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                      {copy.chartEmpty}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+                        {breakdown.map((segment) => (
+                          <span
+                            key={segment.key}
+                            style={{
+                              width: `${(segment.count / filtered.length) * 100}%`,
+                              background: statusTone(segment.key),
+                            }}
+                            title={`${segment.label}: ${segment.count}`}
+                          />
+                        ))}
+                      </div>
+                      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                        {breakdown.map((segment) => (
+                          <li key={segment.key} className="inline-flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ background: statusTone(segment.key) }}
+                            />
+                            <span className="text-[12.5px]">{segment.label}</span>
+                            <span className="text-[12.5px] font-semibold">{segment.count}</span>
+                            <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                              ({Math.round((segment.count / filtered.length) * 100)}%)
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* ---- Filter toolbar (ERPNext-style, shared) ---- */}
+              <ListFilterBar
+                copy={copy}
+                search={searchDraft}
+                onSearchChange={setSearchDraft}
+                statusValue={statusFilter}
+                statusOptions={statusOptions}
+                onStatusChange={(value) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
+                amount={amountDraft}
+                onAmountChange={onAmountChange}
+                fromDate={fromDraft}
+                toDate={toDraft}
+                onFromDateChange={setFromDraft}
+                onToDateChange={setToDraft}
+                onApply={applyFilters}
+                onReset={resetFilters}
+                error={filterError}
+              />
+
+              {/* ---- List ---- */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3 px-1">
+                  <h2 className="text-[14px] font-semibold">{copy.listHeading}</h2>
+                </div>
+
+                {filtered.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-5 py-10 text-center">
+                    <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
+                      <FiHash size={22} />
+                    </span>
+                    <h2 className="text-[16px] font-semibold">{copy.noMatchTitle}</h2>
+                    <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                      {copy.noMatchHint}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-2"
+                    >
+                      <span className="text-[var(--color-primary)]">
+                        <FiRotateCcw size={14} />
+                      </span>
+                      <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.clearFilters}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* desktop table */}
+                    <div className="hidden overflow-x-auto rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)] md:block">
+                      <table className="w-full border-collapse text-left">
+                        <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+                          <tr>
+                            {[
+                              copy.colSl,
+                              copy.colId,
+                              copy.colDate,
+                              copy.colType,
+                              copy.colAmount,
+                              copy.colMode,
+                              copy.colStatus,
+                              copy.colAction,
+                            ].map((heading) => (
+                              <th
+                                key={heading}
+                                className="whitespace-nowrap px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
+                              >
+                                {heading}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pageRows.map((payment, index) => (
+                            <tr
+                              key={payment.name}
+                              className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
+                            >
+                              <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                                {pageStart + index + 1}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                                {payment.name}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {formatDate(payment.posting_date, language)}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {paymentTypeLabel(payment, copy)}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] font-medium text-[var(--color-primary)]">
+                                {formatAmount(payment.amount, payment.currency || currency, language)}
+                              </td>
+                              <td className="px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                                {payment.mode_of_payment || "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <StatusBadge status={payment.display_status} copy={copy} emphasis />
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3">
+                                <button
+                                  type="button"
+                                  onClick={() => void openDetails(payment.name)}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
+                                >
+                                  <FiEye size={12} className="pointer-events-none" />
+                                  <span className="pointer-events-none">{copy.viewDetails}</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* mobile cards */}
+                    <div className="flex flex-col gap-3 md:hidden">
+                      {pageRows.map((payment, index) => (
+                        <PaymentCard
+                          key={payment.name}
+                          sl={pageStart + index + 1}
+                          payment={payment}
+                          copy={copy}
+                          language={language}
+                          currency={currency}
+                          onOpen={() => void openDetails(payment.name)}
+                        />
+                      ))}
+                    </div>
+
+                    {/* pagination (ERPNext-style, shared) */}
+                    <ListPagination
+                      copy={copy}
+                      page={currentPage}
+                      pageCount={totalPages}
+                      onPageChange={setPage}
+                      rangeStart={pageStart + 1}
+                      rangeEnd={pageStart + pageRows.length}
+                      total={filtered.length}
+                      rowsPerPage={rowsPerPage}
+                      rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                      onRowsPerPageChange={(rows) => {
+                        setRowsPerPage(rows);
+                        setPage(1);
+                      }}
+                    />
+
+                  </>
+                )}
+              </div>
+            </>
+          )
+        ) : null}
+      </div>
+
+      {detailName ? (
+        <DetailsDialog
+          name={detailName}
+          detail={detail}
+          loading={detailLoading}
+          error={detailError}
+          copy={copy}
+          language={language}
+          onClose={closeDetails}
+        />
+      ) : null}
+
+      {makePaymentOpen ? (
+        <MakePaymentModal
+          language={language}
+          currency={currency}
+          onCreated={(paymentEntryId) => {
+            // The backend confirmed the create and returned the REAL Payment
+            // Entry name. Close the modal and send the browser to the success
+            // route carrying that name, so the page (and a refresh) loads the
+            // genuine record.
+            setMakePaymentOpen(false);
+            router.push(`${PAYMENT_SUCCESS_PATH}?payment=${encodeURIComponent(paymentEntryId)}`);
+          }}
+          onClose={() => setMakePaymentOpen(false)}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Soft tinted summary tiles. The four tones mirror the Leads ▸ Assigned Tasks
+ * summary cards (violet/blue/green/red at 10% over white) so the payment
+ * summary reads as the same coloured-card family.
+ */
+type StatTone = "violet" | "blue" | "green" | "red";
+
+const STAT_TONES: Record<StatTone, { bg: string; border: string }> = {
+  violet: {
+    bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#7c3aed_20%,transparent)]",
+  },
+  blue: {
+    bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#2f9bff_20%,transparent)]",
+  },
+  green: {
+    bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#22c55e_20%,transparent)]",
+  },
+  red: {
+    bg: "bg-[color-mix(in_srgb,#ef4444_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#ef4444_20%,transparent)]",
+  },
+};
+
+/** A single summary tile. */
+function Stat({ label, value, tone = "blue" }: { label: string; value: string; tone?: StatTone }) {
+  const t = STAT_TONES[tone];
+  return (
+    <div className={`flex flex-col gap-1 rounded-2xl border px-3.5 py-3 ${t.border} ${t.bg}`}>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+        {label}
+      </span>
+      <span className="truncate text-[14px] font-semibold" title={value}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/** A compact, mobile-first payment card. */
+function PaymentCard({
+  sl,
+  payment,
+  copy,
+  language,
+  currency,
+  onOpen,
+}: {
+  sl: number;
+  payment: PaymentEntryRow;
+  copy: PaymentEntryCopy;
+  language: string;
+  currency: string;
+  onOpen: () => void;
+}) {
+  const code = payment.currency || currency;
+  return (
+    <div className="flex flex-col gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold">
+            <span className="mr-2 inline-grid h-5 w-5 place-items-center rounded-lg bg-[color-mix(in_srgb,var(--color-primary)_12%,var(--color-white))] text-[11px] font-semibold text-[var(--color-primary)]">
+              {sl}
+            </span>
+            <span className="truncate">{payment.name}</span>
+          </p>
+          <p className="mt-0.5 text-[12px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+            {formatDate(payment.posting_date, language)} · {paymentTypeLabel(payment, copy)}
+          </p>
+        </div>
+        <StatusBadge status={payment.display_status} copy={copy} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+            {copy.colAmount}
+          </span>
+          <span className="text-[13px] font-semibold">{formatAmount(payment.amount, code, language)}</span>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+            {copy.colMode}
+          </span>
+          <span className="text-[13px] font-semibold">{payment.mode_of_payment || "—"}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_22%,transparent)] bg-[var(--color-white)] px-3 py-1.5 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+        >
+          <span className="text-[12px] font-semibold text-[var(--color-primary)]">{copy.viewDetails}</span>
+          <FiChevronRight size={14} className="text-[var(--color-primary)]" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The payment details popup, built from the shared `DetailSheet` so it matches
+ * the Service Build popup's visual family. Only real fields the ERP returned are
+ * shown — nothing is fabricated; empty rows are dropped.
+ */
+function DetailsDialog({
+  name,
+  detail,
+  loading,
+  error,
+  copy,
+  language,
+  onClose,
+}: {
+  name: string;
+  detail: PaymentEntryDetails | null;
+  loading: boolean;
+  error: string;
+  copy: PaymentEntryCopy;
+  language: string;
+  onClose: () => void;
+}) {
+  const references: PaymentEntryReference[] = detail?.references ?? [];
+
+  return (
+    <DetailSheet
+      open
+      onClose={onClose}
+      closeLabel={copy.close}
+      eyebrow={copy.detailsHeading}
+      title={name}
+      subtitle={detail ? detail.party_name || detail.party || "" : undefined}
+      icon={<FiCreditCard size={20} />}
+      loading={loading}
+      loadingText={copy.detailsLoading}
+      error={error}
+      errorTitle={copy.loadFailed}
+      badges={
+        detail ? (
+          <>
+            <StatusBadge status={detail.display_status} copy={copy} />
+            {detail.verified ? (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--color-success)]">
+                <FiCheckCircle size={13} />
+                {copy.verified}
+              </span>
+            ) : null}
+          </>
+        ) : null
+      }
+      sections={detail ? paymentDetailSections(detail, copy, language) : []}
+      document={
+        detail
+          ? {
+              brand: "Shikkha Chat",
+              badges: [
+                copy.statuses[
+                  String(detail.display_status || "").trim().toLowerCase() as keyof typeof copy.statuses
+                ] || String(detail.display_status || ""),
+                detail.verified ? copy.verified : "",
+              ].filter(Boolean) as string[],
+              tables:
+                references.length > 0
+                  ? [
+                      {
+                        title: copy.referencesHeading,
+                        columns: [
+                          copy.rDocType,
+                          copy.rReference,
+                          copy.rDue,
+                          copy.rTotal,
+                          copy.rOutstanding,
+                          copy.rAllocated,
+                        ],
+                        rows: references.map((row) => {
+                          const code = detail.currency || "BDT";
+                          return [
+                            row.reference_doctype || "—",
+                            row.reference_name || "—",
+                            row.due_date ? formatDate(String(row.due_date), language) : "—",
+                            formatAmount(Number(row.total_amount ?? 0), code, language),
+                            formatAmount(Number(row.outstanding_amount ?? 0), code, language),
+                            formatAmount(Number(row.allocated_amount ?? 0), code, language),
+                          ];
+                        }),
+                      },
+                    ]
+                  : [],
+              filename: `payment-${name}`,
+              printLabel: language === "en" ? "Print" : "প্রিন্ট",
+              downloadLabel: language === "en" ? "Download" : "ডাউনলোড",
+              footerNote: language === "en" ? "Customer copy" : "গ্রাহক কপি",
+              locale: language === "en" ? "en-GB" : "bn-BD",
+            }
+          : undefined
+      }
+    >
+      {detail ? paymentReferences(detail, references, copy, language) : null}
+    </DetailSheet>
+  );
+}
+
+/** The grouped, logical sections of the payment details popup. */
+function paymentDetailSections(
+  detail: PaymentEntryDetails,
+  copy: PaymentEntryCopy,
+  language: string,
+): DetailSection[] {
+  const code = detail.currency || "BDT";
+  const num = (value: unknown) => Number(value ?? 0);
+  const fmt = (value: unknown) => formatAmount(num(value), code, language);
+
+  // The settled-amount row speaks the row's own status: a submitted entry is
+  // money in ("Paid Amount"), one still in draft is money owed ("Unpaid
+  // Amount"). The same section object is what the Print / Download document is
+  // built from, so the two surfaces can never disagree.
+  const statusKey = String(detail.display_status || "").trim().toLowerCase();
+  const isUnpaid = statusKey === "draft" || statusKey === "unpaid";
+  const settledLabel = isUnpaid ? copy.dUnpaidAmount : copy.dPaidAmount;
+  // A draft keeps its figure in `amount` (paid_amount is still 0 there); fall
+  // back to it so the row never disappears on a real unpaid entry.
+  const settledValue = num(detail.paid_amount) || (isUnpaid ? num(detail.amount) : 0);
+
+  const infoRows: DetailRow[] = (
+    [
+      { label: copy.dParty, value: detail.party_name || detail.party || "" },
+      { label: copy.dPostingDate, value: formatDate(detail.posting_date, language) },
+      {
+        label: copy.dPaymentType,
+        value: copy.paymentTypes[String(detail.payment_type || "").trim()] || detail.payment_type || "",
+      },
+      { label: copy.dMode, value: detail.mode_of_payment || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
+
+  const amountRows: DetailRow[] = (
+    [
+      { label: copy.dAmount, value: fmt(detail.amount), emphasis: true },
+      { label: settledLabel, value: settledValue ? fmt(settledValue) : "" },
+      { label: copy.dReceivedAmount, value: num(detail.received_amount) ? fmt(detail.received_amount) : "" },
+      {
+        label: copy.dAllocated,
+        value: num(detail.total_allocated_amount) ? fmt(detail.total_allocated_amount) : "",
+      },
+      {
+        label: copy.dUnallocated,
+        value: Number(detail.unallocated_amount) ? fmt(detail.unallocated_amount) : "",
+      },
+      { label: copy.dCurrency, value: detail.currency || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
+
+  const referenceRows: DetailRow[] = (
+    [
+      { label: copy.dReferenceNo, value: detail.reference_no || "" },
+      {
+        label: copy.dReferenceDate,
+        value: detail.reference_date ? formatDate(detail.reference_date, language) : "",
+      },
+      { label: copy.dPaidFrom, value: detail.paid_from || "" },
+      { label: copy.dPaidTo, value: detail.paid_to || "" },
+      { label: copy.dCompany, value: detail.company || "" },
+      { label: copy.dContactPerson, value: detail.contact_person || "" },
+      { label: copy.dContactEmail, value: detail.contact_email || "" },
+      { label: copy.dRemark, value: detail.remark || "" },
+    ] as DetailRow[]
+  ).filter((row) => Boolean(row.value));
+
+  const sections: DetailSection[] = [
+    { key: "info", title: copy.dSecInfo, icon: <FiCreditCard size={15} />, rows: infoRows },
+    { key: "amount", title: copy.dSecAmount, icon: <FiDollarSign size={15} />, rows: amountRows },
+    { key: "reference", title: copy.dSecReference, icon: <FiHash size={15} />, rows: referenceRows },
+  ];
+
+  return sections.filter((section) => section.rows.length > 0);
+}
+
+/** The allocated reference rows (or an empty note) under the sections. */
+function paymentReferences(
+  detail: PaymentEntryDetails,
+  references: PaymentEntryReference[],
+  copy: PaymentEntryCopy,
+  language: string,
+) {
+  const code = detail.currency || "BDT";
+
+  return (
+    <section className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_7%,var(--color-white))] p-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[var(--color-primary)]">
+          <FiHash size={15} />
+        </span>
+        <h3 className="text-[12px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+          {copy.referencesHeading}
+        </h3>
+      </div>
+      {references.length === 0 ? (
+        <p className="mt-2 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+          {copy.referencesEmpty}
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)]">
+          <table className="w-full border-collapse text-left">
+            <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+              <tr>
+                {[
+                  copy.rDocType,
+                  copy.rReference,
+                  copy.rDue,
+                  copy.rTotal,
+                  copy.rOutstanding,
+                  copy.rAllocated,
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {references.map((row, index) => (
+                <tr key={index} className="border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)]">
+                  <td className="px-3 py-2 text-[12px]">{row.reference_doctype || "—"}</td>
+                  <td className="px-3 py-2 text-[12px]">{row.reference_name || "—"}</td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {row.due_date ? formatDate(String(row.due_date), language) : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {formatAmount(Number(row.total_amount ?? 0), code, language)}
+                  </td>
+                  <td className="px-3 py-2 text-[12px]">
+                    {formatAmount(Number(row.outstanding_amount ?? 0), code, language)}
+                  </td>
+                  <td className="px-3 py-2 text-[12px] font-medium">
+                    {formatAmount(Number(row.allocated_amount ?? 0), code, language)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** A calm, centred card for the non-happy states (permission, no customer, ...). */
+function CalmState({
+  icon,
+  title,
+  hint,
+  action,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-5 py-10 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
+        {icon}
+      </span>
+      <h2 className="text-[16px] font-semibold">{title}</h2>
+      {hint ? (
+        <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">{hint}</p>
+      ) : null}
+      {action ? <div className="mt-1">{action}</div> : null}
+    </div>
+  );
+}
+
+function paymentTypeLabel(payment: PaymentEntryRow, copy: PaymentEntryCopy): string {
+  const raw = String(payment.payment_type || "").trim();
+  return copy.paymentTypes[raw] || raw || "—";
+}
+
+function StatusBadge({
+  status,
+  copy,
+  emphasis = false,
+}: {
+  status?: string;
+  copy: PaymentEntryCopy;
+  emphasis?: boolean;
+}) {
+  const key = String(status || "").trim().toLowerCase();
+  const label = copy.statuses[key as keyof typeof copy.statuses] || status || "—";
+  // In the payment table the two headline states get a filled tint: the
+  // পরিশোধিত (Paid) pill reads green and বকেয়া (Unpaid) reads red. Matched by
+  // label so both the submitted + paid keys (both "পরিশোধিত") light up and the
+  // Bangla/English copy stay in sync. Other states keep the neutral pill.
+  const isPaid = emphasis && label === copy.statuses.submitted;
+  const isUnpaid = emphasis && label === copy.statuses.draft;
+  const tint = isPaid
+    ? {
+        background: "color-mix(in srgb, var(--color-success) 14%, var(--color-white))",
+        borderColor: "color-mix(in srgb, var(--color-success) 40%, transparent)",
+        color: "var(--color-success)",
+      }
+    : isUnpaid
+      ? {
+          background: "color-mix(in srgb, var(--color-danger-strong) 12%, var(--color-white))",
+          borderColor: "color-mix(in srgb, var(--color-danger-strong) 38%, transparent)",
+          color: "var(--color-danger-strong)",
+        }
+      : undefined;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_12%,var(--color-white))] px-2.5 py-1"
+      style={tint ? { background: tint.background, borderColor: tint.borderColor } : undefined}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: tint ? tint.color : statusTone(key) }}
+      />
+      <span className="text-[11.5px] font-semibold" style={tint ? { color: tint.color } : undefined}>
+        {label}
+      </span>
+    </span>
+  );
+}

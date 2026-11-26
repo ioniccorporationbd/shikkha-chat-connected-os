@@ -1,0 +1,50 @@
+/**
+ * Help Desk — dashboard-aware route helpers.
+ *
+ * The ticket centre now renders INSIDE the dashboard shell, so its links are
+ * relative to the dashboard help-desk root (`/userDashboard/help-desk` or
+ * `/clientDashboard/help-desk`) instead of the retired public `/help-desk`
+ * routes. Every component that links between help-desk screens takes a
+ * `basePath` (the help-desk root) and derives its hrefs here, so there is a
+ * single source of truth and the two dashboards can never drift.
+ */
+
+/** The route segment that hosts the ticket centre under each dashboard. */
+export const HELP_DESK_SEGMENT = "help-desk";
+
+export interface HelpDeskLinks {
+  /** The overview root, e.g. `/userDashboard/help-desk`. */
+  root: string;
+  /** The New Ticket form. */
+  newTicket: string;
+  /** The ticket list (open tickets only). */
+  tickets: string;
+  /** The solved/closed ticket list. */
+  solved: string;
+  /** Tickets the support team has replied to and is waiting on the customer. */
+  waiting: string;
+  /** A single ticket's details. */
+  ticket: (id: string) => string;
+  /** The full WhatsApp-style conversation of one ticket. */
+  conversation: (id: string) => string;
+  /** Support's problem queue (every customer ticket, answered or not). */
+  problems: string;
+  /** A single problem in the employee view. */
+  problem: (id: string) => string;
+}
+
+/** Build the help-desk link set for a dashboard root (defaults to the public root). */
+export function helpDeskLinks(base = `/${HELP_DESK_SEGMENT}`): HelpDeskLinks {
+  const root = base.replace(/\/+$/, "");
+  return {
+    root,
+    newTicket: `${root}/new`,
+    tickets: `${root}/tickets`,
+    solved: `${root}/solved`,
+    waiting: `${root}/waiting`,
+    ticket: (id: string) => `${root}/tickets/${encodeURIComponent(id)}`,
+    conversation: (id: string) => `${root}/tickets/${encodeURIComponent(id)}/conversation`,
+    problems: `${root}/problems`,
+    problem: (id: string) => `${root}/problems/${encodeURIComponent(id)}`,
+  };
+}
