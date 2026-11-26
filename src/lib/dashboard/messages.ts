@@ -12,6 +12,8 @@ export interface DashboardCopy {
     /** Staff-only CRM lead board (`/userDashboard/leads`). */
     leads: string;
     expenseClaim: string;
+    /** Staff-only make-a-payment form (`/userDashboard/payment-entry`). */
+    paymentEntry: string;
     /** Customer-facing Payment History link (client scope only). */
     paymentHistory: string;
     /** Customer-facing Service Build (Sales Invoice) link (client scope only). */
@@ -159,6 +161,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       checkin: "চেক ইন / আউট",
       leads: "লিডস",
       expenseClaim: "এক্সপেন্স ক্লেম",
+      paymentEntry: "পেমেন্ট এন্ট্রি",
       paymentHistory: "পেমেন্ট এন্ট্রি",
       serviceBuild: "সার্ভিস বিল্ড",
       helpDesk: "হেল্প ডেস্ক",
@@ -328,6 +331,7 @@ export const dashboardCopy: Record<"bn" | "en", DashboardCopy> = {
       checkin: "Check In / Out",
       leads: "Leads",
       expenseClaim: "Expense Claim",
+      paymentEntry: "Payment Entry",
       paymentHistory: "Payment Entry",
       serviceBuild: "Service Build",
       helpDesk: "Help Desk",

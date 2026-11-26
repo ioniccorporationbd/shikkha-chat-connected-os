@@ -46,6 +46,7 @@ export const NAV_ICONS: Record<string, IconType> = {
   checkin: FiClock,
   leads: FiTarget,
   expenseclaim: FiDollarSign,
+  paymententry: FiCreditCard,
   paymenthistory: FiCreditCard,
   servicebuild: FiFileText,
   helpdesk: FiHeadphones,

@@ -40,6 +40,7 @@ import PanelCard from "@/components/dashboard/PanelCard";
 import PaymentEntryView from "@/components/dashboard/PaymentEntryView";
 import PaymentSuccessView from "@/components/dashboard/payment/PaymentSuccessView";
 import ServiceBuildView from "@/components/dashboard/ServiceBuildView";
+import StaffPaymentEntryView from "@/components/dashboard/StaffPaymentEntryView";
 import ShikkhaLoader from "@/components/dashboard/ShikkhaLoader";
 import QuickLinks from "@/components/dashboard/QuickLinks";
 import StatCard from "@/components/dashboard/StatCard";
@@ -397,12 +398,15 @@ export default function DashboardShell({
   const leadsPath = `${basePath}/leads`;
   const expenseClaimPath = `${basePath}/expense-claim`;
   const expenseClaimNewPath = `${expenseClaimPath}/new`;
+  const paymentEntryPath = `${basePath}/payment-entry`;
   const onCreateView = !isClient && pathname.startsWith(createCustomerPath);
   const onCheckinView = !isClient && pathname.startsWith(checkinPath);
   const onLeadsView = !isClient && pathname.startsWith(leadsPath);
   const onExpenseClaimNewView = !isClient && pathname.startsWith(expenseClaimNewPath);
   const onExpenseClaimView =
     !isClient && pathname.startsWith(expenseClaimPath) && !onExpenseClaimNewView;
+  // The staff "Payment Entry" form, directly below Expense Claim in the rail.
+  const onPaymentEntryView = !isClient && pathname.startsWith(paymentEntryPath);
   // The client panel's own sub-route: the account's Payment Entry history.
   const onPaymentHistoryView = isClient && pathname.startsWith(PAYMENT_HISTORY_PATH);
   // The client panel's child route: the confirmation page for a just-created
@@ -634,6 +638,9 @@ export default function DashboardShell({
   const showCreateCustomer = !isClient && isSystemUser;
   const showCheckin = !isClient && isSystemUser;
   const showExpenseClaim = !isClient && isSystemUser;
+  // "Payment Entry" — the staff make-a-payment form — sits directly below
+  // Expense Claim in the rail. Same audience (the desk staff panel).
+  const showPaymentEntry = !isClient && isSystemUser;
 
   const roles = user?.roles ?? [];
   // The Payment History link is a customer-panel feature: it appears only on the
@@ -693,7 +700,7 @@ export default function DashboardShell({
   const renderNav = () => {
     const items = navKeys.map((key) => {
       const Icon = NAV_ICONS[key];
-      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
+      const active = !onCreateView && !onCheckinView && !onLeadsView && !onExpenseClaimView && !onExpenseClaimNewView && !onPaymentEntryView && !onPaymentHistoryView && !onServiceBuildView && !onHelpDeskView;
 
       return (
         <button
@@ -804,6 +811,30 @@ export default function DashboardShell({
           <span className={navLabelClass(active)}>
             <ExpenseIcon className="shrink-0 text-[16px]" />
             <span className="truncate">{copy.nav.expenseClaim}</span>
+          </span>
+        </button>
+      );
+    }
+
+    if (showPaymentEntry) {
+      const PayEntryIcon = NAV_ICONS.paymententry;
+      const active = onPaymentEntryView;
+
+      items.push(
+        <button
+          key="payment-entry"
+          type="button"
+          onClick={() => {
+            router.push(paymentEntryPath);
+            setNavOpen(false);
+          }}
+          aria-current={active ? "page" : undefined}
+          data-nav-payment-entry=""
+          className={navButtonClass(active)}
+        >
+          <span className={navLabelClass(active)}>
+            <PayEntryIcon className="shrink-0 text-[16px]" />
+            <span className="truncate">{copy.nav.paymentEntry}</span>
           </span>
         </button>
       );
@@ -1098,6 +1129,8 @@ export default function DashboardShell({
               <CheckInOutView onBack={() => router.push(basePath)} />
             ) : onLeadsView ? (
               <LeadsView />
+            ) : onPaymentEntryView ? (
+              <StaffPaymentEntryView onBack={() => router.push(basePath)} />
             ) : onExpenseClaimNewView ? (
               <NewExpenseClaimView onBack={() => router.push(expenseClaimPath)} />
             ) : onExpenseClaimView ? (

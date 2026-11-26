@@ -46,6 +46,13 @@ export const EXPENSE_CLAIM_PATH = `${STAFF_DASHBOARD_PATH}/expense-claim`;
 export const EXPENSE_CLAIM_NEW_PATH = `${EXPENSE_CLAIM_PATH}/new`;
 
 /**
+ * Staff-only sub-route that renders the Payment Entry form (`make a payment`),
+ * directly below Expense Claim in the rail. A real navigation on its own URL so
+ * the address bar changes and Back works.
+ */
+export const PAYMENT_ENTRY_PATH = `${STAFF_DASHBOARD_PATH}/payment-entry`;
+
+/**
  * Staff-only sub-route that renders the CRM lead board (`/userDashboard/leads`),
  * the portal mirror of Desk's `/crm/leads/view/list`.
  */
