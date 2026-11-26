@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiHash, FiRotateCcw } from "react-icons/fi";
+import { FiArrowLeft, FiCreditCard, FiHash, FiLayers, FiPlusCircle, FiRotateCcw } from "react-icons/fi";
 
 import ListFilterBar from "./ListFilterBar";
 import ListPagination from "./ListPagination";
@@ -18,28 +18,44 @@ import {
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { reportClientError } from "@/lib/log/report-error";
 import { formatAmount, formatDate } from "@/lib/payment-entry/format";
+import { manualPaymentCopyFor } from "@/lib/payment-entry/manual-payment/messages";
 import { paymentEntryCopyFor, type PaymentEntryCopy } from "@/lib/payment-entry/messages";
 import { statusTone } from "@/lib/payment-entry/status";
-import type { PaymentEntryRow } from "@/lib/payment-entry/types";
+import type { PaymentEntryRow, PaymentEntrySummary } from "@/lib/payment-entry/types";
 import { fetchStaffPaymentEntries } from "@/lib/staff-payment/api";
 
 /**
- * "পেমেন্ট তালিকা" for the STAFF Payment Entry page.
+ * Right-side pane for the STAFF Payment Entry page.
  *
- * Renders directly below the right-side Payment Entry form and lists every
- * Payment Entry created by the signed-in employee (`owner`-scoped), using the
- * exact same UI as the customer dashboard's payment list: {@link ListFilterBar}
- * on top, the same column set + status pill, and {@link ListPagination} below.
- * Data comes from `GET /api/payment-entry/list` (core `frappe.client.get_list`).
+ * Replicates the customer dashboard Payment Entry page
+ * (`/clientDashboard/payment-entry`): a page header with a "Make Payment" action,
+ * a summary + status-breakdown chart synced to the filters, the ERPNext-style
+ * {@link ListFilterBar}, and the same "পেমেন্ট তালিকা" table + {@link ListPagination}.
  *
- * `refreshToken` lets the parent form force a reload after a successful Draft
- * is created, so a freshly-saved entry appears here immediately.
+ * The only difference from the customer page is scope: every row is a Payment
+ * Entry created by the signed-in employee (`owner`-scoped) via
+ * `GET /api/payment-entry/list` (core `frappe.client.get_list`).
+ *
+ * `onMakePayment` opens the create form (rendered by the parent as a modal), and
+ * `refreshToken` lets the parent force a reload after a successful Draft.
  */
-export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refreshToken?: number }) {
+export default function StaffPaymentHistoryPanel({
+  refreshToken = 0,
+  canCreate = false,
+  onMakePayment,
+  onBack,
+}: {
+  refreshToken?: number;
+  canCreate?: boolean;
+  onMakePayment?: () => void;
+  onBack?: () => void;
+}) {
   const { language } = useLanguage();
   const copy = paymentEntryCopyFor(language);
+  const mpCopy = manualPaymentCopyFor(language);
 
   const [rows, setRows] = useState<PaymentEntryRow[]>([]);
+  const [summary, setSummary] = useState<PaymentEntrySummary | null>(null);
   const [currency, setCurrency] = useState("BDT");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -62,6 +78,7 @@ export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refresh
       const result = await fetchStaffPaymentEntries(language);
       const entries = (result.entries ?? []).filter((row) => Boolean(row?.name));
       setRows(entries);
+      setSummary(result.summary ?? null);
       setCurrency(result.summary?.currency || "BDT");
     } catch (error) {
       const err = error as { code?: string; message?: string; detail?: unknown };
@@ -76,6 +93,7 @@ export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refresh
       });
       setLoadError(err?.message || copy.loadFailed);
       setRows([]);
+      setSummary(null);
     } finally {
       setLoading(false);
     }
@@ -136,6 +154,36 @@ export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refresh
     });
   }, [rows, statusFilter, applied]);
 
+  // Status breakdown for the chart — always derived from the filtered set.
+  const breakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const row of filtered) {
+      const key = String(row.display_status || "").trim().toLowerCase() || "unknown";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return statusOptions
+      .map((option) => ({
+        key: option.value,
+        label: option.label,
+        count: counts.get(option.value) || 0,
+      }))
+      .filter((segment) => segment.count > 0);
+  }, [filtered, statusOptions]);
+
+  const totals = useMemo(() => {
+    const totalRecords = summary?.total ?? rows.length;
+    const filteredAmount = filtered.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const average = filtered.length > 0 ? filteredAmount / filtered.length : 0;
+    const statusOf = (row: PaymentEntryRow) => String(row.display_status || "").trim().toLowerCase();
+    const sumOf = (key: string) =>
+      filtered
+        .filter((row) => statusOf(row) === key)
+        .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+    const settledAmount = sumOf("submitted");
+    const dueAmount = sumOf("draft");
+    return { totalRecords, filteredAmount, average, settledAmount, dueAmount };
+  }, [summary, rows, filtered]);
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const currentPage = Math.min(page, totalPages);
   const pageStart = (currentPage - 1) * rowsPerPage;
@@ -191,40 +239,53 @@ export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refresh
 
   return (
     <section className="flex flex-col gap-4">
-      <header className="flex items-center gap-2.5 px-1">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
-          <FiHash size={15} aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold">{copy.listHeading}</h2>
-          <p className="truncate text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
-            {copy.filterHint}
-          </p>
+      {/* ---- Page header (mirrors the customer payment page) ---- */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
+            <FiCreditCard size={20} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-[20px] font-semibold">{copy.heading}</h1>
+            <p className="mt-0.5 text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+              {copy.subtitle}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {onMakePayment ? (
+            <button
+              type="button"
+              onClick={onMakePayment}
+              disabled={!canCreate}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
+                <FiPlusCircle size={15} />
+                {mpCopy.makePayment}
+              </span>
+            </button>
+          ) : null}
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
+            >
+              <span className="text-[var(--color-primary)]">
+                <FiArrowLeft size={15} />
+              </span>
+              <span className="text-[12.5px] font-semibold">{copy.back}</span>
+            </button>
+          ) : null}
         </div>
       </header>
 
-      <ListFilterBar
-        copy={copy}
-        search={searchDraft}
-        onSearchChange={setSearchDraft}
-        statusValue={statusFilter}
-        statusOptions={statusOptions}
-        onStatusChange={(value) => {
-          setStatusFilter(value);
-          setPage(1);
-        }}
-        amount={amountDraft}
-        onAmountChange={onAmountChange}
-        fromDate={fromDraft}
-        toDate={toDraft}
-        onFromDateChange={setFromDraft}
-        onToDateChange={setToDraft}
-        onApply={applyFilters}
-        onReset={resetFilters}
-        error={filterError}
-      />
-
-      {loadError ? (
+      {loading ? (
+        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-16 text-center">
+          <p className="text-[13px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">{copy.loading}</p>
+        </div>
+      ) : loadError ? (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--color-danger-strong)_28%,transparent)] bg-[color-mix(in_srgb,var(--color-danger-strong)_8%,var(--color-white))] px-4 py-3">
           <p className="text-[12.5px] font-medium text-[var(--color-danger-strong)]">{loadError}</p>
           <button
@@ -235,109 +296,265 @@ export default function StaffPaymentHistoryPanel({ refreshToken = 0 }: { refresh
             <FiRotateCcw size={13} /> {copy.retry}
           </button>
         </div>
-      ) : null}
-
-      {loading ? (
-        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-10 text-center text-[13px] text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-          {copy.loading}
-        </div>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-5 py-10 text-center">
           <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
             <FiHash size={22} />
           </span>
-          <h2 className="text-[16px] font-semibold">{rows.length === 0 ? copy.emptyTitle : copy.noMatchTitle}</h2>
+          <h2 className="text-[16px] font-semibold">{copy.emptyTitle}</h2>
           <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
-            {rows.length === 0 ? copy.emptyHint : copy.noMatchHint}
+            {copy.emptyHint}
           </p>
-          {rows.length > 0 ? (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-2"
-            >
-              <span className="text-[var(--color-primary)]">
-                <FiRotateCcw size={14} />
-              </span>
-              <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.clearFilters}</span>
-            </button>
-          ) : null}
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
-            <table className="w-full border-collapse text-left">
-              <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
-                <tr>
-                  {[
-                    copy.colSl,
-                    copy.colId,
-                    copy.colDate,
-                    copy.colType,
-                    copy.colAmount,
-                    copy.colMode,
-                    copy.colStatus,
-                  ].map((heading) => (
-                    <th
-                      key={heading}
-                      className="whitespace-nowrap px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((payment, index) => (
-                  <tr
-                    key={payment.name}
-                    className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
-                      {pageStart + index + 1}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">
-                      {payment.name}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                      {formatDate(payment.posting_date, language)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                      {copy.paymentTypes[String(payment.payment_type || "").trim()] || payment.payment_type || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[var(--color-primary)]">
-                      {formatAmount(payment.amount, payment.currency || currency, language)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
-                      {payment.mode_of_payment || "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <StatusBadge status={payment.display_status} copy={copy} emphasis />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* ---- Summary + chart (synced to filters) ---- */}
+          <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <span className="text-[var(--color-primary)]">
+                <FiLayers size={16} />
+              </span>
+              <h2 className="text-[14px] font-semibold">{copy.chartHeading}</h2>
+              <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
+                {copy.chartHint}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
+              <Stat label={copy.chartTotal} value={String(totals.totalRecords)} tone="blue" />
+              <Stat
+                label={copy.chartShowing}
+                value={formatAmount(totals.filteredAmount, currency, language)}
+                tone="violet"
+              />
+              <Stat
+                label={copy.chartFilteredAmount}
+                value={formatAmount(totals.settledAmount, currency, language)}
+                tone="green"
+              />
+              <Stat
+                label={copy.chartAvg}
+                value={formatAmount(totals.dueAmount, currency, language)}
+                tone="red"
+              />
+              <Stat label={copy.summaryMonth} value={String(summary?.this_month_count ?? 0)} tone="blue" />
+              <Stat
+                label={copy.summaryLatest}
+                value={
+                  summary?.latest_payment_date
+                    ? formatDate(summary.latest_payment_date, language)
+                    : copy.summaryNone
+                }
+                tone="violet"
+              />
+            </div>
+
+            <div className="mt-5 border-t border-[color-mix(in_srgb,var(--color-primary)_10%,transparent)] pt-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                {copy.chartStatusBreakdown}
+              </p>
+              {breakdown.length === 0 ? (
+                <p className="mt-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+                  {copy.chartEmpty}
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-white))]">
+                    {breakdown.map((segment) => (
+                      <span
+                        key={segment.key}
+                        style={{
+                          width: `${(segment.count / filtered.length) * 100}%`,
+                          background: statusTone(segment.key),
+                        }}
+                        title={`${segment.label}: ${segment.count}`}
+                      />
+                    ))}
+                  </div>
+                  <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                    {breakdown.map((segment) => (
+                      <li key={segment.key} className="inline-flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: statusTone(segment.key) }}
+                        />
+                        <span className="text-[12.5px]">{segment.label}</span>
+                        <span className="text-[12.5px] font-semibold">{segment.count}</span>
+                        <span className="text-[11px] text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+                          ({Math.round((segment.count / filtered.length) * 100)}%)
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
           </div>
 
-          <ListPagination
+          {/* ---- Filter toolbar (ERPNext-style, shared) ---- */}
+          <ListFilterBar
             copy={copy}
-            page={currentPage}
-            pageCount={totalPages}
-            onPageChange={setPage}
-            rangeStart={pageStart + 1}
-            rangeEnd={pageStart + pageRows.length}
-            total={filtered.length}
-            rowsPerPage={rowsPerPage}
-            rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
-            onRowsPerPageChange={(rows) => {
-              setRowsPerPage(rows);
+            search={searchDraft}
+            onSearchChange={setSearchDraft}
+            statusValue={statusFilter}
+            statusOptions={statusOptions}
+            onStatusChange={(value) => {
+              setStatusFilter(value);
               setPage(1);
             }}
+            amount={amountDraft}
+            onAmountChange={onAmountChange}
+            fromDate={fromDraft}
+            toDate={toDraft}
+            onFromDateChange={setFromDraft}
+            onToDateChange={setToDraft}
+            onApply={applyFilters}
+            onReset={resetFilters}
+            error={filterError}
           />
+
+          {/* ---- List ---- */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3 px-1">
+              <h2 className="text-[14px] font-semibold">{copy.listHeading}</h2>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--color-secondary)_10%,var(--color-white))] px-5 py-10 text-center">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary)] text-[var(--color-white)]">
+                  <FiHash size={22} />
+                </span>
+                <h2 className="text-[16px] font-semibold">{copy.noMatchTitle}</h2>
+                <p className="max-w-[46ch] text-[13px] text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]">
+                  {copy.noMatchHint}
+                </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-4 py-2"
+                >
+                  <span className="text-[var(--color-primary)]">
+                    <FiRotateCcw size={14} />
+                  </span>
+                  <span className="text-[12.5px] font-semibold text-[var(--color-primary)]">{copy.clearFilters}</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto rounded-[26px] border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] shadow-[0_18px_44px_-26px_color-mix(in_srgb,var(--color-primary)_45%,transparent)]">
+                  <table className="w-full border-collapse text-left">
+                    <thead className="bg-[color-mix(in_srgb,var(--color-secondary)_14%,var(--color-white))]">
+                      <tr>
+                        {[
+                          copy.colSl,
+                          copy.colId,
+                          copy.colDate,
+                          copy.colType,
+                          copy.colAmount,
+                          copy.colMode,
+                          copy.colStatus,
+                        ].map((heading) => (
+                          <th
+                            key={heading}
+                            className="whitespace-nowrap px-4 py-3 text-[11.5px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_62%,transparent)]"
+                          >
+                            {heading}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((payment, index) => (
+                        <tr
+                          key={payment.name}
+                          className="border-t border-[color-mix(in_srgb,var(--color-primary)_8%,transparent)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_4%,var(--color-white))]"
+                        >
+                          <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">
+                            {pageStart + index + 1}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                            {payment.name}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                            {formatDate(payment.posting_date, language)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                            {copy.paymentTypes[String(payment.payment_type || "").trim()] || payment.payment_type || "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12.5px] font-medium text-[var(--color-primary)]">
+                            {formatAmount(payment.amount, payment.currency || currency, language)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-[12.5px] text-[color-mix(in_srgb,var(--color-primary)_72%,transparent)]">
+                            {payment.mode_of_payment || "—"}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3">
+                            <StatusBadge status={payment.display_status} copy={copy} emphasis />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <ListPagination
+                  copy={copy}
+                  page={currentPage}
+                  pageCount={totalPages}
+                  onPageChange={setPage}
+                  rangeStart={pageStart + 1}
+                  rangeEnd={pageStart + pageRows.length}
+                  total={filtered.length}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+                  onRowsPerPageChange={(rows) => {
+                    setRowsPerPage(rows);
+                    setPage(1);
+                  }}
+                />
+              </>
+            )}
+          </div>
         </>
       )}
     </section>
+  );
+}
+
+/** Soft tinted summary tiles (mirrors the customer payment summary cards). */
+type StatTone = "violet" | "blue" | "green" | "red";
+
+const STAT_TONES: Record<StatTone, { bg: string; border: string }> = {
+  violet: {
+    bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#7c3aed_20%,transparent)]",
+  },
+  blue: {
+    bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#2f9bff_20%,transparent)]",
+  },
+  green: {
+    bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#22c55e_20%,transparent)]",
+  },
+  red: {
+    bg: "bg-[color-mix(in_srgb,#ef4444_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#ef4444_20%,transparent)]",
+  },
+};
+
+/** A single summary tile. */
+function Stat({ label, value, tone = "blue" }: { label: string; value: string; tone?: StatTone }) {
+  const t = STAT_TONES[tone];
+  return (
+    <div className={`flex flex-col gap-1 rounded-2xl border px-3.5 py-3 ${t.border} ${t.bg}`}>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+        {label}
+      </span>
+      <span className="truncate text-[14px] font-semibold" title={value}>
+        {value}
+      </span>
+    </div>
   );
 }
 
