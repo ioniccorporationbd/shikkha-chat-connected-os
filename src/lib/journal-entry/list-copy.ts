@@ -48,6 +48,11 @@ export interface JournalListCopy extends ListFilterCopy, ListPaginationCopy {
   dRemark: string;
   dCheque: string;
   dBill: string;
+  dPartySection: string;
+  dPartyType: string;
+  dParty: string;
+  detailLoading: string;
+  detailError: string;
 }
 
 const BN: JournalListCopy = {
@@ -118,6 +123,11 @@ const BN: JournalListCopy = {
   dRemark: "মন্তব্য",
   dCheque: "চেক নম্বর",
   dBill: "বিল নম্বর",
+  dPartySection: "পক্ষ",
+  dPartyType: "পক্ষের ধরন",
+  dParty: "পক্ষ",
+  detailLoading: "বিস্তারিত লোড হচ্ছে…",
+  detailError: "বিস্তারিত লোড করা যায়নি।",
 };
 
 const EN: JournalListCopy = {
@@ -188,6 +198,11 @@ const EN: JournalListCopy = {
   dRemark: "Remark",
   dCheque: "Cheque no",
   dBill: "Bill no",
+  dPartySection: "Party",
+  dPartyType: "Party type",
+  dParty: "Party",
+  detailLoading: "Loading details…",
+  detailError: "Could not load the details.",
 };
 
 export function journalListCopyFor(language: string): JournalListCopy {

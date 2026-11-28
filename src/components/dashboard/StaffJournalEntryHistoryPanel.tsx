@@ -7,6 +7,7 @@ import {
   FiEye,
   FiFileText,
   FiRotateCcw,
+  FiUser,
 } from "react-icons/fi";
 
 import DetailSheet, { type DetailRow, type DetailSection } from "./DetailSheet";
@@ -26,7 +27,7 @@ import { useLanguage } from "@/lib/i18n/LanguageProvider";
 import { reportClientError } from "@/lib/log/report-error";
 import { formatAmount, formatDate } from "@/lib/payment-entry/format";
 import { statusTone } from "@/lib/payment-entry/status";
-import { fetchJournalEntries } from "@/lib/journal-entry/api";
+import { fetchJournalEntries, fetchJournalEntryDetail } from "@/lib/journal-entry/api";
 import { journalListCopyFor, type JournalListCopy } from "@/lib/journal-entry/list-copy";
 import type { JournalEntryRow } from "@/lib/journal-entry/types";
 
@@ -53,7 +54,8 @@ function StatusBadge({ status, copy }: { status: string; copy: JournalListCopy }
 function detailSections(
   row: JournalEntryRow,
   copy: JournalListCopy,
-  language: string
+  language: string,
+  party: { partyType: string; party: string } | null
 ): DetailSection[] {
   const currency = row.currency || "BDT";
   const info: DetailRow[] = [
@@ -63,6 +65,10 @@ function detailSections(
     { label: copy.dTitle, value: row.title || "—" },
     { label: copy.dCompany, value: row.company || "—" },
     { label: copy.dStatus, value: statusLabel(row.status, copy) },
+  ];
+  const partyRows: DetailRow[] = [
+    { label: copy.dPartyType, value: party?.partyType || "—" },
+    { label: copy.dParty, value: party?.party || "—" },
   ];
   const amount: DetailRow[] = [
     { label: copy.dDebit, value: formatAmount(row.total_debit, currency, language) },
@@ -75,6 +81,7 @@ function detailSections(
 
   const sections: DetailSection[] = [
     { key: "info", title: copy.dSecInfo, icon: <FiBookOpen size={15} />, rows: info },
+    { key: "party", title: copy.dPartySection, icon: <FiUser size={15} />, rows: partyRows },
     { key: "amount", title: copy.dSecAmount, icon: <FiDollarSign size={15} />, rows: amount },
   ];
   if (reference.length) {
@@ -109,6 +116,11 @@ export default function StaffJournalEntryHistoryPanel({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [detailRow, setDetailRow] = useState<JournalEntryRow | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const [detailParty, setDetailParty] = useState<{ partyType: string; party: string } | null>(
+    null
+  );
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [amountDraft, setAmountDraft] = useState<AmountFilter>(EMPTY_AMOUNT);
@@ -256,6 +268,39 @@ export default function StaffJournalEntryHistoryPanel({
     setPage(1);
   }, []);
 
+  const openDetails = useCallback(
+    async (row: JournalEntryRow) => {
+      setDetailRow(row);
+      setDetailParty(null);
+      setDetailError("");
+      setDetailLoading(true);
+      try {
+        const detail = await fetchJournalEntryDetail(row.name, language);
+        const types = new Set<string>();
+        const parties = new Set<string>();
+        if (detail.party_type) types.add(detail.party_type);
+        if (detail.party) parties.add(detail.party);
+        for (const line of detail.accounts ?? []) {
+          if (line.party_type) types.add(line.party_type);
+          if (line.party) parties.add(line.party);
+        }
+        setDetailParty({ partyType: [...types].join(", "), party: [...parties].join(", ") });
+      } catch (error) {
+        const err = error as { message?: string };
+        console.error("[journal-entry:detail] load failed", { message: err?.message ?? null });
+        reportClientError({
+          scope: "journal-entry:detail",
+          message: err?.message || "Journal entry detail load failed",
+          detail: error,
+        });
+        setDetailError(err?.message || copy.detailError);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [language, copy.detailError]
+  );
+
   return (
     <section className="flex flex-col gap-4">
       <header className="flex items-center gap-3">
@@ -388,7 +433,7 @@ export default function StaffJournalEntryHistoryPanel({
                           <td className="whitespace-nowrap px-3 py-3">
                             <button
                               type="button"
-                              onClick={() => setDetailRow(row)}
+                              onClick={() => void openDetails(row)}
                               className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                             >
                               <span className="pointer-events-none">
@@ -428,14 +473,22 @@ export default function StaffJournalEntryHistoryPanel({
       {detailRow ? (
         <DetailSheet
           open
-          onClose={() => setDetailRow(null)}
+          onClose={() => {
+            setDetailRow(null);
+            setDetailParty(null);
+            setDetailError("");
+          }}
           closeLabel={copy.close}
           eyebrow={copy.detailsHeading}
           title={detailRow.name}
           subtitle={detailRow.title || detailRow.voucher_type || ""}
           icon={<FiBookOpen size={20} />}
           badges={<StatusBadge status={detailRow.status} copy={copy} />}
-          sections={detailSections(detailRow, copy, language)}
+          loading={detailLoading}
+          loadingText={copy.detailLoading}
+          error={detailError}
+          errorTitle={copy.detailError}
+          sections={detailSections(detailRow, copy, language, detailParty)}
           document={{
             brand: "Shikkha Chat",
             badges: statusLabel(detailRow.status, copy) ? [statusLabel(detailRow.status, copy)] : [],

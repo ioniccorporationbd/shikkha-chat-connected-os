@@ -92,3 +92,18 @@ export interface JournalEntryListResult {
   entries: JournalEntryRow[];
   summary: JournalEntrySummary;
 }
+
+/** One account line of a Journal Entry (party lives here, not on the list row). */
+export interface JournalEntryAccountLine {
+  account: string;
+  party_type: string;
+  party: string;
+}
+
+/** Full detail for the "view details" popup (`GET /api/journal-entry/detail`). */
+export interface JournalEntryDetail {
+  name: string;
+  party_type: string;
+  party: string;
+  accounts: JournalEntryAccountLine[];
+}
