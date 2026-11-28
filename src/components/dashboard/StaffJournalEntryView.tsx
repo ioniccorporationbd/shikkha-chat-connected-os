@@ -72,6 +72,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
   const [postingDate, setPostingDate] = useState(todayLocalIso());
   const [title, setTitle] = useState("");
   const [remark, setRemark] = useState("");
+  const [costCenter, setCostCenter] = useState("");
   const [rows, setRows] = useState<DraftRow[]>(() => [newRow(), newRow()]);
 
   const [partyCache, setPartyCache] = useState<Record<string, SelectOption[]>>({});
@@ -160,6 +161,24 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
     () => (context?.accounts || []).map((account) => ({ value: account.value, label: account.label })),
     [context]
   );
+  const payableAccounts: SelectOption[] = useMemo(
+    () =>
+      (context?.accounts || [])
+        .filter((account) => (account.account_type || "").trim().toLowerCase() === "payable")
+        .map((account) => ({ value: account.value, label: account.label })),
+    [context]
+  );
+  const receivableAccounts: SelectOption[] = useMemo(
+    () =>
+      (context?.accounts || [])
+        .filter((account) => (account.account_type || "").trim().toLowerCase() === "receivable")
+        .map((account) => ({ value: account.value, label: account.label })),
+    [context]
+  );
+  // Row 1 -> payable accounts, Row 2 -> receivable accounts (as specified);
+  // any extra rows fall back to the full account list.
+  const accountOptionsForRow = (index: number): SelectOption[] =>
+    index === 0 ? payableAccounts : index === 1 ? receivableAccounts : accountOptions;
   const costCenterOptions: SelectOption[] = useMemo(
     () =>
       (context?.cost_centers || []).map((center) => ({ value: center.value, label: center.label })),
@@ -181,6 +200,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
   const validate = (): string | null => {
     if (!company) return copy.errCompany;
     if (!postingDate) return copy.errDate;
+    if (costCenterOptions.length > 0 && !costCenter) return copy.errCostCenter;
     const filled = rows.filter((row) => row.account || toNumber(row.debit) > 0 || toNumber(row.credit) > 0);
     if (filled.length < 2) return copy.errRows;
     for (const row of filled) {
@@ -223,7 +243,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
             party: row.partyType ? row.party : undefined,
             debit: toNumber(row.debit),
             credit: toNumber(row.credit),
-            cost_center: row.costCenter || undefined,
+            cost_center: costCenter || undefined,
           })),
       };
       const result = await createJournalEntry(payload, language);
@@ -326,7 +346,16 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
               className={inputClass}
             />
           </Field>
-          <Field label={copy.fTitle}>
+          <Field label={copy.fCostCenter}>
+            <DashboardSelect
+              value={costCenter}
+              onChange={setCostCenter}
+              options={costCenterOptions}
+              placeholder={copy.selectCostCenter}
+              ariaLabel={copy.fCostCenter}
+            />
+          </Field>
+          <Field label={copy.fTitle} className="sm:col-span-2">
             <input
               type="text"
               value={title}
@@ -369,18 +398,17 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                 <th className="whitespace-nowrap px-2 py-2">{copy.colParty}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colDebit}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colCredit}</th>
-                <th className="whitespace-nowrap px-2 py-2">{copy.colCostCenter}</th>
                 <th className="px-2 py-2" aria-label={copy.colAction} />
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, rowIndex) => (
                 <tr key={row.id} className="border-t border-[var(--color-line)] align-top">
                   <td className="min-w-[220px] px-2 py-2">
                     <DashboardSelect
                       value={row.account}
                       onChange={(value) => onAccountChange(row.id, value)}
-                      options={accountOptions}
+                      options={accountOptionsForRow(rowIndex)}
                       placeholder={copy.selectAccount}
                       ariaLabel={copy.colAccount}
                     />
@@ -420,15 +448,6 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       onChange={(event) => updateRow(row.id, { credit: event.target.value })}
                       placeholder="0"
                       className={`${inputClass} w-24 text-right`}
-                    />
-                  </td>
-                  <td className="min-w-[150px] px-2 py-2">
-                    <DashboardSelect
-                      value={row.costCenter}
-                      onChange={(value) => updateRow(row.id, { costCenter: value })}
-                      options={costCenterOptions}
-                      placeholder={copy.selectCostCenter}
-                      ariaLabel={copy.colCostCenter}
                     />
                   </td>
                   <td className="px-2 py-2 text-right">
@@ -510,6 +529,7 @@ interface Copy {
   fVoucherType: string;
   fCompany: string;
   fPostingDate: string;
+  fCostCenter: string;
   fTitle: string;
   fTitlePlaceholder: string;
   fRemark: string;
@@ -536,6 +556,7 @@ interface Copy {
   submitError: string;
   errCompany: string;
   errDate: string;
+  errCostCenter: string;
   errRows: string;
   errAccount: string;
   errDebitCredit: string;
@@ -556,6 +577,7 @@ const EN: Copy = {
   fVoucherType: "Voucher type",
   fCompany: "Company",
   fPostingDate: "Posting date",
+  fCostCenter: "Cost center",
   fTitle: "Title / Pay To / Received From",
   fTitlePlaceholder: "e.g. IONIC Corporation",
   fRemark: "Remark",
@@ -582,6 +604,7 @@ const EN: Copy = {
   submitError: "Could not create the journal entry.",
   errCompany: "Choose a company.",
   errDate: "Choose a posting date.",
+  errCostCenter: "Choose a cost center.",
   errRows: "Add at least two account lines.",
   errAccount: "Every line needs an account.",
   errDebitCredit: "Each line must have either a debit or a credit, not both.",
@@ -602,6 +625,7 @@ const BN: Copy = {
   fVoucherType: "ভাউচার টাইপ",
   fCompany: "কোম্পানি",
   fPostingDate: "পোস্টিং তারিখ",
+  fCostCenter: "কস্ট সেন্টার",
   fTitle: "টাইটেল / পরিশোধ / প্রাপ্তি",
   fTitlePlaceholder: "যেমন: IONIC Corporation",
   fRemark: "মন্তব্য",
@@ -628,6 +652,7 @@ const BN: Copy = {
   submitError: "জার্নাল এন্ট্রি তৈরি করা যায়নি।",
   errCompany: "একটি কোম্পানি নির্বাচন করুন।",
   errDate: "একটি পোস্টিং তারিখ নির্বাচন করুন।",
+  errCostCenter: "একটি কস্ট সেন্টার নির্বাচন করুন।",
   errRows: "কমপক্ষে দুটি অ্যাকাউন্ট সারি যোগ করুন।",
   errAccount: "প্রতিটি সারিতে অ্যাকাউন্ট লাগবে।",
   errDebitCredit: "প্রতিটি সারিতে হয় ডেবিট নাহয় ক্রেডিট, দুটোই নয়।",
