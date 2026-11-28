@@ -279,10 +279,12 @@ export default function StaffJournalEntryHistoryPanel({
         const types = new Set<string>();
         const parties = new Set<string>();
         if (detail.party_type) types.add(detail.party_type);
-        if (detail.party) parties.add(detail.party);
+        const topName = detail.party_name || detail.party;
+        if (topName) parties.add(topName);
         for (const line of detail.accounts ?? []) {
           if (line.party_type) types.add(line.party_type);
-          if (line.party) parties.add(line.party);
+          const name = line.party_name || line.party;
+          if (name) parties.add(name);
         }
         setDetailParty({ partyType: [...types].join(", "), party: [...parties].join(", ") });
       } catch (error) {

@@ -98,6 +98,7 @@ export interface JournalEntryAccountLine {
   account: string;
   party_type: string;
   party: string;
+  party_name: string;
 }
 
 /** Full detail for the "view details" popup (`GET /api/journal-entry/detail`). */
@@ -105,5 +106,6 @@ export interface JournalEntryDetail {
   name: string;
   party_type: string;
   party: string;
+  party_name: string;
   accounts: JournalEntryAccountLine[];
 }
