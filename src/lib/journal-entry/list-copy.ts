@@ -53,6 +53,14 @@ export interface JournalListCopy extends ListFilterCopy, ListPaginationCopy {
   dParty: string;
   detailLoading: string;
   detailError: string;
+  summaryHeading: string;
+  summaryHint: string;
+  summaryTotalRecords: string;
+  summaryTotalAmount: string;
+  summaryMonth: string;
+  summaryMonthAmount: string;
+  summaryLatest: string;
+  summaryNone: string;
 }
 
 const BN: JournalListCopy = {
@@ -128,6 +136,14 @@ const BN: JournalListCopy = {
   dParty: "পক্ষ",
   detailLoading: "বিস্তারিত লোড হচ্ছে…",
   detailError: "বিস্তারিত লোড করা যায়নি।",
+  summaryHeading: "জার্নাল এন্ট্রি সারসংক্ষেপ",
+  summaryHint: "আপনার জার্নাল এন্ট্রি",
+  summaryTotalRecords: "মোট এন্ট্রি",
+  summaryTotalAmount: "মোট পরিমাণ",
+  summaryMonth: "এই মাসের এন্ট্রি",
+  summaryMonthAmount: "এই মাসের পরিমাণ",
+  summaryLatest: "সর্বশেষ এন্ট্রি",
+  summaryNone: "—",
 };
 
 const EN: JournalListCopy = {
@@ -203,6 +219,14 @@ const EN: JournalListCopy = {
   dParty: "Party",
   detailLoading: "Loading details…",
   detailError: "Could not load the details.",
+  summaryHeading: "Journal entry summary",
+  summaryHint: "Your journal entries",
+  summaryTotalRecords: "Total entries",
+  summaryTotalAmount: "Total amount",
+  summaryMonth: "This month",
+  summaryMonthAmount: "This month amount",
+  summaryLatest: "Latest entry",
+  summaryNone: "—",
 };
 
 export function journalListCopyFor(language: string): JournalListCopy {

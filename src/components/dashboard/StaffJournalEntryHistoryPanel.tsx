@@ -6,6 +6,7 @@ import {
   FiDollarSign,
   FiEye,
   FiFileText,
+  FiLayers,
   FiRotateCcw,
   FiUser,
 } from "react-icons/fi";
@@ -29,7 +30,7 @@ import { formatAmount, formatDate } from "@/lib/payment-entry/format";
 import { statusTone } from "@/lib/payment-entry/status";
 import { fetchJournalEntries, fetchJournalEntryDetail } from "@/lib/journal-entry/api";
 import { journalListCopyFor, type JournalListCopy } from "@/lib/journal-entry/list-copy";
-import type { JournalEntryRow } from "@/lib/journal-entry/types";
+import type { JournalEntryRow, JournalEntrySummary } from "@/lib/journal-entry/types";
 
 function statusKey(status: string): string {
   return String(status || "").trim().toLowerCase();
@@ -113,6 +114,7 @@ export default function StaffJournalEntryHistoryPanel({
 
   const [rows, setRows] = useState<JournalEntryRow[]>([]);
   const [currency, setCurrency] = useState("BDT");
+  const [summary, setSummary] = useState<JournalEntrySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [detailRow, setDetailRow] = useState<JournalEntryRow | null>(null);
@@ -140,6 +142,7 @@ export default function StaffJournalEntryHistoryPanel({
       const entries = (result.entries ?? []).filter((row) => Boolean(row?.name));
       setRows(entries);
       setCurrency(result.summary?.currency || "BDT");
+      setSummary(result.summary ?? null);
     } catch (error) {
       const err = error as { code?: string; message?: string };
       console.error("[journal-entry:list] load failed", {
@@ -316,6 +319,41 @@ export default function StaffJournalEntryHistoryPanel({
           </p>
         </div>
       </header>
+
+      {summary ? (
+        <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+          <div className="flex items-center gap-2">
+            <span className="text-[var(--color-primary)]">
+              <FiLayers size={16} />
+            </span>
+            <h2 className="text-[14px] font-semibold text-[var(--color-primary)]">{copy.summaryHeading}</h2>
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-medium text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
+              {copy.summaryHint}
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">
+            <Stat label={copy.summaryTotalRecords} value={String(summary.total ?? rows.length)} tone="blue" />
+            <Stat
+              label={copy.summaryTotalAmount}
+              value={formatAmount(summary.total_amount, currency, language)}
+              tone="violet"
+            />
+            <Stat label={copy.summaryMonth} value={String(summary.this_month_count ?? 0)} tone="green" />
+            <Stat
+              label={copy.summaryMonthAmount}
+              value={formatAmount(summary.this_month_amount, currency, language)}
+              tone="blue"
+            />
+            <Stat
+              label={copy.summaryLatest}
+              value={summary.latest_date ? formatDate(summary.latest_date, language) : copy.summaryNone}
+              tone="violet"
+            />
+          </div>
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="grid min-h-[220px] place-items-center rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-6 py-10">
@@ -503,5 +541,42 @@ export default function StaffJournalEntryHistoryPanel({
         />
       ) : null}
     </section>
+  );
+}
+
+/** Soft tinted summary tiles (mirrors the payment-entry "পেমেন্ট সারসংক্ষেপ" cards). */
+type StatTone = "violet" | "blue" | "green" | "red";
+
+const STAT_TONES: Record<StatTone, { bg: string; border: string }> = {
+  violet: {
+    bg: "bg-[color-mix(in_srgb,#7c3aed_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#7c3aed_20%,transparent)]",
+  },
+  blue: {
+    bg: "bg-[color-mix(in_srgb,#2f9bff_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#2f9bff_20%,transparent)]",
+  },
+  green: {
+    bg: "bg-[color-mix(in_srgb,#22c55e_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#22c55e_20%,transparent)]",
+  },
+  red: {
+    bg: "bg-[color-mix(in_srgb,#ef4444_10%,var(--color-white))]",
+    border: "border-[color-mix(in_srgb,#ef4444_20%,transparent)]",
+  },
+};
+
+/** A single summary tile. */
+function Stat({ label, value, tone = "blue" }: { label: string; value: string; tone?: StatTone }) {
+  const t = STAT_TONES[tone];
+  return (
+    <div className={`flex flex-col gap-1 rounded-2xl border px-3.5 py-3 ${t.border} ${t.bg}`}>
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_52%,transparent)]">
+        {label}
+      </span>
+      <span className="truncate text-[14px] font-semibold" title={value}>
+        {value}
+      </span>
+    </div>
   );
 }
