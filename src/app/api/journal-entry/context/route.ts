@@ -136,7 +136,7 @@ export async function GET(request: Request) {
   const payableRes = await getList(
     "Account",
     ["name"],
-    [["company", "=", company], ["account_type", "=", "Payable"]],
+    [["company", "=", company], ["account_type", "like", "%Payable%"]],
     sid,
     "name asc"
   );
