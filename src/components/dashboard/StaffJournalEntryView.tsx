@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiArrowLeft, FiBookOpen, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiBookOpen, FiPlus, FiRefreshCw } from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { formatAmount } from "@/lib/expense-claim/format";
@@ -13,7 +13,6 @@ import {
   fetchJournalParties,
 } from "@/lib/journal-entry/api";
 import type {
-  AccountOption,
   JournalEntryCreateInput,
   JournalEntryFormContext,
   SelectOption,
@@ -43,15 +42,6 @@ function newRow(): DraftRow {
     credit: "",
     costCenter: "",
   };
-}
-
-/** Which party type an account demands, from its `account_type`. */
-function partyTypeFor(accounts: AccountOption[], name: string): string {
-  const found = accounts.find((account) => account.value === name);
-  const type = (found?.account_type || "").trim().toLowerCase();
-  if (type === "payable") return "Supplier";
-  if (type === "receivable") return "Customer";
-  return "";
 }
 
 const toNumber = (value: string): number => {
@@ -126,13 +116,10 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
   };
 
   const onAccountChange = (id: string, account: string) => {
-    const suggested = partyTypeFor(context?.accounts || [], account);
-    const allowed = (context?.party_types || []).some((type) => type.value === suggested);
-    const partyType = suggested && allowed ? suggested : "";
+    // Party type is always chosen by the user — never auto-filled from the account.
     setRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, account, partyType, party: "" } : row))
+      prev.map((row) => (row.id === id ? { ...row, account, partyType: "", party: "" } : row))
     );
-    if (partyType) void ensureParties(partyType);
   };
 
   const onPartyTypeChange = (id: string, partyType: string) => {
@@ -143,8 +130,12 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
   };
 
   const addRow = () => setRows((prev) => [...prev, newRow()]);
-  const removeRow = (id: string) =>
-    setRows((prev) => (prev.length > 1 ? prev.filter((row) => row.id !== id) : prev));
+  const resetForm = () => {
+    setTitle("");
+    setRemark("");
+    setCostCenter("");
+    setRows([newRow(), newRow()]);
+  };
 
   const totals = useMemo(() => {
     let debit = 0;
@@ -398,7 +389,6 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                 <th className="whitespace-nowrap px-2 py-2">{copy.colParty}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colDebit}</th>
                 <th className="whitespace-nowrap px-2 py-2 text-right">{copy.colCredit}</th>
-                <th className="px-2 py-2" aria-label={copy.colAction} />
               </tr>
             </thead>
             <tbody>
@@ -450,17 +440,6 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       className={`${inputClass} w-24 text-right`}
                     />
                   </td>
-                  <td className="px-2 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(row.id)}
-                      disabled={rows.length <= 1}
-                      aria-label={copy.removeRow}
-                      className="inline-grid h-8 w-8 place-items-center rounded-full text-[var(--color-muted)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)] disabled:opacity-40"
-                    >
-                      <FiTrash2 size={15} />
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -483,14 +462,25 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
               <b>{formatAmount(totals.diff, currency, language)}</b>
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => void onSubmit()}
-            disabled={submitting || !balanced}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-action)] px-5 py-2.5 text-[13.5px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? copy.submitting : copy.submit}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetForm}
+              disabled={submitting}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--color-line)] px-5 py-2.5 text-[13.5px] font-semibold text-[var(--color-action)] transition hover:bg-[var(--color-action-tint)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FiRefreshCw size={14} />
+              {copy.reset}
+            </button>
+            <button
+              type="button"
+              onClick={() => void onSubmit()}
+              disabled={submitting || !balanced}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--color-action)] px-5 py-2.5 text-[13.5px] font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? copy.submitting : copy.submit}
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -551,6 +541,7 @@ interface Copy {
   totalCredit: string;
   difference: string;
   submit: string;
+  reset: string;
   submitting: string;
   success: string;
   submitError: string;
@@ -599,6 +590,7 @@ const EN: Copy = {
   totalCredit: "Total credit",
   difference: "Difference",
   submit: "Create journal entry",
+  reset: "Reset",
   submitting: "Creating…",
   success: "Journal entry {name} created as a draft.",
   submitError: "Could not create the journal entry.",
@@ -647,6 +639,7 @@ const BN: Copy = {
   totalCredit: "মোট ক্রেডিট",
   difference: "পার্থক্য",
   submit: "জার্নাল এন্ট্রি তৈরি করুন",
+  reset: "রিসেট",
   submitting: "তৈরি হচ্ছে…",
   success: "জার্নাল এন্ট্রি {name} খসড়া হিসেবে তৈরি হয়েছে।",
   submitError: "জার্নাল এন্ট্রি তৈরি করা যায়নি।",
