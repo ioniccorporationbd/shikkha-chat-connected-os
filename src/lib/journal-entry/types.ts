@@ -20,6 +20,8 @@ export interface JournalEntryFormContext {
   posting_date: string;
   voucher_types: SelectOption[];
   accounts: AccountOption[];
+  /** Payable accounts exactly as the desk list (account_type=Payable) shows; may include group accounts. */
+  payable_accounts: SelectOption[];
   cost_centers: CostCenterOption[];
   /** Party types from the ERP "Party Type" doctype (Customer, Supplier, Employee, ...). */
   party_types: SelectOption[];

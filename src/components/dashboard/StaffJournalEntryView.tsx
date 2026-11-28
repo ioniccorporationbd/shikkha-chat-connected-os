@@ -161,13 +161,16 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
         .map((account) => ({ value: account.value, label: account.label })),
     [context]
   );
-  const payableAccounts: SelectOption[] = useMemo(
-    () =>
-      (context?.accounts || [])
-        .filter((account) => hasAccountType(account, "payable"))
-        .map((account) => ({ value: account.value, label: account.label })),
-    [context]
-  );
+  const payableAccounts: SelectOption[] = useMemo(() => {
+    // Prefer the dedicated Payable list that mirrors the desk
+    // account_type=Payable view (may include group accounts); fall back to
+    // filtering the postable account pool if it is empty.
+    const dedicated = context?.payable_accounts || [];
+    if (dedicated.length) return dedicated;
+    return (context?.accounts || [])
+      .filter((account) => hasAccountType(account, "payable"))
+      .map((account) => ({ value: account.value, label: account.label }));
+  }, [context]);
   // Row 1 -> Expense Account, Row 2 -> Payable (as specified);
   // any extra rows fall back to the full account list.
   const accountOptionsForRow = (index: number): SelectOption[] =>

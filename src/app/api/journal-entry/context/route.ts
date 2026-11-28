@@ -129,6 +129,25 @@ export async function GET(request: Request) {
     .map((row) => ({ value: String(row.name ?? ""), label: String(row.name ?? "") }))
     .filter((option) => option.value);
 
+  // Dedicated Payable list that mirrors the desk view
+  // `account/view/list?account_type=Payable` EXACTLY (no is_group filter, so
+  // group-level payable accounts such as "Creditors - X" are included). This is
+  // what feeds the second row of the accounts grid.
+  const payableRes = await getList(
+    "Account",
+    ["name"],
+    [["company", "=", company], ["account_type", "=", "Payable"]],
+    sid,
+    "name asc"
+  );
+  if (!payableRes.ok) {
+    const response = fromFrappeFailure(payableRes);
+    return payableRes.status === 401 ? clearSessionCookie(response) : response;
+  }
+  const payable_accounts: SelectOption[] = (Array.isArray(payableRes.data) ? payableRes.data : [])
+    .map((row) => ({ value: String(row.name ?? ""), label: String(row.name ?? "") }))
+    .filter((option) => option.value);
+
   const payload: JournalEntryFormContext = {
     company,
     companies,
@@ -136,6 +155,7 @@ export async function GET(request: Request) {
     posting_date: "",
     voucher_types: VOUCHER_TYPES.map((value) => ({ value, label: value })),
     accounts,
+    payable_accounts,
     cost_centers,
     party_types,
   };
