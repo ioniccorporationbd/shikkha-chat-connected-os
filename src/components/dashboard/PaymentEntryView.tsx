@@ -15,6 +15,7 @@ import {
   FiRotateCcw,
   FiUserCheck,
   FiPlusCircle,
+  FiX,
 } from "react-icons/fi";
 
 import ListFilterBar from "@/components/dashboard/ListFilterBar";
@@ -363,16 +364,29 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMakePaymentOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
-          >
-            <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
-              <FiPlusCircle size={15} />
-              {mpCopy.makePayment}
-            </span>
-          </button>
+          {makePaymentOpen ? (
+            <button
+              type="button"
+              onClick={() => setMakePaymentOpen(false)}
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] px-3.5 py-2 transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
+            >
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-primary)]">
+                <FiX size={15} />
+                {copy.close}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMakePaymentOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-[var(--color-action)] px-3.5 py-2 shadow-[0_14px_30px_-16px_color-mix(in_srgb,var(--color-action)_80%,transparent)] transition hover:bg-[var(--color-action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-action-ring)] focus-visible:ring-[color-mix(in_srgb,var(--color-action)_20%,transparent)]"
+            >
+              <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--color-white)]">
+                <FiPlusCircle size={15} />
+                {mpCopy.makePayment}
+              </span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -388,6 +402,20 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
       </header>
 
       <div className="flex flex-col gap-5">
+        {makePaymentOpen ? (
+          <MakePaymentModal
+            inline
+            language={language}
+            currency={currency}
+            onCreated={(paymentEntryId) => {
+              // Backend confirmed the create; collapse the form and hand off to
+              // the success route carrying the real Payment Entry name.
+              setMakePaymentOpen(false);
+              router.push(`${PAYMENT_SUCCESS_PATH}?payment=${encodeURIComponent(paymentEntryId)}`);
+            }}
+            onClose={() => setMakePaymentOpen(false)}
+          />
+        ) : null}
         {expired ? (
           <CalmState
             icon={<FiUserCheck size={22} />}
@@ -686,22 +714,6 @@ export default function PaymentEntryView({ onBack }: { onBack?: () => void }) {
           copy={copy}
           language={language}
           onClose={closeDetails}
-        />
-      ) : null}
-
-      {makePaymentOpen ? (
-        <MakePaymentModal
-          language={language}
-          currency={currency}
-          onCreated={(paymentEntryId) => {
-            // The backend confirmed the create and returned the REAL Payment
-            // Entry name. Close the modal and send the browser to the success
-            // route carrying that name, so the page (and a refresh) loads the
-            // genuine record.
-            setMakePaymentOpen(false);
-            router.push(`${PAYMENT_SUCCESS_PATH}?payment=${encodeURIComponent(paymentEntryId)}`);
-          }}
-          onClose={() => setMakePaymentOpen(false)}
         />
       ) : null}
     </section>

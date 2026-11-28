@@ -49,6 +49,13 @@ interface MakePaymentModalProps {
    */
   onCreated?: (paymentEntryId: string) => void;
   onClose: () => void;
+  /**
+   * When true the form renders inline (a plain card, no modal overlay/Escape
+   * handling) so a page can host it in a collapsible panel — e.g. the
+   * payment-entry page mirrors the journal-entry "create" toggle. The
+   * service-build page (which never passes this) keeps the modal behaviour.
+   */
+  inline?: boolean;
 }
 
 /**
@@ -68,6 +75,7 @@ export default function MakePaymentModal({
   salesInvoice,
   onCreated,
   onClose,
+  inline = false,
 }: MakePaymentModalProps) {
   const copy = manualPaymentCopyFor(language);
 
@@ -174,15 +182,7 @@ export default function MakePaymentModal({
     </button>
   );
 
-  return (
-    <DashboardModal
-      open
-      title={copy.makePayment}
-      subtitle={copy.makePaymentSubtitle}
-      closeLabel={copy.close}
-      onClose={onClose}
-      widthClass="max-w-[560px]"
-    >
+  const body = (
       <div className="flex flex-col gap-4">
         {showBack ? BackButton : null}
 
@@ -278,6 +278,27 @@ export default function MakePaymentModal({
           </>
         ) : null}
       </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+        <h2 className="mb-3 text-[15px] font-semibold text-[var(--color-primary)]">{copy.makePayment}</h2>
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <DashboardModal
+      open
+      title={copy.makePayment}
+      subtitle={copy.makePaymentSubtitle}
+      closeLabel={copy.close}
+      onClose={onClose}
+      widthClass="max-w-[560px]"
+    >
+      {body}
     </DashboardModal>
   );
 }
