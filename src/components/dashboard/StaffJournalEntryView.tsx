@@ -138,6 +138,19 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
     setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   };
 
+  // Mirror the first row's Debit into the second row's Credit so a simple
+  // two-line entry balances as the user types. Only the 2nd row's credit is
+  // driven by the 1st row's debit — the account/party/totals logic is untouched.
+  const onDebitChange = (id: string, value: string) => {
+    setRows((prev) => {
+      const next = prev.map((row) => (row.id === id ? { ...row, debit: value } : row));
+      if (next.length > 1 && id === prev[0]?.id) {
+        next[1] = { ...next[1], credit: value };
+      }
+      return next;
+    });
+  };
+
   const onAccountChange = (id: string, account: string) => {
     // Party type is always chosen by the user — never auto-filled from the account.
     setRows((prev) =>
@@ -447,7 +460,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                     <input
                       inputMode="decimal"
                       value={row.debit}
-                      onChange={(event) => updateRow(row.id, { debit: event.target.value })}
+                      onChange={(event) => onDebitChange(row.id, event.target.value)}
                       placeholder="0"
                       className={`${inputClass} w-24 text-right`}
                     />
