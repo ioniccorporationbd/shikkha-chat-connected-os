@@ -75,6 +75,20 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       try {
         const data = await fetchJournalEntryContext(targetCompany, language);
         setContext(data);
+        // Diagnose an empty row-2 (Payable): if neither the dedicated
+        // `account_type like %Payable%` list nor the postable pool yields a
+        // Payable account, report the counts to the ERP Error Log so it can be
+        // inspected at desk/system/error-log without guessing.
+        const payDedicated = data.payable_accounts?.length || 0;
+        const payPool = (data.accounts || []).filter((account) =>
+          (account.account_type || "").toLowerCase().includes("payable")
+        ).length;
+        if (payDedicated === 0 && payPool === 0) {
+          reportClientError({
+            scope: "journal-entry:context",
+            message: `row-2 Payable list is empty — accounts=${(data.accounts || []).length}, payable_api=${payDedicated}, payable_pool=${payPool}, company=${data.company}`,
+          });
+        }
         setCompany((prev) => prev || data.company);
         setVoucherType((prev) => prev || data.voucher_types[0]?.value || "Journal Entry");
       } catch (error) {
