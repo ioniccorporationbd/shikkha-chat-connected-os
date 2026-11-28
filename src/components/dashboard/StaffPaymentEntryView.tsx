@@ -574,55 +574,33 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
     );
   }
 
-  return (
-    <div className="flex flex-col gap-5">
-      <StaffPaymentHistoryPanel
-        refreshToken={historyToken}
-        canCreate
-        onMakePayment={() => setOpen(true)}
-        onBack={onBack}
-      />
-
-      {open ? (
-        <div
-          role="dialog"
-          aria-modal="true"
+  const paymentForm = open ? (
+    <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
+            <FiCreditCard size={16} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">{copy.heading}</h2>
+            <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
+              {copy.subtitle}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
           onClick={() => {
             if (!submitting) setOpen(false);
           }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[color-mix(in_srgb,#0b0f1a_45%,transparent)] p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
+          disabled={submitting}
+          aria-label={copy.back}
+          className="grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[var(--color-action-tint)] disabled:opacity-50"
         >
-          <div
-            onClick={(event) => event.stopPropagation()}
-            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[26px] bg-[var(--color-white)] shadow-[0_30px_80px_-24px_rgba(0,0,0,0.45)] sm:rounded-[26px]"
-          >
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-3.5">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--color-primary)] text-[var(--color-white)]">
-                  <FiCreditCard size={16} />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="text-[15px] font-semibold text-[var(--color-primary)]">{copy.heading}</h2>
-                  <p className="mt-0.5 text-[11.5px] text-[color-mix(in_srgb,var(--color-primary)_58%,transparent)]">
-                    {copy.subtitle}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!submitting) setOpen(false);
-                }}
-                disabled={submitting}
-                aria-label={copy.back}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] text-[color-mix(in_srgb,var(--color-primary)_70%,transparent)] transition hover:bg-[var(--color-action-tint)] disabled:opacity-50"
-              >
-                <FiX size={16} />
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-5">
-              <div className="space-y-4">
+          <FiX size={16} />
+        </button>
+      </div>
+      <div className="space-y-4">
         {/* Row 1: Payment type (left) | Mode of Payment (right) */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -849,10 +827,19 @@ export default function StaffPaymentEntryView({ onBack }: { onBack: () => void }
           </div>
         </div>
       </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+    </div>
+  ) : null;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <StaffPaymentHistoryPanel
+        refreshToken={historyToken}
+        canCreate
+        onMakePayment={() => setOpen(true)}
+        onBack={onBack}
+      >
+        {paymentForm}
+      </StaffPaymentHistoryPanel>
     </div>
   );
 }

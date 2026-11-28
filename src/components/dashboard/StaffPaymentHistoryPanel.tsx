@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { FiArrowLeft, FiCreditCard, FiDollarSign, FiEye, FiHash, FiLayers, FiPlusCircle, FiRotateCcw } from "react-icons/fi";
 
 import ListFilterBar from "./ListFilterBar";
@@ -45,11 +45,13 @@ export default function StaffPaymentHistoryPanel({
   canCreate = false,
   onMakePayment,
   onBack,
+  children,
 }: {
   refreshToken?: number;
   canCreate?: boolean;
   onMakePayment?: () => void;
   onBack?: () => void;
+  children?: ReactNode;
 }) {
   const { language } = useLanguage();
   const copy = paymentEntryCopyFor(language);
@@ -282,6 +284,8 @@ export default function StaffPaymentHistoryPanel({
           ) : null}
         </div>
       </header>
+
+      {children}
 
       {loading ? (
         <div className="rounded-3xl border border-[color-mix(in_srgb,var(--color-primary)_12%,transparent)] bg-[var(--color-white)] px-5 py-16 text-center">

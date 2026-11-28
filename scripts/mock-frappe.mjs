@@ -5692,6 +5692,79 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (method === "frappe.auth.get_logged_user") {
+    ok(response, "tamim@ioniccorporation.com");
+    return;
+  }
+
+  if (method === "frappe.client.get_list") {
+    const dt = url.searchParams.get("doctype") || "";
+    if (dt === "Payment Entry") {
+      ok(response, [
+        {
+          name: "ACC-PAY-2026-00074",
+          posting_date: "2026-11-24",
+          payment_type: "Pay",
+          party_type: "Supplier",
+          party: "MSLSCS00001",
+          party_name: "MSL",
+          paid_amount: 5000,
+          received_amount: 0,
+          mode_of_payment: "Bank",
+          reference_no: "REF-74",
+          reference_date: "2026-11-24",
+          status: "Submitted",
+          docstatus: 1,
+          company: "MSL",
+          paid_from_account_currency: "BDT",
+          paid_to_account_currency: "BDT",
+          creation: "2026-11-24 10:00:00",
+        },
+        {
+          name: "ACC-PAY-2026-00075",
+          posting_date: "2026-11-20",
+          payment_type: "Receive",
+          party_type: "Customer",
+          party: "CUST-0001",
+          party_name: "Acme Ltd",
+          paid_amount: 0,
+          received_amount: 8000,
+          mode_of_payment: "Cash",
+          reference_no: "REF-75",
+          reference_date: "2026-11-20",
+          status: "Draft",
+          docstatus: 0,
+          company: "MSL",
+          paid_from_account_currency: "BDT",
+          paid_to_account_currency: "BDT",
+          creation: "2026-11-20 09:00:00",
+        },
+      ]);
+      return;
+    }
+    if (dt === "Mode of Payment") {
+      ok(response, [{ name: "Cash" }, { name: "Bank" }, { name: "bKash" }]);
+      return;
+    }
+    if (dt === "Party Type") {
+      ok(response, [{ name: "Customer" }, { name: "Supplier" }]);
+      return;
+    }
+    if (dt === "Company") {
+      ok(response, [{ name: "MSL", default_currency: "BDT" }]);
+      return;
+    }
+    if (dt === "Account") {
+      ok(response, [
+        { name: "Bank - MSL", account_currency: "BDT" },
+        { name: "Cash - MSL", account_currency: "BDT" },
+      ]);
+      return;
+    }
+    ok(response, []);
+    return;
+  }
+
   if (method === "shikkha_os.api.v1.auth.login") {
     if (request.method !== "POST") {
       failure(response, 405, "AuthenticationError", "Method not allowed.", "Not Allowed");
