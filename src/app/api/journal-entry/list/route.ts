@@ -15,10 +15,11 @@ export const dynamic = "force-dynamic";
  *
  * Reads straight from the ERP CORE API (`frappe.client.get_list`) on the
  * `Journal Entry` doctype — the same records the desk list
- * (`/desk/accounts/journal-entry`) shows, newest first. Permission-checked by
- * the session cookie: get_list only returns rows the signed-in user may Read,
- * so no owner filter is applied (this is the whole company JE ledger, not just
- * the current employee's drafts).
+ * (`/desk/accounts/journal-entry`) shows — scoped to `owner == <logged-in user>`
+ * so the table shows exactly the Journal Entries this employee created
+ * (including the JEs auto-posted by their Payment Entries), newest first.
+ * Permission-checked by the session cookie: get_list only returns rows the
+ * signed-in user may Read.
  *
  * The row shape mirrors the payment-entry history table (`JournalEntryRow`) so
  * the panel renders the same columns/styles/statuses.
@@ -48,10 +49,16 @@ const LIST_FIELDS = [
   "creation",
 ];
 
-async function coreList(sid: string, fields: string[], orderBy: string) {
+async function coreList(
+  sid: string,
+  fields: string[],
+  orderBy: string,
+  filters: unknown[] = []
+) {
   const params = new URLSearchParams();
   params.set("doctype", "Journal Entry");
   params.set("fields", JSON.stringify(fields));
+  if (filters.length) params.set("filters", JSON.stringify(filters));
   if (orderBy) params.set("order_by", orderBy);
   params.set("limit_page_length", "0");
   return callFrappe<Row[]>(`frappe.client.get_list?${params.toString()}`, { sid });
@@ -90,7 +97,9 @@ export async function GET(request: Request) {
     return clearSessionCookie(response);
   }
 
-  const rowsRes = await coreList(sid, LIST_FIELDS, "posting_date desc, creation desc");
+  const rowsRes = await coreList(sid, LIST_FIELDS, "posting_date desc, creation desc", [
+    ["owner", "=", user],
+  ]);
   if (!rowsRes.ok) {
     const response = fromFrappeFailure(rowsRes);
     return rowsRes.status === 401 ? clearSessionCookie(response) : response;

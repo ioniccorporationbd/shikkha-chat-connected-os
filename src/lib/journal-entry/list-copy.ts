@@ -52,7 +52,7 @@ export interface JournalListCopy extends ListFilterCopy, ListPaginationCopy {
 
 const BN: JournalListCopy = {
   heading: "জার্নাল এন্ট্রি তালিকা",
-  subtitle: "সকল জার্নাল এন্ট্রির তালিকা",
+  subtitle: "আপনার তৈরি করা জার্নাল এন্ট্রি",
   loading: "লোড হচ্ছে…",
   loadFailed: "জার্নাল এন্ট্রি লোড করা যায়নি।",
   retry: "আবার চেষ্টা",
@@ -122,7 +122,7 @@ const BN: JournalListCopy = {
 
 const EN: JournalListCopy = {
   heading: "Journal Entries",
-  subtitle: "All journal entries",
+  subtitle: "Journal entries you created",
   loading: "Loading…",
   loadFailed: "Could not load the journal entries.",
   retry: "Retry",
