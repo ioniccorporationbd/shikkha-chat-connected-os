@@ -135,11 +135,17 @@ export async function GET(request: Request) {
   let totalAmount = 0;
   let monthCount = 0;
   let monthAmount = 0;
+  let submittedCount = 0;
+  let submittedAmount = 0;
   for (const row of entries) {
     totalAmount += row.amount;
     if (row.posting_date.startsWith(monthPrefix)) {
       monthCount += 1;
       monthAmount += row.amount;
+    }
+    if (row.docstatus === 1) {
+      submittedCount += 1;
+      submittedAmount += row.amount;
     }
   }
 
@@ -148,6 +154,8 @@ export async function GET(request: Request) {
     total_amount: totalAmount,
     this_month_count: monthCount,
     this_month_amount: monthAmount,
+    submitted_count: submittedCount,
+    submitted_amount: submittedAmount,
     latest_date: entries[0]?.posting_date || "",
     currency: "BDT",
   };

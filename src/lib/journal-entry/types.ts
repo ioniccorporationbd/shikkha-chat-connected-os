@@ -83,6 +83,8 @@ export interface JournalEntrySummary {
   total_amount: number;
   this_month_count: number;
   this_month_amount: number;
+  submitted_count: number;
+  submitted_amount: number;
   latest_date: string;
   currency: string;
 }

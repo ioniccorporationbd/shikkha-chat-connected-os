@@ -347,6 +347,11 @@ export default function StaffJournalEntryHistoryPanel({
               tone="blue"
             />
             <Stat
+              label={copy.summarySubmitted}
+              value={formatAmount(summary.submitted_amount ?? 0, currency, language)}
+              tone="green"
+            />
+            <Stat
               label={copy.summaryLatest}
               value={summary.latest_date ? formatDate(summary.latest_date, language) : copy.summaryNone}
               tone="violet"

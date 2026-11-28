@@ -59,6 +59,7 @@ export interface JournalListCopy extends ListFilterCopy, ListPaginationCopy {
   summaryTotalAmount: string;
   summaryMonth: string;
   summaryMonthAmount: string;
+  summarySubmitted: string;
   summaryLatest: string;
   summaryNone: string;
 }
@@ -142,6 +143,7 @@ const BN: JournalListCopy = {
   summaryTotalAmount: "মোট পরিমাণ",
   summaryMonth: "এই মাসের এন্ট্রি",
   summaryMonthAmount: "এই মাসের পরিমাণ",
+  summarySubmitted: "জমাকৃত পরিমাণ",
   summaryLatest: "সর্বশেষ এন্ট্রি",
   summaryNone: "—",
 };
@@ -225,6 +227,7 @@ const EN: JournalListCopy = {
   summaryTotalAmount: "Total amount",
   summaryMonth: "This month",
   summaryMonthAmount: "This month amount",
+  summarySubmitted: "Submitted amount",
   summaryLatest: "Latest entry",
   summaryNone: "—",
 };
