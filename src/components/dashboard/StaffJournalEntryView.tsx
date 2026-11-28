@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiArrowLeft, FiBookOpen, FiRefreshCw } from "react-icons/fi";
+import { FiArrowLeft, FiBookOpen, FiPlus, FiRefreshCw, FiX } from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import ShikkhaLoader from "./ShikkhaLoader";
@@ -69,6 +69,9 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
 
   const [partyCache, setPartyCache] = useState<Record<string, SelectOption[]>>({});
   const [submitting, setSubmitting] = useState(false);
+  // The create form is collapsed by default; the header "Create journal entry"
+  // button reveals it and it closes again after a successful create.
+  const [formOpen, setFormOpen] = useState(false);
   // Bumped after a successful create so the right-side history table reloads.
   const [historyToken, setHistoryToken] = useState(0);
 
@@ -286,6 +289,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       setRemark("");
       setRows([newRow(), newRow()]);
       setHistoryToken((token) => token + 1);
+      setFormOpen(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : copy.submitError;
       toast.error(message);
@@ -337,17 +341,38 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
             <p className="mt-0.5 text-[13px] text-[var(--color-muted)]">{copy.subtitle}</p>
           </div>
         </div>
-        {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-muted)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
-          >
-            <FiArrowLeft size={13} /> {copy.back}
-          </button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {formOpen ? (
+            <button
+              type="button"
+              onClick={() => setFormOpen(false)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-muted)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+            >
+              <FiX size={13} /> {copy.close}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-action)] px-3.5 py-1.5 text-[12.5px] font-semibold text-white transition hover:opacity-90"
+            >
+              <FiPlus size={14} /> {copy.submit}
+            </button>
+          )}
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-muted)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+            >
+              <FiArrowLeft size={13} /> {copy.back}
+            </button>
+          ) : null}
+        </div>
       </div>
 
+      {formOpen ? (
+        <>
       {/* Entry details */}
       <section className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 sm:p-5">
         <h2 className="mb-4 text-[15px] font-semibold text-[var(--color-ink)]">{copy.detailsHeading}</h2>
@@ -521,6 +546,8 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
           </div>
         </div>
       </section>
+        </>
+      ) : null}
 
       <StaffJournalEntryHistoryPanel refreshToken={historyToken} />
     </div>
@@ -582,6 +609,7 @@ interface Copy {
   difference: string;
   submit: string;
   reset: string;
+  close: string;
   submitting: string;
   success: string;
   submitError: string;
@@ -631,6 +659,7 @@ const EN: Copy = {
   difference: "Difference",
   submit: "Create journal entry",
   reset: "Reset",
+  close: "Close",
   submitting: "Creating…",
   success: "Journal entry {name} created as a draft.",
   submitError: "Could not create the journal entry.",
@@ -680,6 +709,7 @@ const BN: Copy = {
   difference: "পার্থক্য",
   submit: "জার্নাল এন্ট্রি তৈরি করুন",
   reset: "রিসেট",
+  close: "বন্ধ করুন",
   submitting: "তৈরি হচ্ছে…",
   success: "জার্নাল এন্ট্রি {name} খসড়া হিসেবে তৈরি হয়েছে।",
   submitError: "জার্নাল এন্ট্রি তৈরি করা যায়নি।",
