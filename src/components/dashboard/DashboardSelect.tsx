@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FiCheck, FiChevronDown } from "react-icons/fi";
 
 import { useOverlayPresence } from "@/lib/dashboard/useOverlayPresence";
@@ -70,6 +71,11 @@ function LeadingVisual({ option }: { option?: DashboardSelectOption }) {
  * Presentation only: a controlled value/onChange pair, so callers keep their
  * existing state and handlers. Keyboard (Arrow/Home/End/Enter/Escape) and
  * click-outside behaviour are built in; ARIA follows the listbox pattern.
+ *
+ * `portal` renders the option list into document.body with fixed positioning so
+ * a parent scroll container (e.g. the journal-entry accounts table, which uses
+ * `overflow-x-auto`) can neither clip the menu nor grow a scrollbar when it
+ * opens. Off by default, so other pages are unaffected.
  */
 export default function DashboardSelect({
   value,
@@ -79,6 +85,7 @@ export default function DashboardSelect({
   ariaLabel,
   disabled,
   invalid,
+  portal,
   className,
 }: {
   value: string;
@@ -88,10 +95,14 @@ export default function DashboardSelect({
   ariaLabel?: string;
   disabled?: boolean;
   invalid?: boolean;
+  /** Render the menu in a body portal (fixed) so a parent overflow container
+   *  can't clip it or show a scrollbar. */
+  portal?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const baseId = useId();
@@ -104,7 +115,10 @@ export default function DashboardSelect({
   useEffect(() => {
     if (!open) return;
     function onDocPointer(event: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current && rootRef.current.contains(target)) return;
+      if (listRef.current && listRef.current.contains(target)) return; // portalled menu
+      setOpen(false);
     }
     document.addEventListener("mousedown", onDocPointer);
     return () => document.removeEventListener("mousedown", onDocPointer);
@@ -115,6 +129,29 @@ export default function DashboardSelect({
     const node = listRef.current.children[active] as HTMLElement | undefined;
     node?.scrollIntoView({ block: "nearest" });
   }, [active, open]);
+
+  // Fixed-position coordinates for the portalled menu; re-measured on scroll
+  // and resize so it tracks the trigger while the page/table moves.
+  useLayoutEffect(() => {
+    if (!portal || !open) return;
+    const update = () => {
+      const el = rootRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const estimate = Math.min(240, options.length * 44 + 12);
+      const spaceBelow = window.innerHeight - r.bottom;
+      const flipUp = spaceBelow < estimate && r.top > spaceBelow;
+      const top = flipUp ? Math.max(8, r.top - estimate - 6) : r.bottom + 6;
+      setCoords({ top, left: r.left, width: r.width });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [portal, open, options.length]);
 
   const openAtSelected = () => {
     setActive(selectedIndex >= 0 ? selectedIndex : 0);
@@ -162,6 +199,57 @@ export default function DashboardSelect({
     ? "border-[var(--color-danger)]"
     : "border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)]";
 
+  const listbox = (
+    <ul
+      ref={listRef}
+      id={`${baseId}-list`}
+      role="listbox"
+      aria-label={ariaLabel}
+      aria-hidden={popExiting || undefined}
+      style={
+        portal && coords
+          ? { position: "fixed", top: coords.top, left: coords.left, width: coords.width }
+          : undefined
+      }
+      className={`${portal ? "fixed z-[80]" : "absolute left-0 right-0 z-30 mt-1.5"} max-h-60 origin-top overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
+        popExiting ? "u-shk-pop-out pointer-events-none" : "u-shk-pop-in"
+      }`}
+    >
+      {options.map((option, index) => {
+        const isSelected = option.value === value;
+        const isActive = index === active;
+        return (
+          <li key={option.value} role="option" aria-selected={isSelected}>
+            <button
+              type="button"
+              onMouseEnter={() => setActive(index)}
+              onClick={() => commit(index)}
+              className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition ${
+                isActive ? "bg-[var(--color-action-tint)]" : "hover:bg-[var(--color-action-tint)]"
+              }`}
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <LeadingVisual option={option} />
+                <span
+                  className={`min-w-0 truncate text-[13px] ${
+                    isSelected
+                      ? "font-semibold text-[var(--color-action)]"
+                      : "font-medium text-[var(--color-primary)]"
+                  }`}
+                >
+                  {option.label}
+                </span>
+              </span>
+              {isSelected ? (
+                <FiCheck aria-hidden size={15} className="shrink-0 text-[var(--color-action)]" />
+              ) : null}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div ref={rootRef} className={`relative ${className ?? ""}`}>
       <button
@@ -195,51 +283,13 @@ export default function DashboardSelect({
         />
       </button>
 
-      {popMounted ? (
-        <ul
-          ref={listRef}
-          id={`${baseId}-list`}
-          role="listbox"
-          aria-label={ariaLabel}
-          aria-hidden={popExiting || undefined}
-          className={`absolute left-0 right-0 z-30 mt-1.5 max-h-60 origin-top overflow-y-auto rounded-2xl border border-[color-mix(in_srgb,var(--color-primary)_16%,transparent)] bg-[var(--color-white)] p-1.5 shadow-[0_26px_54px_-24px_color-mix(in_srgb,var(--color-primary)_60%,transparent)] ${
-            popExiting ? "u-shk-pop-out pointer-events-none" : "u-shk-pop-in"
-          }`}
-        >
-          {options.map((option, index) => {
-            const isSelected = option.value === value;
-            const isActive = index === active;
-            return (
-              <li key={option.value} role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setActive(index)}
-                  onClick={() => commit(index)}
-                  className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition ${
-                    isActive ? "bg-[var(--color-action-tint)]" : "hover:bg-[var(--color-action-tint)]"
-                  }`}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <LeadingVisual option={option} />
-                    <span
-                      className={`min-w-0 truncate text-[13px] ${
-                        isSelected
-                          ? "font-semibold text-[var(--color-action)]"
-                          : "font-medium text-[var(--color-primary)]"
-                      }`}
-                    >
-                      {option.label}
-                    </span>
-                  </span>
-                  {isSelected ? (
-                    <FiCheck aria-hidden size={15} className="shrink-0 text-[var(--color-action)]" />
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+      {popMounted
+        ? portal
+          ? typeof document !== "undefined" && coords
+            ? createPortal(listbox, document.body)
+            : null
+          : listbox
+        : null}
     </div>
   );
 }

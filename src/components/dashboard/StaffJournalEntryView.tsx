@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiArrowLeft, FiBookOpen, FiPlus, FiRefreshCw } from "react-icons/fi";
+import { FiArrowLeft, FiBookOpen, FiRefreshCw } from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import { formatAmount } from "@/lib/expense-claim/format";
@@ -151,7 +151,6 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
     if (partyType) void ensureParties(partyType);
   };
 
-  const addRow = () => setRows((prev) => [...prev, newRow()]);
   const resetForm = () => {
     setTitle("");
     setRemark("");
@@ -398,13 +397,6 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       <section className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-[15px] font-semibold text-[var(--color-ink)]">{copy.accountsHeading}</h2>
-          <button
-            type="button"
-            onClick={addRow}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-action)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-action)] hover:bg-[var(--color-action-tint)]"
-          >
-            <FiPlus size={13} /> {copy.addRow}
-          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -428,6 +420,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       options={accountOptionsForRow(rowIndex)}
                       placeholder={copy.selectAccount}
                       ariaLabel={copy.colAccount}
+                      portal
                     />
                   </td>
                   <td className="min-w-[150px] px-2 py-2">
@@ -437,6 +430,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       options={partyTypeOptions}
                       placeholder={copy.selectPartyType}
                       ariaLabel={copy.colPartyType}
+                      portal
                     />
                   </td>
                   <td className="min-w-[170px] px-2 py-2">
@@ -447,6 +441,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
                       placeholder={copy.selectParty}
                       ariaLabel={copy.colParty}
                       disabled={!row.partyType}
+                      portal
                     />
                   </td>
                   <td className="px-2 py-2 text-right">
