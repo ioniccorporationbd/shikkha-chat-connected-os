@@ -356,7 +356,7 @@ export default function StaffJournalEntryHistoryPanel({
                         <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">{copy.colDebit}</th>
                         <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">{copy.colCredit}</th>
                         <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">{copy.colStatus}</th>
-                        <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">{copy.colAction}</th>
+                        <th className="px-3 py-3 text-[11px] font-semibold uppercase tracking-wide text-[color-mix(in_srgb,var(--color-primary)_55%,transparent)]">{copy.colAction}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -385,15 +385,16 @@ export default function StaffJournalEntryHistoryPanel({
                           <td className="px-3 py-3">
                             <StatusBadge status={row.status} copy={copy} />
                           </td>
-                          <td className="px-3 py-3 text-right">
+                          <td className="whitespace-nowrap px-3 py-3">
                             <button
                               type="button"
                               onClick={() => setDetailRow(row)}
-                              aria-label={copy.viewDetails}
-                              title={copy.viewDetails}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-primary)] transition hover:border-[var(--color-action)] hover:bg-[var(--color-action-tint)] hover:text-[var(--color-action)]"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-action)_30%,transparent)] px-2.5 py-1.5 text-[11.5px] font-semibold text-[var(--color-action)] transition hover:bg-[color-mix(in_srgb,var(--color-action)_7%,var(--color-white))]"
                             >
-                              <FiEye size={13} aria-hidden /> {copy.viewDetails}
+                              <span className="pointer-events-none">
+                                <FiEye size={12} />
+                              </span>
+                              <span className="pointer-events-none">{copy.viewDetails}</span>
                             </button>
                           </td>
                         </tr>
