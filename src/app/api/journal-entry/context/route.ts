@@ -98,7 +98,7 @@ export async function GET(request: Request) {
   const costRes = await getList(
     "Cost Center",
     ["name"],
-    [["company", "=", company], ["is_group", "=", 0]],
+    [["company", "=", company]],
     sid,
     "name asc"
   );
