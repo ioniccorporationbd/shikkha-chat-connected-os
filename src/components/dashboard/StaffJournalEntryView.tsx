@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiArrowLeft, FiBookOpen, FiRefreshCw } from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
+import ShikkhaLoader from "./ShikkhaLoader";
 import { formatAmount } from "@/lib/expense-claim/format";
 import { todayLocalIso } from "@/lib/format/datetime";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -281,10 +282,8 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
 
   if (loading) {
     return (
-      <div className="grid min-h-[280px] place-items-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] text-sm text-[var(--color-muted)]">
-        <span className="flex items-center gap-2">
-          <FiRefreshCw className="animate-spin" size={15} /> {copy.loading}
-        </span>
+      <div className="grid min-h-[320px] place-items-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-6 py-10">
+        <ShikkhaLoader label={copy.loading} size="md" />
       </div>
     );
   }
