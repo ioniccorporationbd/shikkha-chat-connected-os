@@ -89,6 +89,14 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
             message: `row-2 Payable list is empty — accounts=${(data.accounts || []).length}, payable_api=${payDedicated}, payable_pool=${payPool}, company=${data.company}`,
           });
         }
+        // Browser-console visibility (clause 4): shows exactly what the API
+        // returned for the dropdowns the moment the form loads.
+        console.info("[journal-entry] context loaded", {
+          accounts: (data.accounts || []).length,
+          payable_accounts: payDedicated,
+          cost_centers: (data.cost_centers || []).length,
+          company: data.company,
+        });
         setCompany((prev) => prev || data.company);
         setVoucherType((prev) => prev || data.voucher_types[0]?.value || "Journal Entry");
       } catch (error) {

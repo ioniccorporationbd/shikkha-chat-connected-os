@@ -14,7 +14,7 @@ export function fetchJournalEntryContext(
   company: string | undefined,
   language: string
 ): Promise<JournalEntryFormContext> {
-  const params = new URLSearchParams({ language });
+  const params = new URLSearchParams({ language, _ts: String(Date.now()) });
   if (company) params.set("company", company);
   return getJson<JournalEntryFormContext>(`/api/journal-entry/context?${params.toString()}`);
 }
