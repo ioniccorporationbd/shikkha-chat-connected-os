@@ -685,7 +685,8 @@ function staffDetailSections(
 
   const infoRows: DetailRow[] = (
     [
-      { label: copy.dParty, value: row.party_name || row.party || "" },
+      { label: copy.dPartyType, value: row.party_type || "" },
+      { label: copy.dPartyName, value: row.party_name || row.party || "" },
       { label: copy.dPostingDate, value: formatDate(row.posting_date, language) },
       {
         label: copy.dPaymentType,

@@ -49,6 +49,8 @@ export interface PaymentEntryCopy {
   detailsLoading: string;
   close: string;
   dParty: string;
+  dPartyType: string;
+  dPartyName: string;
   dPostingDate: string;
   dPaymentType: string;
   dAmount: string;
@@ -187,6 +189,8 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     detailsLoading: "বিস্তারিত লোড হচ্ছে…",
     close: "বন্ধ করুন",
     dParty: "কাস্টমার",
+    dPartyType: "পক্ষের ধরন",
+    dPartyName: "পক্ষ",
     dPostingDate: "পোস্টিং তারিখ",
     dPaymentType: "পেমেন্ট টাইপ",
     dAmount: "পরিমাণ",
@@ -332,6 +336,8 @@ export const paymentEntryCopy: Record<"bn" | "en", PaymentEntryCopy> = {
     detailsLoading: "Loading details…",
     close: "Close",
     dParty: "Customer",
+    dPartyType: "Party type",
+    dPartyName: "Party",
     dPostingDate: "Posting Date",
     dPaymentType: "Payment Type",
     dAmount: "Amount",
