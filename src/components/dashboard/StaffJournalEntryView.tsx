@@ -152,24 +152,26 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
     () => (context?.accounts || []).map((account) => ({ value: account.value, label: account.label })),
     [context]
   );
+  const hasAccountType = (account: { account_type?: string }, type: string): boolean =>
+    (account.account_type || "").trim().toLowerCase().includes(type);
+  const expenseAccounts: SelectOption[] = useMemo(
+    () =>
+      (context?.accounts || [])
+        .filter((account) => hasAccountType(account, "expense account"))
+        .map((account) => ({ value: account.value, label: account.label })),
+    [context]
+  );
   const payableAccounts: SelectOption[] = useMemo(
     () =>
       (context?.accounts || [])
-        .filter((account) => (account.account_type || "").trim().toLowerCase() === "payable")
+        .filter((account) => hasAccountType(account, "payable"))
         .map((account) => ({ value: account.value, label: account.label })),
     [context]
   );
-  const receivableAccounts: SelectOption[] = useMemo(
-    () =>
-      (context?.accounts || [])
-        .filter((account) => (account.account_type || "").trim().toLowerCase() === "receivable")
-        .map((account) => ({ value: account.value, label: account.label })),
-    [context]
-  );
-  // Row 1 -> payable accounts, Row 2 -> receivable accounts (as specified);
+  // Row 1 -> Expense Account, Row 2 -> Payable (as specified);
   // any extra rows fall back to the full account list.
   const accountOptionsForRow = (index: number): SelectOption[] =>
-    index === 0 ? payableAccounts : index === 1 ? receivableAccounts : accountOptions;
+    index === 0 ? expenseAccounts : index === 1 ? payableAccounts : accountOptions;
   const costCenterOptions: SelectOption[] = useMemo(
     () =>
       (context?.cost_centers || []).map((center) => ({ value: center.value, label: center.label })),
