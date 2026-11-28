@@ -56,3 +56,39 @@ export interface JournalEntryResult {
   total_credit: number;
   currency: string;
 }
+
+/** One row of the history table (`GET /api/journal-entry/list`). */
+export interface JournalEntryRow {
+  name: string;
+  posting_date: string;
+  voucher_type: string;
+  title: string;
+  remark: string;
+  total_debit: number;
+  total_credit: number;
+  /** The entry amount (total debit = total credit for a balanced entry). */
+  amount: number;
+  /** Draft / Submitted / Cancelled derived from docstatus. */
+  status: string;
+  docstatus: number;
+  company: string;
+  currency: string;
+  cheque_no: string;
+  bill_no: string;
+  creation: string;
+}
+
+export interface JournalEntrySummary {
+  total: number;
+  total_amount: number;
+  this_month_count: number;
+  this_month_amount: number;
+  latest_date: string;
+  currency: string;
+}
+
+export interface JournalEntryListResult {
+  doctype: string;
+  entries: JournalEntryRow[];
+  summary: JournalEntrySummary;
+}

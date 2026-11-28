@@ -5,6 +5,7 @@ import { FiArrowLeft, FiBookOpen, FiRefreshCw } from "react-icons/fi";
 
 import DashboardSelect from "@/components/dashboard/DashboardSelect";
 import ShikkhaLoader from "./ShikkhaLoader";
+import StaffJournalEntryHistoryPanel from "./StaffJournalEntryHistoryPanel";
 import { formatAmount } from "@/lib/expense-claim/format";
 import { todayLocalIso } from "@/lib/format/datetime";
 import { useLanguage } from "@/lib/i18n/LanguageProvider";
@@ -68,6 +69,8 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
 
   const [partyCache, setPartyCache] = useState<Record<string, SelectOption[]>>({});
   const [submitting, setSubmitting] = useState(false);
+  // Bumped after a successful create so the right-side history table reloads.
+  const [historyToken, setHistoryToken] = useState(0);
 
   const loadContext = useCallback(
     async (targetCompany?: string) => {
@@ -282,6 +285,7 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
       setTitle("");
       setRemark("");
       setRows([newRow(), newRow()]);
+      setHistoryToken((token) => token + 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : copy.submitError;
       toast.error(message);
@@ -517,6 +521,8 @@ export default function StaffJournalEntryView({ onBack }: { onBack?: () => void 
           </div>
         </div>
       </section>
+
+      <StaffJournalEntryHistoryPanel refreshToken={historyToken} />
     </div>
   );
 }

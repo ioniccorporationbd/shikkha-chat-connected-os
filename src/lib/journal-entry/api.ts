@@ -5,6 +5,7 @@ import { getJson, postJson } from "@/lib/api/http";
 import type {
   JournalEntryCreateInput,
   JournalEntryFormContext,
+  JournalEntryListResult,
   JournalEntryResult,
   SelectOption,
 } from "./types";
@@ -37,4 +38,10 @@ export function createJournalEntry(
   language: string
 ): Promise<JournalEntryResult> {
   return postJson<JournalEntryResult>("/api/journal-entry/create", { data: values, language });
+}
+
+/** List the created Journal Entries shown in the history table. */
+export function fetchJournalEntries(language: string): Promise<JournalEntryListResult> {
+  const params = new URLSearchParams({ language, _ts: String(Date.now()) });
+  return getJson<JournalEntryListResult>(`/api/journal-entry/list?${params.toString()}`);
 }
